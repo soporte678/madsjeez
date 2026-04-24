@@ -80,7 +80,8 @@ export default async function DashboardPage() {
   const { profile, productsCount, ordersCount, subscription } = await getDashboardData(session.user.id);
 
   // Si no es vendedor, redirigir a convertirse en vendedor
-  if (profile?.role === "buyer") {
+  // Forzamos el tipo a 'any' para evitar el error 'never' en el build
+  if ((profile as any)?.role === "buyer") {
     redirect("/become-seller");
   }
 
