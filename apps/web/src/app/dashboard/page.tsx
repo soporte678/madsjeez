@@ -16,6 +16,21 @@ import {
   Zap
 } from "lucide-react";
 
+// Definir interfaz para el perfil
+interface UserProfile {
+  id: string;
+  email: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  role: "buyer" | "seller" | "admin";
+  is_verified: boolean;
+  reputation_scores?: {
+    color: string;
+    total_sales: number;
+    average_rating: number;
+  };
+}
+
 async function getDashboardData(userId: string) {
   const supabase = await createClient();
   
@@ -47,7 +62,7 @@ async function getDashboardData(userId: string) {
     .single();
   
   return {
-    profile,
+    profile: profile as UserProfile | null,
     productsCount: productsCount || 0,
     ordersCount: ordersCount || 0,
     subscription,
@@ -62,7 +77,7 @@ export default async function DashboardPage() {
     redirect("/auth/login?redirect=/dashboard");
   }
 
-  const { profile, productsCount, ordersCount, subscription } = await getDashboardData(session.user.id) as any;
+  const { profile, productsCount, ordersCount, subscription } = await getDashboardData(session.user.id);
 
   // Si no es vendedor, redirigir a convertirse en vendedor
   if (profile?.role === "buyer") {
