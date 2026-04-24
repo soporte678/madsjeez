@@ -7,9 +7,9 @@ WORKDIR /app
 COPY package*.json ./
 COPY apps/web/package*.json ./apps/web/
 
-# Instalar dependencias
-RUN npm install
-RUN cd apps/web && npm install
+# Instalar dependencias (sin caché)
+RUN npm install --no-cache
+RUN cd apps/web && npm install --no-cache
 
 # Copiar todo el código
 COPY . .
