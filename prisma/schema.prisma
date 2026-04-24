@@ -1,0 +1,351 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+enum UserRole {
+  USER
+  SELLER
+  ADMIN
+}
+
+enum ReputationColor {
+  ROJO       // Más del 10% de reclamos
+  NARANJA    // Entre 5% y 10% de reclamos
+  AMARILLO   // Entre 2% y 5% de reclamos
+  VERDE      // Menos del 2% de reclamos
+  VERDE_OSCURO // Sin reclamos, excelente reputación
+}
+
+enum SubscriptionTier {
+  FREE
+  PLATA
+  GOLD
+  PLATINUM
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime? @map("email_verified")
+  image         String?
+  password      String?
+  role          UserRole  @default(USER)
+  
+  // Perfil de vendedor
+  isSeller          Boolean   @default(false)
+  sellerName        String?
+  sellerDescription String?   @db.Text
+  sellerSince       DateTime? @map("seller_since")
+  
+  // Sistema de reputación
+  reputationColor   ReputationColor @default(VERDE) @map("reputation_color")
+  totalSales        Int             @default(0) @map("total_sales")
+  successfulSales   Int             @default(0) @map("successful_sales")
+  canceledSales     Int             @default(0) @map("canceled_sales")
+  delayedShipments  Int             @default(0) @map("delayed_shipments")
+  claimRate         Float           @default(0) @map("claim_rate") // Porcentaje de reclamos
+  
+  // Suscripción
+  subscriptionTier   SubscriptionTier @default(FREE) @map("subscription_tier")
+  subscriptionExpiry DateTime?        @map("subscription_expiry")
+  
+  // Métricas para suscriptores
+  monthlyRevenue     Float?   @map("monthly_revenue")
+  monthlyViews       Int?     @map("monthly_views")
+  conversionRate     Float?   @map("conversion_rate")
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  accounts      Account[]
+  sessions      Session[]
+  products      Product[]
+  orders        Order[]
+  reviews       Review[]
+  subscriptions Subscription[]
+  boosts        ProductBoost[]
+  
+  @@map("users")
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  image       String?
+  parentId    String?   @map("parent_id")
+  parent      Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
+  products    Product[]
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  @@map("categories")
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @db.Text
+  price       Float
+  comparePrice Float?  @map("compare_price")
+  stock       Int      @default(0)
+  sku         String?
+  condition   String   @default("new") // new, used, refurbished
+  
+  // Estado
+  isActive    Boolean  @default(true) @map("is_active")
+  isFeatured  Boolean  @default(false) @map("is_featured")
+  isBoosted   Boolean  @default(false) @map("is_boosted")
+  boostExpiry DateTime? @map("boost_expiry")
+  
+  // Métricas
+  views       Int      @default(0)
+  sales       Int      @default(0)
+  
+  // Relaciones
+  sellerId    String   @map("seller_id")
+  seller      User     @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  
+  categoryId  String   @map("category_id")
+  category    Category @relation(fields: [categoryId], references: [id])
+  
+  images      ProductImage[]
+  attributes  ProductAttribute[]
+  orderItems  OrderItem[]
+  reviews     Review[]
+  boosts      ProductBoost[]
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  @@index([sellerId])
+  @@index([categoryId])
+  @@index([isActive])
+  @@index([isBoosted])
+  @@map("products")
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  url       String
+  alt       String?
+  order     Int     @default(0)
+  productId String  @map("product_id")
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  @@map("product_images")
+}
+
+model ProductAttribute {
+  id        String  @id @default(cuid())
+  name      String
+  value     String
+  productId String  @map("product_id")
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  @@map("product_attributes")
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+model Order {
+  id            String      @id @default(cuid())
+  orderNumber   String      @unique @map("order_number")
+  status        OrderStatus @default(PENDING)
+  
+  // Totales
+  subtotal      Float
+  shippingCost  Float       @default(0) @map("shipping_cost")
+  tax           Float       @default(0)
+  total         Float
+  
+  // Dirección de envío
+  shippingName      String @map("shipping_name")
+  shippingAddress   String @map("shipping_address")
+  shippingCity      String @map("shipping_city")
+  shippingState     String @map("shipping_state")
+  shippingZip       String @map("shipping_zip")
+  shippingPhone     String @map("shipping_phone")
+  
+  // Relaciones
+  buyerId       String      @map("buyer_id")
+  buyer         User        @relation(fields: [buyerId], references: [id])
+  
+  items         OrderItem[]
+  payment       Payment?
+  review        Review?
+  
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  
+  @@index([buyerId])
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  quantity  Int
+  price     Float   // Precio al momento de la compra
+  
+  orderId   String  @map("order_id")
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  productId String  @map("product_id")
+  product   Product @relation(fields: [productId], references: [id])
+  
+  @@map("order_items")
+}
+
+model Payment {
+  id            String   @id @default(cuid())
+  stripeId      String   @unique @map("stripe_id")
+  amount        Float
+  currency      String   @default("clp")
+  status        String
+  
+  orderId       String   @unique @map("order_id")
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  createdAt     DateTime @default(now()) @map("created_at")
+  
+  @@map("payments")
+}
+
+model Review {
+  id          String   @id @default(cuid())
+  rating      Int      // 1-5 estrellas
+  comment     String?  @db.Text
+  
+  // Relaciones
+  orderId     String   @unique @map("order_id")
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  productId   String   @map("product_id")
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  reviewerId  String   @map("reviewer_id")
+  reviewer    User     @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  
+  @@map("reviews")
+}
+
+model Subscription {
+  id              String           @id @default(cuid())
+  tier            SubscriptionTier
+  status          String           @default("active") // active, cancelled, expired
+  price           Float
+  
+  // Período
+  startDate       DateTime         @map("start_date")
+  endDate         DateTime         @map("end_date")
+  
+  // Stripe
+  stripeId        String?          @map("stripe_id")
+  stripePriceId   String?          @map("stripe_price_id")
+  
+  userId          String           @map("user_id")
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime         @default(now()) @map("created_at")
+  
+  @@index([userId])
+  @@map("subscriptions")
+}
+
+model ProductBoost {
+  id          String   @id @default(cuid())
+  cost        Float    // Costo calculado según reputación
+  duration    Int      // Días de duración
+  startDate   DateTime @map("start_date")
+  endDate     DateTime @map("end_date")
+  
+  productId   String   @map("product_id")
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  sellerId    String   @map("seller_id")
+  seller      User     @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  
+  stripeId    String?  @map("stripe_id")
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  
+  @@map("product_boosts")
+}
+
+model SiteConfig {
+  id                    String   @id @default(cuid())
+  siteName              String   @default("MarketPlace") @map("site_name")
+  siteLogo              String?  @map("site_logo")
+  primaryColor          String   @default("#FFE600") @map("primary_color")
+  secondaryColor        String   @default("#3483FA") @map("secondary_color")
+  
+  // Precios de suscripción
+  pricePlata            Float    @default(9999) @map("price_plata")
+  priceGold             Float    @default(19999) @map("price_gold")
+  pricePlatinum         Float    @default(49999) @map("price_platinum")
+  
+  // Costo base de impulso
+  boostBaseCost         Float    @default(9999) @map("boost_base_cost")
+  
+  // Comisiones
+  commissionFree        Float    @default(0.15) @map("commission_free")
+  commissionPlata       Float    @default(0.12) @map("commission_plata")
+  commissionGold        Float    @default(0.08) @map("commission_gold")
+  commissionPlatinum    Float    @default(0.05) @map("commission_platinum")
+  
+  updatedAt             DateTime @updatedAt @map("updated_at")
+  
+  @@map("site_config")
+}
