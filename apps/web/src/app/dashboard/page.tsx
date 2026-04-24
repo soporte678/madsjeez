@@ -62,7 +62,7 @@ export default async function DashboardPage() {
     redirect("/auth/login?redirect=/dashboard");
   }
 
-  const { profile, productsCount, ordersCount, subscription } = await getDashboardData(session.user.id);
+  const { profile, productsCount, ordersCount, subscription } = await getDashboardData(session.user.id) as any;
 
   // Si no es vendedor, redirigir a convertirse en vendedor
   if (profile?.role === "buyer") {
