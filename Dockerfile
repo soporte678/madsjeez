@@ -1,25 +1,28 @@
 # Dockerfile para Railway
-# Cache buster: 2026-04-24-20-10
-FROM node:20-alpine
+FROM node:20-alpine AS base
+
+# Instalar dependencias necesarias
+RUN apk add --no-cache libc6-compat
 
 WORKDIR /app
 
-# Copiar archivos de configuración
+# Copiar package.json y package-lock.json
 COPY package*.json ./
-COPY apps/web/package*.json ./apps/web/
 
-# Instalar dependencias (sin caché)
-RUN npm install --no-cache
-RUN cd apps/web && npm install --no-cache
+# Instalar dependencias
+RUN npm ci --no-cache
 
-# Copiar todo el código (invalida cache)
+# Copiar el resto del código
 COPY . .
 
-# Build
-RUN cd apps/web && npm run build
+# Generar Prisma Client
+RUN npx prisma generate
+
+# Build de Next.js
+RUN npm run build
 
 # Exponer puerto
 EXPOSE 3000
 
 # Comando de inicio
-CMD ["sh", "-c", "cd apps/web && npm start"]
+CMD ["npm", "start"]
