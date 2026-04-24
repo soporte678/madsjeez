@@ -1,4 +1,5 @@
 # Dockerfile para Railway
+# Cache buster: 2026-04-24-20-10
 FROM node:20-alpine
 
 WORKDIR /app
@@ -11,7 +12,7 @@ COPY apps/web/package*.json ./apps/web/
 RUN npm install --no-cache
 RUN cd apps/web && npm install --no-cache
 
-# Copiar todo el código
+# Copiar todo el código (invalida cache)
 COPY . .
 
 # Build
