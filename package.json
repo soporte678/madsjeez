@@ -4,7 +4,8 @@
   "description": "MADSJEEZ Marketplace - Plataforma de comercio electrónico",
   "private": true,
   "scripts": {
-    "build": "turbo run build",
+    "build": "cd apps/web && npm install && npm run build",
+    "start": "cd apps/web && npm start",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
