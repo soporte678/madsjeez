@@ -6,24 +6,23 @@ RUN apk add --no-cache libc6-compat
 
 WORKDIR /app
 
-# Copiar package.json raíz
-COPY package*.json ./
-
-# Copiar package.json de la app web
+# Copiar package.json de la app web primero (para aprovechar cache de Docker)
 COPY apps/web/package*.json ./apps/web/
 
-# Instalar dependencias
+# Instalar dependencias en apps/web
+WORKDIR /app/apps/web
 RUN npm ci
 
 # Copiar el resto del código
+WORKDIR /app
 COPY . .
 
-# Build de Next.js - usar el next instalado localmente
+# Build de Next.js
 WORKDIR /app/apps/web
-RUN ../../node_modules/.bin/next build 2>&1 || (echo "BUILD FAILED" && exit 1)
+RUN npm run build 2>&1 || (echo "BUILD FAILED" && exit 1)
 
 # Exponer puerto
 EXPOSE 3000
 
-# Comando de inicio - usar el next instalado localmente
-CMD ["../../node_modules/.bin/next", "start", "-p", "3000"]
+# Comando de inicio
+CMD ["npm", "start"]
