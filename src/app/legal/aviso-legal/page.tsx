@@ -134,7 +134,7 @@ export default function AvisoLegalPage() {
         <h2 className="text-xl font-semibold mt-6 mb-3">12. Contacto Legal</h2>
         <p className="mb-4">
           Para consultas legales o notificaciones:<br />
-          <strong>Departamento Legal</strong><br /
+          <strong>Departamento Legal</strong><br />
           Email: <a href="mailto:legal@madsjeez.com.ar" className="text-blue-600 hover:underline">legal@madsjeez.com.ar</a><br />
           Dirección: [Dirección postal]<br />
           Horario de atención: Lunes a Viernes de 9:00 a 18:00 hs.

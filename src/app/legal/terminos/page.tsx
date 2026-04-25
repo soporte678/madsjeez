@@ -84,10 +84,10 @@ export default function TerminosPage() {
         <p className="mb-4">Los vendedores acumulan reputación basada en:</p>
         <ul className="list-disc pl-6 mb-4 space-y-2">
           <li><strong>Verde Oscuro:</strong> Excelente (0% reclamos)</li>
-          <li><strong>Verde:</strong> Muy buena (< 2% reclamos)</li>
+          <li><strong>Verde:</strong> Muy buena (menos 2% reclamos)</li>
           <li><strong>Amarillo:</strong> Buena (2-5% reclamos)</li>
           <li><strong>Naranja:</strong> Regular (5-10% reclamos)</li>
-          <li><strong>Rojo:</strong> Mala (> 10% reclamos)</li>
+          <li><strong>Rojo:</strong> Mala (mas 10% reclamos)</li>
         </ul>
 
         <h2 className="text-xl font-semibold mt-6 mb-3">7. Programa de Impulso</h2>
