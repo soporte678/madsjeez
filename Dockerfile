@@ -18,12 +18,12 @@ RUN npm ci
 # Copiar el resto del código
 COPY . .
 
-# Build de Next.js - ejecutar directamente npx next build desde apps/web
+# Build de Next.js - usar el next instalado localmente
 WORKDIR /app/apps/web
-RUN npx next build 2>&1 || (echo "BUILD FAILED" && exit 1)
+RUN ../../node_modules/.bin/next build 2>&1 || (echo "BUILD FAILED" && exit 1)
 
 # Exponer puerto
 EXPOSE 3000
 
-# Comando de inicio - ejecutar directamente next start
-CMD ["npx", "next", "start", "-p", "3000"]
+# Comando de inicio - usar el next instalado localmente
+CMD ["../../node_modules/.bin/next", "start", "-p", "3000"]
