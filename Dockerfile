@@ -6,7 +6,7 @@ RUN apk add --no-cache libc6-compat
 
 WORKDIR /app
 
-# Variables de entorno dummy para el build (evitan errores durante prerender)
+# Variables de entorno para el build (evitan errores durante prerender)
 # --- MATA-TOPOS DE MERCADO PAGO ---
 ENV MERCADOPAGO_ACCESS_TOKEN="TEST-dummy-token-para-build"
 ENV MERCADOPAGO_PUBLIC_KEY="TEST-dummy-public-key"
@@ -24,26 +24,17 @@ ENV NEXT_PUBLIC_APP_URL="https://www.madsjeez.com.ar"
 ENV NEXT_PUBLIC_SITE_URL="https://www.madsjeez.com.ar"
 ENV APP_URL="https://www.madsjeez.com.ar"
 
-# --- ANTENAS PARA SUPABASE DESDE RAILWAY ---
-ARG NEXT_PUBLIC_SUPABASE_URL
-ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
+# --- SUPABASE (valores por defecto para build, se sobreescriben en runtime) ---
+ENV NEXT_PUBLIC_SUPABASE_URL="https://svbzmvmmzaqkepeysjyk.supabase.co"
+ENV NEXT_PUBLIC_SUPABASE_ANON_KEY="sb_publishable_3tpcnJT3gHBNC4bfJ79yAg_rcq3FBtK"
 
-ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
-ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
+# --- GOOGLE AUTH (valores por defecto para build, se sobreescriben en runtime) ---
+ENV GOOGLE_CLIENT_ID="dummy-google-client-id"
+ENV GOOGLE_CLIENT_SECRET="dummy-google-client-secret"
 
-# --- ANTENAS PARA GOOGLE AUTH DESDE RAILWAY ---
-ARG GOOGLE_CLIENT_ID
-ENV GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID
-
-ARG GOOGLE_CLIENT_SECRET
-ENV GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET
-
-# --- ANTENAS PARA NEXTAUTH DESDE RAILWAY ---
-ARG NEXTAUTH_SECRET
-ENV NEXTAUTH_SECRET=$NEXTAUTH_SECRET
-
-ARG NEXTAUTH_URL
-ENV NEXTAUTH_URL=$NEXTAUTH_URL
+# --- NEXTAUTH (valores por defecto para build, se sobreescriben en runtime) ---
+ENV NEXTAUTH_SECRET="dummy-nextauth-secret-for-build-only"
+ENV NEXTAUTH_URL="https://www.madsjeez.com.ar"
 
 # Copiar los archivos de dependencias de la raíz
 COPY package*.json ./
