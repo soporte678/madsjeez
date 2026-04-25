@@ -1,0 +1,16 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/legal/layout,_N_T_/legal/reembolsos/layout,_N_T_/legal/reembolsos/page,_N_T_/legal/reembolsos"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/legal/reembolsos/__PAGE__",
+    "/legal/reembolsos",
+    "/legal",
+    "/_index",
+    "/_head"
+  ]
+}

@@ -1,0 +1,16 @@
+# https://railway.app/changelog/2024-04-05-railway-config
+version: "2"
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - port: 3000
+        httpSupport: true
+    healthcheck:
+      path: /api/health
+      port: 3000
+    restart:
+      policy: on-failure
+      maxRetries: 10

@@ -1,0 +1,119 @@
+{
+  "app": {
+    "[project]/Downloads/LINEAGE 2 - JEEZ/.worktrees/kimi-k2.6-1777041882296/madsjeez-marketplace/apps/web/src/app/_not-found/page": [
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/797e433ab948586e-s.p.0.q-h669a_dqa.woff2"
+    ],
+    "[project]/Downloads/LINEAGE 2 - JEEZ/.worktrees/kimi-k2.6-1777041882296/madsjeez-marketplace/apps/web/src/app/admin/page": [
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/797e433ab948586e-s.p.0.q-h669a_dqa.woff2"
+    ],
+    "[project]/Downloads/LINEAGE 2 - JEEZ/.worktrees/kimi-k2.6-1777041882296/madsjeez-marketplace/apps/web/src/app/auth/login/page": [
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/797e433ab948586e-s.p.0.q-h669a_dqa.woff2"
+    ],
+    "[project]/Downloads/LINEAGE 2 - JEEZ/.worktrees/kimi-k2.6-1777041882296/madsjeez-marketplace/apps/web/src/app/auth/register/page": [
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/797e433ab948586e-s.p.0.q-h669a_dqa.woff2"
+    ],
+    "[project]/Downloads/LINEAGE 2 - JEEZ/.worktrees/kimi-k2.6-1777041882296/madsjeez-marketplace/apps/web/src/app/cart/page": [
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/797e433ab948586e-s.p.0.q-h669a_dqa.woff2"
+    ],
+    "[project]/Downloads/LINEAGE 2 - JEEZ/.worktrees/kimi-k2.6-1777041882296/madsjeez-marketplace/apps/web/src/app/category/[slug]/page": [
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/797e433ab948586e-s.p.0.q-h669a_dqa.woff2"
+    ],
+    "[project]/Downloads/LINEAGE 2 - JEEZ/.worktrees/kimi-k2.6-1777041882296/madsjeez-marketplace/apps/web/src/app/checkout/page": [
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/797e433ab948586e-s.p.0.q-h669a_dqa.woff2"
+    ],
+    "[project]/Downloads/LINEAGE 2 - JEEZ/.worktrees/kimi-k2.6-1777041882296/madsjeez-marketplace/apps/web/src/app/coupons/page": [
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/797e433ab948586e-s.p.0.q-h669a_dqa.woff2"
+    ],
+    "[project]/Downloads/LINEAGE 2 - JEEZ/.worktrees/kimi-k2.6-1777041882296/madsjeez-marketplace/apps/web/src/app/dashboard/analytics/page": [
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/797e433ab948586e-s.p.0.q-h669a_dqa.woff2"
+    ],
+    "[project]/Downloads/LINEAGE 2 - JEEZ/.worktrees/kimi-k2.6-1777041882296/madsjeez-marketplace/apps/web/src/app/dashboard/page": [
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/797e433ab948586e-s.p.0.q-h669a_dqa.woff2"
+    ],
+    "[project]/Downloads/LINEAGE 2 - JEEZ/.worktrees/kimi-k2.6-1777041882296/madsjeez-marketplace/apps/web/src/app/favorites/page": [
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/797e433ab948586e-s.p.0.q-h669a_dqa.woff2"
+    ],
+    "[project]/Downloads/LINEAGE 2 - JEEZ/.worktrees/kimi-k2.6-1777041882296/madsjeez-marketplace/apps/web/src/app/help/page": [
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/797e433ab948586e-s.p.0.q-h669a_dqa.woff2"
+    ],
+    "[project]/Downloads/LINEAGE 2 - JEEZ/.worktrees/kimi-k2.6-1777041882296/madsjeez-marketplace/apps/web/src/app/legal/cookies/page": [
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/797e433ab948586e-s.p.0.q-h669a_dqa.woff2"
+    ],
+    "[project]/Downloads/LINEAGE 2 - JEEZ/.worktrees/kimi-k2.6-1777041882296/madsjeez-marketplace/apps/web/src/app/legal/privacidad/page": [
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/797e433ab948586e-s.p.0.q-h669a_dqa.woff2"
+    ],
+    "[project]/Downloads/LINEAGE 2 - JEEZ/.worktrees/kimi-k2.6-1777041882296/madsjeez-marketplace/apps/web/src/app/legal/reembolsos/page": [
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/797e433ab948586e-s.p.0.q-h669a_dqa.woff2"
+    ],
+    "[project]/Downloads/LINEAGE 2 - JEEZ/.worktrees/kimi-k2.6-1777041882296/madsjeez-marketplace/apps/web/src/app/legal/terminos/page": [
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/797e433ab948586e-s.p.0.q-h669a_dqa.woff2"
+    ],
+    "[project]/Downloads/LINEAGE 2 - JEEZ/.worktrees/kimi-k2.6-1777041882296/madsjeez-marketplace/apps/web/src/app/messages/page": [
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/797e433ab948586e-s.p.0.q-h669a_dqa.woff2"
+    ],
+    "[project]/Downloads/LINEAGE 2 - JEEZ/.worktrees/kimi-k2.6-1777041882296/madsjeez-marketplace/apps/web/src/app/notifications/page": [
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/797e433ab948586e-s.p.0.q-h669a_dqa.woff2"
+    ],
+    "[project]/Downloads/LINEAGE 2 - JEEZ/.worktrees/kimi-k2.6-1777041882296/madsjeez-marketplace/apps/web/src/app/orders/[id]/page": [
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/797e433ab948586e-s.p.0.q-h669a_dqa.woff2"
+    ],
+    "[project]/Downloads/LINEAGE 2 - JEEZ/.worktrees/kimi-k2.6-1777041882296/madsjeez-marketplace/apps/web/src/app/orders/page": [
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/797e433ab948586e-s.p.0.q-h669a_dqa.woff2"
+    ],
+    "[project]/Downloads/LINEAGE 2 - JEEZ/.worktrees/kimi-k2.6-1777041882296/madsjeez-marketplace/apps/web/src/app/page": [
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/797e433ab948586e-s.p.0.q-h669a_dqa.woff2"
+    ],
+    "[project]/Downloads/LINEAGE 2 - JEEZ/.worktrees/kimi-k2.6-1777041882296/madsjeez-marketplace/apps/web/src/app/product/[id]/page": [
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/797e433ab948586e-s.p.0.q-h669a_dqa.woff2"
+    ],
+    "[project]/Downloads/LINEAGE 2 - JEEZ/.worktrees/kimi-k2.6-1777041882296/madsjeez-marketplace/apps/web/src/app/products/page": [
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/797e433ab948586e-s.p.0.q-h669a_dqa.woff2"
+    ],
+    "[project]/Downloads/LINEAGE 2 - JEEZ/.worktrees/kimi-k2.6-1777041882296/madsjeez-marketplace/apps/web/src/app/search/page": [
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/797e433ab948586e-s.p.0.q-h669a_dqa.woff2"
+    ],
+    "[project]/Downloads/LINEAGE 2 - JEEZ/.worktrees/kimi-k2.6-1777041882296/madsjeez-marketplace/apps/web/src/app/sell/page": [
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/797e433ab948586e-s.p.0.q-h669a_dqa.woff2"
+    ],
+    "[project]/Downloads/LINEAGE 2 - JEEZ/.worktrees/kimi-k2.6-1777041882296/madsjeez-marketplace/apps/web/src/app/seller/[id]/page": [
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/797e433ab948586e-s.p.0.q-h669a_dqa.woff2"
+    ],
+    "[project]/Downloads/LINEAGE 2 - JEEZ/.worktrees/kimi-k2.6-1777041882296/madsjeez-marketplace/apps/web/src/app/settings/page": [
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/797e433ab948586e-s.p.0.q-h669a_dqa.woff2"
+    ],
+    "[project]/Downloads/LINEAGE 2 - JEEZ/.worktrees/kimi-k2.6-1777041882296/madsjeez-marketplace/apps/web/src/app/subscriptions/page": [
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/797e433ab948586e-s.p.0.q-h669a_dqa.woff2"
+    ]
+  },
+  "appUsingSizeAdjust": true,
+  "pages": {},
+  "pagesUsingSizeAdjust": false
+}

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # MADSJEEZ Marketplace
 
 Un marketplace completo estilo MercadoLibre con publicaciones gratuitas, sistema de suscripciones (Plata/Gold/Platinum), reputación por colores, impulsos pagos y API propia.
@@ -151,3 +152,107 @@ Este proyecto es propiedad de MADSJEEZ. Todos los derechos reservados.
 ---
 
 **© 2026 MADSJEEZ. Todos los derechos reservados.**
+=======
+# MadsJeez - Marketplace
+
+Marketplace completo con sistema de suscripciones, reputación y publicidad.
+
+## Configuración DNS para Railway + Supabase
+
+### 1. Configurar DNS en NIC.AR
+
+Accede a [NIC.AR](https://nic.ar) con tu cuenta y modifica los DNS:
+
+**Opción A: Usar los DNS de Railway (Recomendado)**
+```
+Tipo: CNAME
+Nombre: www
+Valor: [tu-app].up.railway.app
+TTL: 3600
+```
+
+**Opción B: DNS personalizados**
+```
+Tipo: A
+Nombre: @
+Valor: [IP-de-Railway]
+TTL: 3600
+
+Tipo: CNAME
+Nombre: www
+Valor: madsjeez.com.ar
+TTL: 3600
+```
+
+### 2. Configurar en Railway Dashboard
+
+1. Ve a [railway.app](https://railway.app)
+2. Selecciona tu proyecto
+3. Settings > Domains
+4. Agrega: `madsjeez.com.ar`
+5. Agrega: `www.madsjeez.com.ar`
+
+### 3. Variables de Entorno en Railway
+
+```
+DATABASE_URL=postgresql://postgres.svbzmvmmzaqkepeysjyk:[PASSWORD]@aws-0-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true
+DIRECT_URL=postgresql://postgres.svbzmvmmzaqkepeysjyk:[PASSWORD]@aws-0-us-east-1.pooler.supabase.com:5432/postgres
+NEXTAUTH_URL=https://madsjeez.com.ar
+NEXTAUTH_SECRET=madsjeez-secret-2024
+NEXT_PUBLIC_SUPABASE_URL=https://svbzmvmmzaqkepeysjyk.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=[ANON-KEY]
+SUPABASE_SERVICE_ROLE_KEY=[SERVICE-KEY]
+STRIPE_PUBLIC_KEY=pk_live_...
+STRIPE_SECRET_KEY=sk_live_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+CLOUDINARY_CLOUD_NAME=...
+CLOUDINARY_API_KEY=...
+CLOUDINARY_API_SECRET=...
+NEXT_PUBLIC_APP_NAME=MadsJeez
+NEXT_PUBLIC_APP_URL=https://madsjeez.com.ar
+```
+
+### 4. Configurar Supabase Auth
+
+En Supabase Dashboard:
+- Authentication > URL Configuration
+- Site URL: `https://madsjeez.com.ar`
+- Redirect URLs: `https://madsjeez.com.ar/auth/callback`
+
+## Deploy
+
+```bash
+# Instalar Railway CLI
+npm install -g @railway/cli
+
+# Login y deploy
+railway login
+railway link
+railway up
+```
+
+## Características
+
+- ✅ Sistema de suscripciones (Plata, Gold, Platinum)
+- ✅ Sistema de reputación con colores
+- ✅ Programa de impulso/publicidad
+- ✅ Dashboard de vendedor con métricas
+- ✅ Pasarela de pagos Stripe
+- ✅ Documentos legales (Términos, Privacidad)
+
+## Estructura
+
+- `/src/app` - Next.js App Router
+- `/src/components` - Componentes React
+- `/src/lib` - Utilidades
+- `/prisma` - Base de datos
+
+## Comandos
+
+```bash
+npm run dev      # Desarrollo
+npm run build    # Build
+npx prisma migrate dev  # Migraciones
+railway up       # Deploy
+```
+>>>>>>> f4d3b74 (Initial commit: MadsJeez marketplace with subscriptions, reputation system, and legal docs)
