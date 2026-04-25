@@ -7,13 +7,17 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Variables de entorno dummy para el build (evitan errores durante prerender)
-# --- MATA-TOPOS DE MERCADO PAGO: Todas las variantes posibles ---
+# --- MATA-TOPOS DE MERCADO PAGO ---
 ENV MERCADOPAGO_ACCESS_TOKEN="TEST-dummy-token-para-build"
 ENV MERCADOPAGO_PUBLIC_KEY="TEST-dummy-public-key"
 ENV MP_ACCESS_TOKEN="TEST-dummy-token-para-build"
 ENV MP_PUBLIC_KEY="TEST-dummy-public-key"
 ENV MERCADO_PAGO_ACCESS_TOKEN="TEST-dummy-token-para-build"
 ENV MERCADO_PAGO_PUBLIC_KEY="TEST-dummy-public-key"
+
+# --- MATA-TOPOS DE STRIPE ---
+ENV STRIPE_SECRET_KEY="sk_test_dummy_key_para_build"
+ENV STRIPE_PUBLISHABLE_KEY="pk_test_dummy_key_para_build"
 
 # Copiar los archivos de dependencias de la raíz
 COPY package*.json ./
