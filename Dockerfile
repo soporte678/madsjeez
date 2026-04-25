@@ -15,6 +15,9 @@ RUN npm ci
 # Copiar el resto del código
 COPY . .
 
+# Generar cliente de Prisma
+RUN npx prisma generate
+
 # Build de Next.js
 RUN npm run build 2>&1 || (echo "BUILD FAILED" && exit 1)
 
