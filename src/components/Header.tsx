@@ -8,43 +8,69 @@ export function Header() {
   const { data: session } = useSession()
 
   return (
-    <header className="border-b bg-white">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <Link href="/" className="text-xl font-bold text-[#3483FA]">
-          MADSJEEZ
-        </Link>
+    <header className="bg-[#FEE500]">
+      <div className="container mx-auto px-4">
+        {/* Top bar */}
+        <div className="flex items-center justify-between h-16">
+          <div className="flex items-center gap-4">
+            <Link href="/" className="text-xl font-bold text-gray-800">
+              MADSJEEZ
+            </Link>
+          </div>
 
-        <nav className="hidden md:flex items-center gap-6">
-          <Link href="/products" className="text-sm hover:text-[#3483FA]">
-            Productos
-          </Link>
-          <Link href="/search" className="text-sm hover:text-[#3483FA]">
-            Buscar
-          </Link>
-          {session?.user ? (
-            <>
-              <Link href="/dashboard" className="text-sm hover:text-[#3483FA]">
-                Mi Cuenta
-              </Link>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => signOut()}
-              >
-                Cerrar sesión
-              </Button>
-            </>
-          ) : (
-            <>
-              <Link href="/auth/login">
-                <Button variant="outline" size="sm">Ingresar</Button>
-              </Link>
-              <Link href="/auth/register">
-                <Button size="sm" className="bg-[#3483FA]">Crear cuenta</Button>
-              </Link>
-            </>
-          )}
-        </nav>
+          <nav className="hidden md:flex items-center gap-6">
+            <Link href="/categories" className="text-sm font-medium hover:opacity-70">
+              Categorías
+            </Link>
+            <Link href="/deals" className="text-sm font-medium hover:opacity-70">
+              Ofertas
+            </Link>
+            <Link href="/history" className="text-sm font-medium hover:opacity-70">
+              Historial
+            </Link>
+            <Link href="/supermarket" className="text-sm font-medium hover:opacity-70">
+              Supermercado
+            </Link>
+            <Link href="/fashion" className="text-sm font-medium hover:opacity-70">
+              Moda
+            </Link>
+            <Link href="/sell" className="text-sm font-medium hover:opacity-70">
+              Vender
+            </Link>
+            <Link href="/help" className="text-sm font-medium hover:opacity-70">
+              Ayuda
+            </Link>
+          </nav>
+
+          <div className="flex items-center gap-4">
+            {session?.user ? (
+              <>
+                <Link href="/dashboard" className="text-sm font-medium hover:opacity-70">
+                  Mi Cuenta
+                </Link>
+                <Link href="/cart">
+                  <Button variant="ghost" size="icon">
+                    🛒
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="/auth/register" className="text-sm font-medium hover:opacity-70">
+                  Creá tu cuenta
+                </Link>
+                <Link href="/auth/login" className="text-sm font-medium hover:opacity-70">
+                  Ingresá
+                </Link>
+                <Link href="/cart">
+                  <Button variant="ghost" size="icon">
+                    🛒
+                  </Button>
+                </Link>
+              </>
+            )}
+          </div>
+        </div>
       </div>
     </header>
   )
