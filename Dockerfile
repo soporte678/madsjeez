@@ -6,10 +6,12 @@ RUN apk add --no-cache libc6-compat
 
 WORKDIR /app
 
-# Copiar package.json y package-lock.json de la app web
-COPY apps/web/package*.json ./apps/web/
+# Crear directorio para la app web y copiar package.json
+RUN mkdir -p apps/web
+COPY apps/web/package.json ./apps/web/
+COPY apps/web/package-lock.json* ./apps/web/ 2>/dev/null || true
 
-# Instalar dependencias en apps/web (usar npm install porque no tenemos package-lock.json en el contexto)
+# Instalar dependencias en apps/web
 WORKDIR /app/apps/web
 RUN npm install
 
