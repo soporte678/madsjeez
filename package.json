@@ -4,10 +4,10 @@
   "description": "MADSJEEZ Marketplace - Plataforma de comercio electrónico",
   "private": true,
   "scripts": {
-    "dev": "cd apps/web && npm run dev",
-    "build": "cd apps/web && npm run build",
-    "start": "cd apps/web && npm run start",
-    "lint": "cd apps/web && npm run lint"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
   },
   "engines": {
     "node": ">=20.9.0"
