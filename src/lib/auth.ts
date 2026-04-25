@@ -1,5 +1,6 @@
 import { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
+import GoogleProvider from "next-auth/providers/google"
 import bcrypt from "bcryptjs"
 import { prisma } from "./prisma"
 
@@ -44,19 +45,75 @@ export const authOptions: NextAuthOptions = {
           reputationColor: user.reputationColor,
         }
       }
+    }),
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID || "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+      authorization: {
+        params: {
+          prompt: "consent",
+          access_type: "offline",
+          response_type: "code"
+        }
+      }
     })
   ],
   session: {
     strategy: "jwt"
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async signIn({ user, account, profile }) {
+      // Si es login con Google, crear/actualizar usuario en la base de datos
+      if (account?.provider === "google") {
+        const existingUser = await prisma.user.findUnique({
+          where: { email: user.email! }
+        })
+
+        if (!existingUser) {
+          // Crear nuevo usuario con Google
+          await prisma.user.create({
+            data: {
+              email: user.email!,
+              name: user.name || "Usuario Google",
+              image: user.image,
+              role: "user",
+              isSeller: false,
+              subscriptionTier: "free",
+              emailVerified: new Date(),
+            }
+          })
+        } else {
+          // Actualizar imagen si cambió
+          if (user.image && existingUser.image !== user.image) {
+            await prisma.user.update({
+              where: { email: user.email! },
+              data: { image: user.image }
+            })
+          }
+        }
+      }
+      return true
+    },
+    async jwt({ token, user, account }) {
       if (user) {
         token.id = user.id
         token.role = user.role
         token.isSeller = user.isSeller
         token.subscriptionTier = user.subscriptionTier
         token.reputationColor = user.reputationColor
+      }
+      // Si es login con Google, obtener datos actualizados de la BD
+      if (account?.provider === "google" && token.email) {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: token.email as string }
+        })
+        if (dbUser) {
+          token.id = dbUser.id
+          token.role = dbUser.role
+          token.isSeller = dbUser.isSeller
+          token.subscriptionTier = dbUser.subscriptionTier
+          token.reputationColor = dbUser.reputationColor
+        }
       }
       return token
     },
