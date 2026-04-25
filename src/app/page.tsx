@@ -6,7 +6,7 @@ import Link from "next/link"
 import { useSession } from "next-auth/react"
 import { 
   Search, Bell, Heart, ShoppingCart, Menu, 
-  Laptop, Home, Armchair, Dumbbell, Shirt, 
+  Laptop, Home as HomeIcon, Armchair, Dumbbell, Shirt, 
   Gamepad2, Sparkles, CarFront, ChevronRight,
   CheckCircle2, Star, Truck, ChevronLeft, Zap, 
   ShieldCheck, TrendingUp, Timer, MapPin, 
