@@ -18,7 +18,11 @@ COPY . .
 # Generar Prisma Client
 RUN npx prisma generate
 
-# Build de Next.js
+# Build de Next.js con variables de entorno dummy para el build
+ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
+ENV DIRECT_URL="postgresql://dummy:dummy@localhost:5432/dummy"
+ENV NEXTAUTH_SECRET="dummy-secret-for-build"
+ENV NEXTAUTH_URL="http://localhost:3000"
 RUN npm run build
 
 # Exponer puerto
