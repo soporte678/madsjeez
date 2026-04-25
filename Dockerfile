@@ -22,11 +22,8 @@ COPY . .
 WORKDIR /app/apps/web
 RUN npm run build 2>&1 || (echo "BUILD FAILED" && exit 1)
 
-# Volver a la raíz
-WORKDIR /app
-
 # Exponer puerto
 EXPOSE 3000
 
-# Comando de inicio
-CMD ["npm", "start"]
+# Comando de inicio - ejecutar directamente next start
+CMD ["npx", "next", "start", "-p", "3000"]
