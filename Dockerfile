@@ -19,6 +19,11 @@ ENV MERCADO_PAGO_PUBLIC_KEY="TEST-dummy-public-key"
 ENV STRIPE_SECRET_KEY="sk_test_dummy_key_para_build"
 ENV STRIPE_PUBLISHABLE_KEY="pk_test_dummy_key_para_build"
 
+# --- URL PARA EL BUILD DE NEXT.JS ---
+ENV NEXT_PUBLIC_APP_URL="https://www.madsjeez.com.ar"
+ENV NEXT_PUBLIC_SITE_URL="https://www.madsjeez.com.ar"
+ENV APP_URL="https://www.madsjeez.com.ar"
+
 # --- ANTENAS PARA SUPABASE DESDE RAILWAY ---
 ARG NEXT_PUBLIC_SUPABASE_URL
 ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
