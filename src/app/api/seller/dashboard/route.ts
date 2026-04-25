@@ -164,8 +164,8 @@ export async function GET(req: Request) {
       subscription: {
         tier: user?.subscriptionTier,
         reputationColor: user?.reputationColor,
-        successRate: user?.totalSales > 0 
-          ? (user.successfulSales / user.totalSales * 100).toFixed(1)
+        successRate: (user?.totalSales ?? 0) > 0 
+          ? ((user?.successfulSales ?? 0) / (user?.totalSales ?? 1) * 100).toFixed(1)
           : 0,
         claimRate: user?.claimRate || 0,
       }
