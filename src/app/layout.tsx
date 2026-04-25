@@ -16,6 +16,7 @@ const montserrat = Montserrat({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.madsjeez.com.ar"),
   title: "MadsJeez - El Nuevo Standard en Compras Globales",
   description: "Tecnología, Moda y Hogar con el respaldo del Commerce Group líder en la región. Vende y compra con la mejor plataforma.",
 }
