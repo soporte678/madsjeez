@@ -48,7 +48,7 @@ export async function POST(req: Request) {
     const order = await prisma.order.create({
       data: {
         orderNumber,
-        buyerId: session.user.id,
+        buyerId: (session.user as any).id,
         subtotal,
         shippingCost,
         tax,
