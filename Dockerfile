@@ -9,7 +9,9 @@ WORKDIR /app
 # Crear directorio para la app web y copiar package.json
 RUN mkdir -p apps/web
 COPY apps/web/package.json ./apps/web/
-COPY apps/web/package-lock.json* ./apps/web/ 2>/dev/null || true
+
+# Copiar package-lock.json si existe (usando wildcard que funciona en Docker)
+COPY apps/web/package-lock.json ./apps/web/ 2>&1 || echo "No package-lock.json found"
 
 # Instalar dependencias en apps/web
 WORKDIR /app/apps/web
