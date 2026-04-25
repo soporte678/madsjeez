@@ -19,8 +19,13 @@ COPY . .
 RUN npx prisma generate
 
 # Variables de entorno dummy para el build (Mercado Pago necesita un token para no llorar durante el prerender)
+# --- MATA-TOPOS DE MERCADO PAGO: Todas las variantes posibles ---
 ENV MERCADOPAGO_ACCESS_TOKEN="TEST-dummy-token-para-build"
 ENV MERCADOPAGO_PUBLIC_KEY="TEST-dummy-public-key"
+ENV MP_ACCESS_TOKEN="TEST-dummy-token-para-build"
+ENV MP_PUBLIC_KEY="TEST-dummy-public-key"
+ENV MERCADO_PAGO_ACCESS_TOKEN="TEST-dummy-token-para-build"
+ENV MERCADO_PAGO_PUBLIC_KEY="TEST-dummy-public-key"
 
 # Build de Next.js
 RUN npm run build 2>&1 || (echo "BUILD FAILED" && exit 1)
