@@ -18,9 +18,9 @@ RUN npm ci
 # Copiar el resto del código
 COPY . .
 
-# Build de Next.js
+# Build de Next.js - ejecutar directamente npx next build desde apps/web
 WORKDIR /app/apps/web
-RUN npm run build 2>&1 || (echo "BUILD FAILED" && exit 1)
+RUN npx next build 2>&1 || (echo "BUILD FAILED" && exit 1)
 
 # Exponer puerto
 EXPOSE 3000
