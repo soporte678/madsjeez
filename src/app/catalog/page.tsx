@@ -338,7 +338,7 @@ export default function CatalogPage() {
                     <div className="flex items-baseline gap-2 mb-1">
                       <span className="text-2xl font-black text-slate-900">
                         ${product.price.toLocaleString("es-AR")}
-003c/span>
+                      </span>
                       {product.original_price && (
                         <span className="text-sm text-slate-400 line-through">
                           ${product.original_price.toLocaleString("es-AR")}
