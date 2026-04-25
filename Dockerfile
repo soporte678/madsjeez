@@ -23,7 +23,7 @@ ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
 ENV DIRECT_URL="postgresql://dummy:dummy@localhost:5432/dummy"
 ENV NEXTAUTH_SECRET="dummy-secret-for-build"
 ENV NEXTAUTH_URL="http://localhost:3000"
-RUN npm run build
+RUN npm run build 2>&1 || (echo "BUILD FAILED" && exit 1)
 
 # Exponer puerto
 EXPOSE 3000
