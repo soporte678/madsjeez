@@ -1,4 +1,4 @@
-# Dockerfile para Railway
+# Dockerfile para Railway - MADSJEEZ Marketplace
 FROM node:20-alpine AS base
 
 # Instalar dependencias necesarias
@@ -6,8 +6,11 @@ RUN apk add --no-cache libc6-compat
 
 WORKDIR /app
 
-# Copiar package.json y package-lock.json
+# Copiar package.json raíz
 COPY package*.json ./
+
+# Copiar package.json de la app web
+COPY apps/web/package*.json ./apps/web/
 
 # Instalar dependencias
 RUN npm ci
@@ -15,17 +18,12 @@ RUN npm ci
 # Copiar el resto del código
 COPY . .
 
-# Generar Prisma Client
-RUN npx prisma generate
-
-# Build de Next.js con variables de entorno dummy para el build
-ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
-ENV DIRECT_URL="postgresql://dummy:dummy@localhost:5432/dummy"
-ENV NEXTAUTH_SECRET="dummy-secret-for-build"
-ENV NEXTAUTH_URL="http://localhost:3000"
-ENV STRIPE_SECRET_KEY="sk_test_dummy"
-ENV STRIPE_PUBLIC_KEY="pk_test_dummy"
+# Build de Next.js
+WORKDIR /app/apps/web
 RUN npm run build 2>&1 || (echo "BUILD FAILED" && exit 1)
+
+# Volver a la raíz
+WORKDIR /app
 
 # Exponer puerto
 EXPOSE 3000
