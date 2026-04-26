@@ -36,6 +36,13 @@ ENV GOOGLE_CLIENT_SECRET="dummy-google-client-secret"
 ENV NEXTAUTH_SECRET="dummy-nextauth-secret-for-build-only"
 ENV NEXTAUTH_URL="https://www.madsjeez.com.ar"
 
+# --- ANTENAS PARA LA BASE DE DATOS ---
+ARG DATABASE_URL
+ENV DATABASE_URL=$DATABASE_URL
+
+ARG DIRECT_URL
+ENV DIRECT_URL=$DIRECT_URL
+
 # Copiar los archivos de dependencias de la raíz
 COPY package*.json ./
 

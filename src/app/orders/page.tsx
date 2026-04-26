@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -47,8 +48,8 @@ function OrdersContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createClient();
+  const { data: session, status } = useSession();
 
-  const [user, setUser] = useState<any>(null);
   const [buyOrders, setBuyOrders] = useState<Order[]>([]);
   const [sellOrders, setSellOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,9 +57,12 @@ function OrdersContent() {
 
   const success = searchParams.get("status") === "success";
 
+  // Redirect if not authenticated
   useEffect(() => {
-    checkAuth();
-  }, []);
+    if (status === "unauthenticated") {
+      router.push("/auth/login?redirect=/orders");
+    }
+  }, [status, router]);
 
   useEffect(() => {
     if (success) {
@@ -66,15 +70,11 @@ function OrdersContent() {
     }
   }, [success]);
 
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      router.push("/auth/login?redirect=/orders");
-      return;
+  useEffect(() => {
+    if (session?.user?.id) {
+      fetchOrders(session.user.id);
     }
-    setUser(session.user);
-    fetchOrders(session.user.id);
-  };
+  }, [session]);
 
   const fetchOrders = async (userId: string) => {
     setLoading(true);

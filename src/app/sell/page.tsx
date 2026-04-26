@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +12,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import {
   Select,
@@ -27,9 +27,6 @@ import {
   Package,
   DollarSign,
   Truck,
-  Info,
-  ChevronRight,
-  Check,
   AlertCircle,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -52,10 +49,10 @@ interface UserSubscription {
 export default function SellPage() {
   const router = useRouter();
   const supabase = createClient();
+  const { data: session, status } = useSession();
 
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [user, setUser] = useState<any>(null);
   const [subscription, setSubscription] = useState<UserSubscription | null>(null);
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
@@ -71,35 +68,42 @@ export default function SellPage() {
   const [freeShipping, setFreeShipping] = useState(false);
   const [attributes, setAttributes] = useState<Record<string, string>>({});
 
+  // Redirect if not authenticated
   useEffect(() => {
-    checkAuth();
-    fetchCategories();
-  }, []);
-
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    if (status === "unauthenticated") {
       router.push("/auth/login?redirect=/sell");
-      return;
     }
-    setUser(session.user);
-    fetchUserSubscription(session.user.id);
-  };
+  }, [status, router]);
+
+  useEffect(() => {
+    if (session?.user?.id) {
+      fetchCategories();
+      fetchUserSubscription(session.user.id);
+    }
+  }, [session]);
 
   const fetchUserSubscription = async (userId: string) => {
-    const { data } = await supabase
-      .from("subscriptions")
-      .select(`
-        tier:subscription_tiers(max_images_per_product, commission_rate)
-      `)
-      .eq("user_id", userId)
-      .eq("status", "active")
-      .single();
+    try {
+      const { data } = await supabase
+        .from("subscriptions")
+        .select(`
+          tier:subscription_tiers(max_images_per_product, commission_rate)
+        `)
+        .eq("user_id", userId)
+        .eq("status", "active")
+        .single();
 
-    if (data?.tier) {
-      setSubscription({ tier: data.tier as any });
-    } else {
-      // Default free tier
+      if (data?.tier) {
+        setSubscription({ tier: data.tier as any });
+      } else {
+        setSubscription({
+          tier: {
+            max_images_per_product: 5,
+            commission_rate: 10,
+          },
+        });
+      }
+    } catch (error) {
       setSubscription({
         tier: {
           max_images_per_product: 5,
@@ -136,7 +140,6 @@ export default function SellPage() {
     const newImages = [...images, ...filesToAdd];
     setImages(newImages);
 
-    // Create previews
     filesToAdd.forEach((file) => {
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -165,7 +168,7 @@ export default function SellPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!user) {
+    if (!session?.user?.id) {
       toast.error("Debes iniciar sesión para publicar");
       return;
     }
@@ -178,11 +181,10 @@ export default function SellPage() {
     setLoading(true);
 
     try {
-      // 1. Create product
       const { data: product, error: productError } = await supabase
         .from("products")
         .insert({
-          seller_id: user.id,
+          seller_id: session.user.id,
           category_id: categoryId || null,
           title,
           slug: title.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""),
@@ -205,7 +207,6 @@ export default function SellPage() {
 
       if (productError) throw productError;
 
-      // 2. Upload images
       for (let i = 0; i < images.length; i++) {
         const file = images[i];
         const fileExt = file.name.split(".").pop();
@@ -221,7 +222,6 @@ export default function SellPage() {
           .from("product-images")
           .getPublicUrl(fileName);
 
-        // 3. Save image reference
         await supabase.from("product_images").insert({
           product_id: product.id,
           url: publicUrl,
@@ -241,7 +241,15 @@ export default function SellPage() {
     }
   };
 
-  if (!user) {
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-4 border-[#3483FA] border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (status === "unauthenticated") {
     return (
       <div className="min-h-screen flex flex-col">
         <Header user={null} />
@@ -265,7 +273,7 @@ export default function SellPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header user={{ id: user.id, email: user.email }} />
+      <Header user={{ id: session.user.id, email: session.user.email || "" }} />
 
       <main className="flex-1 bg-[#EBEBEB]">
         <div className="container mx-auto px-4 py-6 max-w-4xl">
@@ -275,7 +283,6 @@ export default function SellPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Images */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -328,7 +335,6 @@ export default function SellPage() {
               </CardContent>
             </Card>
 
-            {/* Basic Info */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -400,7 +406,6 @@ export default function SellPage() {
               </CardContent>
             </Card>
 
-            {/* Price */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -460,7 +465,6 @@ export default function SellPage() {
 
                 <Separator />
 
-                {/* Commission Info */}
                 {price && (
                   <div className="bg-gray-50 rounded-lg p-4 space-y-2">
                     <div className="flex justify-between text-sm">
@@ -481,7 +485,6 @@ export default function SellPage() {
               </CardContent>
             </Card>
 
-            {/* Shipping */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -511,7 +514,6 @@ export default function SellPage() {
               </CardContent>
             </Card>
 
-            {/* Submit */}
             <div className="flex gap-4">
               <Button
                 type="submit"

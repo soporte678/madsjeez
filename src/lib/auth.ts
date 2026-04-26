@@ -66,54 +66,58 @@ export const authOptions: NextAuthOptions = {
     async signIn({ user, account, profile }) {
       // Si es login con Google, crear/actualizar usuario en la base de datos
       if (account?.provider === "google") {
-        const existingUser = await prisma.user.findUnique({
-          where: { email: user.email! }
-        })
-
-        if (!existingUser) {
-          // Crear nuevo usuario con Google
-          await prisma.user.create({
-            data: {
-              email: user.email!,
-              name: user.name || "Usuario Google",
-              image: user.image,
-              role: "user",
-              isSeller: false,
-              subscriptionTier: "free",
-              emailVerified: new Date(),
-            }
+        try {
+          const existingUser = await prisma.user.findUnique({
+            where: { email: user.email! }
           })
-        } else {
-          // Actualizar imagen si cambió
-          if (user.image && existingUser.image !== user.image) {
-            await prisma.user.update({
-              where: { email: user.email! },
-              data: { image: user.image }
+
+          if (!existingUser) {
+            // Crear nuevo usuario con Google
+            const newUser = await prisma.user.create({
+              data: {
+                email: user.email!,
+                name: user.name || "Usuario Google",
+                image: user.image,
+                role: "USER",
+                isSeller: false,
+                subscriptionTier: "FREE",
+                emailVerified: new Date(),
+                reputationColor: "VERDE",
+              }
             })
+            console.log("Usuario creado:", newUser.id)
+          } else {
+            // Actualizar imagen si cambió
+            if (user.image && existingUser.image !== user.image) {
+              await prisma.user.update({
+                where: { email: user.email! },
+                data: { image: user.image }
+              })
+            }
           }
+        } catch (error) {
+          console.error("Error en signIn callback:", error)
+          // No bloqueamos el login si hay error en DB
         }
       }
       return true
     },
-    async jwt({ token, user, account }) {
-      if (user) {
-        token.id = user.id
-        token.role = user.role
-        token.isSeller = user.isSeller
-        token.subscriptionTier = user.subscriptionTier
-        token.reputationColor = user.reputationColor
-      }
-      // Si es login con Google, obtener datos actualizados de la BD
-      if (account?.provider === "google" && token.email) {
-        const dbUser = await prisma.user.findUnique({
-          where: { email: token.email as string }
-        })
-        if (dbUser) {
-          token.id = dbUser.id
-          token.role = dbUser.role
-          token.isSeller = dbUser.isSeller
-          token.subscriptionTier = dbUser.subscriptionTier
-          token.reputationColor = dbUser.reputationColor
+    async jwt({ token, user, account, trigger }) {
+      // Si es login inicial, obtener datos de la BD
+      if (trigger === "signIn" || !token.id) {
+        if (token.email) {
+          const dbUser = await prisma.user.findUnique({
+            where: { email: token.email as string }
+          })
+          if (dbUser) {
+            token.id = dbUser.id
+            token.role = dbUser.role
+            token.isSeller = dbUser.isSeller
+            token.subscriptionTier = dbUser.subscriptionTier
+            token.reputationColor = dbUser.reputationColor
+            token.name = dbUser.name
+            token.image = dbUser.image
+          }
         }
       }
       return token

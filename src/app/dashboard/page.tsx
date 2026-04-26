@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 import { 
   LayoutGrid, ShoppingCart, Zap, Megaphone, FileText, 
   Wallet, User, Settings, ChevronDown, Star, TrendingUp,
@@ -26,6 +27,28 @@ const sidebarMenu = [
 export default function DashboardPage() {
   const [activeMenu, setActiveMenu] = useState("ventas")
   const router = useRouter()
+  const { data: session, status } = useSession()
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/auth/login?redirect=/dashboard")
+    }
+  }, [status, router])
+
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-4 border-[#3483FA] border-t-transparent rounded-full" />
+      </div>
+    )
+  }
+
+  if (status === "unauthenticated") {
+    return null
+  }
+
+  const userName = session?.user?.name || session?.user?.email || "Usuario"
 
   return (
     <div className="min-h-screen bg-[#F5F5F5] font-sans text-slate-900">
@@ -62,7 +85,7 @@ export default function DashboardPage() {
                 <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center border border-slate-300">
                   <User size={18} />
                 </div>
-                <span className="hidden lg:block">MaqJeez II</span>
+                <span className="hidden lg:block">{userName}</span>
               </div>
               <button className="hidden lg:block hover:text-blue-700">Ayuda</button>
               <div className="relative cursor-pointer">
