@@ -64,6 +64,8 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async signIn({ user, account, profile }) {
+      console.log("signIn callback called", { provider: account?.provider, email: user.email })
+      
       // Si es login con Google, crear/actualizar usuario en la base de datos
       if (account?.provider === "google") {
         try {
@@ -72,6 +74,7 @@ export const authOptions: NextAuthOptions = {
           })
 
           if (!existingUser) {
+            console.log("Creating new user for:", user.email)
             // Crear nuevo usuario con Google
             const newUser = await prisma.user.create({
               data: {
@@ -85,8 +88,9 @@ export const authOptions: NextAuthOptions = {
                 reputationColor: "VERDE",
               }
             })
-            console.log("Usuario creado:", newUser.id)
+            console.log("Usuario creado exitosamente:", newUser.id)
           } else {
+            console.log("Usuario existente:", existingUser.id)
             // Actualizar imagen si cambió
             if (user.image && existingUser.image !== user.image) {
               await prisma.user.update({
@@ -95,8 +99,8 @@ export const authOptions: NextAuthOptions = {
               })
             }
           }
-        } catch (error) {
-          console.error("Error en signIn callback:", error)
+        } catch (error: any) {
+          console.error("Error CRITICO en signIn callback:", error.message, error.stack)
           // No bloqueamos el login si hay error en DB
         }
       }
