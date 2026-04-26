@@ -1,0 +1,2 @@
+-- Initial migration for madsjeez-clean project
+-- This migration creates all tables from the Prisma schema
