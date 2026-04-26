@@ -53,6 +53,7 @@ RUN npm run build 2>&1 || (echo "BUILD FAILED" && exit 1)
 
 # Exponer puerto
 EXPOSE 3000
+ENV PORT=3000
 
 # Comando de inicio (la migración se ejecuta aquí con las variables de Railway ya inyectadas)
 CMD ["npm", "start"]
