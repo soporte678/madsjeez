@@ -1,8 +1,38 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useSession } from "next-auth/react"
-import { createClient } from "@/lib/supabase/client"
+
+interface DashboardMetrics {
+  sales: {
+    total: number
+    count: number
+    today: number
+    todayCount: number
+  }
+  products: {
+    total: number
+    views: number
+  }
+  orders: any[]
+  claims: {
+    open: number
+  }
+  reviews: {
+    pending: number
+    average: number
+    total: number
+  }
+  questions: {
+    pending: number
+  }
+  promotions: {
+    active: number
+  }
+  shipping: {
+    express: number
+  }
+}
 
 interface DashboardData {
   user: {
@@ -13,92 +43,47 @@ interface DashboardData {
     role: string
     isSeller: boolean
     reputationColor: string
-    totalSales: number
     subscriptionTier: string
+    totalSales: number
   } | null
-  stats: {
-    pendingQuestions: number
-    itemsToImprove: number
-    expressShipping: number
-    competitivePrices: number
-    monthlyRevenue: number
-    monthlyViews: number
-    conversionRate: number
-  }
-  products: any[]
-  orders: any[]
+  metrics: DashboardMetrics | null
   isLoading: boolean
   error: string | null
 }
 
-export function useDashboardData(): DashboardData {
+export function useDashboardData(): DashboardData & { refresh: () => void } {
   const { data: session, status } = useSession()
-  const supabase = createClient()
   
   const [data, setData] = useState<DashboardData>({
     user: null,
-    stats: {
-      pendingQuestions: 0,
-      itemsToImprove: 0,
-      expressShipping: 0,
-      competitivePrices: 0,
-      monthlyRevenue: 0,
-      monthlyViews: 0,
-      conversionRate: 0,
-    },
-    products: [],
-    orders: [],
+    metrics: null,
     isLoading: true,
     error: null,
   })
 
-  useEffect(() => {
-    if (status === "authenticated" && session?.user?.id) {
-      fetchDashboardData(session.user.id)
-    }
-  }, [status, session])
+  const fetchDashboardData = useCallback(async () => {
+    if (status !== "authenticated" || !session?.user?.id) return
 
-  const fetchDashboardData = async (userId: string) => {
     try {
-      // Fetch user data
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("*")
-        .eq("id", userId)
-        .single()
+      setData(prev => ({ ...prev, isLoading: true, error: null }))
 
-      if (userError) throw userError
-
-      // Fetch products count
-      const { count: productsCount } = await supabase
-        .from("products")
-        .select("*", { count: "exact" })
-        .eq("seller_id", userId)
-
-      // Fetch orders
-      const { data: ordersData } = await supabase
-        .from("orders")
-        .select("*")
-        .eq("seller_id", userId)
-        .order("created_at", { ascending: false })
-        .limit(10)
-
-      // Calculate stats
-      const totalRevenue = ordersData?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0
+      const metricsRes = await fetch('/api/dashboard/metrics')
+      if (!metricsRes.ok) throw new Error('Error al cargar métricas')
+      const metricsData = await metricsRes.json()
 
       setData({
-        user: userData,
-        stats: {
-          pendingQuestions: 0, // TODO: Implement questions table
-          itemsToImprove: productsCount || 0,
-          expressShipping: 0, // TODO: Calculate from products
-          competitivePrices: 0, // TODO: Calculate from market analysis
-          monthlyRevenue: totalRevenue,
-          monthlyViews: userData?.monthly_views || 0,
-          conversionRate: userData?.conversion_rate || 0,
+        user: {
+          id: session.user.id,
+          name: session.user.name || null,
+          email: session.user.email || '',
+          image: session.user.image || null,
+          role: (session.user as any).role || 'USER',
+          isSeller: (session.user as any).isSeller || false,
+          reputationColor: (session.user as any).reputationColor || 'VERDE',
+          subscriptionTier: (session.user as any).subscriptionTier || 'FREE',
+          totalSales: (session.user as any).totalSales || 0,
         },
-        products: [],
-        orders: ordersData || [],
+        metrics: metricsData,
         isLoading: false,
         error: null,
       })
@@ -110,7 +95,25 @@ export function useDashboardData(): DashboardData {
         error: error.message,
       }))
     }
-  }
+  }, [status, session])
 
-  return data
+  useEffect(() => {
+    fetchDashboardData()
+  }, [fetchDashboardData])
+
+  // Auto-refresh cada 60 segundos
+  useEffect(() => {
+    if (status !== "authenticated") return
+    
+    const interval = setInterval(() => {
+      fetchDashboardData()
+    }, 60000)
+
+    return () => clearInterval(interval)
+  }, [status, fetchDashboardData])
+
+  return {
+    ...data,
+    refresh: fetchDashboardData,
+  }
 }
