@@ -1,8 +1,8 @@
 import { defineConfig } from "prisma/config";
 
-// Usar variable de entorno o fallback a la URL hardcodeada (solo para desarrollo local)
-const DATABASE_URL = process.env.DATABASE_URL || 
-  "postgresql://postgres.svbzmvmmzaqkepeysjyk:Eze12ar432156%24@aws-1-us-east-1.pooler.supabase.com:5432/postgres";
+// Usar DIRECT_URL (puerto 5432) para migraciones, o fallback a URL hardcodeada
+const DATABASE_URL = process.env.DIRECT_URL || process.env.DATABASE_URL || 
+  "postgresql://postgres.svbzmvmmzaqkepeysjyk:Eze12ar432156%24@aws-0-us-east-1.pooler.supabase.com:5432/postgres";
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
