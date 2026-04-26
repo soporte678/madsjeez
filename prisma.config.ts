@@ -1,7 +1,7 @@
 import { defineConfig } from "prisma/config";
 
-// Usar DIRECT_URL (puerto 5432) para migraciones, o fallback a URL hardcodeada
-const DATABASE_URL = process.env.DIRECT_URL || process.env.DATABASE_URL || 
+// Usar DIRECT_URL (puerto 5432) para migraciones
+const MIGRATE_URL = process.env.DIRECT_URL || 
   "postgresql://postgres.svbzmvmmzaqkepeysjyk:Eze12ar432156%24@aws-0-us-east-1.pooler.supabase.com:5432/postgres";
 
 export default defineConfig({
@@ -9,8 +9,11 @@ export default defineConfig({
   migrations: {
     path: "prisma/migrations",
   },
+  migrate: {
+    url: MIGRATE_URL,
+  },
   datasource: {
     provider: "postgresql",
-    url: DATABASE_URL,
+    url: MIGRATE_URL,
   },
 });
