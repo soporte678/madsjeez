@@ -5,8 +5,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma migrate deploy && next build",
-    "start": "next start",
+    "build": "next build",
+    "start": "npx prisma migrate deploy && next start -H 0.0.0.0 -p ${PORT:-3000}",
     "lint": "next lint"
   },
   "dependencies": {

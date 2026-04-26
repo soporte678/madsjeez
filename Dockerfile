@@ -36,13 +36,6 @@ ENV GOOGLE_CLIENT_SECRET="dummy-google-client-secret"
 ENV NEXTAUTH_SECRET="dummy-nextauth-secret-for-build-only"
 ENV NEXTAUTH_URL="https://www.madsjeez.com.ar"
 
-# --- ANTENAS PARA LA BASE DE DATOS ---
-ARG DATABASE_URL
-ENV DATABASE_URL=$DATABASE_URL
-
-ARG DIRECT_URL
-ENV DIRECT_URL=$DIRECT_URL
-
 # Copiar los archivos de dependencias de la raíz
 COPY package*.json ./
 
@@ -55,11 +48,11 @@ COPY . .
 # Generar cliente de Prisma
 RUN npx prisma generate
 
-# Build de Next.js
+# Build de Next.js (sin migración, la migración va en el start)
 RUN npm run build 2>&1 || (echo "BUILD FAILED" && exit 1)
 
 # Exponer puerto
 EXPOSE 3000
 
-# Comando de inicio
+# Comando de inicio (la migración se ejecuta aquí con las variables de Railway ya inyectadas)
 CMD ["npm", "start"]
