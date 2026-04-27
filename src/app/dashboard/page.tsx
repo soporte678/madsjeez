@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Search, Bell, ShoppingCart, User, ChevronDown, ChevronRight,
   ShoppingBag, Tag, Megaphone, FileText, CreditCard, Settings,
@@ -13,8 +13,37 @@ import {
 import { UserMenu } from '@/components/dashboard/UserMenu';
 import ReputacionView from "@/components/dashboard/ReputacionView";
 
+function getInitialMenu() {
+  if (typeof window !== 'undefined') {
+    const hash = window.location.hash.replace('#', '');
+    if (hash) return hash;
+  }
+  return 'resumen';
+}
+
 export default function App() {
-  const [activeMenu, setActiveMenu] = useState('resumen');
+  const [activeMenu, setActiveMenu] = useState(getInitialMenu);
+
+  // Sync activeMenu to URL hash so refresh keeps the selected section
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const onHashChange = () => {
+        const hash = window.location.hash.replace('#', '');
+        if (hash) setActiveMenu(hash);
+      };
+      window.addEventListener('hashchange', onHashChange);
+      return () => window.removeEventListener('hashchange', onHashChange);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const currentHash = window.location.hash.replace('#', '');
+      if (currentHash !== activeMenu) {
+        window.history.replaceState(null, '', `#${activeMenu}`);
+      }
+    }
+  }, [activeMenu]);
   const [comprasOpen, setComprasOpen] = useState(true);
   const [ventasOpen, setVentasOpen] = useState(true);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
