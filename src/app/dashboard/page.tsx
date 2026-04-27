@@ -333,15 +333,20 @@ export default function App() {
       <header className="bg-[#fff159] py-2 px-4 shadow-sm z-50 relative">
         <div className="max-w-[1200px] mx-auto flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 group cursor-pointer" onClick={() => setActiveMenu('resumen')}>
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-900 to-blue-800 rounded-md flex items-center justify-center transform group-hover:scale-105 group-hover:-rotate-3 transition-all duration-300 shadow-md relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"></div>
-                <span className="text-[#fff159] font-black text-2xl italic tracking-tighter transform -skew-x-6 drop-shadow-md">M</span>
+            <a href="/" className="flex items-center gap-2 group cursor-pointer">
+              <div className="relative w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center shadow-lg border border-white/10 overflow-hidden group-hover:shadow-blue-500/20 transition-all">
+                <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/30 to-transparent"></div>
+                <svg viewBox="0 0 100 100" className="w-7 h-7 overflow-visible">
+                  <polygon points="15,80 35,30 55,55 35,80" fill="#2563EB" className="opacity-90" />
+                  <polygon points="55,55 75,30 95,80 75,80" fill="#2563EB" className="opacity-90" />
+                  <path d="M 85 80 L 65 30 L 45 65" fill="none" stroke="#FACC15" strokeWidth="14" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </div>
-              <span className="font-black text-[26px] tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-blue-900 to-blue-700 drop-shadow-sm transform group-hover:scale-[1.02] transition-transform duration-300">
-                MADSJEEZ
+              <span className="font-black text-[22px] tracking-tighter leading-none flex items-center uppercase">
+                <span className="text-slate-900">MADS</span>
+                <span className="text-blue-700">JEEZ</span>
               </span>
-            </div>
+            </a>
             <div className="flex-1 max-w-2xl mx-8 relative">
               <input type="text" placeholder="Buscar productos, marcas y más..." className="w-full py-2 px-4 rounded-full shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               <button className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"><Search size={18} /></button>
