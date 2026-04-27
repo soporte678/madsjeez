@@ -8,7 +8,7 @@ import {
   Search, Filter, ChevronDown, MoreVertical, Eye, 
   ShoppingCart, Package, TrendingUp, AlertCircle,
   CheckCircle, Clock, Zap, Star, MessageSquare,
-  Edit, Trash2, Pause, Play, BarChart3
+  Edit, Trash2, Pause, Play, BarChart3, Tag
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -174,41 +174,40 @@ export default function PublicacionesPage() {
       {/* Main Layout */}
       <div className="max-w-full mx-auto flex relative">
         
-        {/* Sidebar Left - Igual que dashboard */}
-        <aside className="w-72 bg-white min-h-[calc(100vh-110px)] border-r border-slate-200 sticky top-[110px] hidden md:block flex-shrink-0">
-          <div className="p-6">
-            <h2 className="text-lg font-black uppercase mb-8 flex items-center gap-3 text-slate-800">
-              <Package size={22} className="text-blue-600" /> Mi cuenta
-            </h2>
-            <nav className="flex flex-col gap-1">
-              <div className="mb-1">
-                <button className="w-full flex items-center justify-between p-3 rounded-lg bg-blue-50 text-blue-700">
-                  <div className="flex items-center gap-3">
-                    <Zap size={18} strokeWidth={2.5} />
-                    <span className="font-bold text-[14px]">Ventas</span>
-                  </div>
-                  <ChevronDown size={14} className="rotate-180" />
-                </button>
-                <div className="flex flex-col ml-10 mt-1 border-l-2 border-blue-100">
-                  <Link href="/dashboard" className="text-left py-2 px-3 text-[13px] text-slate-500 hover:text-blue-600 hover:bg-blue-50/50 transition-all font-medium">
-                    Resumen
-                  </Link>
-                  <Link href="/dashboard/novedades" className="text-left py-2 px-3 text-[13px] text-slate-500 hover:text-blue-600 hover:bg-blue-50/50 transition-all font-medium">
-                    Novedades
-                  </Link>
-                  <Link href="/dashboard/publicaciones" className="text-left py-2 px-3 text-[13px] text-blue-600 font-medium bg-blue-50/50">
-                    Publicaciones
-                  </Link>
-                  <Link href="/dashboard/preguntas" className="text-left py-2 px-3 text-[13px] text-slate-500 hover:text-blue-600 hover:bg-blue-50/50 transition-all font-medium">
-                    Preguntas
-                  </Link>
-                  <Link href="/dashboard/ventas" className="text-left py-2 px-3 text-[13px] text-slate-500 hover:text-blue-600 hover:bg-blue-50/50 transition-all font-medium">
-                    Ventas
-                  </Link>
+        {/* Sidebar - Componente unificado del dashboard */
+        <aside className="w-56 flex-shrink-0">
+          <h2 className="font-bold text-lg mb-4 flex items-center gap-2">
+            <span className="grid grid-cols-2 gap-0.5"><span className="w-2 h-2 bg-blue-500 rounded-sm"></span><span className="w-2 h-2 bg-blue-500 rounded-sm"></span><span className="w-2 h-2 bg-blue-500 rounded-sm"></span><span className="w-2 h-2 bg-blue-500 rounded-sm"></span></span>
+            MI CUENTA
+          </h2>
+          <nav className="flex flex-col gap-1">
+            <div className="mb-2">
+              <button className="w-full flex items-center justify-between py-2 px-3 hover:bg-blue-50 rounded-lg text-blue-600 font-semibold transition-colors">
+                <div className="flex items-center gap-3">
+                  <Tag size={18} /> 
+                  <span>Ventas</span>
                 </div>
+                <ChevronDown size={16} className="transform rotate-180" />
+              </button>
+              <div className="flex flex-col ml-9 mt-1 border-l-2 border-gray-200 pl-4 gap-2">
+                <Link href="/dashboard" className="text-left text-sm py-1.5 transition-colors text-gray-500 hover:text-gray-900">
+                  Resumen
+                </Link>
+                <Link href="/dashboard/novedades" className="text-left text-sm py-1.5 transition-colors text-gray-500 hover:text-gray-900">
+                  Novedades
+                </Link>
+                <Link href="/dashboard/publicaciones" className="text-left text-sm py-1.5 transition-colors text-blue-600 font-bold">
+                  Publicaciones
+                </Link>
+                <Link href="/dashboard/preguntas" className="text-left text-sm py-1.5 transition-colors text-gray-500 hover:text-gray-900">
+                  Preguntas
+                </Link>
+                <Link href="/dashboard/ventas" className="text-left text-sm py-1.5 transition-colors text-gray-500 hover:text-gray-900">
+                  Ventas
+                </Link>
               </div>
-            </nav>
-          </div>
+            </div>
+          </nav>
         </aside>
 
         {/* Main Content */}
