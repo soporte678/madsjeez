@@ -1,61 +1,41 @@
 # Dockerfile para Railway - MADSJEEZ Marketplace
 FROM node:20.18-alpine AS base
 
-# Forzar rebuild limpio - cambiar este número para invalidar cache: 1
+# Forzar rebuild limpio - cambiar este número para invalidar cache: 2
 
 # Instalar dependencias necesarias
 RUN apk add --no-cache libc6-compat
 
 WORKDIR /app
 
-# Variables de entorno para el build (evitan errores durante prerender)
-# --- MATA-TOPOS DE MERCADO PAGO ---
-ENV MERCADOPAGO_ACCESS_TOKEN="TEST-dummy-token-para-build"
-ENV MERCADOPAGO_PUBLIC_KEY="TEST-dummy-public-key"
-ENV MP_ACCESS_TOKEN="TEST-dummy-token-para-build"
-ENV MP_PUBLIC_KEY="TEST-dummy-public-key"
-ENV MERCADO_PAGO_ACCESS_TOKEN="TEST-dummy-token-para-build"
-ENV MERCADO_PAGO_PUBLIC_KEY="TEST-dummy-public-key"
+# Variables de entorno mínimas para build
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
-# --- MATA-TOPOS DE STRIPE ---
-ENV STRIPE_SECRET_KEY="sk_test_dummy_key_para_build"
-ENV STRIPE_PUBLISHABLE_KEY="pk_test_dummy_key_para_build"
+# Copiar solo package.json primero
+COPY package.json ./
 
-# --- URL PARA EL BUILD DE NEXT.JS ---
-ENV NEXT_PUBLIC_APP_URL="https://www.madsjeez.com.ar"
-ENV NEXT_PUBLIC_SITE_URL="https://www.madsjeez.com.ar"
-ENV APP_URL="https://www.madsjeez.com.ar"
-
-# --- SUPABASE (valores por defecto para build, se sobreescriben en runtime) ---
-ENV NEXT_PUBLIC_SUPABASE_URL="https://svbzmvmmzaqkepeysjyk.supabase.co"
-ENV NEXT_PUBLIC_SUPABASE_ANON_KEY="sb_publishable_3tpcnJT3gHBNC4bfJ79yAg_rcq3FBtK"
-
-# --- GOOGLE AUTH (valores por defecto para build, se sobreescriben en runtime) ---
-ENV GOOGLE_CLIENT_ID="dummy-google-client-id"
-ENV GOOGLE_CLIENT_SECRET="dummy-google-client-secret"
-
-# --- NEXTAUTH (valores por defecto para build, se sobreescriben en runtime) ---
-ENV NEXTAUTH_SECRET="dummy-nextauth-secret-for-build-only"
-ENV NEXTAUTH_URL="https://www.madsjeez.com.ar"
-
-# Copiar los archivos de dependencias de la raíz
-COPY package*.json ./
-
-# Instalar dependencias
-RUN npm ci
+# Instalar dependencias con más memoria y logs
+RUN echo "=== Instalando dependencias ===" && \
+    npm install --production=false --no-audit --no-fund 2>&1 && \
+    echo "=== Dependencias instaladas ==="
 
 # Copiar el resto del código
 COPY . .
 
 # Generar cliente de Prisma
-RUN npx prisma generate
+RUN echo "=== Generando Prisma Client ===" && \
+    npx prisma generate && \
+    echo "=== Prisma Client generado ==="
 
-# Build de Next.js (sin migración, la migración va en el start)
-RUN npm run build 2>&1 || (echo "BUILD FAILED" && exit 1)
+# Build de Next.js
+RUN echo "=== Iniciando build de Next.js ===" && \
+    npm run build && \
+    echo "=== Build completado ==="
 
 # Exponer puerto
 EXPOSE 3000
 ENV PORT=3000
 
-# Comando de inicio (la migración se ejecuta aquí con las variables de Railway ya inyectadas)
+# Comando de inicio
 CMD ["npm", "start"]
