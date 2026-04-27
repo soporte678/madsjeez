@@ -54,5 +54,5 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Comando de inicio explícito para Railway
-CMD ["sh", "-c", "next start -H 0.0.0.0 -p ${PORT:-3000}"]
+# Comando de inicio - usar npm run start para que encuentre next en node_modules
+CMD ["npm", "run", "start"]
