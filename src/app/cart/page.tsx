@@ -38,7 +38,6 @@ interface CartItem {
 
 export default function CartPage() {
   const router = useRouter();
-  const supabase = createClient();
 
   const [user, setUser] = useState<any>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -49,6 +48,7 @@ export default function CartPage() {
   }, []);
 
   const checkAuth = async () => {
+    const supabase = createClient();
     const { data: { session } } = await supabase.auth.getSession();
     if (session) {
       setUser(session.user);
@@ -60,6 +60,7 @@ export default function CartPage() {
   };
 
   const fetchCart = async (userId: string) => {
+    const supabase = createClient();
     setLoading(true);
     const { data } = await supabase
       .from("cart_items")
@@ -99,6 +100,7 @@ export default function CartPage() {
     if (newQuantity < 1) return;
 
     if (user) {
+      const supabase = createClient();
       const { error } = await supabase
         .from("cart_items")
         .update({ quantity: newQuantity })
@@ -122,6 +124,7 @@ export default function CartPage() {
 
   const removeItem = async (itemId: string) => {
     if (user) {
+      const supabase = createClient();
       const { error } = await supabase
         .from("cart_items")
         .delete()
@@ -144,6 +147,7 @@ export default function CartPage() {
 
   const clearCart = async () => {
     if (user) {
+      const supabase = createClient();
       await supabase.from("cart_items").delete().eq("user_id", user.id);
       fetchCart(user.id);
     } else {
@@ -179,7 +183,7 @@ export default function CartPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header user={user ? { id: user.id, email: user.email } : null} />
+      <Header />
 
       <main className="flex-1 bg-[#EBEBEB]">
         <div className="container mx-auto px-4 py-8">
