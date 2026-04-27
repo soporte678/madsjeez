@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useState, useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -39,7 +41,6 @@ interface FavoriteItem {
 
 function FavoritesContent() {
   const router = useRouter();
-  const supabase = createClient();
 
   const [user, setUser] = useState<any>(null);
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
@@ -51,6 +52,7 @@ function FavoritesContent() {
   }, []);
 
   const checkAuth = async () => {
+    const supabase = createClient();
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       router.push("/auth/login?redirect=/favorites");
@@ -61,6 +63,7 @@ function FavoritesContent() {
   };
 
   const fetchFavorites = async (userId: string) => {
+    const supabase = createClient();
     setLoading(true);
     const { data } = await supabase
       .from("favorites")
@@ -92,6 +95,7 @@ function FavoritesContent() {
   };
 
   const removeFromFavorites = async (favoriteId: string) => {
+    const supabase = createClient();
     const { error } = await supabase
       .from("favorites")
       .delete()
@@ -111,6 +115,7 @@ function FavoritesContent() {
       return;
     }
 
+    const supabase = createClient();
     const { error } = await supabase.from("cart_items").insert({
       user_id: user.id,
       product_id: productId,
@@ -147,7 +152,7 @@ function FavoritesContent() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header user={{ id: user.id, email: user.email }} />
+      <Header />
 
       <main className="flex-1 bg-[#EBEBEB]">
         <div className="container mx-auto px-4 py-8">
@@ -348,7 +353,7 @@ export default function FavoritesPage() {
     <Suspense
       fallback={
         <div className="min-h-screen flex flex-col">
-          <Header user={null} />
+          <Header />
           <div className="flex-1 bg-[#EBEBEB] flex items-center justify-center">
             <div className="text-center">
               <div className="animate-spin h-8 w-8 border-2 border-[#3483FA] border-t-transparent rounded-full mx-auto mb-4"></div>
