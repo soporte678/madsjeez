@@ -48,7 +48,6 @@ export default function App() {
   const [comprasOpen, setComprasOpen] = useState(true);
   const [ventasOpen, setVentasOpen] = useState(true);
   const [marketingOpen, setMarketingOpen] = useState(true);
-  const [prestamosOpen, setPrestamosOpen] = useState(true);
   const [facturacionOpen, setFacturacionOpen] = useState(true);
   const [configOpen, setConfigOpen] = useState(true);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -109,8 +108,6 @@ export default function App() {
         { id: 'preguntas', label: 'Preguntas' },
         { id: 'ventas-lista', label: 'Ventas' },
         { id: 'posventa', label: 'Posventa' },
-        { id: 'gestion-full', label: 'Gestión de envíos Full', rightIcon: <Zap size={14} className="text-emerald-500 fill-emerald-500" /> },
-        { id: 'retiros-full', label: 'Retiros creados Full', rightIcon: <Zap size={14} className="text-emerald-500 fill-emerald-500" /> },
         { id: 'metricas', label: 'Métricas' },
         { id: 'reputacion', label: 'Reputación' },
         { id: 'productos-catalogo', label: 'Productos de catálogo' },
@@ -132,17 +129,6 @@ export default function App() {
         { id: 'clips', label: 'Clips' },
         { id: 'mi-pagina', label: 'Mi página' },
         { id: 'canal-difusion', label: 'Canal de difusión' },
-      ]
-    },
-    {
-      id: 'prestamos-group',
-      label: 'Préstamos',
-      icon: <CreditCard size={18} />,
-      isParent: true,
-      isOpen: prestamosOpen,
-      setIsOpen: setPrestamosOpen,
-      subItems: [
-        { id: 'suscripciones', label: 'Suscripciones' },
       ]
     },
     {
