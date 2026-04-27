@@ -422,9 +422,9 @@ export default function App() {
       </header>
 
       {/* CONTENIDO PRINCIPAL */}
-      <main className="max-w-[1200px] w-full mx-auto py-8 px-4 flex gap-8 flex-1">
+      <main className="max-w-[1200px] w-full mx-auto py-8 px-4 flex gap-8 flex-1 items-start">
         {/* SIDEBAR IZQUIERDO */}
-        <aside className="w-56 flex-shrink-0">
+        <aside className="w-56 flex-shrink-0 overflow-hidden">
           <h2 className="font-bold text-lg mb-4 flex items-center gap-2">
             <span className="grid grid-cols-2 gap-0.5"><span className="w-2 h-2 bg-blue-500 rounded-sm"></span><span className="w-2 h-2 bg-blue-500 rounded-sm"></span><span className="w-2 h-2 bg-blue-500 rounded-sm"></span><span className="w-2 h-2 bg-blue-500 rounded-sm"></span></span>
             MI CUENTA
