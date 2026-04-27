@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -48,7 +50,6 @@ interface UserSubscription {
 
 export default function SellPage() {
   const router = useRouter();
-  const supabase = createClient();
   const { data: session, status } = useSession();
 
   const [loading, setLoading] = useState(false);
@@ -84,6 +85,7 @@ export default function SellPage() {
 
   const fetchUserSubscription = async (userId: string) => {
     try {
+      const supabase = createClient();
       const { data } = await supabase
         .from("subscriptions")
         .select(`
@@ -114,6 +116,7 @@ export default function SellPage() {
   };
 
   const fetchCategories = async () => {
+    const supabase = createClient();
     const { data } = await supabase
       .from("categories")
       .select("id, name, slug, parent_id")
@@ -168,23 +171,14 @@ export default function SellPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!session?.user?.id) {
-      toast.error("Debes iniciar sesión para publicar");
-      return;
-    }
-
-    if (images.length === 0) {
-      toast.error("Debes subir al menos una imagen");
-      return;
-    }
-
     setLoading(true);
 
     try {
+      const supabase = createClient();
       const { data: product, error: productError } = await supabase
         .from("products")
         .insert({
-          seller_id: session.user.id,
+          seller_id: session!.user.id,
           category_id: categoryId || null,
           title,
           slug: title.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""),
@@ -252,7 +246,7 @@ export default function SellPage() {
   if (status === "unauthenticated") {
     return (
       <div className="min-h-screen flex flex-col">
-        <Header user={null} />
+        <Header />
         <main className="flex-1 flex items-center justify-center">
           <Card>
             <CardContent className="p-8 text-center">
@@ -273,7 +267,7 @@ export default function SellPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header user={{ id: session.user.id, email: session.user.email || "" }} />
+      <Header />
 
       <main className="flex-1 bg-[#EBEBEB]">
         <div className="container mx-auto px-4 py-6 max-w-4xl">
