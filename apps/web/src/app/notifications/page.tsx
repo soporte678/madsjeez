@@ -52,7 +52,6 @@ const notificationColors = {
 
 function NotificationsContent() {
   const router = useRouter();
-  const supabase = createClient();
 
   const [user, setUser] = useState<any>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -64,6 +63,7 @@ function NotificationsContent() {
   }, []);
 
   const checkAuth = async () => {
+    const supabase = createClient();
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       router.push("/auth/login?redirect=/notifications");
@@ -74,6 +74,7 @@ function NotificationsContent() {
   };
 
   const fetchNotifications = async (userId: string) => {
+    const supabase = createClient();
     setLoading(true);
     const { data } = await supabase
       .from("notifications")
@@ -88,6 +89,7 @@ function NotificationsContent() {
   };
 
   const markAsRead = async (notificationId: string) => {
+    const supabase = createClient();
     const { error } = await supabase
       .from("notifications")
       .update({ is_read: true })
@@ -103,6 +105,7 @@ function NotificationsContent() {
   const markAllAsRead = async () => {
     if (!user) return;
 
+    const supabase = createClient();
     const { error } = await supabase
       .from("notifications")
       .update({ is_read: true })
@@ -116,6 +119,7 @@ function NotificationsContent() {
   };
 
   const deleteNotification = async (notificationId: string) => {
+    const supabase = createClient();
     const { error } = await supabase
       .from("notifications")
       .delete()
@@ -129,6 +133,7 @@ function NotificationsContent() {
   const deleteAllRead = async () => {
     if (!user) return;
 
+    const supabase = createClient();
     const { error } = await supabase
       .from("notifications")
       .delete()
@@ -173,7 +178,7 @@ function NotificationsContent() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header user={{ id: user.id, email: user.email }} />
+      <Header />
 
       <main className="flex-1 bg-[#EBEBEB]">
         <div className="container mx-auto px-4 py-8 max-w-3xl">
@@ -377,7 +382,7 @@ export default function NotificationsPage() {
     <Suspense
       fallback={
         <div className="min-h-screen flex flex-col">
-          <Header user={null} />
+          <Header />
           <div className="flex-1 bg-[#EBEBEB] flex items-center justify-center">
             <div className="text-center">
               <div className="animate-spin h-8 w-8 border-2 border-[#3483FA] border-t-transparent rounded-full mx-auto mb-4"></div>
