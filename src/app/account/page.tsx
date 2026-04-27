@@ -151,37 +151,39 @@ export default function AccountPage() {
         </div>
 
         {/* Resumen rápido */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h3 className="font-semibold text-gray-900 mb-4">Compras recientes</h3>
-            <div className="text-center py-8 text-gray-500">
-              <ShoppingBag className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-              <p className="text-sm">No tienes compras recientes</p>
-              <Link href="/" className="text-blue-600 text-sm hover:underline mt-2 inline-block">
-                Explorar productos
-              </Link>
+        {false && (
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <h3 className="font-semibold text-gray-900 mb-4">Compras recientes</h3>
+              <div className="text-center py-8 text-gray-500">
+                <ShoppingBag className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                <p className="text-sm">No tienes compras recientes</p>
+                <Link href="/" className="text-blue-600 text-sm hover:underline mt-2 inline-block">
+                  Explorar productos
+                </Link>
+              </div>
             </div>
-          </div>
 
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h3 className="font-semibold text-gray-900 mb-4">Favoritos</h3>
-            <div className="text-center py-8 text-gray-500">
-              <Heart className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-              <p className="text-sm">No tienes productos favoritos</p>
-              <Link href="/" className="text-blue-600 text-sm hover:underline mt-2 inline-block">
-                Descubrir productos
-              </Link>
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <h3 className="font-semibold text-gray-900 mb-4">Favoritos</h3>
+              <div className="text-center py-8 text-gray-500">
+                <Heart className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                <p className="text-sm">No tienes productos favoritos</p>
+                <Link href="/" className="text-blue-600 text-sm hover:underline mt-2 inline-block">
+                  Descubrir productos
+                </Link>
+              </div>
             </div>
-          </div>
 
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h3 className="font-semibold text-gray-900 mb-4">Notificaciones</h3>
-            <div className="text-center py-8 text-gray-500">
-              <Bell className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-              <p className="text-sm">No tienes notificaciones nuevas</p>
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <h3 className="font-semibold text-gray-900 mb-4">Notificaciones</h3>
+              <div className="text-center py-8 text-gray-500">
+                <Bell className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                <p className="text-sm">No tienes notificaciones nuevas</p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   )

@@ -73,15 +73,17 @@ export const UserMenu: React.FC<UserMenuProps> = ({ isOpen, onClose, userData, o
         </div>
 
         {/* Banner de Suscripción Mads+ */}
-        <div className="px-4 py-2">
-          <div className="bg-gradient-to-r from-purple-800 to-fuchsia-600 rounded-md p-2 flex items-center justify-between text-white cursor-pointer hover:opacity-95 transition-opacity">
-            <div className="flex items-center gap-2">
-              <span className="font-black bg-white text-purple-800 px-1.5 py-0.5 rounded-[4px] text-[10px] lowercase tracking-wide">mads+</span>
-              <span className="font-medium text-[12px]">Suscribite desde $ 3.490/mes</span>
+        {false && (
+          <div className="px-4 py-2">
+            <div className="bg-gradient-to-r from-purple-800 to-fuchsia-600 rounded-md p-2 flex items-center justify-between text-white cursor-pointer hover:opacity-95 transition-opacity">
+              <div className="flex items-center gap-2">
+                <span className="font-black bg-white text-purple-800 px-1.5 py-0.5 rounded-[4px] text-[10px] lowercase tracking-wide">mads+</span>
+                <span className="font-medium text-[12px]">Suscribite desde $ 3.490/mes</span>
+              </div>
+              <ChevronRight size={14} />
             </div>
-            <ChevronRight size={14} />
           </div>
-        </div>
+        )}
 
         <hr className="border-gray-100 my-1" />
 
@@ -99,7 +101,9 @@ export const UserMenu: React.FC<UserMenuProps> = ({ isOpen, onClose, userData, o
         <div className="py-1">
           <DropdownItem text="Créditos" />
           <DropdownItem text="Suscripciones" />
-          <DropdownItem text="Mads Play" badge="GRATIS" badgeColor="bg-emerald-500" />
+          {false && (
+            <DropdownItem text="Mads Play" badge="GRATIS" badgeColor="bg-emerald-500" />
+          )}
         </div>
 
         <hr className="border-gray-100 my-1" />
