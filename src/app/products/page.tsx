@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -44,7 +46,6 @@ interface Product {
 
 export default function ProductsPage() {
   const router = useRouter();
-  const supabase = createClient();
 
   const [user, setUser] = useState<any>(null);
   const [products, setProducts] = useState<Product[]>([]);
@@ -57,6 +58,7 @@ export default function ProductsPage() {
   }, []);
 
   const checkAuth = async () => {
+    const supabase = createClient();
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       router.push("/auth/login?redirect=/products");
@@ -67,6 +69,7 @@ export default function ProductsPage() {
   };
 
   const fetchProducts = async (userId: string) => {
+    const supabase = createClient();
     setLoading(true);
     const { data } = await supabase
       .from("products")
@@ -89,6 +92,7 @@ export default function ProductsPage() {
   };
 
   const toggleProductStatus = async (productId: string, currentStatus: boolean) => {
+    const supabase = createClient();
     const { error } = await supabase
       .from("products")
       .update({ is_active: !currentStatus })
@@ -107,6 +111,7 @@ export default function ProductsPage() {
       return;
     }
 
+    const supabase = createClient();
     const { error } = await supabase
       .from("products")
       .delete()
@@ -145,7 +150,7 @@ export default function ProductsPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header user={{ id: user.id, email: user.email }} />
+      <Header />
 
       <main className="flex-1 bg-[#EBEBEB]">
         <div className="container mx-auto px-4 py-8">
