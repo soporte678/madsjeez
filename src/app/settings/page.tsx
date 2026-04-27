@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useState, useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/Header";
@@ -26,7 +28,6 @@ import { toast } from "sonner";
 
 function SettingsContent() {
   const router = useRouter();
-  const supabase = createClient();
 
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
@@ -60,6 +61,7 @@ function SettingsContent() {
   }, []);
 
   const checkAuth = async () => {
+    const supabase = createClient();
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       router.push("/auth/login?redirect=/settings");
@@ -71,6 +73,7 @@ function SettingsContent() {
   };
 
   const fetchProfile = async (userId: string) => {
+    const supabase = createClient();
     setLoading(true);
     const { data } = await supabase
       .from("profiles")
@@ -94,6 +97,7 @@ function SettingsContent() {
     if (!user) return;
 
     setSaving(true);
+    const supabase = createClient();
     const { error } = await supabase
       .from("profiles")
       .update({
@@ -124,6 +128,7 @@ function SettingsContent() {
     }
 
     setSaving(true);
+    const supabase = createClient();
     const { error } = await supabase.auth.updateUser({
       password: passwordData.new_password,
     });
@@ -145,6 +150,7 @@ function SettingsContent() {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
+    const supabase = createClient();
     const fileExt = file.name.split(".").pop();
     const fileName = `${user.id}/avatar.${fileExt}`;
 
@@ -182,7 +188,7 @@ function SettingsContent() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header user={{ id: user.id, email: user.email }} />
+      <Header />
 
       <main className="flex-1 bg-[#EBEBEB]">
         <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -465,11 +471,11 @@ export default function SettingsPage() {
     <Suspense
       fallback={
         <div className="min-h-screen flex flex-col">
-          <Header user={null} />
+          <Header />
           <div className="flex-1 bg-[#EBEBEB] flex items-center justify-center">
             <div className="text-center">
               <div className="animate-spin h-8 w-8 border-2 border-[#3483FA] border-t-transparent rounded-full mx-auto mb-4"></div>
-              <p>Cargando...</p>
+              <p>Cargando configuración...</p>
             </div>
           </div>
         </div>
