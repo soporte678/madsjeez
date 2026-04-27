@@ -11,16 +11,26 @@ import {
 // --- TIPOS ---
 
 type SummaryData = {
+  accountStatus: {
+    hasRestrictions: boolean;
+    restrictionCount: number;
+    message: string;
+    warnings: number;
+  };
   reputation: {
     level: string;
-    color: string;
+    score: number;
     claimsPercent: string;
     cancellationsPercent: string;
     mediationsPercent: string;
     wrongShippingPercent: string;
+    totalSales: number;
+    successfulSales: number;
+    canceledSales: number;
   };
   sales: {
     grossLast7Days: number;
+    grossTotal: number;
     growthPercent: number;
     totalCompleted: number;
   };
@@ -50,6 +60,7 @@ type SummaryData = {
     salesGrowth: number;
     clicks: number;
     clicksGrowth: number;
+    hasCampaigns: boolean;
   };
   page: {
     visits: number;
@@ -60,9 +71,20 @@ type SummaryData = {
   billing: {
     balanceDue: number;
     status: string;
+    details?: {
+      subscription: number;
+      boosts: number;
+      commissions: number;
+    };
   };
   credits: {
+    available: boolean;
     status: string;
+    message: string;
+  };
+  turbo: {
+    available: boolean;
+    message: string;
   };
 };
 
@@ -141,32 +163,50 @@ export default function ResumenView() {
     <div className="max-w-[1200px] w-full pb-12">
       <h1 className="text-2xl font-semibold text-[#333333] mb-6">Resumen</h1>
 
-      {/* ALERTA SUPERIOR */}
-      <div className="bg-white rounded-lg shadow-[0_1px_2px_0_rgba(0,0,0,0.12)] border border-[#e6e6e6] mb-6 overflow-hidden">
-        <div className="h-1 w-full bg-[#f23d4f]"></div>
-        <div className="p-5 flex items-start gap-4">
-          <AlertCircle className="w-6 h-6 text-[#f23d4f] mt-0.5 flex-shrink-0" />
-          <div className="flex-1 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <p className="text-[11px] font-semibold text-[#999] uppercase tracking-wider mb-1">Estado de la cuenta</p>
-              <h3 className="text-base font-semibold text-[#333] flex items-center gap-2">
-                Restricciones activas <span className="w-4 h-4 rounded-full bg-[#f23d4f] text-white text-[10px] flex items-center justify-center font-bold">1</span>
-              </h3>
-              <p className="text-[13px] text-[#666] mt-1">Tenés funciones inhabilitadas. Resolvelo para volver a operar con normalidad.</p>
-            </div>
-            <div className="flex gap-6">
-              <div className="text-center">
-                <span className="text-lg font-semibold text-[#333] block">1 <span className="w-2 h-2 rounded-full bg-[#f23d4f] inline-block mb-1"></span></span>
-                <a href="#" className="text-[13px] text-[#3483fa] font-semibold">Ir a Restricciones</a>
+      {/* ALERTA SUPERIOR - ESTADO REAL DE CUENTA */}
+      {d.accountStatus?.hasRestrictions ? (
+        <div className="bg-white rounded-lg shadow-[0_1px_2px_0_rgba(0,0,0,0.12)] border border-[#e6e6e6] mb-6 overflow-hidden">
+          <div className="h-1 w-full bg-[#f23d4f]"></div>
+          <div className="p-5 flex items-start gap-4">
+            <AlertCircle className="w-6 h-6 text-[#f23d4f] mt-0.5 flex-shrink-0" />
+            <div className="flex-1 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <p className="text-[11px] font-semibold text-[#999] uppercase tracking-wider mb-1">Estado de la cuenta</p>
+                <h3 className="text-base font-semibold text-[#333] flex items-center gap-2">
+                  Restricciones activas <span className="w-4 h-4 rounded-full bg-[#f23d4f] text-white text-[10px] flex items-center justify-center font-bold">{d.accountStatus.restrictionCount}</span>
+                </h3>
+                <p className="text-[13px] text-[#666] mt-1">{d.accountStatus.message}</p>
               </div>
-              <div className="text-center">
-                <span className="text-lg font-semibold text-[#333] block">0</span>
-                <a href="#" className="text-[13px] text-[#3483fa] font-semibold">Ir a Advertencias</a>
+              <div className="flex gap-6">
+                <div className="text-center">
+                  <span className="text-lg font-semibold text-[#333] block">{d.accountStatus.restrictionCount} <span className="w-2 h-2 rounded-full bg-[#f23d4f] inline-block mb-1"></span></span>
+                  <a href="#" className="text-[13px] text-[#3483fa] font-semibold">Ir a Restricciones</a>
+                </div>
+                <div className="text-center">
+                  <span className="text-lg font-semibold text-[#333] block">{d.accountStatus.warnings}</span>
+                  <a href="#" className="text-[13px] text-[#3483fa] font-semibold">Ir a Advertencias</a>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="bg-white rounded-lg shadow-[0_1px_2px_0_rgba(0,0,0,0.12)] border border-[#e6e6e6] mb-6 overflow-hidden">
+          <div className="h-1 w-full bg-[#00a650]"></div>
+          <div className="p-5 flex items-start gap-4">
+            <CheckCircle2 className="w-6 h-6 text-[#00a650] mt-0.5 flex-shrink-0" />
+            <div className="flex-1 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <p className="text-[11px] font-semibold text-[#999] uppercase tracking-wider mb-1">Estado de la cuenta</p>
+                <h3 className="text-base font-semibold text-[#333] flex items-center gap-2">
+                  Todo está bien <CheckCircle2 className="w-4 h-4 text-[#00a650]" />
+                </h3>
+                <p className="text-[13px] text-[#666] mt-1">{d.accountStatus?.message || 'Tu cuenta está en buen estado. No tenés restricciones ni advertencias.'}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* TIRA DE MÉTRICAS SUPERIOR */}
       <div className="bg-white rounded-lg shadow-[0_1px_2px_0_rgba(0,0,0,0.12)] border border-[#e6e6e6] mb-6 flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-[#e6e6e6]">
@@ -230,11 +270,11 @@ export default function ResumenView() {
         {/* --- COLUMNA 1 --- */}
         <div className="space-y-4">
           <MeliCard title="Pendientes en tus publicaciones" className="h-auto">
-            <MeliListItem label="Preguntas" value={d.pending.questions > 0 ? `${d.pending.questions} pendientes` : "No tenés pendientes"} />
-            <MeliListItem label="Publicaciones" value={`${d.pending.publicationsToImprove} por mejorar`} alert alertType="red" actionText="Ver más" />
-            <MeliListItem label="Productos Full" value="24 por gestionar" alert alertType="red" actionText="Ver más" />
-            <MeliListItem label="Precios" value="No pudimos mostrar estos datos" actionText="Reintentar" />
-            <MeliListItem label="Publicidad" value="1 sugerencia" isLast actionText="Ver más" />
+            <MeliListItem label="Preguntas" value={d.pending.questions > 0 ? `${d.pending.questions} sin responder` : "No tenés pendientes"} />
+            <MeliListItem label="Publicaciones" value={`${d.pending.publicationsToImprove} por mejorar`} alert={d.pending.publicationsToImprove > 0} alertType="red" actionText={d.pending.publicationsToImprove > 0 ? "Ver más" : undefined} />
+            <MeliListItem label="Productos Full" value={`${d.pending.totalPublications} activas`} />
+            <MeliListItem label="Envíos de hoy" value={d.pending.shipmentsToday > 0 ? `${d.pending.shipmentsToday} por despachar` : "Sin envíos pendientes"} alert={d.pending.shipmentsToday > 0} alertType="red" />
+            <MeliListItem label="Posventa" value={d.pending.postSale > 0 ? `${d.pending.postSale} pendientes` : "No tenés pendientes"} isLast />
           </MeliCard>
 
           <MeliCard title="Uso de tus espacios en Full" actionText="Ir a métricas de Stock Full">
@@ -301,13 +341,13 @@ export default function ResumenView() {
             </div>
           </MeliCard>
 
-          <MeliCard title="Envíos Turbo" actionText="Ir a métricas de envíos">
-            <div className="flex items-baseline gap-2 mb-1">
-              <h3 className="text-2xl font-light text-[#333]">{d.logistics.turbo.metric}</h3>
+          {/* TURBO - NO DISPONIBLE */}
+          <MeliCard title="Envíos Turbo" actionText="Próximamente">
+            <div className="flex items-center gap-2 mb-2">
+              <Info className="w-5 h-5 text-[#999]" />
+              <span className="text-[13px] text-[#999] font-semibold">No disponible</span>
             </div>
-            <p className="text-[12px] text-[#666] mb-4">Esta semana</p>
-            <p className="text-[13px] text-[#333] font-semibold">{d.logistics.turbo.exposure}</p>
-            <p className="text-[12px] text-[#666]">Radio de cobertura previsto la próxima semana</p>
+            <p className="text-[12px] text-[#666]">Esta funcionalidad estará disponible próximamente para vendedores con nivel Oro o superior.</p>
           </MeliCard>
 
           <MeliCard noPadding>
@@ -342,21 +382,13 @@ export default function ResumenView() {
             </div>
           </MeliCard>
 
-          <MeliCard title="Créditos para tu negocio" actionText="Ir a Créditos">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex-1">
-                <p className="text-[13px] text-[#333] mb-2 leading-tight">Mejorar tu perfil te ayuda a tener crédito.</p>
-                <a href="#" className="text-[13px] text-[#3483fa] font-semibold">Revisar mi perfil</a>
-              </div>
-              {/* Dial */}
-              <div className="w-16 h-16 relative">
-                <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
-                  <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#eee" strokeWidth="3" />
-                  <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#facc15" strokeWidth="3" strokeDasharray="50, 100" />
-                </svg>
-                <span className="absolute inset-0 flex items-center justify-center text-[10px] font-semibold text-[#333] mt-2">Medio</span>
-              </div>
+          {/* CRÉDITOS - NO DISPONIBLE */}
+          <MeliCard title="Créditos para tu negocio" actionText="Próximamente">
+            <div className="flex items-center gap-2 mb-2">
+              <Info className="w-5 h-5 text-[#999]" />
+              <span className="text-[13px] text-[#999] font-semibold">No disponible</span>
             </div>
+            <p className="text-[12px] text-[#666]">{d.credits?.message || 'Los créditos estarán disponibles próximamente para vendedores con historial establecido.'}</p>
           </MeliCard>
 
           <MeliCard title="Tu dinero" actionText="Ir a Mercado Pago">
@@ -381,42 +413,81 @@ export default function ResumenView() {
             <p className="text-[13px] text-[#666] leading-relaxed">Aún no tenés novedades. Aquí las podrás consultar cuando estén disponibles.</p>
           </MeliCard>
 
-          <MeliCard title="Facturación" actionText="Ir a Pagar">
+          <MeliCard title="Facturación" actionText="Ver detalles">
             <h3 className="text-2xl font-light text-[#333] mb-1">${d.billing.balanceDue.toLocaleString()}</h3>
             <p className="text-[12px] font-semibold text-[#333] mb-4">Saldo a pagar</p>
-            {d.billing.status === 'overdue' && (
+            {d.billing.status === 'overdue' ? (
               <div className="flex gap-2">
                 <span className="w-2 h-2 rounded-full bg-[#f23d4f] mt-1 flex-shrink-0"></span>
                 <p className="text-[12px] text-[#333]">
-                  <strong className="text-[#f23d4f]">Pagá para reactivar tu cuenta</strong><br/>
-                  Tus facturas vencieron. Realizá el pago y evitá restricciones en tu cuenta.
+                  <strong className="text-[#f23d4f]">Tenés facturas pendientes</strong><br/>
+                  Incluye suscripción, boosts y comisiones por ventas.
                 </p>
+              </div>
+            ) : d.billing.balanceDue > 0 ? (
+              <div className="flex gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#facc15] mt-1 flex-shrink-0"></span>
+                <p className="text-[12px] text-[#333]">
+                  <strong className="text-[#b45309]">Próximo vencimiento</strong><br/>
+                  Tu factura se generará automáticamente al final del mes.
+                </p>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <CheckCircle2 className="w-4 h-4 text-[#00a650] mt-0.5 flex-shrink-0" />
+                <p className="text-[12px] text-[#333]">
+                  <strong className="text-[#00a650]">Al día con tus pagos</strong><br/>
+                  No tenés facturas pendientes.
+                </p>
+              </div>
+            )}
+            {d.billing.details && d.billing.details.subscription > 0 && (
+              <div className="mt-3 pt-3 border-t border-[#f5f5f5]">
+                <p className="text-[11px] text-[#666]">Suscripción: ${d.billing.details.subscription.toLocaleString()}/mes</p>
               </div>
             )}
           </MeliCard>
 
           <MeliCard title="Métricas de publicidad" actionText="Ir a Publicidad">
-            <div className="mb-4">
-              <div className="flex items-center gap-2">
-                <h3 className="text-xl font-semibold text-[#333]">{d.advertising.sales}</h3>
-                <span className="text-[10px] font-bold text-[#00a650] bg-[#e6f7ee] px-1.5 py-0.5 rounded">↑ {d.advertising.salesGrowth}%</span>
-              </div>
-              <p className="text-[12px] text-[#666]">Ventas por publicidad</p>
-            </div>
-            <div className="mb-6">
-              <div className="flex items-center gap-2">
-                <h3 className="text-xl font-semibold text-[#333]">{d.advertising.clicks}</h3>
-                <span className="text-[10px] font-bold text-[#00a650] bg-[#e6f7ee] px-1.5 py-0.5 rounded">↑ {d.advertising.clicksGrowth}%</span>
-              </div>
-              <p className="text-[12px] text-[#666]">Clics recibidos</p>
-            </div>
+            {d.advertising?.hasCampaigns ? (
+              <>
+                <div className="mb-4">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-xl font-semibold text-[#333]">{d.advertising.sales}</h3>
+                    <span className="text-[10px] font-bold text-[#00a650] bg-[#e6f7ee] px-1.5 py-0.5 rounded">↑ {d.advertising.salesGrowth}%</span>
+                  </div>
+                  <p className="text-[12px] text-[#666]">Ventas por publicidad</p>
+                </div>
+                <div className="mb-6">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-xl font-semibold text-[#333]">{d.advertising.clicks}</h3>
+                    <span className="text-[10px] font-bold text-[#00a650] bg-[#e6f7ee] px-1.5 py-0.5 rounded">↑ {d.advertising.clicksGrowth}%</span>
+                  </div>
+                  <p className="text-[12px] text-[#666]">Clics recibidos</p>
+                </div>
 
-            <div className="bg-[#f5f5f5] p-4 rounded-md">
-              <p className="text-[11px] font-semibold text-[#3483fa] uppercase tracking-wider mb-1 flex items-center gap-1"><Star className="w-3 h-3 fill-current"/> Recomendación</p>
-              <p className="text-[13px] text-[#333] font-semibold mb-1 leading-tight">Potenciá estas publicaciones con Product Ads</p>
-              <p className="text-[12px] text-[#666] mb-3 leading-tight">Agregalas a una campaña activa y vendé todavía más.</p>
-              <a href="#" className="text-[13px] text-[#3483fa] font-semibold">Agregar a campaña</a>
-            </div>
+                <div className="bg-[#f5f5f5] p-4 rounded-md">
+                  <p className="text-[11px] font-semibold text-[#3483fa] uppercase tracking-wider mb-1 flex items-center gap-1"><Star className="w-3 h-3 fill-current"/> Recomendación</p>
+                  <p className="text-[13px] text-[#333] font-semibold mb-1 leading-tight">Potenciá estas publicaciones con Product Ads</p>
+                  <p className="text-[12px] text-[#666] mb-3 leading-tight">Agregalas a una campaña activa y vendé todavía más.</p>
+                  <a href="#" className="text-[13px] text-[#3483fa] font-semibold">Agregar a campaña</a>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-2 mb-3">
+                  <Info className="w-5 h-5 text-[#999]" />
+                  <span className="text-[13px] text-[#999] font-semibold">Sin campañas activas</span>
+                </div>
+                <p className="text-[12px] text-[#666] mb-4">No tenés campañas de publicidad activas. Creá una campaña para potenciar tus ventas.</p>
+                <div className="bg-[#f0f4ff] p-4 rounded-md">
+                  <p className="text-[11px] font-semibold text-[#3483fa] uppercase tracking-wider mb-1 flex items-center gap-1"><Star className="w-3 h-3 fill-current"/> Recomendación</p>
+                  <p className="text-[13px] text-[#333] font-semibold mb-1 leading-tight">Creá tu primera campaña de Product Ads</p>
+                  <p className="text-[12px] text-[#666] mb-3 leading-tight">Llegá a más compradores y aumentá tus ventas.</p>
+                  <a href="#" className="text-[13px] text-[#3483fa] font-semibold">Crear campaña</a>
+                </div>
+              </>
+            )}
           </MeliCard>
         </div>
 
