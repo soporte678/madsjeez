@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -18,10 +19,6 @@ interface FavoritoItem {
   installments: string | null;
   shipping: string | null;
   fullShipping: boolean;
-}
-
-function formatPrice(price: number): string {
-  return `$ ${price.toLocaleString('es-AR')}`;
 }
 
 const mockFavoritos: FavoritoItem[] = [
@@ -83,6 +80,16 @@ const mockFavoritos: FavoritoItem[] = [
   },
 ];
 
+function formatPrice(price: number): string {
+  return `$ ${price.toLocaleString('es-AR')}`;
+}
+
+function calculateDiscount(oldPrice: number | null, price: number): string | null {
+  if (!oldPrice || oldPrice <= price) return null;
+  const discount = Math.round(((oldPrice - price) / oldPrice) * 100);
+  return `${discount}% OFF`;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -90,15 +97,62 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Por ahora no existe tabla de favoritos en Prisma
-    // Se devuelven datos mock con la estructura real preparada
-    // para cuando se cree la tabla en el futuro
+    const userId = session.user.id;
+
+    let realFavoritos: FavoritoItem[] = [];
+    let tableExists = true;
+
+    try {
+      const dbFavorites = await prisma.favorite.findMany({
+        where: {
+          userId: userId,
+        },
+        include: {
+          product: {
+            include: {
+              seller: true,
+              images: {
+                orderBy: { order: 'asc' },
+                take: 1,
+              },
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+
+      if (dbFavorites.length > 0) {
+        realFavoritos = dbFavorites.map((f: any) => ({
+          id: f.id,
+          productId: f.productId,
+          productTitle: f.product.title,
+          productImage: f.product.images[0]?.url || null,
+          sellerName: f.product.seller?.name || null,
+          verified: f.product.seller?.subscriptionTier === 'GOLD' || f.product.seller?.subscriptionTier === 'PLATINUM',
+          oldPrice: f.product.comparePrice,
+          price: f.product.price,
+          discount: calculateDiscount(f.product.comparePrice, f.product.price),
+          installments: f.product.price > 50000
+            ? `Mismo precio en cuotas`
+            : null,
+          shipping: f.product.stock > 0 ? 'Envío gratis' : null,
+          fullShipping: f.product.price > 100000,
+        }));
+      }
+    } catch (dbError) {
+      console.warn('Favorite table may not exist yet:', dbError);
+      tableExists = false;
+    }
+
+    const isRealData = realFavoritos.length > 0;
 
     const response = {
-      favoritos: mockFavoritos,
-      total: mockFavoritos.length,
-      isRealData: false,
-      tableExists: false,
+      favoritos: isRealData ? realFavoritos : mockFavoritos,
+      total: isRealData ? realFavoritos.length : mockFavoritos.length,
+      isRealData,
+      tableExists,
     };
 
     return NextResponse.json(response);

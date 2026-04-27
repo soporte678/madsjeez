@@ -122,9 +122,10 @@ model User {
   products      Product[]
   orders        Order[]
   reviews       Review[]
+  favorites     Favorite[]
   subscriptions Subscription[]
   boosts        ProductBoost[]
-  
+
   // Nuevas relaciones Fase 1
   questions         Question[]      @relation("BuyerQuestions")
   notifications     Notification[]  @relation("UserNotifications")
@@ -135,7 +136,7 @@ model User {
   receivedMessages  OrderMessage[]  @relation("ReceivedMessages")
   campaigns         Campaign[]
   coupons           Coupon[]
-  
+
   // Reputación
   reputationHistory ReputationHistory[] @relation("ReputationHistory")
   
@@ -189,8 +190,9 @@ model Product {
   attributes  ProductAttribute[]
   orderItems  OrderItem[]
   reviews     Review[]
+  favorites   Favorite[]
   boosts      ProductBoost[]
-  
+
   // Nuevas relaciones Fase 1
   questions     Question[]
   variations    ProductVariation[]
@@ -309,20 +311,36 @@ model Review {
   id          String   @id @default(cuid())
   rating      Int      // 1-5 estrellas
   comment     String?  @db.Text
-  
+
   // Relaciones
   orderId     String   @unique @map("order_id")
   order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  
+
   productId   String   @map("product_id")
   product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  
+
   reviewerId  String   @map("reviewer_id")
   reviewer    User     @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
-  
+
   createdAt   DateTime @default(now()) @map("created_at")
-  
+
   @@map("reviews")
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  productId String   @map("product_id")
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([userId, productId])
+  @@index([userId])
+  @@map("favorites")
 }
 
 model Subscription {
