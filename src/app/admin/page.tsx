@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useState, useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -53,7 +55,6 @@ interface Product {
 
 function AdminDashboardContent() {
   const router = useRouter();
-  const supabase = createClient();
 
   const [user, setUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -75,6 +76,7 @@ function AdminDashboardContent() {
   }, []);
 
   const checkAuth = async () => {
+    const supabase = createClient();
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       router.push("/auth/login");
@@ -101,6 +103,7 @@ function AdminDashboardContent() {
   };
 
   const fetchDashboardData = async () => {
+    const supabase = createClient();
     setLoading(true);
 
     // Stats
@@ -170,6 +173,7 @@ function AdminDashboardContent() {
   };
 
   const toggleUserStatus = async (userId: string, currentStatus: boolean) => {
+    const supabase = createClient();
     const { error } = await supabase
       .from("profiles")
       .update({ is_active: !currentStatus })
@@ -187,6 +191,7 @@ function AdminDashboardContent() {
     productId: string,
     currentStatus: boolean
   ) => {
+    const supabase = createClient();
     const { error } = await supabase
       .from("products")
       .update({ is_active: !currentStatus })
@@ -212,7 +217,7 @@ function AdminDashboardContent() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header user={{ id: user.id, email: user.email }} />
+      <Header />
 
       <main className="flex-1 bg-[#EBEBEB]">
         <div className="container mx-auto px-4 py-8">
@@ -457,11 +462,11 @@ export default function AdminDashboardPage() {
     <Suspense
       fallback={
         <div className="min-h-screen flex flex-col">
-          <Header user={null} />
+          <Header />
           <div className="flex-1 bg-[#EBEBEB] flex items-center justify-center">
             <div className="text-center">
               <div className="animate-spin h-8 w-8 border-2 border-[#3483FA] border-t-transparent rounded-full mx-auto mb-4"></div>
-              <p>Cargando...</p>
+              <p className="text-gray-600">Cargando panel de administración...</p>
             </div>
           </div>
         </div>
