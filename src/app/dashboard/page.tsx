@@ -16,6 +16,7 @@ import ResumenView from "@/components/dashboard/ResumenView";
 import PreguntasView from "@/components/dashboard/PreguntasView";
 import OpinionesView from "@/components/dashboard/OpinionesView";
 import FavoritosView from "@/components/dashboard/FavoritosView";
+import ComprasView from "@/components/dashboard/ComprasView";
 
 function getInitialMenu() {
   if (typeof window !== 'undefined') {
@@ -300,17 +301,6 @@ export default function App() {
     </div>
   );
 
-  const renderCompras = () => (
-    <div className="flex-1 flex flex-col gap-6 w-full max-w-5xl">
-      <h1 className="text-[26px] font-semibold text-gray-800">Compras</h1>
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-16 flex flex-col items-center justify-center text-center mt-2">
-        <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-6"><ShoppingBag size={40} className="text-gray-300" /></div>
-        <h3 className="text-lg font-semibold text-gray-800 mb-2">Aún no tienes compras</h3>
-        <button className="bg-blue-500 text-white font-semibold text-sm px-6 py-3 rounded-md hover:bg-blue-600">Descubrir productos</button>
-      </div>
-    </div>
-  );
-
   const renderPreferenciasVenta = () => (
     <div className="flex-1 flex flex-col gap-8 w-full max-w-4xl">
       <h1 className="text-[26px] font-semibold text-gray-800 mb-2">Preferencias de venta</h1>
@@ -450,6 +440,7 @@ export default function App() {
           {activeMenu === 'preguntas' && <PreguntasView />}
           {activeMenu === 'opiniones' && <OpinionesView />}
           {activeMenu === 'favoritos' && <FavoritosView />}
+          {activeMenu === 'compras' && <ComprasView />}
           {activeMenu === 'publicaciones' && renderProductosCatalogo()}
         </section>
       </main>
