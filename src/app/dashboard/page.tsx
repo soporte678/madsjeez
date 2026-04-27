@@ -14,6 +14,7 @@ import { UserMenu } from '@/components/dashboard/UserMenu';
 import ReputacionView from "@/components/dashboard/ReputacionView";
 import ResumenView from "@/components/dashboard/ResumenView";
 import PreguntasView from "@/components/dashboard/PreguntasView";
+import OpinionesView from "@/components/dashboard/OpinionesView";
 
 function getInitialMenu() {
   if (typeof window !== 'undefined') {
@@ -58,7 +59,6 @@ export default function App() {
   
   const [activePosventaTab, setActivePosventaTab] = useState('reclamos');
   const [activeCatalogoTab, setActiveCatalogoTab] = useState('sugerencias');
-  const [activeOpinionesTab, setActiveOpinionesTab] = useState('pendientes');
   const [activeFavoritosTab, setActiveFavoritosTab] = useState('favoritos');
   
   // Estado para el widget del Asistente
@@ -272,17 +272,6 @@ export default function App() {
 
   // --- VISTAS PREVIAMENTE DESARROLLADAS (MANTENIDAS) ---
 
-  const renderOpiniones = () => (
-    <div className="flex-1 flex flex-col gap-6 w-full max-w-5xl">
-      <h1 className="text-[26px] font-semibold text-gray-800">Opiniones</h1>
-      <div className="border-b border-gray-200"><nav className="flex gap-8"><button onClick={() => setActiveOpinionesTab('pendientes')} className={`pb-3 px-1 text-[15px] font-medium ${activeOpinionesTab === 'pendientes' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}>Pendientes</button><button onClick={() => setActiveOpinionesTab('realizadas')} className={`pb-3 px-1 text-[15px] font-medium ${activeOpinionesTab === 'realizadas' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}>Realizadas</button></nav></div>
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-20 flex flex-col items-center justify-center text-center">
-        <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-6 border border-gray-100">{activeOpinionesTab === 'pendientes' ? <ClipboardList size={32} className="text-gray-300" /> : <ThumbsUp size={32} className="text-gray-300" />}</div>
-        <h3 className="text-lg font-semibold text-gray-800 mb-2">{activeOpinionesTab === 'pendientes' ? 'No tienes opiniones pendientes' : 'Aún no has realizado opiniones'}</h3>
-        <p className="text-sm text-gray-500 max-w-xs mb-8">Cuando compres productos, aparecerán aquí para que cuentes tu experiencia.</p>
-      </div>
-    </div>
-  );
 
   const renderNovedades = () => (
     <div className="flex-1 flex flex-col gap-6 w-full max-w-4xl">
@@ -458,6 +447,7 @@ export default function App() {
           {activeMenu === 'posventa' && renderPosventa()}
           {activeMenu === 'preferencias-venta' && renderPreferenciasVenta()}
           {activeMenu === 'preguntas' && <PreguntasView />}
+          {activeMenu === 'opiniones' && <OpinionesView />}
           {activeMenu === 'publicaciones' && renderProductosCatalogo()}
         </section>
       </main>
