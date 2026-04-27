@@ -65,10 +65,25 @@ export default function App() {
   
   // Estado para el widget del Asistente
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<{ name: string; email: string; image: string | null } | null>(null);
+
+  // Fetch real user data from session
+  useEffect(() => {
+    fetch('/api/user/me')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.email) {
+          setCurrentUser(data);
+        }
+      })
+      .catch((err) => {
+        console.error('Error fetching user:', err);
+      });
+  }, []);
 
   const userData = {
-    name: "Maqjeez | Repues...",
-    email: "danibj556@gmail.com",
+    name: currentUser?.name || "Maqjeez | Repues...",
+    email: currentUser?.email || "",
     reputation: "VENDEDOR NUEVO",
     billing: "0,00",
     adsSales: 0,
@@ -359,15 +374,22 @@ export default function App() {
             </div>
             <div className="flex items-center gap-6 text-sm">
               <div className="relative">
-                <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="flex items-center gap-1 hover:text-gray-600 font-semibold">
-                  <User size={18} /> {userData.name} <ChevronDown size={14} className={`transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
+                <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="flex items-center gap-1.5 hover:text-gray-600 font-semibold">
+                  {currentUser?.image ? (
+                    <img src={currentUser.image} alt={userData.name} className="w-7 h-7 rounded-full object-cover border border-gray-200" />
+                  ) : (
+                    <User size={18} />
+                  )}
+                  <span className="max-w-[120px] truncate">{userData.name}</span>
+                  <ChevronDown size={14} className={`transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
                 <UserMenu 
                   isOpen={userMenuOpen}
                   onClose={() => setUserMenuOpen(false)}
                   userData={{
                     name: userData.name,
-                    email: userData.email
+                    email: userData.email,
+                    image: currentUser?.image || null
                   }}
                   onNavigate={(view) => {
                     setActiveMenu(view);

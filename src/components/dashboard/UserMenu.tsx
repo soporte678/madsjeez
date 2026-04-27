@@ -12,6 +12,7 @@ interface UserMenuProps {
   userData: {
     name: string;
     email: string;
+    image?: string | null;
   };
   onNavigate: (view: string) => void;
 }
@@ -52,7 +53,11 @@ export const UserMenu: React.FC<UserMenuProps> = ({ isOpen, onClose, userData, o
         >
           <div className="flex gap-3 items-center">
             <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 overflow-hidden shrink-0">
-              <User size={24} />
+              {userData.image ? (
+                <img src={userData.image} alt={userData.name} className="w-full h-full object-cover" />
+              ) : (
+                <User size={24} />
+              )}
             </div>
             <div className="flex flex-col">
               <span className="font-semibold text-[15px] truncate w-40">{userData.name}</span>
