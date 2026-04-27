@@ -1,16 +1,17 @@
 "use client"
 
 import React, { useState } from 'react';
-import { 
-  Search, Bell, ShoppingCart, User, ChevronDown, ChevronRight, 
-  ShoppingBag, Tag, Megaphone, FileText, CreditCard, Settings, 
+import {
+  Search, Bell, ShoppingCart, User, ChevronDown, ChevronRight,
+  ShoppingBag, Tag, Megaphone, FileText, CreditCard, Settings,
   MapPin, HelpCircle, MessageCircle, Star, Heart, TrendingUp, AlertCircle,
-  Info, CheckCircle2, ChevronUp, Download, Filter, PieChart, BarChart2, 
-  MoreVertical, Activity, Clock, Box, ShieldAlert, XCircle, RefreshCcw, 
+  Info, CheckCircle2, ChevronUp, Download, Filter, PieChart, BarChart2,
+  MoreVertical, Activity, Clock, Box, ShieldAlert, XCircle, RefreshCcw,
   ThumbsUp, Users, Target, LayoutGrid, Zap, Plus, X, Maximize2, MessageSquare,
   ClipboardList, Bookmark, Store, Car, Home, SearchCode
 } from 'lucide-react';
 import { UserMenu } from '@/components/dashboard/UserMenu';
+import ReputacionView from "@/components/dashboard/ReputacionView";
 
 export default function App() {
   const [activeMenu, setActiveMenu] = useState('resumen');
@@ -390,6 +391,7 @@ export default function App() {
         {/* ÁREA CENTRAL DINÁMICA */}
         <section className="flex-1">
           {activeMenu === 'metricas' && renderMetricas()}
+          {activeMenu === 'reputacion' && <ReputacionView />}
           {activeMenu === 'preferencias-venta' && renderPreferenciasVenta()}
           {activeMenu === 'productos-catalogo' && renderProductosCatalogo()}
           {activeMenu === 'posventa' && renderPosventa()}
