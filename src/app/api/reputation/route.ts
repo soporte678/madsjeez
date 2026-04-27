@@ -96,19 +96,33 @@ export async function GET(request: NextRequest) {
       ? (user.delayedShipments / (user.onTimeDeliveries + user.delayedShipments) * 100) 
       : 0;
 
-    // Obtener límites desde la tabla Madslider
-    const madsliderLevel = await prisma.madsliderLevel.findFirst({
-      where: {
-        level: user.reputationLevel
-      }
-    });
-
-    const limits = {
-      claimLimit: madsliderLevel ? (madsliderLevel.maxClaimRate * 100) : 8,
-      mediationLimit: madsliderLevel ? (madsliderLevel.maxClaimRate * 50) : 4, // Aproximación
-      cancellationLimit: madsliderLevel ? (madsliderLevel.maxCancellationRate * 100) : 5,
-      delayLimit: madsliderLevel ? (madsliderLevel.maxDelayRate * 100) : 10
+    // Obtener límites desde la tabla Madslider (con fallback si no existen)
+    let limits = {
+      claimLimit: 8,
+      mediationLimit: 4,
+      cancellationLimit: 5,
+      delayLimit: 10
     };
+
+    try {
+      const madsliderLevel = await prisma.madsliderLevel.findFirst({
+        where: {
+          level: user.reputationLevel
+        }
+      });
+
+      if (madsliderLevel) {
+        limits = {
+          claimLimit: Math.round(madsliderLevel.maxClaimRate * 100),
+          mediationLimit: Math.round(madsliderLevel.maxClaimRate * 50),
+          cancellationLimit: Math.round(madsliderLevel.maxCancellationRate * 100),
+          delayLimit: Math.round(madsliderLevel.maxDelayRate * 100)
+        };
+      }
+    } catch (e) {
+      // Si la tabla no existe, usar valores por defecto
+      console.log('Madslider levels not found, using defaults');
+    }
 
     const reputationData = {
       level: user.reputationLevel,

@@ -14,7 +14,7 @@ function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const registered = searchParams.get("registered")
-  const callbackUrl = searchParams.get("callbackUrl") || searchParams.get("redirect") || "/"
+  const callbackUrl = searchParams.get("callbackUrl") || searchParams.get("redirect") || "/dashboard"
   
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -39,7 +39,8 @@ function LoginForm() {
         throw new Error(result.error)
       }
 
-      router.push(callbackUrl)
+      const targetUrl = callbackUrl && callbackUrl !== '/' ? callbackUrl : '/dashboard'
+      router.push(targetUrl)
       router.refresh()
     } catch (err: any) {
       setError(err.message || "Error al iniciar sesión")
