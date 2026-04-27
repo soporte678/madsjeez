@@ -30,7 +30,7 @@ export default function AccountPage() {
   }
 
   if (!session) {
-    router.push("/auth/login")
+    router.push(`/auth/login?callbackUrl=${encodeURIComponent("/account")}`)
     return null
   }
 

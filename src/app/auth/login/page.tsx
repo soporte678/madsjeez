@@ -14,7 +14,7 @@ function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const registered = searchParams.get("registered")
-  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard"
+  const callbackUrl = searchParams.get("callbackUrl") || searchParams.get("redirect") || "/"
   
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")

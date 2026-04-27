@@ -45,7 +45,7 @@ export function Header() {
           <div className="flex items-center gap-4">
             {session?.user ? (
               <>
-                <Link href="/dashboard" className="text-sm font-medium hover:opacity-70">
+                <Link href="/account" className="text-sm font-medium hover:opacity-70">
                   Mi Cuenta
                 </Link>
                 <Link href="/cart">
