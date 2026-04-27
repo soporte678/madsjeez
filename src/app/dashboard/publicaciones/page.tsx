@@ -205,6 +205,9 @@ export default function PublicacionesPage() {
                 <Link href="/dashboard/ventas" className="text-left text-sm py-1.5 transition-colors text-gray-500 hover:text-gray-900">
                   Ventas
                 </Link>
+                <Link href="/dashboard/reputacion" className="text-left text-sm py-1.5 transition-colors text-gray-500 hover:text-gray-900">
+                  Reputación
+                </Link>
               </div>
             </div>
           </nav>
