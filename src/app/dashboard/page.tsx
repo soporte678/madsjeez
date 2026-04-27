@@ -10,6 +10,7 @@ import {
   ThumbsUp, Users, Target, LayoutGrid, Zap, Plus, X, Maximize2, MessageSquare,
   ClipboardList, Bookmark, Store, Car, Home, SearchCode
 } from 'lucide-react';
+import { UserMenu } from '@/components/dashboard/UserMenu';
 
 export default function App() {
   const [activeMenu, setActiveMenu] = useState('resumen');
@@ -319,38 +320,18 @@ export default function App() {
                 <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="flex items-center gap-1 hover:text-gray-600 font-semibold">
                   <User size={18} /> {userData.name} <ChevronDown size={14} className={`transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
-                {userMenuOpen && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)}></div>
-                    <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-md shadow-[0_4px_20px_rgba(0,0,0,0.15)] border border-gray-100 py-1 z-50 text-gray-800 text-[13.5px] font-normal cursor-default max-h-[80vh] overflow-y-auto">
-                      <div className="px-4 py-3 flex items-center justify-between hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => setUserMenuOpen(false)}>
-                        <div className="flex gap-3 items-center">
-                          <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 shrink-0"><User size={24} /></div>
-                          <div className="flex flex-col"><span className="font-semibold text-[15px] truncate w-40">{userData.name}</span><span className="text-gray-500 text-xs truncate w-40">{userData.email}</span></div>
-                        </div>
-                        <button className="p-1 hover:bg-gray-200 rounded-full"><ChevronDown size={16} className="rotate-180 text-gray-500" /></button>
-                      </div>
-                      <div className="px-4 py-3 flex items-center gap-3 hover:bg-gray-50 cursor-pointer transition-colors">
-                        <div className="w-5 h-5 border-2 border-gray-400 rounded-full flex items-center justify-center shrink-0 text-gray-500"><User size={12} /></div>
-                        <span className="text-gray-700 font-medium">Agregar cuenta</span>
-                      </div>
-                      <hr className="border-gray-100 my-1" />
-                      <div className="py-1">
-                        <DropdownItem text="Compras" onClick={() => {setActiveMenu('compras'); setUserMenuOpen(false);}} />
-                        <DropdownItem text="Preguntas" onClick={() => {setActiveMenu('preguntas'); setUserMenuOpen(false);}} />
-                        <DropdownItem text="Opiniones" onClick={() => {setActiveMenu('opiniones'); setUserMenuOpen(false);}} />
-                        <DropdownItem text="Favoritos" onClick={() => {setActiveMenu('favoritos'); setUserMenuOpen(false);}} />
-                      </div>
-                      <hr className="border-gray-100 my-1" />
-                      <div className="py-1">
-                        <DropdownItem text="Resumen de ventas" onClick={() => {setActiveMenu('resumen'); setUserMenuOpen(false);}} />
-                        <DropdownItem text="Métricas" onClick={() => {setActiveMenu('metricas'); setUserMenuOpen(false);}} />
-                      </div>
-                      <hr className="border-gray-100 my-1" />
-                      <div className="py-1"><DropdownItem text="Salir" /></div>
-                    </div>
-                  </>
-                )}
+                <UserMenu 
+                  isOpen={userMenuOpen}
+                  onClose={() => setUserMenuOpen(false)}
+                  userData={{
+                    name: userData.name,
+                    email: userData.email
+                  }}
+                  onNavigate={(view) => {
+                    setActiveMenu(view);
+                    setUserMenuOpen(false);
+                  }}
+                />
               </div>
               <button className="hover:text-gray-600">Ayuda</button>
               <button className="relative hover:text-gray-600"><ShoppingCart size={20} /><span className="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">2</span></button>
