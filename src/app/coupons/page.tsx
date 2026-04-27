@@ -48,7 +48,6 @@ interface Coupon {
 
 function CouponsContent() {
   const router = useRouter();
-  const supabase = createClient();
 
   const [user, setUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -76,6 +75,7 @@ function CouponsContent() {
   }, []);
 
   const checkAuth = async () => {
+    const supabase = createClient();
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       router.push("/auth/login");
@@ -101,6 +101,7 @@ function CouponsContent() {
   };
 
   const fetchCoupons = async () => {
+    const supabase = createClient();
     setLoading(true);
     const { data } = await supabase
       .from("coupons")
@@ -114,6 +115,7 @@ function CouponsContent() {
   const createCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const supabase = createClient();
     const { error } = await supabase.from("coupons").insert({
       code: formData.code.toUpperCase(),
       discount_type: formData.discount_type,
@@ -151,6 +153,7 @@ function CouponsContent() {
   };
 
   const toggleCouponStatus = async (id: string, currentStatus: boolean) => {
+    const supabase = createClient();
     const { error } = await supabase
       .from("coupons")
       .update({ is_active: !currentStatus })
@@ -167,6 +170,7 @@ function CouponsContent() {
   const deleteCoupon = async (id: string) => {
     if (!confirm("¿Estás seguro de eliminar este cupón?")) return;
 
+    const supabase = createClient();
     const { error } = await supabase.from("coupons").delete().eq("id", id);
 
     if (error) {
@@ -208,7 +212,7 @@ function CouponsContent() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header user={{ id: user.id, email: user.email }} />
+      <Header />
 
       <main className="flex-1 bg-[#EBEBEB]">
         <div className="container mx-auto px-4 py-8">
@@ -549,11 +553,11 @@ export default function CouponsPage() {
     <Suspense
       fallback={
         <div className="min-h-screen flex flex-col">
-          <Header user={null} />
+          <Header />
           <div className="flex-1 bg-[#EBEBEB] flex items-center justify-center">
             <div className="text-center">
               <div className="animate-spin h-8 w-8 border-2 border-[#3483FA] border-t-transparent rounded-full mx-auto mb-4"></div>
-              <p>Cargando...</p>
+              <p className="text-gray-600">Cargando cupones...</p>
             </div>
           </div>
         </div>
