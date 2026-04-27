@@ -1,7 +1,7 @@
 # Dockerfile para Railway - MADSJEEZ Marketplace
-FROM node:20.18-alpine AS base
+FROM node:22-alpine AS base
 
-# Forzar rebuild limpio - cambiar este número para invalidar cache: 2
+# Forzar rebuild limpio - cambiar este número para invalidar cache: 3
 
 # Instalar dependencias necesarias
 RUN apk add --no-cache libc6-compat
