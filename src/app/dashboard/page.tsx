@@ -45,7 +45,12 @@ export default function App() {
       }
     }
   }, [activeMenu]);
+  const [comprasOpen, setComprasOpen] = useState(true);
   const [ventasOpen, setVentasOpen] = useState(true);
+  const [marketingOpen, setMarketingOpen] = useState(true);
+  const [prestamosOpen, setPrestamosOpen] = useState(true);
+  const [facturacionOpen, setFacturacionOpen] = useState(true);
+  const [configOpen, setConfigOpen] = useState(true);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [activeMetricasTab, setActiveMetricasTab] = useState('negocio');
   const [activePromocionesSubTab, setActivePromocionesSubTab] = useState('promociones');
@@ -72,7 +77,24 @@ export default function App() {
   };
 
   const menuItems = [
-    { id: 'resumen', label: 'Resumen', icon: null },
+    {
+      id: 'compras-group',
+      label: 'Compras',
+      icon: <ShoppingBag size={18} />,
+      isParent: true,
+      isOpen: comprasOpen,
+      setIsOpen: setComprasOpen,
+      subItems: [
+        { id: 'compras', label: 'Compras' },
+        { id: 'preguntas', label: 'Preguntas' },
+        { id: 'opiniones', label: 'Opiniones' },
+        { id: 'favoritos', label: 'Favoritos' },
+        { id: 'tiendas-sigo', label: 'Tiendas que sigo' },
+        { id: 'vehiculos-interes', label: 'Vehículos de interés' },
+        { id: 'inmuebles-interes', label: 'Inmuebles de interés' },
+        { id: 'busquedas-guardadas', label: 'Búsquedas guardadas' },
+      ]
+    },
     {
       id: 'ventas-group',
       label: 'Ventas',
@@ -81,21 +103,73 @@ export default function App() {
       isOpen: ventasOpen,
       setIsOpen: setVentasOpen,
       subItems: [
+        { id: 'resumen', label: 'Resumen' },
         { id: 'ventas-novedades', label: 'Novedades' },
         { id: 'publicaciones', label: 'Publicaciones' },
+        { id: 'preguntas', label: 'Preguntas' },
         { id: 'ventas-lista', label: 'Ventas' },
         { id: 'posventa', label: 'Posventa' },
+        { id: 'gestion-full', label: 'Gestión de envíos Full', rightIcon: <Zap size={14} className="text-emerald-500 fill-emerald-500" /> },
+        { id: 'retiros-full', label: 'Retiros creados Full', rightIcon: <Zap size={14} className="text-emerald-500 fill-emerald-500" /> },
         { id: 'metricas', label: 'Métricas' },
         { id: 'reputacion', label: 'Reputación' },
+        { id: 'productos-catalogo', label: 'Productos de catálogo' },
         { id: 'preferencias-venta', label: 'Preferencias de venta' },
+        { id: 'central-aprendizaje', label: 'Central de aprendizaje' },
       ]
     },
-    { id: 'preguntas', label: 'Preguntas', icon: <HelpCircle size={18} /> },
-    { id: 'publicaciones', label: 'Publicaciones', icon: <FileText size={18} /> },
-    { id: 'reputacion', label: 'Reputación', icon: <Star size={18} /> },
-    { id: 'marketing', label: 'Marketing', icon: <Megaphone size={18} /> },
-    { id: 'facturacion', label: 'Facturación', icon: <FileText size={18} /> },
-    { id: 'configuracion', label: 'Configuración', icon: <Settings size={18} /> },
+    {
+      id: 'marketing-group',
+      label: 'Marketing',
+      icon: <Megaphone size={18} />,
+      isParent: true,
+      isOpen: marketingOpen,
+      setIsOpen: setMarketingOpen,
+      subItems: [
+        { id: 'central-marketing', label: 'Central de marketing' },
+        { id: 'publicidad', label: 'Publicidad' },
+        { id: 'promociones', label: 'Promociones' },
+        { id: 'clips', label: 'Clips' },
+        { id: 'mi-pagina', label: 'Mi página' },
+        { id: 'canal-difusion', label: 'Canal de difusión' },
+      ]
+    },
+    {
+      id: 'prestamos-group',
+      label: 'Préstamos',
+      icon: <CreditCard size={18} />,
+      isParent: true,
+      isOpen: prestamosOpen,
+      setIsOpen: setPrestamosOpen,
+      subItems: [
+        { id: 'suscripciones', label: 'Suscripciones' },
+      ]
+    },
+    {
+      id: 'facturacion-group',
+      label: 'Facturación',
+      icon: <FileText size={18} />,
+      isParent: true,
+      isOpen: facturacionOpen,
+      setIsOpen: setFacturacionOpen,
+      subItems: [
+        { id: 'tarifas-pagos', label: 'Tarifas y pagos' },
+        { id: 'facturacion', label: 'Facturación' },
+      ]
+    },
+    { id: 'perfil', label: 'Mi perfil', icon: <User size={18} /> },
+    {
+      id: 'configuracion-group',
+      label: 'Configuración',
+      icon: <Settings size={18} />,
+      isParent: true,
+      isOpen: configOpen,
+      setIsOpen: setConfigOpen,
+      subItems: [
+        { id: 'mis-marcas', label: 'Mis marcas' },
+        { id: 'colaboradores', label: 'Colaboradores' },
+      ]
+    },
   ];
 
   // --- VISTAS DE COMPRAS AGREGADAS ---
