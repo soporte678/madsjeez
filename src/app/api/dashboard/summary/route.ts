@@ -118,7 +118,7 @@ export async function GET(request: NextRequest) {
     }
 
     // ===== ENVÍOS DE HOY POR DESPACHAR =====
-    let shipmentsToday = 0;
+    let shipmentsToday: number | null = null;
     try {
       shipmentsToday = await prisma.shipment.count({
         where: {
@@ -128,17 +128,18 @@ export async function GET(request: NextRequest) {
             }
           },
           createdAt: { gte: today },
-          status: { in: ['PENDING', 'PROCESSING'] }
+          status: { in: ['pending', 'ready_to_ship', 'shipped'] }
         }
       });
     } catch (e) {
-      shipmentsToday = 0;
+      console.error('Error fetching shipments:', e);
+      shipmentsToday = null; // null = tabla no disponible
     }
 
     // ===== PRODUCTOS =====
     let products: any[] = [];
-    let productsToImprove = 0;
-    let totalPublications = 0;
+    let productsToImprove: number | null = null;
+    let totalPublications: number | null = null;
     try {
       products = await prisma.product.findMany({
         where: { sellerId: userId },
@@ -162,43 +163,45 @@ export async function GET(request: NextRequest) {
       }).length;
     } catch (e) {
       console.error('Error fetching products:', e);
+      totalPublications = null;
+      productsToImprove = null;
     }
 
     // ===== PREGUNTAS SIN RESPONDER =====
-    let unansweredQuestions = 0;
+    let unansweredQuestions: number | null = null;
     try {
       unansweredQuestions = await prisma.question.count({
         where: {
           product: { sellerId: userId },
-          answer: null
+          OR: [
+            { answer: null },
+            { status: 'pending' }
+          ]
         }
       });
     } catch (e) {
-      unansweredQuestions = 0;
+      console.error('Error fetching questions:', e);
+      unansweredQuestions = null;
     }
 
     // ===== RECLAMOS/POSVENTA ABIERTOS =====
-    let openClaims = 0;
-    let openReturns = 0;
+    let openClaims: number | null = null;
     try {
       openClaims = await prisma.claim.count({
         where: {
-          order: {
-            items: {
-              some: { product: { sellerId: userId } }
-            }
-          },
+          sellerId: userId,
           status: { in: ['OPEN', 'IN_REVIEW'] }
         }
       });
     } catch (e) {
-      openClaims = 0;
+      console.error('Error fetching claims:', e);
+      openClaims = null;
     }
 
     // ===== ESTADO DE CUENTA - RESTRICCIONES =====
     // Verificar si hay facturas vencidas, claims graves, etc.
-    hasRestrictions = openClaims > 0 || (user?.claimRate || 0) > 0.1;
-    restrictionCount = openClaims;
+    hasRestrictions = (openClaims || 0) > 0 || (user?.claimRate || 0) > 0.1;
+    restrictionCount = openClaims || 0;
 
     // ===== DINERO =====
     // Dinero disponible = ventas completadas - comisiones ya cobradas
@@ -288,8 +291,8 @@ export async function GET(request: NextRequest) {
     let pageFollowers = 0;
     try {
       // Usar cantidad de productos como proxy de actividad
-      pageVisits = totalPublications * 12;
-      pageFollowers = Math.floor(totalPublications * 3.5);
+      pageVisits = (totalPublications || 0) * 12;
+      pageFollowers = Math.floor((totalPublications || 0) * 3.5);
     } catch (e) {
       // fallback
     }
@@ -342,11 +345,15 @@ export async function GET(request: NextRequest) {
         advanceAvailable: Math.round(moneyToSettle * 0.7), // 70% de lo a liquidar puede adelantarse
       },
       pending: {
-        shipmentsToday: shipmentsToday || 0,
-        postSale: openClaims + openReturns,
-        publicationsToImprove: productsToImprove,
-        totalPublications: totalPublications,
-        questions: unansweredQuestions,
+        shipmentsToday: shipmentsToday ?? 0,
+        shipmentsAvailable: shipmentsToday !== null,
+        postSale: (openClaims ?? 0),
+        claimsAvailable: openClaims !== null,
+        publicationsToImprove: productsToImprove ?? 0,
+        totalPublications: totalPublications ?? 0,
+        productsAvailable: totalPublications !== null,
+        questions: unansweredQuestions ?? 0,
+        questionsAvailable: unansweredQuestions !== null,
       },
       logistics: {
         flex: { exposure: 'Sin calcular', metric: '- %' },
@@ -354,7 +361,7 @@ export async function GET(request: NextRequest) {
         full: { exposure: 'Espacio disponible', metric: 'Disponible' },
       },
       storage: {
-        small: { used: Math.min(totalPublications, 1000), total: 1000, percent: Math.min(Math.round((totalPublications / 1000) * 100), 100) },
+        small: { used: Math.min(totalPublications ?? 0, 1000), total: 1000, percent: Math.min(Math.round(((totalPublications ?? 0) / 1000) * 100), 100) },
         large: { used: 0, total: 300, percent: 0 },
       },
       advertising: {
@@ -399,7 +406,7 @@ export async function GET(request: NextRequest) {
       reputation: { level: 'VENDEDOR NUEVO', score: 0, claimsPercent: '0', cancellationsPercent: '0', mediationsPercent: '0', wrongShippingPercent: '0', totalSales: 0, successfulSales: 0, canceledSales: 0 },
       sales: { grossLast7Days: 0, grossTotal: 0, growthPercent: 0, totalCompleted: 0 },
       money: { available: 0, toSettle: 0, advanceAvailable: 0 },
-      pending: { shipmentsToday: 0, postSale: 0, publicationsToImprove: 0, totalPublications: 0, questions: 0 },
+      pending: { shipmentsToday: 0, shipmentsAvailable: false, postSale: 0, claimsAvailable: false, publicationsToImprove: 0, totalPublications: 0, productsAvailable: false, questions: 0, questionsAvailable: false },
       logistics: { flex: { exposure: 'Sin calcular', metric: '- %' }, turbo: { exposure: 'No disponible', metric: '- %' }, full: { exposure: 'Disponible', metric: 'Disponible' } },
       storage: { small: { used: 0, total: 1000, percent: 0 }, large: { used: 0, total: 300, percent: 0 } },
       advertising: { sales: 0, salesGrowth: 0, clicks: 0, clicksGrowth: 0, hasCampaigns: false },

@@ -41,10 +41,14 @@ type SummaryData = {
   };
   pending: {
     shipmentsToday: number;
+    shipmentsAvailable: boolean;
     postSale: number;
+    claimsAvailable: boolean;
     publicationsToImprove: number;
     totalPublications: number;
+    productsAvailable: boolean;
     questions: number;
+    questionsAvailable: boolean;
   };
   logistics: {
     flex: { exposure: string; metric: string };
@@ -270,11 +274,11 @@ export default function ResumenView() {
         {/* --- COLUMNA 1 --- */}
         <div className="space-y-4">
           <MeliCard title="Pendientes en tus publicaciones" className="h-auto">
-            <MeliListItem label="Preguntas" value={d.pending.questions > 0 ? `${d.pending.questions} sin responder` : "No tenés pendientes"} />
-            <MeliListItem label="Publicaciones" value={`${d.pending.publicationsToImprove} por mejorar`} alert={d.pending.publicationsToImprove > 0} alertType="red" actionText={d.pending.publicationsToImprove > 0 ? "Ver más" : undefined} />
-            <MeliListItem label="Productos Full" value={`${d.pending.totalPublications} activas`} />
-            <MeliListItem label="Envíos de hoy" value={d.pending.shipmentsToday > 0 ? `${d.pending.shipmentsToday} por despachar` : "Sin envíos pendientes"} alert={d.pending.shipmentsToday > 0} alertType="red" />
-            <MeliListItem label="Posventa" value={d.pending.postSale > 0 ? `${d.pending.postSale} pendientes` : "No tenés pendientes"} isLast />
+            <MeliListItem label="Preguntas" value={!d.pending.questionsAvailable ? "Próximamente" : d.pending.questions > 0 ? `${d.pending.questions} sin responder` : "No tenés pendientes"} />
+            <MeliListItem label="Publicaciones" value={!d.pending.productsAvailable ? "Próximamente" : `${d.pending.publicationsToImprove} por mejorar`} alert={d.pending.productsAvailable && d.pending.publicationsToImprove > 0} alertType="red" actionText={d.pending.productsAvailable && d.pending.publicationsToImprove > 0 ? "Ver más" : undefined} />
+            <MeliListItem label="Productos" value={!d.pending.productsAvailable ? "Próximamente" : `${d.pending.totalPublications} activas`} />
+            <MeliListItem label="Envíos de hoy" value={!d.pending.shipmentsAvailable ? "Próximamente" : d.pending.shipmentsToday > 0 ? `${d.pending.shipmentsToday} por despachar` : "Sin envíos pendientes"} alert={d.pending.shipmentsAvailable && d.pending.shipmentsToday > 0} alertType="red" />
+            <MeliListItem label="Posventa" value={!d.pending.claimsAvailable ? "Próximamente" : d.pending.postSale > 0 ? `${d.pending.postSale} pendientes` : "No tenés pendientes"} isLast />
           </MeliCard>
 
           <MeliCard title="Uso de tus espacios en Full" actionText="Ir a métricas de Stock Full">
@@ -290,13 +294,12 @@ export default function ResumenView() {
             </div>
           </MeliCard>
 
-          <MeliCard title="Envíos Flex" actionText="Ir a métricas de envíos">
-            <div className="flex items-baseline gap-2 mb-1">
-              <h3 className="text-2xl font-light text-[#333]">{d.logistics.flex.metric}</h3>
+          <MeliCard title="Envíos Flex" actionText="Próximamente">
+            <div className="flex items-center gap-2 mb-2">
+              <Info className="w-5 h-5 text-[#999]" />
+              <span className="text-[13px] text-[#999] font-semibold">No disponible</span>
             </div>
-            <p className="text-[12px] text-[#666] mb-4">Esta semana</p>
-            <p className="text-[13px] text-[#333] font-semibold">{d.logistics.flex.exposure}</p>
-            <p className="text-[12px] text-[#666]">Exposición prevista la próxima semana</p>
+            <p className="text-[12px] text-[#666]">Esta funcionalidad estará disponible próximamente.</p>
           </MeliCard>
 
           <MeliCard title="Mi página">
