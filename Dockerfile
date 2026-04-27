@@ -52,6 +52,7 @@ RUN echo "=== Iniciando build de Next.js ===" && \
 # Exponer puerto
 EXPOSE 3000
 ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
 
 # Comando de inicio
 CMD ["npm", "start"]
