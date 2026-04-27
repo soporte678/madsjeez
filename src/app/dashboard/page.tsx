@@ -15,6 +15,7 @@ import ReputacionView from "@/components/dashboard/ReputacionView";
 import ResumenView from "@/components/dashboard/ResumenView";
 import PreguntasView from "@/components/dashboard/PreguntasView";
 import OpinionesView from "@/components/dashboard/OpinionesView";
+import FavoritosView from "@/components/dashboard/FavoritosView";
 
 function getInitialMenu() {
   if (typeof window !== 'undefined') {
@@ -448,6 +449,7 @@ export default function App() {
           {activeMenu === 'preferencias-venta' && renderPreferenciasVenta()}
           {activeMenu === 'preguntas' && <PreguntasView />}
           {activeMenu === 'opiniones' && <OpinionesView />}
+          {activeMenu === 'favoritos' && <FavoritosView />}
           {activeMenu === 'publicaciones' && renderProductosCatalogo()}
         </section>
       </main>
