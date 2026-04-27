@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { UserMenu } from '@/components/dashboard/UserMenu';
 import ReputacionView from "@/components/dashboard/ReputacionView";
+import ResumenView from "@/components/dashboard/ResumenView";
 
 function getInitialMenu() {
   if (typeof window !== 'undefined') {
@@ -434,13 +435,7 @@ export default function App() {
           {activeMenu === 'inmuebles-interes' && renderInmueblesInteres()}
           {activeMenu === 'busquedas-guardadas' && renderBusquedasGuardadas()}
           
-          {activeMenu === 'resumen' && (
-            <div className="flex flex-col items-center justify-center text-gray-400 bg-white rounded-xl shadow-sm border border-gray-200 border-dashed p-10 h-full min-h-[400px]">
-               <Activity size={48} className="mb-4 opacity-30" />
-               <h2 className="text-xl font-bold text-gray-600 mb-2">Panel de Resumen Madsjeez</h2>
-               <p className="text-sm">Estamos conectando los motores de datos para tus estadísticas en vivo.</p>
-            </div>
-          )}
+          {activeMenu === 'resumen' && <ResumenView />}
         </section>
       </main>
 
