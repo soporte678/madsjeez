@@ -54,5 +54,5 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Comando de inicio
-CMD ["npm", "start"]
+# Comando de inicio explícito para Railway
+CMD ["sh", "-c", "next start -H 0.0.0.0 -p ${PORT:-3000}"]
