@@ -4,6 +4,17 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 
 export async function GET(request: Request) {
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    return NextResponse.json({
+      sales: { total: 0, count: 0, monthly: 0, monthlyCount: 0, today: 0, todayCount: 0 },
+      products: { total: 0, active: 0, views: 0 },
+      orders: [],
+      questions: { pending: 0, total: 0 },
+      reviews: { average: 0, total: 0, pending: 0 },
+      reputation: { level: "VENDEDOR NUEVO", color: "green", sales: 0 },
+    })
+  }
+
   try {
     const session = await getServerSession(authOptions)
     
@@ -18,18 +29,18 @@ export async function GET(request: Request) {
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
 
     // Obtener productos del usuario
-    const { data: products, error: productsError } = await supabase
+    const { data: products, error: productsError } = (await supabase
       .from('products')
       .select('id, price, sales, views, status, created_at')
-      .eq('seller_id', userId)
+      .eq('seller_id', userId)) as any
 
     if (productsError) throw productsError
 
     // Obtener órdenes
-    const { data: orders, error: ordersError } = await supabase
+    const { data: orders, error: ordersError } = (await supabase
       .from('orders')
       .select('*')
-      .eq('seller_id', userId)
+      .eq('seller_id', userId)) as any
 
     if (ordersError && ordersError.code !== 'PGRST116') throw ordersError
 
@@ -52,19 +63,19 @@ export async function GET(request: Request) {
     const todayRevenue = todayOrders.reduce((sum, order) => sum + (order.total || 0), 0)
 
     // Obtener preguntas pendientes
-    const { data: questions, error: questionsError } = await supabase
+    const { data: questions, error: questionsError } = (await supabase
       .from('questions')
       .select('*')
       .eq('seller_id', userId)
-      .eq('status', 'PENDING')
+      .eq('status', 'PENDING')) as any
 
     if (questionsError && questionsError.code !== 'PGRST116') throw questionsError
 
     // Obtener reseñas
-    const { data: reviews, error: reviewsError } = await supabase
+    const { data: reviews, error: reviewsError } = (await supabase
       .from('reviews')
       .select('*')
-      .eq('seller_id', userId)
+      .eq('seller_id', userId)) as any
 
     if (reviewsError && reviewsError.code !== 'PGRST116') throw reviewsError
 

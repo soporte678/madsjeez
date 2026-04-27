@@ -174,7 +174,7 @@ export default function PublicacionesPage() {
       {/* Main Layout */}
       <div className="max-w-full mx-auto flex relative">
         
-        {/* Sidebar - Componente unificado del dashboard */
+        {/* Sidebar - Componente unificado del dashboard */}
         <aside className="w-56 flex-shrink-0">
           <h2 className="font-bold text-lg mb-4 flex items-center gap-2">
             <span className="grid grid-cols-2 gap-0.5"><span className="w-2 h-2 bg-blue-500 rounded-sm"></span><span className="w-2 h-2 bg-blue-500 rounded-sm"></span><span className="w-2 h-2 bg-blue-500 rounded-sm"></span><span className="w-2 h-2 bg-blue-500 rounded-sm"></span></span>

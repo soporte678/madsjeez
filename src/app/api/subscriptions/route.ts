@@ -6,9 +6,16 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import Stripe from "stripe"
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2026-04-22.dahlia"
-})
+function getStripeClient() {
+  const key = process.env.STRIPE_SECRET_KEY
+  if (!key) {
+    throw new Error("STRIPE_SECRET_KEY is not configured")
+  }
+
+  return new Stripe(key, {
+    apiVersion: "2026-04-22.dahlia",
+  })
+}
 
 // POST /api/subscriptions - Crear suscripción
 export async function POST(req: Request) {
@@ -21,6 +28,8 @@ export async function POST(req: Request) {
         { status: 401 }
       )
     }
+
+    const stripe = getStripeClient()
 
     const body = await req.json()
     const { tier, paymentMethodId } = body

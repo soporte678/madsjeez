@@ -6,9 +6,16 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import Stripe from "stripe"
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2026-04-22.dahlia"
-})
+function getStripeClient() {
+  const key = process.env.STRIPE_SECRET_KEY
+  if (!key) {
+    throw new Error("STRIPE_SECRET_KEY is not configured")
+  }
+
+  return new Stripe(key, {
+    apiVersion: "2026-04-22.dahlia",
+  })
+}
 
 // POST /api/orders - Crear orden
 export async function POST(req: Request) {
@@ -79,6 +86,7 @@ export async function POST(req: Request) {
     })
 
     // Crear payment intent con Stripe
+    const stripe = getStripeClient()
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(total),
       currency: "clp",
