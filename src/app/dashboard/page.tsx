@@ -13,6 +13,7 @@ import {
 import { UserMenu } from '@/components/dashboard/UserMenu';
 import ReputacionView from "@/components/dashboard/ReputacionView";
 import ResumenView from "@/components/dashboard/ResumenView";
+import PreguntasView from "@/components/dashboard/PreguntasView";
 
 function getInitialMenu() {
   if (typeof window !== 'undefined') {
@@ -283,199 +284,6 @@ export default function App() {
     </div>
   );
 
-  const renderPreguntasCompras = () => {
-    const questionsData = [
-      {
-        id: 1,
-        img: "https://via.placeholder.com/80?text=Bujia",
-        title: "Bujía Para Desmalezadoras Motoguadaña 33/43/52cc",
-        sellerLinkText: "Ir a la página del vendedor",
-        price: "$ 7.999",
-        stockWarning: "¡Quedan solo 10 unidades!",
-        question: { text: "Hola buenas! Sirve como repuesto para una china de segunda marca?", date: "- Hace 3 días." },
-        answer: { text: "Hola, son aptas para todas las chinas mientras sean del cc que mencionamos en la publicación, esperamos tu compra, saludos!", date: "- Hace 3 días." }
-      },
-      {
-        id: 2,
-        img: "https://via.placeholder.com/80?text=Barral",
-        title: "Barral Completo Desmalezadora Más Campana Más Caja Engranaje",
-        sellerLinkText: "Ver más productos del vendedor",
-        price: "$ 79.999",
-        installments: "Mismo precio en cuotas",
-        stockWarning: "¡Quedan solo 2 unidades!",
-        shipping: "Envío gratis a todo el país",
-        question: { text: "Es compatible con recortardora stihl?", date: "- Hace 3 días." },
-        answer: { text: "Hola buenas! En este caso solo si es de origen chino, saludos!", date: "- Hace 3 días." }
-      },
-      {
-        id: 3,
-        img: "https://via.placeholder.com/80?text=Tijera",
-        title: "Tijera Profesional Dorada Modista 26cm Tela Lana Premium Dorado",
-        sellerLinkText: "Ver más productos del vendedor",
-        price: "$ 149.999",
-        installments: "Mismo precio en cuotas",
-        stockWarning: "¡Quedan solo 3 unidades!",
-        shipping: "Envío gratis a todo el país",
-        question: { text: "hola, mas grande tenes?", date: "- Hace 14 días." },
-        answer: { text: "HOLA, POR EL MOMENTO ES EL UNICO TAMAÑO AT...", isInline: true },
-        collapsed: true
-      },
-      {
-        id: 4,
-        img: "https://via.placeholder.com/80?text=Brazo",
-        title: "Brazo De Suspensión Inferior Recto Vw Passat Audi A4",
-        sellerLinkText: "Ir a la página del vendedor",
-        price: "$ 97.965",
-        oldPrice: "$ 90.274,75",
-        hasMeliPlus: true,
-        stockAvailable: "Hay stock disponible",
-        shipping: "Envío gratis a todo el país",
-        question: null,
-        answer: null
-      }
-    ];
-
-    return (
-      <div className="max-w-[1000px] w-full pb-12">
-        {/* Breadcrumb Meli */}
-        <div className="flex items-center gap-2 text-[14px] mb-6">
-          <a href="#" className="text-[#3483fa] hover:text-blue-700 font-semibold">Compras</a>
-          <ChevronRight className="w-4 h-4 text-[#bfbfbf]" />
-          <span className="text-[#666666]">Preguntas</span>
-        </div>
-
-        {/* Toolbar / Filtros */}
-        <div className="flex items-center justify-between mb-4">
-          <button className="flex items-center gap-2 text-[#333] text-[14px] font-semibold bg-white border border-[#e6e6e6] rounded-md px-4 py-2 hover:bg-[#f5f5f5] transition-colors shadow-sm">
-            <Calendar className="w-4 h-4 text-[#666]" />
-            Todas las fechas
-            <ChevronDown className="w-4 h-4 text-[#333] ml-1" />
-          </button>
-
-          <div className="flex items-center gap-6 text-[14px] text-[#666]">
-            <span>1 - 6 de 6 preguntas</span>
-            <div className="flex items-center gap-3">
-              <span>Ampliar todas</span>
-              {/* Toggle Switch (Estilo Meli) */}
-              <div className="w-9 h-5 bg-[#e6e6e6] rounded-full relative cursor-pointer hover:bg-[#ccc] transition-colors">
-                <div className="w-5 h-5 bg-white rounded-full absolute left-0 top-0 shadow-[0_1px_3px_rgba(0,0,0,0.3)]"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Lista de Tarjetas de Preguntas */}
-        <div className="space-y-4">
-          {questionsData.map((item) => (
-            <div key={item.id} className="bg-white rounded-[8px] shadow-[0_1px_2px_0_rgba(0,0,0,0.12)] border border-[#e6e6e6] overflow-hidden">
-
-              {/* Sección Superior: Detalles del Producto */}
-              <div className="p-6 flex flex-col md:flex-row items-start md:items-center gap-6">
-
-                {/* Imagen del Producto */}
-                <div className="w-[72px] h-[72px] flex-shrink-0 border border-[#e6e6e6] rounded bg-white flex items-center justify-center p-1">
-                  <img src={item.img} alt="Product" className="max-w-full max-h-full object-contain" />
-                </div>
-
-                {/* Título y Link */}
-                <div className="flex-1 min-w-[200px] pr-4">
-                  <h4 className="text-[16px] text-[#333333] font-light leading-snug">{item.title}</h4>
-                  <a href="#" className="text-[14px] text-[#3483fa] font-semibold mt-1.5 inline-block hover:text-blue-700">{item.sellerLinkText}</a>
-                </div>
-
-                {/* Precios y Cuotas */}
-                <div className="w-[140px] flex-shrink-0">
-                  <span className="text-[20px] text-[#333333] font-light block leading-none">{item.price}</span>
-                  {item.oldPrice && (
-                    <div className="flex items-center gap-1 mt-1">
-                      <span className="text-[14px] text-[#333333] leading-none">{item.oldPrice}</span>
-                      {item.hasMeliPlus && (
-                         <span className="w-4 h-4 bg-[#00a650] text-white flex items-center justify-center rounded-sm text-[10px] font-bold">
-                           <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                         </span>
-                      )}
-                    </div>
-                  )}
-                  {item.installments && <p className="text-[14px] text-[#00a650] mt-1 leading-tight">{item.installments}</p>}
-                </div>
-
-                {/* Stock y Envío */}
-                <div className="w-[180px] flex-shrink-0">
-                  {item.stockWarning && <p className="text-[14px] text-[#ff7733]">{item.stockWarning}</p>}
-                  {item.stockAvailable && <p className="text-[14px] text-[#999999]">{item.stockAvailable}</p>}
-                  {item.shipping && <p className="text-[14px] text-[#00a650] mt-1 leading-tight">{item.shipping}</p>}
-                </div>
-
-                {/* Botón Comprar y Menú */}
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  <button className="bg-[#3483fa] hover:bg-[#2968c8] text-white font-semibold text-[16px] py-2.5 px-6 rounded-[6px] transition-colors">
-                    Comprar
-                  </button>
-                  <button className="text-[#3483fa] p-2 hover:bg-[#f0f4ff] rounded-full transition-colors flex items-center justify-center">
-                    <MoreVertical className="w-6 h-6 text-[#3483fa]" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Separador */}
-              <div className="h-[1px] bg-[#e6e6e6] w-full"></div>
-
-              {/* Botón "Hacer otra pregunta" */}
-              <div className="px-6 py-4">
-                <a href="#" className="text-[14px] text-[#3483fa] font-semibold hover:text-blue-700">Hacer otra pregunta</a>
-              </div>
-
-              {/* Área de Pregunta y Respuesta */}
-              {item.question && (
-                <>
-                  {!item.collapsed && <div className="h-[1px] bg-[#e6e6e6] w-full"></div>}
-
-                  <div className="px-6 py-5 flex justify-between items-start gap-4">
-                    <div className="flex flex-col gap-3 w-full">
-
-                      {/* Caso 1: Pregunta colapsada (Pregunta y respuesta en la misma línea) */}
-                      {item.collapsed ? (
-                         <p className="text-[14px] text-[#333333]">
-                            {item.question.text} <span className="text-[#666666] uppercase mx-2">{item.answer?.text}</span> <span className="text-[#999999] text-[13px]">{item.question.date}</span>
-                         </p>
-                      ) : (
-                         /* Caso 2: Pregunta expandida (Estándar) */
-                         <>
-                            <p className="text-[14px] text-[#333333]">
-                              {item.question.text} <span className="text-[#999999] text-[13px] ml-1">{item.question.date}</span>
-                            </p>
-
-                            {item.answer && (
-                              <div className="flex gap-0 relative mt-1">
-                                {/* Icono "L" de respuesta estilo Meli */}
-                                <div className="w-5 h-5 border-l-2 border-b-2 border-[#e6e6e6] rounded-bl-sm mt-0.5 ml-1 mr-3 flex-shrink-0"></div>
-                                <p className="text-[14px] text-[#666666] leading-relaxed">
-                                  {item.answer.text} <span className="text-[#999999] text-[13px] ml-1">{item.answer.date}</span>
-                                </p>
-                              </div>
-                            )}
-                         </>
-                      )}
-
-                    </div>
-
-                    {/* Flecha de colapso/expansión */}
-                    {!item.collapsed ? (
-                      <ChevronUp className="w-6 h-6 text-[#ccc] cursor-pointer hover:text-[#999] flex-shrink-0" />
-                    ) : (
-                      <ChevronDown className="w-6 h-6 text-[#ccc] cursor-pointer hover:text-[#999] flex-shrink-0" />
-                    )}
-                  </div>
-                </>
-              )}
-
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
   const renderNovedades = () => (
     <div className="flex-1 flex flex-col gap-6 w-full max-w-4xl">
       <div className="flex justify-between items-center mb-2"><h1 className="text-[26px] font-semibold text-gray-800">Novedades</h1><button className="text-blue-600 text-sm font-semibold hover:underline">Configurar notificaciones</button></div>
@@ -649,7 +457,7 @@ export default function App() {
           {activeMenu === 'ventas-novedades' && renderNovedades()}
           {activeMenu === 'posventa' && renderPosventa()}
           {activeMenu === 'preferencias-venta' && renderPreferenciasVenta()}
-          {activeMenu === 'preguntas' && renderPreguntasCompras()}
+          {activeMenu === 'preguntas' && <PreguntasView />}
           {activeMenu === 'publicaciones' && renderProductosCatalogo()}
         </section>
       </main>
