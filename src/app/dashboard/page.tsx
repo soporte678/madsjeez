@@ -5,11 +5,12 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { useDashboardData } from "@/hooks/useDashboardData"
+import { NotificationBell } from "@/components/notifications/NotificationBell"
 import { 
   LayoutGrid, ShoppingCart, Zap, Megaphone, FileText, 
   Wallet, User, Settings, ChevronDown, Star, TrendingUp,
   MoreVertical, MessageSquare, ChevronRight, ShieldCheck,
-  Bell, Search, MapPin, Sparkles, Package, DollarSign,
+  Search, MapPin, Sparkles, Package, DollarSign,
   Activity
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -132,12 +133,7 @@ export default function DashboardPage() {
                 <span className="hidden lg:block">{userName}</span>
               </div>
               <button className="hidden lg:block hover:text-blue-700">Ayuda</button>
-              <div className="relative cursor-pointer">
-                <Bell size={20} />
-                {m.questions.pending > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-black h-4 w-4 flex items-center justify-center rounded-full">{m.questions.pending}</span>
-                )}
-              </div>
+              <NotificationBell />
               <Link href="/cart">
                 <ShoppingCart size={20} className="cursor-pointer" />
               </Link>

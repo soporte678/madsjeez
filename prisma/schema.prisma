@@ -103,6 +103,17 @@ model User {
   subscriptions Subscription[]
   boosts        ProductBoost[]
   
+  // Nuevas relaciones Fase 1
+  questions         Question[]      @relation("BuyerQuestions")
+  notifications     Notification[]  @relation("UserNotifications")
+  buyerClaims       Claim[]         @relation("BuyerClaims")
+  sellerClaims      Claim[]         @relation("SellerClaims")
+  claimMessages     ClaimMessage[]
+  sentMessages      OrderMessage[]  @relation("SentMessages")
+  receivedMessages  OrderMessage[]  @relation("ReceivedMessages")
+  campaigns         Campaign[]
+  coupons           Coupon[]
+  
   @@map("users")
 }
 
@@ -154,6 +165,11 @@ model Product {
   orderItems  OrderItem[]
   reviews     Review[]
   boosts      ProductBoost[]
+  
+  // Nuevas relaciones Fase 1
+  questions     Question[]
+  variations    ProductVariation[]
+  campaignProducts CampaignProduct[]
   
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
@@ -222,6 +238,11 @@ model Order {
   items         OrderItem[]
   payment       Payment?
   review        Review?
+  
+  // Nuevas relaciones Fase 1
+  claims        Claim[]
+  messages      OrderMessage[]
+  shipment      Shipment?
   
   createdAt     DateTime    @default(now()) @map("created_at")
   updatedAt     DateTime    @updatedAt @map("updated_at")
@@ -346,4 +367,377 @@ model SiteConfig {
   updatedAt             DateTime @updatedAt @map("updated_at")
   
   @@map("site_config")
+}
+
+// ============================================
+// NUEVOS MODELOS - FASE 1
+// ============================================
+
+// Preguntas y Respuestas
+model Question {
+  id          String    @id @default(cuid())
+  productId   String    @map("product_id")
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  buyerId     String    @map("buyer_id")
+  buyer       User      @relation("BuyerQuestions", fields: [buyerId], references: [id], onDelete: Cascade)
+  
+  question    String    @db.Text
+  answer      String?   @db.Text
+  answeredAt  DateTime? @map("answered_at")
+  answeredBy  String?   @map("answered_by") // seller_id who answered
+  
+  status      String    @default("pending") // pending, answered
+  isPublic    Boolean   @default(true) @map("is_public")
+  
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  
+  @@index([productId])
+  @@index([buyerId])
+  @@index([status])
+  @@map("questions")
+}
+
+// Notificaciones
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  user        User     @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  
+  type        String   // order, question, claim, message, promotion
+  topic       String   // specific sub-topic
+  resourceId  String   @map("resource_id") // ID of related entity
+  
+  title       String
+  message     String   @db.Text
+  
+  isRead      Boolean  @default(false) @map("is_read")
+  readAt      DateTime? @map("read_at")
+  
+  // Webhook data
+  webhookUrl  String?  @map("webhook_url")
+  webhookSent Boolean  @default(false) @map("webhook_sent")
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  
+  @@index([userId])
+  @@index([type])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+// Reclamos y Devoluciones
+enum ClaimType {
+  CLAIM
+  RETURN
+  EXCHANGE
+}
+
+enum ClaimStatus {
+  OPEN
+  IN_REVIEW
+  RESOLVED
+  CLOSED
+  CANCELLED
+}
+
+model Claim {
+  id          String      @id @default(cuid())
+  
+  orderId     String      @map("order_id")
+  order       Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  buyerId     String      @map("buyer_id")
+  buyer       User        @relation("BuyerClaims", fields: [buyerId], references: [id], onDelete: Cascade)
+  
+  sellerId    String      @map("seller_id")
+  seller      User        @relation("SellerClaims", fields: [sellerId], references: [id], onDelete: Cascade)
+  
+  type        ClaimType   @default(CLAIM)
+  reason      String      // damaged, not_as_described, missing_parts, wrong_item, etc.
+  description String      @db.Text
+  
+  status      ClaimStatus @default(OPEN)
+  
+  // Evidence
+  images      String[]    // Array of image URLs
+  
+  // Resolution
+  resolution  String?     // refund, replacement, repair, reject
+  resolutionNotes String? @map("resolution_notes") @db.Text
+  resolvedAt  DateTime?   @map("resolved_at")
+  resolvedBy  String?     @map("resolved_by")
+  
+  // Refund amount if applicable
+  refundAmount Float?     @map("refund_amount")
+  
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+  
+  claimMessages ClaimMessage[]
+  
+  @@index([orderId])
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([status])
+  @@map("claims")
+}
+
+// Mensajes en reclamos
+model ClaimMessage {
+  id          String   @id @default(cuid())
+  
+  claimId     String   @map("claim_id")
+  claim       Claim    @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  
+  senderId    String   @map("sender_id")
+  sender      User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  
+  content     String   @db.Text
+  attachments String[] // Array of file URLs
+  
+  isInternal  Boolean  @default(false) @map("is_internal") // For admin notes
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  
+  @@index([claimId])
+  @@index([senderId])
+  @@map("claim_messages")
+}
+
+// Mensajería Posventa (Chat entre comprador y vendedor)
+model OrderMessage {
+  id          String   @id @default(cuid())
+  
+  orderId     String   @map("order_id")
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  senderId    String   @map("sender_id")
+  sender      User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  
+  receiverId  String   @map("receiver_id")
+  receiver    User     @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  
+  content     String   @db.Text
+  attachments String[] // JSON array of file URLs
+  
+  isRead      Boolean  @default(false) @map("is_read")
+  readAt      DateTime? @map("read_at")
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  
+  @@index([orderId])
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([isRead])
+  @@map("order_messages")
+}
+
+// Tracking de Envíos Detallado
+model Shipment {
+  id          String   @id @default(cuid())
+  
+  orderId     String   @unique @map("order_id")
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  // Carrier info
+  carrier     String   // mercado_envios, fedex, dhl, custom, etc.
+  carrierName String?  @map("carrier_name") // Display name
+  trackingNumber String? @map("tracking_number")
+  
+  // Status
+  status      String   @default("pending") // pending, ready_to_ship, shipped, in_transit, out_for_delivery, delivered, exception
+  
+  // Label
+  labelUrl    String?  @map("label_url")
+  labelGeneratedAt DateTime? @map("label_generated_at")
+  
+  // Tracking events
+  events      ShipmentEvent[]
+  
+  // Estimated delivery
+  estimatedDelivery DateTime? @map("estimated_delivery")
+  
+  // Actual delivery
+  deliveredAt DateTime? @map("delivered_at")
+  receivedBy  String?   @map("received_by") // Person who received
+  
+  // Shipping address (snapshot)
+  shippingAddress Json? @map("shipping_address")
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  @@map("shipments")
+}
+
+model ShipmentEvent {
+  id          String   @id @default(cuid())
+  
+  shipmentId  String   @map("shipment_id")
+  shipment    Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  
+  status      String   // Event status code
+  description String   // Human readable description
+  location    String?  // Where the event occurred
+  
+  timestamp   DateTime
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  
+  @@index([shipmentId])
+  @@index([timestamp])
+  @@map("shipment_events")
+}
+
+// Variaciones de Producto
+model ProductVariation {
+  id          String   @id @default(cuid())
+  
+  productId   String   @map("product_id")
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  sku         String?
+  
+  // Variation attributes (e.g., {"color": "red", "size": "XL"})
+  attributes  Json
+  
+  // Pricing
+  price       Float
+  comparePrice Float?  @map("compare_price")
+  
+  // Inventory
+  stock       Int      @default(0)
+  
+  // Images specific to this variation
+  images      String[] // Array of image URLs
+  
+  isActive    Boolean  @default(true) @map("is_active")
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  @@index([productId])
+  @@index([sku])
+  @@map("product_variations")
+}
+
+// Campañas y Promociones
+enum CampaignType {
+  FLASH_SALE
+  DAILY_DEAL
+  QUANTITY_DISCOUNT
+  COUPON
+  PRICE_AGREEMENT
+}
+
+enum CampaignStatus {
+  DRAFT
+  PENDING_APPROVAL
+  ACTIVE
+  PAUSED
+  ENDED
+  CANCELLED
+}
+
+model Campaign {
+  id          String         @id @default(cuid())
+  
+  sellerId    String         @map("seller_id")
+  seller      User           @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  
+  name        String
+  description String?        @db.Text
+  
+  type        CampaignType
+  status      CampaignStatus @default(DRAFT)
+  
+  // Schedule
+  startDate   DateTime       @map("start_date")
+  endDate     DateTime       @map("end_date")
+  
+  // Discount
+  discountType String        @map("discount_type") // percentage, fixed
+  discountValue Float        @map("discount_value")
+  
+  // For quantity discounts
+  minQuantity Int?           @map("min_quantity")
+  
+  // Budget
+  maxBudget   Float?         @map("max_budget")
+  spentBudget Float          @default(0) @map("spent_budget")
+  
+  // Products in campaign
+  products    CampaignProduct[]
+  
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+  
+  @@index([sellerId])
+  @@index([type])
+  @@index([status])
+  @@index([startDate])
+  @@map("campaigns")
+}
+
+model CampaignProduct {
+  id          String    @id @default(cuid())
+  
+  campaignId  String    @map("campaign_id")
+  campaign    Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  
+  productId   String    @map("product_id")
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  // Override campaign discount for this product
+  discountOverride Float? @map("discount_override")
+  
+  createdAt   DateTime  @default(now()) @map("created_at")
+  
+  @@unique([campaignId, productId])
+  @@index([productId])
+  @@map("campaign_products")
+}
+
+// Cupones
+model Coupon {
+  id          String   @id @default(cuid())
+  
+  code        String   @unique
+  sellerId    String   @map("seller_id")
+  seller      User     @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  
+  description String?
+  
+  // Discount
+  discountType String  @map("discount_type") // percentage, fixed
+  discountValue Float  @map("discount_value")
+  
+  // Limits
+  minPurchase Float?   @map("min_purchase")
+  maxDiscount Float?   @map("max_discount") // For percentage coupons
+  
+  // Usage limits
+  maxUses     Int?     @map("max_uses")
+  usedCount   Int      @default(0) @map("used_count")
+  maxUsesPerUser Int?  @map("max_uses_per_user")
+  
+  // Validity
+  startsAt    DateTime @map("starts_at")
+  expiresAt   DateTime @map("expires_at")
+  
+  isActive    Boolean  @default(true) @map("is_active")
+  
+  // Applicable products (empty = all products)
+  productIds  String[] @map("product_ids")
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  @@index([sellerId])
+  @@index([code])
+  @@index([isActive])
+  @@map("coupons")
 }
