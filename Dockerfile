@@ -40,6 +40,8 @@ ENV NEXTAUTH_URL=${NEXTAUTH_URL:-https://www.madsjeez.com.ar}
 ENV NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-https://www.madsjeez.com.ar}
 ENV DATABASE_URL=${DATABASE_URL:-postgresql://dummy}
 ENV DIRECT_URL=${DIRECT_URL:-postgresql://dummy}
+ENV NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL:-https://dummy.supabase.co}
+ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY:-dummy-key}
 
 # Build de Next.js
 RUN echo "=== Iniciando build de Next.js ===" && \
