@@ -53,6 +53,7 @@ export default function ReputacionView({ data }: { data?: ReputationStats }) {
   const [apiData, setApiData] = useState<ReputationStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showAllLevels, setShowAllLevels] = useState(false);
 
   useEffect(() => {
     const fetchReputationData = async () => {
@@ -138,12 +139,12 @@ export default function ReputacionView({ data }: { data?: ReputationStats }) {
           <a href="#" className="text-blue-500 font-medium hover:underline">
             Necesito ayuda
           </a>
-          <a 
-            href="/admin/setup-reputation" 
+          <button 
+            onClick={() => setShowAllLevels(!showAllLevels)}
             className="text-blue-500 font-medium hover:underline text-xs bg-blue-50 px-2 py-1 rounded"
           >
-            Ver todos los niveles
-          </a>
+            {showAllLevels ? 'Ocultar niveles' : 'Ver todos los niveles'}
+          </button>
         </div>
       </div>
 
@@ -190,7 +191,84 @@ export default function ReputacionView({ data }: { data?: ReputationStats }) {
           <Info size={20} className="text-blue-500 shrink-0 mt-0.5" />
           <div className="text-[13px] text-gray-700 pr-8 leading-relaxed">
             <span className="font-bold">Para llegar a {nextLevel.name}</span> necesitás: {nextRequirements.join(', ')}.
-            <a href="#" className="text-blue-600 hover:underline ml-1">Ver detalles</a>
+            <button onClick={() => setShowAllLevels(true)} className="text-blue-600 hover:underline ml-1">Ver detalles</button>
+          </div>
+        </div>
+      )}
+
+      {showAllLevels && (
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <h3 className="font-semibold text-gray-800 mb-4 text-lg">Requisitos para todos los niveles Madslider</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-2 px-3 font-semibold text-gray-600">Nivel</th>
+                  <th className="text-left py-2 px-3 font-semibold text-gray-600">Ventas mínimas</th>
+                  <th className="text-left py-2 px-3 font-semibold text-gray-600">Facturación mín.</th>
+                  <th className="text-left py-2 px-3 font-semibold text-gray-600">Días como vendedor</th>
+                  <th className="text-left py-2 px-3 font-semibold text-gray-600">Max. reclamos</th>
+                  <th className="text-left py-2 px-3 font-semibold text-gray-600">Max. cancel.</th>
+                  <th className="text-left py-2 px-3 font-semibold text-gray-600">Max. envíos demorados</th>
+                  <th className="text-left py-2 px-3 font-semibold text-gray-600">Descuento en boosts</th>
+                </tr>
+              </thead>
+              <tbody>
+                {LEVELS.map((level) => {
+                  const isCurrent = level.name === stats.level;
+                  const levelColors = COLOR_CLASSES[level.color];
+                  return (
+                    <tr key={level.name} className={`border-b border-gray-100 ${isCurrent ? 'bg-blue-50' : ''}`}>
+                      <td className="py-3 px-3">
+                        <div className="flex items-center gap-2">
+                          <span className={`w-3 h-3 rounded-full ${levelColors.bg}`} />
+                          <span className={`font-medium ${isCurrent ? 'text-blue-700 font-bold' : 'text-gray-700'}`}>
+                            {level.name}
+                            {isCurrent && <span className="ml-2 text-xs text-blue-600">(Actual)</span>}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-3 text-gray-600">{level.minSales}</td>
+                      <td className="py-3 px-3 text-gray-600">${level.minRevenue.toLocaleString()}</td>
+                      <td className="py-3 px-3 text-gray-600">60 días</td>
+                      <td className="py-3 px-3 text-gray-600">
+                        {level.name === 'VENDEDOR NUEVO' ? '8%' :
+                         level.name === 'BRONCE' ? '6%' :
+                         level.name === 'PLATA' ? '4%' :
+                         level.name === 'ORO' ? '2.5%' :
+                         level.name === 'PLATINUM' ? '1.5%' : '1%'}
+                      </td>
+                      <td className="py-3 px-3 text-gray-600">
+                        {level.name === 'VENDEDOR NUEVO' ? '5%' :
+                         level.name === 'BRONCE' ? '4%' :
+                         level.name === 'PLATA' ? '3%' :
+                         level.name === 'ORO' ? '2%' :
+                         level.name === 'PLATINUM' ? '1%' : '0.8%'}
+                      </td>
+                      <td className="py-3 px-3 text-gray-600">
+                        {level.name === 'VENDEDOR NUEVO' ? '10%' :
+                         level.name === 'BRONCE' ? '8%' :
+                         level.name === 'PLATA' ? '6%' :
+                         level.name === 'ORO' ? '4%' :
+                         level.name === 'PLATINUM' ? '3%' : '2%'}
+                      </td>
+                      <td className="py-3 px-3">
+                        <span className={`font-bold ${levelColors.text}`}>
+                          {level.name === 'VENDEDOR NUEVO' ? '0%' :
+                           level.name === 'BRONCE' ? '3%' :
+                           level.name === 'PLATA' ? '7%' :
+                           level.name === 'ORO' ? '12%' :
+                           level.name === 'PLATINUM' ? '18%' : '25%'}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-4 p-3 bg-gray-50 rounded-lg text-xs text-gray-500">
+            <span className="font-semibold">Nota:</span> Para llegar a <span className="font-bold text-emerald-700">MadsLíder Platinum</span> también necesitás 240 días de antigüedad en la plataforma.
           </div>
         </div>
       )}
@@ -342,13 +420,13 @@ export default function ReputacionView({ data }: { data?: ReputationStats }) {
                 );
               })}
             </div>
-            <a
-              href="/admin/setup-reputation"
+            <button
+              onClick={() => setShowAllLevels(!showAllLevels)}
               className="w-full text-left text-[13px] text-blue-600 font-semibold hover:underline flex justify-between items-center group"
             >
-              Ver requisitos completos
-              <ChevronRight size={16} className="transform group-hover:translate-x-1 transition-transform" />
-            </a>
+              {showAllLevels ? 'Ocultar requisitos' : 'Ver requisitos completos'}
+              <ChevronRight size={16} className={`transform transition-transform ${showAllLevels ? 'rotate-90' : 'group-hover:translate-x-1'}`} />
+            </button>
           </div>
         </div>
       </div>
