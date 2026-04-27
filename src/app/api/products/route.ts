@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
+import { supabase } from "@/lib/supabase"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 
@@ -16,81 +16,61 @@ export async function GET(req: Request) {
     const page = parseInt(searchParams.get("page") || "1")
     const limit = parseInt(searchParams.get("limit") || "20")
 
-    const where: any = {
-      isActive: true,
-    }
+    
+    // Construir query de Supabase
+    let query = supabase
+      .from('products')
+      .select(`
+        *,
+        images(url, order),
+        seller:users(id, name, seller_name, reputation_color),
+        category:categories(id, name, slug),
+        reviews(count)
+      `, { count: 'exact' })
 
+    // Aplicar filtros
     if (category) {
-      where.category = { slug: category }
+      query = query.eq('category.slug', category)
     }
-
     if (search) {
-      where.OR = [
-        { title: { contains: search, mode: "insensitive" } },
-        { description: { contains: search, mode: "insensitive" } },
-      ]
+      query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`)
     }
-
     if (seller) {
-      where.sellerId = seller
+      query = query.eq('seller_id', seller)
+    }
+    if (minPrice) {
+      query = query.gte('price', parseFloat(minPrice))
+    }
+    if (maxPrice) {
+      query = query.lte('price', parseFloat(maxPrice))
     }
 
-    if (minPrice || maxPrice) {
-      where.price = {}
-      if (minPrice) where.price.gte = parseFloat(minPrice)
-      if (maxPrice) where.price.lte = parseFloat(maxPrice)
-    }
-
-    // Ordenamiento
-    let orderBy: any = {}
+    // Aplicar ordenamiento
     switch (sort) {
       case "price_asc":
-        orderBy = { price: "asc" }
+        query = query.order('price', { ascending: true })
         break
       case "price_desc":
-        orderBy = { price: "desc" }
+        query = query.order('price', { ascending: false })
         break
       case "newest":
-        orderBy = { createdAt: "desc" }
+        query = query.order('created_at', { ascending: false })
         break
       case "popular":
-        orderBy = { sales: "desc" }
+        query = query.order('sales', { ascending: false })
         break
       default:
-        // Por relevancia: productos boosteados primero
-        orderBy = { isBoosted: "desc" }
+        query = query.order('is_boosted', { ascending: false })
     }
 
-    const [products, total] = await Promise.all([
-      prisma.product.findMany({
-        where,
-        include: {
-          images: { take: 1 },
-          seller: {
-            select: {
-              id: true,
-              name: true,
-              sellerName: true,
-              reputationColor: true,
-            }
-          },
-          category: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-            }
-          },
-          _count: {
-            select: { reviews: true }
-          }
-        },
-        orderBy,
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-      prisma.product.count({ where })
-    ])
+    // Paginación
+    query = query.range((page - 1) * limit, page * limit - 1)
+
+    const { data: products, error, count } = await query
+
+    if (error) throw error
+
+    const total = count || 0
 
     return NextResponse.json({
       products,
@@ -132,34 +112,54 @@ export async function POST(req: Request) {
     const body = await req.json()
     const { title, description, price, comparePrice, stock, categoryId, condition, images, attributes } = body
 
-    const product = await prisma.product.create({
-      data: {
+    // Crear producto principal
+    const { data: product, error: productError } = await supabase
+      .from('products')
+      .insert({
         title,
         description,
         price: parseFloat(price),
-        comparePrice: comparePrice ? parseFloat(comparePrice) : null,
+        compare_price: comparePrice ? parseFloat(comparePrice) : null,
         stock: parseInt(stock),
-        categoryId,
+        category_id: categoryId,
         condition: condition || "new",
-        sellerId: session.user.id,
-        images: {
-          create: images.map((url: string, index: number) => ({
+        seller_id: session.user.id,
+        status: 'ACTIVE'
+      })
+      .select()
+      .single()
+
+    if (productError) throw productError
+
+    // Crear imágenes
+    if (images && images.length > 0) {
+      const { error: imagesError } = await supabase
+        .from('product_images')
+        .insert(
+          images.map((url: string, index: number) => ({
+            product_id: product.id,
             url,
             order: index,
           }))
-        },
-        attributes: {
-          create: attributes?.map((attr: { name: string; value: string }) => ({
+        )
+      
+      if (imagesError) throw imagesError
+    }
+
+    // Crear atributos
+    if (attributes && attributes.length > 0) {
+      const { error: attributesError } = await supabase
+        .from('product_attributes')
+        .insert(
+          attributes.map((attr: { name: string; value: string }) => ({
+            product_id: product.id,
             name: attr.name,
             value: attr.value,
-          })) || []
-        }
-      },
-      include: {
-        images: true,
-        category: true,
-      }
-    })
+          }))
+        )
+      
+      if (attributesError) throw attributesError
+    }
 
     return NextResponse.json(product)
   } catch (error) {

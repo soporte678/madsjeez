@@ -28,9 +28,18 @@ export function Header() {
         <div className="flex items-center gap-4">
           {/* Logo */}
           <Link href="/" className="flex-shrink-0">
-            <h1 className="text-2xl font-bold text-gray-800 tracking-tight">
-              Mads<span className="text-blue-600">Jeez</span>
-            </h1>
+            <div className="flex items-center gap-2">
+              <div className="relative w-10 h-10 bg-slate-900 rounded-lg flex items-center justify-center shadow-lg border border-white/10 overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/30 to-transparent"></div>
+                <svg viewBox="0 0 100 100" className="w-6 h-6 overflow-visible">
+                  <path d="M 15 80 L 35 30 L 55 55" stroke="#2563EB" fill="none" strokeWidth="15" strokeLinecap="round"/>
+                  <path d="M 85 80 L 65 30 L 45 65" stroke="#FACC15" fill="none" strokeWidth="15" strokeLinecap="round"/>
+                </svg>
+              </div>
+              <h1 className="text-2xl font-bold text-gray-800 tracking-tight">
+                MADS<span className="text-blue-600">JEEZ</span>
+              </h1>
+            </div>
           </Link>
 
           {/* Barra de búsqueda */}

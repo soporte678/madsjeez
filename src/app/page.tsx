@@ -14,53 +14,105 @@ import {
   Navigation, Box, Clock
 } from "lucide-react"
 import { useCartStore } from "@/stores/cartStore"
+import { ProductCard } from "@/components/ProductCard"
 
-// Datos de productos destacados
+// Datos de productos destacados - Estilo Mercado Libre
 const productosDestacados = [
   {
-    id: 1,
-    titulo: "Auriculares Inalámbricos Premium con Cancelación",
-    precio: "$125.000",
-    precioAnterior: "$150.000",
-    imagen: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=500&q=80",
-    etiqueta: "Envío gratis",
-    rating: 4.8
+    id: "1",
+    title: "Auriculares Inalámbricos Bluetooth Sony WH-1000XM4 Cancelación Ruido",
+    price: 125000,
+    originalPrice: 150000,
+    image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=500&q=80",
+    seller: "TechStore Official",
+    rating: 4.8,
+    sales: 234,
+    freeShipping: true,
+    installments: "6x $20.833"
   },
   {
-    id: 2,
-    titulo: "Smart TV 55\" 4K UHD Crystal Ultra",
-    precio: "$450.000",
-    precioAnterior: null,
-    imagen: "https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?auto=format&fit=crop&w=500&q=80",
-    etiqueta: "Más vendido",
-    rating: 4.9
+    id: "2",
+    title: "Smart TV Samsung 55\" 4K UHD Crystal Processor HDR",
+    price: 450000,
+    originalPrice: null,
+    image: "https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?auto=format&fit=crop&w=500&q=80",
+    seller: "ElectroHogar SA",
+    rating: 4.9,
+    sales: 512,
+    freeShipping: true,
+    installments: "12x $37.500"
   },
   {
-    id: 3,
-    titulo: "Zapatillas Running Pro Aerodinámicas",
-    precio: "$85.000",
-    precioAnterior: null,
-    imagen: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=500&q=80",
-    etiqueta: "",
-    rating: 4.5
+    id: "3",
+    title: "Zapatillas Nike Air Max 270 Running Hombre Negras",
+    price: 85000,
+    originalPrice: 95000,
+    image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=500&q=80",
+    seller: "SportLife Store",
+    rating: 4.5,
+    sales: 189,
+    freeShipping: false,
+    installments: "3x $28.333"
   },
   {
-    id: 4,
-    titulo: "Silla Gamer Ergonómica Reclinable",
-    precio: "$190.000",
-    precioAnterior: "$220.000",
-    imagen: "https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?auto=format&fit=crop&w=500&q=80",
-    etiqueta: "Oferta",
-    rating: 4.7
+    id: "4",
+    title: "Silla Gamer Ergonómica DXRacer Formula Series Reclinable",
+    price: 190000,
+    originalPrice: 220000,
+    image: "https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?auto=format&fit=crop&w=500&q=80",
+    seller: "GamingZone",
+    rating: 4.7,
+    sales: 156,
+    freeShipping: true,
+    installments: "6x $31.667"
   },
   {
-    id: 5,
-    titulo: "Smartphone 128GB 5G Cámara Dual",
-    precio: "$320.000",
-    precioAnterior: "$350.000",
-    imagen: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=500&q=80",
-    etiqueta: "Envío gratis",
-    rating: 4.6
+    id: "5",
+    title: "Smartphone 128GB 5G Cámara Dual",
+    price: 320000,
+    originalPrice: 350000,
+    image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=500&q=80",
+    seller: "TechMobile Store",
+    rating: 4.6,
+    sales: 298,
+    freeShipping: true,
+    installments: "12x $26.667"
+  },
+  {
+    id: "6",
+    title: "Tablet 10\" 64GB WiFi",
+    price: 180000,
+    originalPrice: null,
+    image: "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?auto=format&fit=crop&w=500&q=80",
+    seller: "TabletWorld",
+    rating: 4.4,
+    sales: 87,
+    freeShipping: true,
+    installments: "6x $30.000"
+  },
+  {
+    id: "7",
+    title: "Laptop Gaming Intel Core i7 RTX 3060",
+    price: 550000,
+    originalPrice: 600000,
+    image: "https://images.unsplash.com/photo-1593642632827-cf2a2e98e5f8?auto=format&fit=crop&w=500&q=80",
+    seller: "PCMaster",
+    rating: 4.9,
+    sales: 423,
+    freeShipping: true,
+    installments: "12x $45.833"
+  },
+  {
+    id: "8",
+    title: "Reloj Smartwatch Fitness Tracker",
+    price: 95000,
+    originalPrice: null,
+    image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=500&q=80",
+    seller: "WearTech",
+    rating: 4.3,
+    sales: 134,
+    freeShipping: false,
+    installments: "3x $31.667"
   }
 ]
 
@@ -442,44 +494,10 @@ export default function Home() {
           <Link href="/search" className="text-blue-600 font-bold hover:underline text-sm uppercase tracking-widest">Ver más productos</Link>
         </div>
         
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-          {productosDestacados.map((item) => (
-            <Link 
-              href={`/product/${item.id}`}
-              key={item.id} 
-              className="group bg-white rounded-3xl shadow-sm hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15)] transition-all duration-500 cursor-pointer overflow-hidden flex flex-col h-full border border-slate-200/50 hover:border-blue-200"
-            >
-              <div className="relative w-full h-56 bg-white p-6 overflow-hidden">
-                <Image 
-                  src={item.imagen} 
-                  fill
-                  className="object-contain group-hover:scale-105 transition-transform duration-500" 
-                  alt={item.titulo}
-                  unoptimized
-                />
-                <div className="absolute top-4 right-4 p-2 bg-white/80 backdrop-blur-md rounded-xl text-slate-300 hover:text-rose-500 shadow-sm transition-colors">
-                  <Heart size={20} />
-                </div>
-              </div>
-              <div className="p-6 flex flex-col flex-grow bg-white border-t border-slate-50">
-                <div className="mt-auto">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-3xl font-black text-slate-900 tracking-tighter">{item.precio}</span>
-                    {item.precioAnterior && <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">15% OFF</span>}
-                  </div>
-                  <h3 className="text-[14px] font-medium text-slate-600 leading-snug line-clamp-2 min-h-[40px] mb-4">
-                    {item.titulo}
-                  </h3>
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center text-yellow-400">
-                      <Star size={14} fill="currentColor" /> 
-                      <span className="text-xs font-black text-slate-400 ml-1">{item.rating}</span>
-                    </div>
-                    {item.etiqueta && <span className="text-[10px] font-black text-blue-700 uppercase tracking-widest bg-blue-50 px-2 py-1 rounded-md">{item.etiqueta}</span>}
-                  </div>
-                </div>
-              </div>
-            </Link>
+        {/* Grid de productos destacados */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {productosDestacados.map((producto) => (
+            <ProductCard key={producto.id} {...producto} />
           ))}
         </div>
       </section>

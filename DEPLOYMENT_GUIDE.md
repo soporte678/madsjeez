@@ -1,40 +1,67 @@
 # Guía de Despliegue - MADSJEEZ Marketplace
 
-## Requisitos Previos
+## Configuración Actual
 
-- Dominio comprado en DonWeb (o cualquier proveedor)
-- VPS o hosting con Node.js 20+
-- Base de datos Supabase configurada
-- Certificado SSL (Let's Encrypt recomendado)
+- **Dominio**: www.madsjeez.com.ar
+- **Railway**: madsjeez-production-9f46.up.railway.app
+- **Supabase**: doweovsukuskflgnxhhn.supabase.co
+- **Repositorio**: soporte678/madsjeez (rama main)
 
 ---
 
-## PASO 1: Configurar Variables de Entorno
+## PASO 1: Configurar Variables de Entorno en Railway
 
-Crea el archivo `.env.production` en `apps/web/`:
+Las variables de entorno están configuradas en `railway.toml`:
+
+```toml
+[environments.production.env]
+NEXT_PUBLIC_SUPABASE_URL = "https://doweovsukuskflgnxhhn.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY = "sb_publishable_DmXmnt4V6A3tpwCq73ZIuA_a0dtWb0h"
+DATABASE_URL = "postgresql://postgres:[YOUR-PASSWORD]@db.doweovsukuskflgnxhhn.supabase.co:5432/postgres"
+NEXTAUTH_URL = "https://www.madsjeez.com.ar"
+PORT = "3000"
+NODE_ENV = "production"
+```
+
+### Variables adicionales necesarias en Railway:
 
 ```env
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-anon-key
-SUPABASE_SERVICE_ROLE_KEY=tu-service-role-key
+# Pagos (Stripe/MercadoPago)
+STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
 
-# App
-NEXT_PUBLIC_APP_URL=https://tudominio.com
-NEXT_PUBLIC_APP_NAME=MADSJEEZ Marketplace
+# NextAuth
+NEXTAUTH_SECRET=tu_secreto_aqui
 
-# Pagos (MercadoPago recomendado para Argentina)
-MERCADOPAGO_PUBLIC_KEY=TEST-...
-MERCADOPAGO_ACCESS_TOKEN=TEST-...
-MERCADOPAGO_WEBHOOK_SECRET=tu-webhook-secret
-
-# Email (SendGrid, Resend, etc.)
+# Email
 RESEND_API_KEY=re_...
-EMAIL_FROM=noreply@tudominio.com
-
-# Storage (Supabase Storage)
-NEXT_PUBLIC_STORAGE_URL=https://tu-proyecto.supabase.co/storage/v1
+EMAIL_FROM=noreply@madsjeez.com.ar
 ```
+
+---
+
+## PASO 2: Configurar Supabase
+
+### 2.1 Conectar Supabase CLI
+
+```bash
+supabase login
+supabase link --project-ref doweovsukuskflgnxhhn
+```
+
+### 2.2 Configurar Supabase Auth
+
+En el dashboard de Supabase:
+- Site URL: `https://www.madsjeez.com.ar`
+- Redirect URLs: `https://madsjeez-production-9f46.up.railway.app/api/auth/callback`
+- Habilitar email signup
+
+---
+
+## PASO 3: Configurar DNS (ya configurado)
+
+El dominio `www.madsjeez.com.ar` ya está apuntando a Railway con los registros DNS configurados correctamente.
 
 ---
 

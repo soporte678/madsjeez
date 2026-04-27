@@ -14,3 +14,11 @@ numReplicas = 1
 [environments.production.deploy]
 healthcheckPath = "/api/health"
 healthcheckTimeout = 300
+
+[environments.production.env]
+NEXT_PUBLIC_SUPABASE_URL = "https://doweovsukuskflgnxhhn.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY = "sb_publishable_DmXmnt4V6A3tpwCq73ZIuA_a0dtWb0h"
+DATABASE_URL = "postgresql://postgres:[YOUR-PASSWORD]@db.doweovsukuskflgnxhhn.supabase.co:5432/postgres"
+NEXTAUTH_URL = "https://www.madsjeez.com.ar"
+PORT = "3000"
+NODE_ENV = "production"

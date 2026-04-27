@@ -1,0 +1,41 @@
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+api_url = "https://doweovsukuskflgnxhhn.supabase.co"
+
+[ingest]
+enabled = false
+port = 54324
+transform = "http://localhost:8080"
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+image_transformation_enabled = true
+
+[auth]
+enabled = true
+site_url = "https://www.madsjeez.com.ar"
+additional_redirect_urls = ["https://madsjeez-production-9f46.up.railway.app"]
+jwt_expiry = "3600s"
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = true
+
+[analytics]
+enabled = false
+port = 54327
