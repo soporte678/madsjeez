@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useSession } from "next-auth/react"
+import { supabase } from "@/lib/supabase"
 
 interface DashboardMetrics {
   sales: {
@@ -67,53 +68,150 @@ export function useDashboardData(): DashboardData & { refresh: () => void } {
     try {
       setData(prev => ({ ...prev, isLoading: true, error: null }))
 
-      const metricsRes = await fetch('/api/dashboard/metrics')
-      if (!metricsRes.ok) throw new Error('Error al cargar métricas')
-      const metricsData = await metricsRes.json()
+      // Obtener datos del usuario desde Supabase
+      let { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', session.user.id)
+        .single()
+
+      if (userError && userError.code !== 'PGRST116') {
+        // Si el usuario no existe, crearlo
+        const { data: newUser, error: createError } = await supabase
+          .from('users')
+          .insert({
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.name,
+            created_at: new Date().toISOString()
+          })
+          .select()
+          .single()
+
+        if (createError) throw createError
+        // Usar el nuevo usuario creado
+        userData = newUser
+      }
+
+      // Obtener productos del usuario
+      const { data: productsData, error: productsError } = await supabase
+        .from('products')
+        .select('id, price, sales, views, status, created_at')
+        .eq('seller_id', session.user.id)
+
+      if (productsError) throw productsError
+
+      // Obtener órdenes
+      const { data: ordersData, error: ordersError } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('seller_id', session.user.id)
+        .order('created_at', { ascending: false })
+        .limit(10)
+
+      if (ordersError && ordersError.code !== 'PGRST116') throw ordersError
+
+      // Obtener preguntas pendientes
+      const { data: questionsData, error: questionsError } = await supabase
+        .from('questions')
+        .select('*')
+        .eq('seller_id', session.user.id)
+        .eq('status', 'PENDING')
+
+      if (questionsError && questionsError.code !== 'PGRST116') throw questionsError
+
+      // Obtener reseñas pendientes
+      const { data: reviewsData, error: reviewsError } = await supabase
+        .from('reviews')
+        .select('*')
+        .eq('seller_id', session.user.id)
+        .eq('status', 'PENDING')
+
+      if (reviewsError && reviewsError.code !== 'PGRST116') throw reviewsError
+
+      // Calcular métricas
+      const totalSales = productsData?.reduce((sum, product) => sum + (product.sales || 0), 0) || 0
+      const totalRevenue = productsData?.reduce((sum, product) => sum + (product.price * (product.sales || 0)), 0) || 0
+      const totalViews = productsData?.reduce((sum, product) => sum + (product.views || 0), 0) || 0
+
+      const today = new Date()
+      const todaySales = ordersData?.filter(order => {
+        const orderDate = new Date(order.created_at)
+        return orderDate.toDateString() === today.toDateString()
+      }).length || 0
+
+      const todayRevenue = ordersData?.filter(order => {
+        const orderDate = new Date(order.created_at)
+        return orderDate.toDateString() === today.toDateString()
+      }).reduce((sum, order) => sum + (order.total || 0), 0) || 0
+
+      const metrics: DashboardMetrics = {
+        sales: {
+          total: totalRevenue,
+          count: totalSales,
+          today: todayRevenue,
+          todayCount: todaySales
+        },
+        products: {
+          total: productsData?.length || 0,
+          views: totalViews
+        },
+        orders: ordersData || [],
+        claims: {
+          open: 0
+        },
+        reviews: {
+          pending: reviewsData?.length || 0,
+          average: 0,
+          total: reviewsData?.length || 0
+        },
+        questions: {
+          pending: questionsData?.length || 0
+        },
+        promotions: {
+          active: 0
+        },
+        shipping: {
+          express: 0
+        }
+      }
 
       setData({
         user: {
-          id: session.user.id,
-          name: session.user.name || null,
-          email: session.user.email || '',
-          image: session.user.image || null,
-          role: (session.user as any).role || 'USER',
-          isSeller: (session.user as any).isSeller || false,
-          reputationColor: (session.user as any).reputationColor || 'VERDE',
-          subscriptionTier: (session.user as any).subscriptionTier || 'FREE',
-          totalSales: (session.user as any).totalSales || 0,
+          id: userData?.id || session.user.id,
+          name: userData?.seller_name || userData?.name || session.user.name || null,
+          email: userData?.email || session.user.email || '',
+          image: userData?.image || session.user.image || null,
+          role: userData?.role || 'user',
+          isSeller: userData?.is_seller || false,
+          reputationColor: userData?.reputation_color || 'green',
+          subscriptionTier: userData?.subscription_tier || 'free',
+          totalSales: totalSales
         },
-        metrics: metricsData,
+        metrics,
         isLoading: false,
-        error: null,
+        error: null
       })
-    } catch (error: any) {
-      console.error("Error fetching dashboard data:", error)
+    } catch (err) {
+      console.error("Error fetching dashboard data:", err)
       setData(prev => ({
         ...prev,
-        isLoading: false,
-        error: error.message,
+        error: "Error al cargar los datos del dashboard",
+        isLoading: false
       }))
     }
-  }, [status, session])
+  }, [session, status])
 
   useEffect(() => {
     fetchDashboardData()
   }, [fetchDashboardData])
 
-  // Auto-refresh cada 60 segundos
-  useEffect(() => {
-    if (status !== "authenticated") return
-    
-    const interval = setInterval(() => {
-      fetchDashboardData()
-    }, 60000)
-
-    return () => clearInterval(interval)
-  }, [status, fetchDashboardData])
+  const refresh = useCallback(() => {
+    fetchDashboardData()
+  }, [fetchDashboardData])
 
   return {
     ...data,
-    refresh: fetchDashboardData,
+    refresh
   }
 }

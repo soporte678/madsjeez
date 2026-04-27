@@ -1,474 +1,490 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { useSession } from "next-auth/react"
-import { useDashboardData } from "@/hooks/useDashboardData"
-import { NotificationBell } from "@/components/notifications/NotificationBell"
+import React, { useState } from 'react';
 import { 
-  LayoutGrid, ShoppingCart, Zap, Megaphone, FileText, 
-  Wallet, User, Settings, ChevronDown, Star, TrendingUp,
-  MoreVertical, MessageSquare, ChevronRight, ShieldCheck,
-  Search, MapPin, Sparkles, Package, DollarSign,
-  Activity
-} from "lucide-react"
-import { Badge } from "@/components/ui/badge"
+  Search, Bell, ShoppingCart, User, ChevronDown, ChevronRight, 
+  ShoppingBag, Tag, Megaphone, FileText, CreditCard, Settings, 
+  MapPin, HelpCircle, MessageCircle, Star, Heart, TrendingUp, AlertCircle,
+  Info, CheckCircle2, ChevronUp, Download, Filter, PieChart, BarChart2, 
+  MoreVertical, Activity, Clock, Box, ShieldAlert, XCircle, RefreshCcw, 
+  ThumbsUp, Users, Target, LayoutGrid, Zap, Plus, X, Maximize2, MessageSquare,
+  ClipboardList, Bookmark, Store, Car, Home, SearchCode
+} from 'lucide-react';
 
-const sidebarMenu = [
-  { id: "compras", label: "Compras", icon: ShoppingCart, sub: ["Compras", "Preguntas", "Opiniones", "Favoritos"] },
-  { id: "ventas", label: "Ventas", icon: Zap, sub: ["Resumen", "Novedades", "Publicaciones", "Preguntas", "Ventas", "Posventa", "Envíos Full", "Métricas", "Reputación"] },
-  { id: "marketing", label: "Marketing", icon: Megaphone, sub: ["Central de marketing", "Publicidad", "Promociones"] },
-  { id: "facturacion", label: "Facturación", icon: FileText, sub: ["Tarifas y pagos", "Facturador"] },
-  { id: "prestamos", label: "Préstamos", icon: Wallet, sub: ["Créditos"] },
-  { id: "perfil", label: "Mi perfil", icon: User, sub: ["Mis datos", "Seguridad"] },
-  { id: "configuracion", label: "Configuración", icon: Settings, sub: ["Ventas", "Colaboradores"] },
-]
+export default function App() {
+  const [activeMenu, setActiveMenu] = useState('resumen');
+  const [comprasOpen, setComprasOpen] = useState(true);
+  const [ventasOpen, setVentasOpen] = useState(true);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [activeMetricasTab, setActiveMetricasTab] = useState('negocio');
+  const [activePromocionesSubTab, setActivePromocionesSubTab] = useState('promociones');
+  const [showLiveMonitor, setShowLiveMonitor] = useState(false);
+  
+  const [activePosventaTab, setActivePosventaTab] = useState('reclamos');
+  const [activeCatalogoTab, setActiveCatalogoTab] = useState('sugerencias');
+  const [activeOpinionesTab, setActiveOpinionesTab] = useState('pendientes');
+  const [activeFavoritosTab, setActiveFavoritosTab] = useState('favoritos');
+  
+  // Estado para el widget del Asistente
+  const [isAssistantOpen, setIsAssistantOpen] = useState(false);
 
-const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    minimumFractionDigits: 2
-  }).format(value)
-}
+  const userData = {
+    name: "Maqjeez | Repues...",
+    email: "danibj556@gmail.com",
+    reputation: "VENDEDOR NUEVO",
+    billing: "0,00",
+    adsSales: 0,
+    pendingQuestions: 0,
+    itemsToImprove: 0,
+    expressShipping: 0,
+    competitivePrices: 0
+  };
 
-export default function DashboardPage() {
-  const [activeMenu, setActiveMenu] = useState("ventas")
-  const router = useRouter()
-  const { data: session, status } = useSession()
-  const { user, metrics, isLoading, error, refresh } = useDashboardData()
+  const menuItems = [
+    { id: 'resumen', label: 'Resumen', icon: null },
+    { 
+      id: 'compras-group', 
+      label: 'Compras', 
+      icon: <ShoppingBag size={18} />, 
+      isParent: true,
+      isOpen: comprasOpen,
+      setIsOpen: setComprasOpen,
+      subItems: [
+        { id: 'compras', label: 'Compras' },
+        { id: 'preguntas', label: 'Preguntas' },
+        { id: 'opiniones', label: 'Opiniones' },
+        { id: 'favoritos', label: 'Favoritos' },
+        { id: 'tiendas-sigo', label: 'Tiendas que sigo' },
+        { id: 'vehiculos-interes', label: 'Vehículos de interés' },
+        { id: 'inmuebles-interes', label: 'Inmuebles de interés' },
+        { id: 'busquedas-guardadas', label: 'Búsquedas guardadas' },
+      ]
+    },
+    { 
+      id: 'ventas-group', 
+      label: 'Ventas', 
+      icon: <Tag size={18} />, 
+      isParent: true,
+      isOpen: ventasOpen,
+      setIsOpen: setVentasOpen,
+      subItems: [
+        { id: 'ventas-resumen', label: 'Resumen' },
+        { id: 'ventas-novedades', label: 'Novedades' },
+        { id: 'publicaciones', label: 'Publicaciones' },
+        { id: 'ventas-preguntas', label: 'Preguntas' },
+        { id: 'ventas-lista', label: 'Ventas' },
+        { id: 'posventa', label: 'Posventa' },
+        { id: 'gestion-express', label: 'Gestión de envíos Express', rightIcon: <Zap size={14} className="text-emerald-500 fill-emerald-500" /> },
+        { id: 'retiros-express', label: 'Retiros creados Express', rightIcon: <Zap size={14} className="text-emerald-500 fill-emerald-500" /> },
+        { id: 'metricas', label: 'Métricas' },
+        { id: 'reputacion', label: 'Reputación' },
+        { id: 'productos-catalogo', label: 'Productos de catálogo' },
+        { id: 'preferencias-venta', label: 'Preferencias de venta' },
+        { id: 'central-aprendizaje', label: 'Central de aprendizaje' },
+      ]
+    },
+    { id: 'marketing', label: 'Marketing', icon: <Megaphone size={18} /> },
+    { id: 'facturacion', label: 'Facturación', icon: <FileText size={18} /> },
+    { id: 'prestamos', label: 'Préstamos', icon: <CreditCard size={18} /> },
+    { id: 'perfil', label: 'Mi perfil', icon: <User size={18} /> },
+    { id: 'configuracion', label: 'Configuración', icon: <Settings size={18} /> },
+  ];
 
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/auth/login?redirect=/dashboard")
-    }
-  }, [status, router])
+  // --- VISTAS DE COMPRAS AGREGADAS ---
 
-  if (status === "loading" || isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F5F5F5]">
-        <div className="animate-spin h-8 w-8 border-4 border-[#3483FA] border-t-transparent rounded-full" />
+  const renderFavoritos = () => (
+    <div className="flex-1 flex flex-col gap-6 w-full max-w-5xl">
+      <div className="flex justify-between items-center">
+        <h1 className="text-[26px] font-semibold text-gray-800">Favoritos</h1>
+        <button className="bg-blue-500 text-white px-4 py-2 rounded-md font-semibold text-sm flex items-center gap-2 hover:bg-blue-600 transition-colors shadow-sm">
+          <Plus size={18} /> Crear lista
+        </button>
       </div>
-    )
-  }
 
-  if (status === "unauthenticated") {
-    return null
-  }
+      <div className="border-b border-gray-200">
+        <nav className="flex gap-8">
+          <button onClick={() => setActiveFavoritosTab('favoritos')} className={`pb-3 px-1 text-[15px] font-medium transition-colors ${activeFavoritosTab === 'favoritos' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-800'}`}>Mis favoritos</button>
+          <button onClick={() => setActiveFavoritosTab('listas')} className={`pb-3 px-1 text-[15px] font-medium transition-colors ${activeFavoritosTab === 'listas' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-800'}`}>Listas</button>
+        </nav>
+      </div>
 
-  const userName = user?.name || session?.user?.name || session?.user?.email || "Usuario"
-  const reputationText = user?.reputationColor === "VERDE_OSCURO" ? "Vendedor Líder" : 
-                         user?.reputationColor === "VERDE" ? "Vendedor Experto" :
-                         user?.reputationColor === "AMARILLO" ? "Vendedor Avanzado" :
-                         user?.reputationColor === "NARANJA" ? "Vendedor Intermedio" :
-                         user?.reputationColor === "ROJO" ? "Vendedor Nuevo" : "Vendedor Nuevo"
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-20 flex flex-col items-center justify-center text-center">
+        <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-6 border border-gray-100">
+          <Heart size={32} className="text-gray-300" />
+        </div>
+        <h3 className="text-lg font-semibold text-gray-800 mb-2">Aún no tienes favoritos</h3>
+        <p className="text-sm text-gray-500 max-w-xs mb-8">Guarda los productos que más te gusten para tenerlos siempre a mano.</p>
+        <button className="bg-blue-50 text-blue-600 font-semibold text-sm px-8 py-3 rounded-md hover:bg-blue-100 transition-colors">Buscar productos</button>
+      </div>
+    </div>
+  );
 
-  const reputationColors: Record<string, string> = {
-    VERDE_OSCURO: "text-emerald-600",
-    VERDE: "text-green-600",
-    AMARILLO: "text-yellow-600",
-    NARANJA: "text-orange-600",
-    ROJO: "text-red-600",
-  }
+  const renderTiendasSigo = () => (
+    <div className="flex-1 flex flex-col gap-6 w-full max-w-5xl">
+      <div className="flex justify-between items-center mb-2">
+        <h1 className="text-[26px] font-semibold text-gray-800">Tiendas que sigo</h1>
+        <span className="text-sm text-gray-400 font-medium">0 tiendas que sigo</span>
+      </div>
 
-  const reputationDots: Record<string, string> = {
-    VERDE_OSCURO: "bg-emerald-500",
-    VERDE: "bg-green-500",
-    AMARILLO: "bg-yellow-500",
-    NARANJA: "bg-orange-500",
-    ROJO: "bg-red-500",
-  }
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-2">
+        <div className="relative max-w-md">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input type="text" placeholder="Buscar nombre de la tienda" className="w-full py-2 pl-9 pr-4 text-sm border border-gray-300 rounded-full focus:outline-none focus:border-blue-500" />
+        </div>
+      </div>
 
-  const m = metrics || {
-    sales: { total: 0, count: 0, today: 0, todayCount: 0 },
-    products: { total: 0, views: 0 },
-    orders: [],
-    claims: { open: 0 },
-    reviews: { pending: 0, average: 0, total: 0 },
-    questions: { pending: 0 },
-    promotions: { active: 0 },
-    shipping: { express: 0 },
-  }
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-16 flex flex-col items-center justify-center text-center">
+        <Store size={40} className="text-gray-200 mb-4" />
+        <h3 className="text-lg font-semibold text-gray-800 mb-1">No sigues ninguna tienda</h3>
+        <p className="text-sm text-gray-500 mb-6">Sigue a tus marcas favoritas para enterarte de sus novedades.</p>
+      </div>
+
+      <div className="mt-4">
+        <h3 className="text-lg font-bold text-gray-800 mb-4">Recomendadas para ti</h3>
+        <div className="grid grid-cols-1 gap-4">
+          <div className="bg-white border border-gray-200 rounded-xl p-6 flex items-center justify-between opacity-50 italic text-gray-400">
+             Pronto verás recomendaciones aquí...
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderVehiculosInteres = () => (
+    <div className="flex-1 flex flex-col gap-6 w-full max-w-5xl">
+      <h1 className="text-[26px] font-semibold text-gray-800">Vehículos de interés</h1>
+      <div className="flex items-center gap-2 mb-4">
+        <button className="flex items-center gap-1 text-gray-600 text-sm font-semibold hover:bg-gray-100 px-3 py-1.5 rounded-md border border-gray-300"><Filter size={14}/> Filtrar</button>
+      </div>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-24 flex flex-col items-center justify-center text-center">
+        <div className="relative mb-6">
+           <Car size={48} className="text-gray-200" />
+           <div className="absolute -bottom-2 -right-2 bg-gray-100 p-1 rounded-full border-2 border-white"><Search size={14} className="text-gray-400"/></div>
+        </div>
+        <h3 className="text-lg font-semibold text-gray-800 mb-2">Aquí encontrarás los vehículos en los que te intereses</h3>
+        <p className="text-sm text-gray-500">Aparecerán aquí cuando contactes a un vendedor desde una publicación.</p>
+      </div>
+    </div>
+  );
+
+  const renderInmueblesInteres = () => (
+    <div className="flex-1 flex flex-col gap-6 w-full max-w-5xl">
+      <h1 className="text-[26px] font-semibold text-gray-800">Inmuebles de interés</h1>
+      <div className="flex items-center gap-2 mb-4">
+        <button className="flex items-center gap-1 text-gray-600 text-sm font-semibold hover:bg-gray-100 px-3 py-1.5 rounded-md border border-gray-300"><Filter size={14}/> Filtrar</button>
+      </div>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-24 flex flex-col items-center justify-center text-center">
+        <div className="relative mb-6">
+           <Home size={48} className="text-gray-200" />
+           <div className="absolute -bottom-2 -right-2 bg-gray-100 p-1 rounded-full border-2 border-white"><Search size={14} className="text-gray-400"/></div>
+        </div>
+        <h3 className="text-lg font-semibold text-gray-800 mb-2">Aquí encontrarás los inmuebles en los que te intereses</h3>
+        <p className="text-sm text-gray-500">Aparecerán aquí cuando contactes a un vendedor desde una publicación.</p>
+      </div>
+    </div>
+  );
+
+  const renderBusquedasGuardadas = () => (
+    <div className="flex-1 flex flex-col gap-6 w-full max-w-5xl">
+      <h1 className="text-[26px] font-semibold text-gray-800">Búsquedas guardadas</h1>
+      <div className="flex items-center gap-2 mb-2">
+        <button className="flex items-center gap-1 text-gray-600 text-sm font-semibold hover:bg-gray-100 px-3 py-1.5 rounded-md border border-gray-300"><LayoutGrid size={14}/> Todas <ChevronDown size={14}/></button>
+        <span className="text-xs text-gray-400 ml-4 font-medium italic">0 resultados</span>
+      </div>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-24 flex flex-col items-center justify-center text-center">
+        <div className="w-16 h-16 bg-gray-50 rounded-xl flex items-center justify-center mb-6 border border-gray-200">
+           <SearchCode size={32} className="text-gray-200" />
+        </div>
+        <h3 className="text-lg font-semibold text-gray-800 mb-2">Aún no tenés búsquedas guardadas</h3>
+        <p className="text-sm text-gray-500 max-w-sm">Encontrarás tus búsquedas y podrás administrar tus notificaciones para las publicaciones de inmuebles y vehículos.</p>
+      </div>
+    </div>
+  );
+
+  // --- VISTAS PREVIAMENTE DESARROLLADAS (MANTENIDAS) ---
+
+  const renderOpiniones = () => (
+    <div className="flex-1 flex flex-col gap-6 w-full max-w-5xl">
+      <h1 className="text-[26px] font-semibold text-gray-800">Opiniones</h1>
+      <div className="border-b border-gray-200"><nav className="flex gap-8"><button onClick={() => setActiveOpinionesTab('pendientes')} className={`pb-3 px-1 text-[15px] font-medium ${activeOpinionesTab === 'pendientes' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}>Pendientes</button><button onClick={() => setActiveOpinionesTab('realizadas')} className={`pb-3 px-1 text-[15px] font-medium ${activeOpinionesTab === 'realizadas' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}>Realizadas</button></nav></div>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-20 flex flex-col items-center justify-center text-center">
+        <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-6 border border-gray-100">{activeOpinionesTab === 'pendientes' ? <ClipboardList size={32} className="text-gray-300" /> : <ThumbsUp size={32} className="text-gray-300" />}</div>
+        <h3 className="text-lg font-semibold text-gray-800 mb-2">{activeOpinionesTab === 'pendientes' ? 'No tienes opiniones pendientes' : 'Aún no has realizado opiniones'}</h3>
+        <p className="text-sm text-gray-500 max-w-xs mb-8">Cuando compres productos, aparecerán aquí para que cuentes tu experiencia.</p>
+      </div>
+    </div>
+  );
+
+  const renderPreguntasCompras = () => (
+    <div className="flex-1 flex flex-col gap-6 w-full max-w-5xl">
+      <div className="flex flex-col gap-1"><div className="flex items-center gap-2 text-xs text-blue-600 font-medium"><span>Compras</span><ChevronRight size={12} className="text-gray-400" /><span className="text-gray-500">Preguntas</span></div><h1 className="text-[26px] font-semibold text-gray-800">Preguntas</h1></div>
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-20 flex flex-col items-center justify-center text-center">
+        <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-6 border border-gray-100"><MessageSquare size={32} className="text-gray-300" /></div>
+        <h3 className="text-lg font-semibold text-gray-800 mb-2">Todavía no hiciste preguntas</h3>
+        <p className="text-sm text-gray-500 max-w-xs mb-8">Cuando consultes sobre algún producto, podrás ver tus preguntas y las respuestas de los vendedores aquí.</p>
+      </div>
+    </div>
+  );
+
+  const renderNovedades = () => (
+    <div className="flex-1 flex flex-col gap-6 w-full max-w-4xl">
+      <div className="flex justify-between items-center mb-2"><h1 className="text-[26px] font-semibold text-gray-800">Novedades</h1><button className="text-blue-600 text-sm font-semibold hover:underline">Configurar notificaciones</button></div>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex gap-5 hover:shadow-md transition-shadow cursor-pointer">
+        <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0"><Megaphone size={24} /></div>
+        <div><div className="flex items-center gap-2 mb-1"><span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wide">Importante</span><span className="text-xs text-gray-400 font-medium">Hace 2 horas</span></div><h3 className="text-lg font-bold text-gray-800 mb-1.5">¡Te damos la bienvenida a Madsjeez!</h3><p className="text-[14px] text-gray-600 mb-3 leading-relaxed">Estamos muy felices de que te sumes a nuestra plataforma. Aquí encontrarás todas las herramientas necesarias para potenciar tu negocio.</p><a href="#" className="text-blue-600 text-sm font-semibold hover:underline">Ir a la Central de Aprendizaje</a></div>
+      </div>
+    </div>
+  );
+
+  const renderProductosCatalogo = () => (
+    <div className="flex-1 flex flex-col gap-6 w-full max-w-5xl">
+      <div className="flex justify-between items-center"><h1 className="text-[26px] font-semibold text-gray-800">Productos de Catálogo</h1><button className="bg-blue-500 text-white px-4 py-2 rounded-md font-semibold text-sm hover:bg-blue-600 shadow-sm">Crear productos</button></div>
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-16 flex flex-col items-center justify-center text-center mt-4">
+        <Box size={32} className="text-gray-300 mb-3" /><p className="text-sm font-semibold text-gray-700">Aún no tienes sugerencias de catálogo</p>
+      </div>
+    </div>
+  );
+
+  const renderPosventa = () => (
+    <div className="flex-1 flex flex-col gap-6 w-full max-w-5xl">
+      <h1 className="text-[26px] font-semibold text-gray-800">Posventa</h1>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"><div className="p-16 text-center text-gray-400 bg-white">No hay actividad de posventa en {activePosventaTab}</div></div>
+    </div>
+  );
+
+  const renderCompras = () => (
+    <div className="flex-1 flex flex-col gap-6 w-full max-w-5xl">
+      <h1 className="text-[26px] font-semibold text-gray-800">Compras</h1>
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-16 flex flex-col items-center justify-center text-center mt-2">
+        <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-6"><ShoppingBag size={40} className="text-gray-300" /></div>
+        <h3 className="text-lg font-semibold text-gray-800 mb-2">Aún no tienes compras</h3>
+        <button className="bg-blue-500 text-white font-semibold text-sm px-6 py-3 rounded-md hover:bg-blue-600">Descubrir productos</button>
+      </div>
+    </div>
+  );
+
+  const renderPreferenciasVenta = () => (
+    <div className="flex-1 flex flex-col gap-8 w-full max-w-4xl">
+      <h1 className="text-[26px] font-semibold text-gray-800 mb-2">Preferencias de venta</h1>
+      <section className="bg-white rounded-lg shadow-sm border border-gray-200">
+        <PreferenceItem title="Mis domicilios de envíos" subtitle="Gestioná tus domicilios de envíos." />
+        <PreferenceItem title="Mis horarios de colecta" subtitle="Consultá tus horarios para enviar tus ventas a tiempo." />
+        <PreferenceItem title="Envíos Express" subtitle="Almacenamos tus productos en Madsjeez Hub." hasBorder={false} rightElement={<span></span>}/>
+      </section>
+    </div>
+  );
+
+  const renderMetricas = () => (
+    <div className="flex-1 flex flex-col gap-6 w-full max-w-6xl">
+      <div className="flex justify-between items-center"><h1 className="text-[28px] font-medium text-gray-800">Métricas</h1><button onClick={() => setShowLiveMonitor(true)} className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-full text-sm font-semibold shadow-sm hover:bg-gray-50"><span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span> Monitor de ventas en vivo</button></div>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-20 text-center text-gray-400 italic">Panel de métricas en preparación...</div>
+    </div>
+  );
+
+  const renderLiveMonitor = () => (
+    <div className="fixed inset-0 bg-gray-100 z-50 overflow-y-auto">
+      <div className="bg-[#fff159] py-8 text-center relative border-b border-yellow-400">
+        <button onClick={() => setShowLiveMonitor(false)} className="absolute left-6 top-6 flex items-center gap-1 text-blue-900 font-bold hover:underline"><ChevronDown className="rotate-90" size={16}/> Volver a Métricas</button>
+        <h1 className="text-2xl font-black text-gray-800">Ventas de hoy en vivo</h1>
+        <div className="absolute left-1/2 -translate-x-1/2 -bottom-10 w-[500px] bg-white rounded-xl shadow-lg p-6 text-center border border-gray-100"><div className="text-5xl font-black text-gray-800">$ 0</div></div>
+      </div>
+      <div className="max-w-[1200px] mx-auto pt-20 px-4 text-center py-20 text-gray-400 font-medium">Esperando datos reales...</div>
+    </div>
+  );
+
+  // VISTAS RAÍZ
+  if (showLiveMonitor) return renderLiveMonitor();
 
   return (
-    <div className="min-h-screen bg-[#F5F5F5] font-sans text-slate-900">
-      {/* Header */}
-      <header className="bg-[#FEE500] pt-3 pb-2 px-4 shadow-md sticky top-0 z-[100]">
-        <div className="max-w-7xl mx-auto flex flex-col gap-3">
-          <div className="flex items-center justify-between gap-6 md:gap-12">
-            <Link href="/" className="flex items-center gap-4 cursor-pointer group flex-shrink-0">
-              <div className="relative w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center shadow-2xl border border-white/10 overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/30 to-transparent"></div>
-                <svg viewBox="0 0 100 100" className="w-8 h-8 overflow-visible">
-                  <path d="M 15 80 L 35 30 L 55 55" stroke="#2563EB" fill="none" strokeWidth="15" strokeLinecap="round"/>
-                  <path d="M 85 80 L 65 30 L 45 65" stroke="#FACC15" fill="none" strokeWidth="15" strokeLinecap="round"/>
-                </svg>
+    <div className="min-h-screen bg-gray-100 font-sans text-gray-800 flex flex-col relative overflow-x-hidden">
+      {/* HEADER AMARILLO */}
+      <header className="bg-[#fff159] py-2 px-4 shadow-sm z-50 relative">
+        <div className="max-w-[1200px] mx-auto flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 group cursor-pointer" onClick={() => setActiveMenu('resumen')}>
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-900 to-blue-800 rounded-md flex items-center justify-center transform group-hover:scale-105 group-hover:-rotate-3 transition-all duration-300 shadow-md relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"></div>
+                <span className="text-[#fff159] font-black text-2xl italic tracking-tighter transform -skew-x-6 drop-shadow-md">M</span>
               </div>
-              <span className="font-black text-[22px] tracking-tighter leading-none uppercase text-slate-900">
+              <span className="font-black text-[26px] tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-blue-900 to-blue-700 drop-shadow-sm transform group-hover:scale-[1.02] transition-transform duration-300">
                 MADSJEEZ
               </span>
-            </Link>
-
-            <div className="flex-1 max-w-3xl relative group">
-              <input 
-                type="text" 
-                placeholder="Buscar productos, marcas y más..." 
-                className="w-full py-2.5 px-5 pr-12 rounded shadow-sm bg-white focus:ring-2 focus:ring-blue-600/20 transition-all outline-none text-slate-700 font-medium text-[15px]" 
-              />
-              <div className="absolute inset-y-0 right-0 pr-4 flex items-center cursor-pointer border-l border-slate-100 ml-2 pl-3 group-focus-within:text-blue-600">
-                <Search size={18} className="text-slate-400" />
-              </div>
             </div>
-
-            <div className="flex items-center gap-5 font-semibold text-slate-800 text-sm">
-              <div className="flex items-center gap-2 cursor-pointer hover:text-blue-700 transition-colors">
-                <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center border border-slate-300 overflow-hidden">
-                  {user?.image ? (
-                    <img src={user.image} alt={userName} className="w-full h-full object-cover" />
-                  ) : (
-                    <User size={18} />
-                  )}
-                </div>
-                <span className="hidden lg:block">{userName}</span>
+            <div className="flex-1 max-w-2xl mx-8 relative">
+              <input type="text" placeholder="Buscar productos, marcas y más..." className="w-full py-2 px-4 rounded-full shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <button className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"><Search size={18} /></button>
+            </div>
+            <div className="flex items-center gap-6 text-sm">
+              <div className="relative">
+                <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="flex items-center gap-1 hover:text-gray-600 font-semibold">
+                  <User size={18} /> {userData.name} <ChevronDown size={14} className={`transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {userMenuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)}></div>
+                    <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-md shadow-[0_4px_20px_rgba(0,0,0,0.15)] border border-gray-100 py-1 z-50 text-gray-800 text-[13.5px] font-normal cursor-default max-h-[80vh] overflow-y-auto">
+                      <div className="px-4 py-3 flex items-center justify-between hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => setUserMenuOpen(false)}>
+                        <div className="flex gap-3 items-center">
+                          <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 shrink-0"><User size={24} /></div>
+                          <div className="flex flex-col"><span className="font-semibold text-[15px] truncate w-40">{userData.name}</span><span className="text-gray-500 text-xs truncate w-40">{userData.email}</span></div>
+                        </div>
+                        <button className="p-1 hover:bg-gray-200 rounded-full"><ChevronDown size={16} className="rotate-180 text-gray-500" /></button>
+                      </div>
+                      <div className="px-4 py-3 flex items-center gap-3 hover:bg-gray-50 cursor-pointer transition-colors">
+                        <div className="w-5 h-5 border-2 border-gray-400 rounded-full flex items-center justify-center shrink-0 text-gray-500"><User size={12} /></div>
+                        <span className="text-gray-700 font-medium">Agregar cuenta</span>
+                      </div>
+                      <hr className="border-gray-100 my-1" />
+                      <div className="py-1">
+                        <DropdownItem text="Compras" onClick={() => {setActiveMenu('compras'); setUserMenuOpen(false);}} />
+                        <DropdownItem text="Preguntas" onClick={() => {setActiveMenu('preguntas'); setUserMenuOpen(false);}} />
+                        <DropdownItem text="Opiniones" onClick={() => {setActiveMenu('opiniones'); setUserMenuOpen(false);}} />
+                        <DropdownItem text="Favoritos" onClick={() => {setActiveMenu('favoritos'); setUserMenuOpen(false);}} />
+                      </div>
+                      <hr className="border-gray-100 my-1" />
+                      <div className="py-1">
+                        <DropdownItem text="Resumen de ventas" onClick={() => {setActiveMenu('resumen'); setUserMenuOpen(false);}} />
+                        <DropdownItem text="Métricas" onClick={() => {setActiveMenu('metricas'); setUserMenuOpen(false);}} />
+                      </div>
+                      <hr className="border-gray-100 my-1" />
+                      <div className="py-1"><DropdownItem text="Salir" /></div>
+                    </div>
+                  </>
+                )}
               </div>
-              <button className="hidden lg:block hover:text-blue-700">Ayuda</button>
-              <NotificationBell />
-              <Link href="/cart">
-                <ShoppingCart size={20} className="cursor-pointer" />
-              </Link>
+              <button className="hover:text-gray-600">Ayuda</button>
+              <button className="relative hover:text-gray-600"><ShoppingCart size={20} /><span className="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">2</span></button>
             </div>
           </div>
-          
-          <div className="flex items-center justify-between text-[13px] font-medium text-slate-800/80 pb-1">
-            <div className="flex items-center gap-1 cursor-pointer">
-              <MapPin size={16} /> Enviar a Carlos Spegazzini 1812
-            </div>
-            <div className="hidden md:flex gap-6">
-              {["Categorías", "Ofertas", "Cupones", "Supermercado", "Moda", "Vender"].map((l) => (
-                <Link key={l} href={`/${l.toLowerCase()}`} className="hover:text-blue-700 cursor-pointer">{l}</Link>
-              ))}
-            </div>
-            <div className="flex items-center gap-4 text-slate-900 font-bold italic">
-              <Sparkles size={14} className="text-blue-700" /> MADSJEEZ PRO
-            </div>
+          <div className="flex items-center justify-between text-sm mt-1">
+            <button className="flex items-center gap-1 text-gray-600 hover:text-gray-900 font-medium"><MapPin size={16} /> Enviar a Carlos Spegazzini 1812</button>
+            <nav className="flex items-center gap-4 text-gray-600 font-medium">
+              <a href="#" className="hover:text-gray-900">Categorías <ChevronDown size={14} className="inline" /></a>
+              <a href="#" className="hover:text-gray-900">Ofertas</a>
+              <a href="#" className="hover:text-gray-900">Vender</a>
+            </nav>
+            <div className="flex items-center gap-2 text-blue-900 font-bold text-xs tracking-wider"><Star size={14} fill="currentColor" /> MADSJEEZ PRO</div>
           </div>
         </div>
       </header>
 
-      {/* Main Layout */}
-      <div className="max-w-full mx-auto flex relative">
-        
-        {/* Sidebar Left */}
-        <aside className="w-72 bg-white min-h-[calc(100vh-110px)] border-r border-slate-200 sticky top-[110px] hidden md:block flex-shrink-0">
-          <div className="p-6">
-            <h2 className="text-lg font-black uppercase mb-8 flex items-center gap-3 text-slate-800">
-              <LayoutGrid size={22} className="text-blue-600" /> Mi cuenta
-            </h2>
-            <nav className="flex flex-col gap-1">
-              {sidebarMenu.map((item) => (
-                <div key={item.id} className="mb-1">
-                  <button
-                    onClick={() => setActiveMenu(activeMenu === item.id ? "" : item.id)}
-                    className={`w-full flex items-center justify-between p-3 rounded-lg transition-all ${
-                      activeMenu === item.id ? "bg-blue-50 text-blue-700" : "hover:bg-slate-50 text-slate-600"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <item.icon size={18} strokeWidth={activeMenu === item.id ? 2.5 : 2} />
-                      <span className="font-bold text-[14px]">{item.label}</span>
-                    </div>
-                    <ChevronDown size={14} className={`transition-transform duration-300 ${activeMenu === item.id ? "rotate-180" : ""}`} />
+      {/* CONTENIDO PRINCIPAL */}
+      <main className="max-w-[1200px] w-full mx-auto py-8 px-4 flex gap-8 flex-1">
+        {/* SIDEBAR IZQUIERDO */}
+        <aside className="w-56 flex-shrink-0">
+          <h2 className="font-bold text-lg mb-4 flex items-center gap-2">
+            <span className="grid grid-cols-2 gap-0.5"><span className="w-2 h-2 bg-blue-500 rounded-sm"></span><span className="w-2 h-2 bg-blue-500 rounded-sm"></span><span className="w-2 h-2 bg-blue-500 rounded-sm"></span><span className="w-2 h-2 bg-blue-500 rounded-sm"></span></span>
+            MI CUENTA
+          </h2>
+          <nav className="flex flex-col gap-1">
+            {menuItems.map((item) => (
+              <div key={item.id} className="mb-2">
+                {item.isParent ? (
+                  <>
+                    <button onClick={() => item.setIsOpen(!item.isOpen)} className="w-full flex items-center justify-between py-2 px-3 hover:bg-blue-50 rounded-lg text-blue-600 font-semibold transition-colors">
+                      <div className="flex items-center gap-3">{item.icon} {item.label}</div>
+                      <ChevronDown size={16} className={`transform transition-transform ${item.isOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {item.isOpen && (
+                      <div className="flex flex-col ml-9 mt-1 border-l-2 border-gray-200 pl-4 gap-2">
+                        {item.subItems.map(sub => (
+                          <button key={sub.id} onClick={() => setActiveMenu(sub.id)} className={`text-left text-sm py-1.5 transition-colors flex items-center justify-between ${activeMenu === sub.id ? 'text-blue-600 font-bold' : 'text-gray-500 hover:text-gray-900'}`}>
+                            <span>{sub.label}</span>
+                            {sub.rightIcon && sub.rightIcon}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <button onClick={() => setActiveMenu(item.id)} className={`w-full flex items-center justify-between py-2 px-3 rounded-lg font-medium transition-colors ${activeMenu === item.id ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-200'}`}>
+                    <div className="flex items-center gap-3">{item.icon || <LayoutGrid size={18}/>} {item.label}</div>
                   </button>
-                  {activeMenu === item.id && (
-                    <div className="flex flex-col ml-10 mt-1 border-l-2 border-blue-100">
-                      {item.sub.map((s) => (
-                        <Link 
-                          key={s} 
-                          href={s === "Métricas" ? "/dashboard/analytics" : s === "Ventas" ? "/dashboard/live" : "#"}
-                          className="text-left py-2 px-3 text-[13px] text-slate-500 hover:text-blue-600 hover:bg-blue-50/50 transition-all font-medium"
-                        >
-                          {s}
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </nav>
-          </div>
-        </aside>
-
-        {/* Main Content */}
-        <main className="flex-1 p-8">
-          <div className="mb-8 flex items-center justify-between">
-            <h1 className="text-2xl font-black text-slate-800 uppercase tracking-tight">Resumen</h1>
-            <div className="flex gap-3">
-              <button onClick={refresh} className="bg-white border border-slate-300 px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-slate-50 flex items-center gap-2">
-                <Activity size={14} /> Actualizar
-              </button>
-              <Link href="/dashboard/analytics" className="text-blue-600 font-bold text-sm hover:underline">Métricas</Link>
-              <Link href="/dashboard/live" className="flex items-center gap-2 text-blue-600 font-bold text-sm hover:underline">
-                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span> En vivo
-              </Link>
-            </div>
-          </div>
-
-          {/* Error State */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 text-red-700 text-sm">
-              Error al cargar datos: {error}. <button onClick={refresh} className="underline font-bold">Reintentar</button>
-            </div>
-          )}
-
-          {/* Metrics Top - 2 cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            {/* Reputación */}
-            <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
-              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Tu reputación</h3>
-              <div className="flex items-center gap-2 mb-3">
-                <span className={`text-xl font-black uppercase ${reputationColors[user?.reputationColor || 'ROJO'] || 'text-red-600'}`}>
-                  {reputationText}
-                </span>
-                <div className={`w-2 h-2 rounded-full animate-pulse ${reputationDots[user?.reputationColor || 'ROJO'] || 'bg-red-500'}`}></div>
+                )}
               </div>
-              <div className="h-1.5 w-full flex gap-0.5 rounded overflow-hidden mb-2">
-                <div className={`flex-1 ${user?.reputationColor === "ROJO" ? "bg-red-500" : "bg-red-200 opacity-30"}`}></div>
-                <div className={`flex-1 ${user?.reputationColor === "NARANJA" ? "bg-orange-500" : "bg-orange-200 opacity-30"}`}></div>
-                <div className={`flex-1 ${user?.reputationColor === "AMARILLO" ? "bg-yellow-500" : "bg-yellow-200 opacity-30"}`}></div>
-                <div className={`flex-1 ${["VERDE", "VERDE_OSCURO"].includes(user?.reputationColor || '') ? "bg-green-500" : "bg-lime-300 opacity-30"}`}></div>
-                <div className={`flex-1 ${user?.reputationColor === "VERDE_OSCURO" ? "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" : "bg-emerald-200 opacity-30"}`}></div>
-              </div>
-              <p className="text-xs text-slate-500 mt-2">
-                Ventas totales: <span className="font-bold">{user?.totalSales || 0}</span>
-              </p>
-            </div>
-
-            {/* Desempeño Logístico */}
-            <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
-              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Desempeño logístico</h3>
-              <div className="flex flex-col gap-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-bold text-slate-600">ENVÍOS FLASH</span>
-                  <span className="text-sm font-black text-slate-400">SIN DATOS</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-bold text-slate-600">COLECTA</span>
-                  <span className="text-sm font-black text-slate-400">SIN DATOS</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Stats Cards - 4 cards con datos reales */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">
-                <Package size={20} />
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 font-bold uppercase">Publicaciones</p>
-                <p className="text-xl font-black text-slate-800">{m.products.total}</p>
-              </div>
-            </div>
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center text-green-600">
-                <DollarSign size={20} />
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 font-bold uppercase">Ventas del mes</p>
-                <p className="text-xl font-black text-slate-800">{formatCurrency(m.sales.total)}</p>
-              </div>
-            </div>
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center gap-3">
-              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center text-purple-600">
-                <TrendingUp size={20} />
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 font-bold uppercase">Visitas</p>
-                <p className="text-xl font-black text-slate-800">{m.products.views.toLocaleString('es-AR')}</p>
-              </div>
-            </div>
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center gap-3">
-              <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center text-orange-600">
-                <ShoppingCart size={20} />
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 font-bold uppercase">Órdenes hoy</p>
-                <p className="text-xl font-black text-slate-800">{m.sales.todayCount}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Pendientes */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-8 overflow-hidden">
-            <div className="p-5 border-b border-gray-100 bg-gray-50/50">
-              <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest">Pendientes en tus publicaciones</h3>
-            </div>
-            <div className="divide-y divide-gray-50">
-              {[
-                { label: "Preguntas", value: m.questions.pending === 0 ? "Sin pendientes" : `${m.questions.pending} pendientes`, alert: m.questions.pending > 0 },
-                { label: "Reclamos abiertos", value: m.claims.open === 0 ? "Sin reclamos" : `${m.claims.open} reclamos`, alert: m.claims.open > 0 },
-                { label: "Reseñas pendientes", value: m.reviews.pending === 0 ? "Sin pendientes" : `${m.reviews.pending} pendientes`, alert: m.reviews.pending > 0 },
-                { label: "Gestión de envíos Express", value: m.shipping.express === 0 ? "Sin productos" : `${m.shipping.express} productos`, alert: false },
-                { label: "Promociones activas", value: m.promotions.active === 0 ? "Sin promociones" : `${m.promotions.active} activas`, alert: false },
-              ].map((p, i) => (
-                <div key={i} className="p-5 flex items-center justify-between hover:bg-slate-50 cursor-pointer group">
-                  <div className="flex flex-col">
-                    <span className="font-bold text-slate-700 text-sm">{p.label}</span>
-                    <span className={`text-[13px] font-medium ${p.alert ? "text-red-500" : "text-slate-400"}`}>{p.value}</span>
-                  </div>
-                  <ChevronRight size={18} className="text-slate-300 group-hover:text-blue-600 transition-all" />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Ventas de hoy */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-8 p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-sm font-bold text-slate-800">Ventas de hoy</h3>
-              <Link href="/dashboard/live" className="text-blue-600 text-xs font-bold hover:underline">Ver monitor en vivo</Link>
-            </div>
-            <div className="grid grid-cols-3 gap-6 text-center">
-              <div>
-                <p className="text-2xl font-black text-slate-800">{formatCurrency(m.sales.today)}</p>
-                <p className="text-xs text-slate-400 font-bold uppercase mt-1">Ingresos</p>
-              </div>
-              <div>
-                <p className="text-2xl font-black text-slate-800">{m.sales.todayCount}</p>
-                <p className="text-xs text-slate-400 font-bold uppercase mt-1">Ventas</p>
-              </div>
-              <div>
-                <p className="text-2xl font-black text-slate-800">{m.reviews.average > 0 ? `${m.reviews.average.toFixed(1)} ★` : "Sin datos"}</p>
-                <p className="text-xs text-slate-400 font-bold uppercase mt-1">Calificación promedio</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Órdenes recientes */}
-          {m.orders.length > 0 && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-8 overflow-hidden">
-              <div className="p-5 border-b border-gray-100 bg-gray-50/50">
-                <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest">Órdenes recientes</h3>
-              </div>
-              <div className="divide-y divide-gray-50">
-                {m.orders.slice(0, 5).map((order: any) => (
-                  <div key={order.id} className="p-4 flex items-center justify-between hover:bg-slate-50">
-                    <div>
-                      <p className="font-bold text-sm text-slate-700">Orden #{order.order_number || order.id.slice(-6)}</p>
-                      <p className="text-xs text-slate-400">{new Date(order.created_at).toLocaleDateString('es-AR')}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold text-slate-800">{formatCurrency(order.total)}</p>
-                      <Badge variant={order.status === 'DELIVERED' ? 'default' : order.status === 'PENDING' ? 'secondary' : 'outline'} className="text-[10px]">
-                        {order.status}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </main>
-
-        {/* Sidebar Right */}
-        <aside className="w-80 bg-white min-h-[calc(100vh-110px)] border-l border-slate-200 sticky top-[110px] hidden xl:block p-6 flex-shrink-0">
-          <div className="space-y-8">
-            
-            {/* MADS Play Widget */}
-            <div className="bg-gradient-to-br from-indigo-600 to-blue-800 rounded-2xl p-5 text-white shadow-lg relative overflow-hidden group">
-              <div className="relative z-10">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center backdrop-blur-md">
-                    <Star size={16} className="text-yellow-400" fill="currentColor" />
-                  </div>
-                  <span className="text-[10px] font-black uppercase tracking-widest opacity-80">Novedades</span>
-                </div>
-                <h4 className="font-black text-lg leading-tight mb-2 italic uppercase tracking-tighter">¡Rompé récords!</h4>
-                <p className="text-[12px] opacity-70 mb-4 leading-relaxed">Vendé tus mejores productos en el próximo Flash Sale.</p>
-                <button className="w-full py-2 bg-yellow-400 text-slate-900 rounded-lg font-black text-[11px] uppercase tracking-widest hover:bg-white transition-colors">
-                  Ver MADS Play
-                </button>
-              </div>
-              <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-1000"></div>
-            </div>
-
-            {/* Facturación */}
-            <div className="border-b border-slate-100 pb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Facturación</h4>
-                <MoreVertical size={14} className="text-slate-300" />
-              </div>
-              <div className="text-2xl font-black text-slate-800">{formatCurrency(m.sales.total)}</div>
-              <p className="text-[11px] text-slate-400 font-bold mt-1">Ventas del mes</p>
-              <button className="mt-4 text-xs font-black text-blue-600 hover:underline">Ir a pagar factura</button>
-            </div>
-
-            {/* Publicidad */}
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Publicidad</h4>
-                <TrendingUp size={14} className="text-emerald-500" />
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="text-3xl font-black text-slate-800">{m.promotions.active}</div>
-                <div className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-[10px] font-black">
-                  ACTIVAS
-                </div>
-              </div>
-              <p className="text-[11px] text-slate-400 font-bold mt-1 uppercase">Promociones activas</p>
-              <button className="mt-4 text-xs font-black text-blue-600 hover:underline">Ir a métricas de publicidad</button>
-            </div>
-
-            {/* Suscripción */}
-            <div className="bg-slate-50 rounded-xl p-4">
-              <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Suscripción</h4>
-              <div className="flex items-center gap-2">
-                <span className={`px-2 py-1 rounded text-xs font-bold ${
-                  user?.subscriptionTier === 'PLATINUM' ? 'bg-purple-100 text-purple-700' :
-                  user?.subscriptionTier === 'GOLD' ? 'bg-yellow-100 text-yellow-700' :
-                  user?.subscriptionTier === 'PLATA' ? 'bg-gray-100 text-gray-700' :
-                  'bg-blue-100 text-blue-700'
-                }`}>
-                  {user?.subscriptionTier || 'FREE'}
-                </span>
-              </div>
-            </div>
-          </div>
-        </aside>
-
-        {/* Floating Action Button */}
-        <div className="fixed bottom-8 right-8 z-[200]">
-          <button className="w-14 h-14 bg-blue-600 rounded-full shadow-[0_10px_30px_rgba(37,99,235,0.4)] flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-all group">
-            <MessageSquare size={26} fill="currentColor" className="opacity-90" />
-            <div className="absolute top-0 right-0 w-4 h-4 bg-red-500 rounded-full border-2 border-white"></div>
-          </button>
-        </div>
-      </div>
-
-      {/* Footer */}
-      <footer className="pt-10 pb-8 border-t-[8px] border-yellow-400 bg-white shadow-2xl">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex flex-wrap gap-4 text-[12px] font-bold text-slate-500 mb-8 border-b border-slate-200 pb-6">
-            {["Trabajá con nosotros", "Términos y condiciones", "Privacidad", "Accesibilidad", "Información financiera", "Ayuda", "Defensa del Consumidor"].map((l) => (
-              <Link key={l} href="#" className="hover:text-slate-900 transition-colors">{l}</Link>
             ))}
-          </div>
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 text-[11px] text-slate-400 font-bold">
-            <div className="flex flex-col gap-1">
-              <span>© 2026 MADSJEEZ COMMERCE GROUP S.R.L.</span>
-              <span>Carlos Spegazzini, Buenos Aires, ARGENTINA.</span>
+          </nav>
+        </aside>
+
+        {/* ÁREA CENTRAL DINÁMICA */}
+        <section className="flex-1">
+          {activeMenu === 'metricas' && renderMetricas()}
+          {activeMenu === 'preferencias-venta' && renderPreferenciasVenta()}
+          {activeMenu === 'productos-catalogo' && renderProductosCatalogo()}
+          {activeMenu === 'posventa' && renderPosventa()}
+          {activeMenu === 'compras' && renderCompras()}
+          {activeMenu === 'ventas-novedades' && renderNovedades()}
+          {activeMenu === 'preguntas' && renderPreguntasCompras()}
+          {activeMenu === 'opiniones' && renderOpiniones()}
+          {activeMenu === 'favoritos' && renderFavoritos()}
+          {activeMenu === 'tiendas-sigo' && renderTiendasSigo()}
+          {activeMenu === 'vehiculos-interes' && renderVehiculosInteres()}
+          {activeMenu === 'inmuebles-interes' && renderInmueblesInteres()}
+          {activeMenu === 'busquedas-guardadas' && renderBusquedasGuardadas()}
+          
+          {activeMenu === 'resumen' && (
+            <div className="flex flex-col items-center justify-center text-gray-400 bg-white rounded-xl shadow-sm border border-gray-200 border-dashed p-10 h-full min-h-[400px]">
+               <Activity size={48} className="mb-4 opacity-30" />
+               <h2 className="text-xl font-bold text-gray-600 mb-2">Panel de Resumen Madsjeez</h2>
+               <p className="text-sm">Estamos conectando los motores de datos para tus estadísticas en vivo.</p>
             </div>
-            <div className="flex gap-4 items-center">
-              <span className="text-slate-900 bg-slate-100 px-3 py-1 rounded">DATA FISCAL</span>
-              <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600">
-                <ShieldCheck size={16} />
+          )}
+        </section>
+      </main>
+
+      {/* ASISTENTE */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+        {isAssistantOpen && (
+          <div className="bg-white w-[340px] rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.2)] border border-gray-200 mb-4 overflow-hidden flex flex-col">
+            <div className="px-4 py-3 border-b border-gray-100 flex justify-between items-center shadow-sm">
+              <h3 className="font-bold text-gray-800 text-[15px]">Asistente</h3>
+              <div className="flex items-center gap-2 text-gray-500">
+                <button className="hover:bg-gray-100 p-1.5 rounded-md transition-colors"><Maximize2 size={16}/></button>
+                <button onClick={() => setIsAssistantOpen(false)} className="hover:bg-gray-100 p-1.5 rounded-md transition-colors"><X size={18}/></button>
+              </div>
+            </div>
+            <div className="p-5 h-[320px] bg-gray-50 flex flex-col justify-end">
+              <div className="flex items-center gap-3 text-gray-600 bg-white px-4 py-3 rounded-2xl rounded-tl-sm shadow-sm border border-gray-200 self-start w-3/4">
+                 <div className="flex items-center justify-center w-6 h-6 rounded-full bg-gray-200 shrink-0"><span className="w-1.5 h-1.5 rounded-full bg-gray-500 animate-pulse"></span></div>
+                 <span className="text-sm font-medium">Pensando...</span>
+              </div>
+            </div>
+            <div className="p-4 bg-white border-t border-gray-100">
+              <div className="relative">
+                <input type="text" placeholder="Preguntale al asistente..." className="w-full pl-4 pr-10 py-3 bg-gray-100 rounded-full text-[13px] font-medium focus:outline-none focus:bg-white focus:border-blue-500 transition-all" />
+                <button className="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-blue-100 hover:text-blue-600"><ChevronUp size={16} /></button>
               </div>
             </div>
           </div>
-        </div>
-      </footer>
+        )}
+        {!isAssistantOpen && (
+          <button onClick={() => setIsAssistantOpen(true)} className="w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-700 hover:scale-105 transition-all">
+            <MessageCircle size={28} /><span className="absolute top-0 right-0 w-3.5 h-3.5 bg-red-500 border-2 border-white rounded-full"></span>
+          </button>
+        )}
+      </div>
     </div>
-  )
+  );
+}
+
+// --- SUBCOMPONENTES REUTILIZABLES ---
+function PreferenceItem({ title, subtitle, rightElement, hasBorder = true }) {
+  return (
+    <div className={`p-5 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer ${hasBorder ? 'border-b border-gray-100' : ''}`}>
+      <div><h4 className="text-[15px] text-gray-800 font-medium">{title}</h4>{subtitle && <p className="text-[13px] text-gray-500 mt-1">{subtitle}</p>}</div>
+      {rightElement || <ChevronRight size={20} className="text-blue-500" />}
+    </div>
+  );
+}
+
+function TabButton({ id, label, current, set }) {
+  return (
+    <button onClick={() => set(id)} className={`pb-3 px-1 transition-colors ${current === id ? 'text-blue-600 border-b-2 border-blue-600' : 'hover:text-gray-800'}`}>{label}</button>
+  );
+}
+
+function DropdownItem({ text, onClick }) {
+  return (
+    <a href="#" onClick={(e) => { e.preventDefault(); if(onClick) onClick(); }} className="flex justify-between items-center px-4 py-2 hover:bg-blue-50/50 hover:text-blue-600 text-gray-600 transition-colors"><span>{text}</span></a>
+  );
 }
