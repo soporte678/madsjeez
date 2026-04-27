@@ -45,7 +45,6 @@ export default function App() {
       }
     }
   }, [activeMenu]);
-  const [comprasOpen, setComprasOpen] = useState(true);
   const [ventasOpen, setVentasOpen] = useState(true);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [activeMetricasTab, setActiveMetricasTab] = useState('negocio');
@@ -74,51 +73,28 @@ export default function App() {
 
   const menuItems = [
     { id: 'resumen', label: 'Resumen', icon: null },
-    { 
-      id: 'compras-group', 
-      label: 'Compras', 
-      icon: <ShoppingBag size={18} />, 
-      isParent: true,
-      isOpen: comprasOpen,
-      setIsOpen: setComprasOpen,
-      subItems: [
-        { id: 'compras', label: 'Compras' },
-        { id: 'preguntas', label: 'Preguntas' },
-        { id: 'opiniones', label: 'Opiniones' },
-        { id: 'favoritos', label: 'Favoritos' },
-        { id: 'tiendas-sigo', label: 'Tiendas que sigo' },
-        { id: 'vehiculos-interes', label: 'Vehículos de interés' },
-        { id: 'inmuebles-interes', label: 'Inmuebles de interés' },
-        { id: 'busquedas-guardadas', label: 'Búsquedas guardadas' },
-      ]
-    },
-    { 
-      id: 'ventas-group', 
-      label: 'Ventas', 
-      icon: <Tag size={18} />, 
+    {
+      id: 'ventas-group',
+      label: 'Ventas',
+      icon: <Tag size={18} />,
       isParent: true,
       isOpen: ventasOpen,
       setIsOpen: setVentasOpen,
       subItems: [
-        { id: 'ventas-resumen', label: 'Resumen' },
         { id: 'ventas-novedades', label: 'Novedades' },
         { id: 'publicaciones', label: 'Publicaciones' },
-        { id: 'ventas-preguntas', label: 'Preguntas' },
         { id: 'ventas-lista', label: 'Ventas' },
         { id: 'posventa', label: 'Posventa' },
-        { id: 'gestion-express', label: 'Gestión de envíos Express', rightIcon: <Zap size={14} className="text-emerald-500 fill-emerald-500" /> },
-        { id: 'retiros-express', label: 'Retiros creados Express', rightIcon: <Zap size={14} className="text-emerald-500 fill-emerald-500" /> },
         { id: 'metricas', label: 'Métricas' },
         { id: 'reputacion', label: 'Reputación' },
-        { id: 'productos-catalogo', label: 'Productos de catálogo' },
         { id: 'preferencias-venta', label: 'Preferencias de venta' },
-        { id: 'central-aprendizaje', label: 'Central de aprendizaje' },
       ]
     },
+    { id: 'preguntas', label: 'Preguntas', icon: <HelpCircle size={18} /> },
+    { id: 'publicaciones', label: 'Publicaciones', icon: <FileText size={18} /> },
+    { id: 'reputacion', label: 'Reputación', icon: <Star size={18} /> },
     { id: 'marketing', label: 'Marketing', icon: <Megaphone size={18} /> },
     { id: 'facturacion', label: 'Facturación', icon: <FileText size={18} /> },
-    { id: 'prestamos', label: 'Préstamos', icon: <CreditCard size={18} /> },
-    { id: 'perfil', label: 'Mi perfil', icon: <User size={18} /> },
     { id: 'configuracion', label: 'Configuración', icon: <Settings size={18} /> },
   ];
 
@@ -407,7 +383,7 @@ export default function App() {
                         {item.subItems.map(sub => (
                           <button key={sub.id} onClick={() => setActiveMenu(sub.id)} className={`text-left text-sm py-1.5 transition-colors flex items-center justify-between ${activeMenu === sub.id ? 'text-blue-600 font-bold' : 'text-gray-500 hover:text-gray-900'}`}>
                             <span>{sub.label}</span>
-                            {sub.rightIcon && sub.rightIcon}
+                            {(sub as any).rightIcon && (sub as any).rightIcon}
                           </button>
                         ))}
                       </div>
@@ -425,22 +401,14 @@ export default function App() {
 
         {/* ÁREA CENTRAL DINÁMICA */}
         <section className="flex-1">
-          {activeMenu === 'metricas' && renderMetricas()}
-          {activeMenu === 'reputacion' && <ReputacionView />}
-          {activeMenu === 'preferencias-venta' && renderPreferenciasVenta()}
-          {activeMenu === 'productos-catalogo' && renderProductosCatalogo()}
-          {activeMenu === 'posventa' && renderPosventa()}
-          {activeMenu === 'compras' && renderCompras()}
-          {activeMenu === 'ventas-novedades' && renderNovedades()}
-          {activeMenu === 'preguntas' && renderPreguntasCompras()}
-          {activeMenu === 'opiniones' && renderOpiniones()}
-          {activeMenu === 'favoritos' && renderFavoritos()}
-          {activeMenu === 'tiendas-sigo' && renderTiendasSigo()}
-          {activeMenu === 'vehiculos-interes' && renderVehiculosInteres()}
-          {activeMenu === 'inmuebles-interes' && renderInmueblesInteres()}
-          {activeMenu === 'busquedas-guardadas' && renderBusquedasGuardadas()}
-          
           {activeMenu === 'resumen' && <ResumenView />}
+          {activeMenu === 'reputacion' && <ReputacionView />}
+          {activeMenu === 'metricas' && renderMetricas()}
+          {activeMenu === 'ventas-novedades' && renderNovedades()}
+          {activeMenu === 'posventa' && renderPosventa()}
+          {activeMenu === 'preferencias-venta' && renderPreferenciasVenta()}
+          {activeMenu === 'preguntas' && renderPreguntasCompras()}
+          {activeMenu === 'publicaciones' && renderProductosCatalogo()}
         </section>
       </main>
 
