@@ -10,6 +10,8 @@ import {
   Search,
   X,
   Loader2,
+  Lock,
+  Unlock,
 } from "lucide-react";
 
 type ReputationStats = {
@@ -26,6 +28,25 @@ type ReputationStats = {
   wrongShipping: { percent: string; count: number; limit: string };
   daysAsSeller?: number;
   sellerSince?: string;
+};
+
+// Tabla de niveles Madslider con requisitos
+const LEVELS = [
+  { name: "VENDEDOR NUEVO", color: "gray", minSales: 0, minRevenue: 0, order: 1 },
+  { name: "BRONCE", color: "orange", minSales: 5, minRevenue: 25000, order: 2 },
+  { name: "PLATA", color: "yellow", minSales: 25, minRevenue: 150000, order: 3 },
+  { name: "ORO", color: "emerald", minSales: 100, minRevenue: 750000, order: 4 },
+  { name: "PLATINUM", color: "blue", minSales: 300, minRevenue: 2500000, order: 5 },
+  { name: "MadsLíder Platinum", color: "darkEmerald", minSales: 750, minRevenue: 8000000, order: 6 },
+];
+
+const COLOR_CLASSES: Record<string, { text: string; bg: string; border: string; bar: string }> = {
+  gray: { text: "text-gray-500", bg: "bg-gray-500", border: "border-gray-500", bar: "bg-gray-400" },
+  orange: { text: "text-orange-500", bg: "bg-orange-500", border: "border-orange-500", bar: "bg-orange-400" },
+  yellow: { text: "text-yellow-500", bg: "bg-yellow-500", border: "border-yellow-500", bar: "bg-yellow-400" },
+  emerald: { text: "text-emerald-500", bg: "bg-emerald-500", border: "border-emerald-500", bar: "bg-emerald-400" },
+  blue: { text: "text-blue-500", bg: "bg-blue-500", border: "border-blue-500", bar: "bg-blue-400" },
+  darkEmerald: { text: "text-emerald-700", bg: "bg-emerald-700", border: "border-emerald-700", bar: "bg-emerald-600" },
 };
 
 export default function ReputacionView({ data }: { data?: ReputationStats }) {
@@ -51,24 +72,41 @@ export default function ReputacionView({ data }: { data?: ReputationStats }) {
       }
     };
 
-    // Si no se proporcionan datos, cargar desde la API
     if (!data) {
       fetchReputationData();
     }
   }, [data]);
 
-  // Usar datos proporcionados o datos de la API
   const stats: ReputationStats = data || apiData || ({
     level: "VENDEDOR NUEVO",
     sales60Days: 0,
     salesWithShipping: 0,
     salesCompleted: 0,
     amountBilled: "0",
-    claims: { percent: "0", count: 0, limit: "5%" },
-    mediations: { percent: "0", count: 0, limit: "2%" },
-    cancelled: { percent: "0", count: 0, limit: "3%" },
-    wrongShipping: { percent: "0", count: 0, limit: "8%" },
+    claims: { percent: "0", count: 0, limit: "8%" },
+    mediations: { percent: "0", count: 0, limit: "4%" },
+    cancelled: { percent: "0", count: 0, limit: "5%" },
+    wrongShipping: { percent: "0", count: 0, limit: "10%" },
+    daysAsSeller: 0,
   } satisfies ReputationStats);
+
+  // Determinar nivel actual
+  const currentLevel = LEVELS.find(l => l.name === stats.level) || LEVELS[0];
+  const currentColor = COLOR_CLASSES[currentLevel.color] || COLOR_CLASSES.gray;
+  const nextLevel = LEVELS[currentLevel.order]; // Siguiente nivel
+
+  // Calcular requisitos faltantes para siguiente nivel
+  const getNextLevelRequirements = () => {
+    if (!nextLevel) return null;
+    const completedSales = stats.salesCompleted;
+    const needs = [];
+    if (completedSales < nextLevel.minSales) {
+      needs.push(`${nextLevel.minSales - completedSales} ventas más`);
+    }
+    return needs.length > 0 ? needs : null;
+  };
+
+  const nextRequirements = getNextLevelRequirements();
 
   if (loading && !data) {
     return (
@@ -96,23 +134,37 @@ export default function ReputacionView({ data }: { data?: ReputationStats }) {
           <ChevronRight size={14} />
           <span className="font-semibold text-gray-800">Reputación</span>
         </div>
-        <a href="#" className="text-blue-500 font-medium hover:underline">
-          Necesito ayuda
-        </a>
+        <div className="flex items-center gap-3">
+          <a href="#" className="text-blue-500 font-medium hover:underline">
+            Necesito ayuda
+          </a>
+          <a 
+            href="/admin/setup-reputation" 
+            className="text-blue-500 font-medium hover:underline text-xs bg-blue-50 px-2 py-1 rounded"
+          >
+            Ver todos los niveles
+          </a>
+        </div>
       </div>
 
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col lg:flex-row gap-10 overflow-hidden">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 text-emerald-500 font-bold mb-4">
+          <div className={`flex items-center gap-2 font-bold mb-4 ${currentColor.text}`}>
             <Star size={20} fill="currentColor" />
             <span className="text-lg truncate">{stats.level}</span>
           </div>
           <div className="flex h-2.5 rounded-full overflow-hidden gap-1 mt-6 mb-2 bg-gray-100">
-            <div className="bg-red-200 flex-1" />
-            <div className="bg-orange-200 flex-1" />
-            <div className="bg-yellow-200 flex-1" />
-            <div className="bg-lime-200 flex-1" />
-            <div className="bg-emerald-500 flex-1 shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]" />
+            {LEVELS.map((level) => {
+              const levelColor = COLOR_CLASSES[level.color];
+              const isCurrent = level.order <= currentLevel.order;
+              return (
+                <div 
+                  key={level.name}
+                  className={`flex-1 ${isCurrent ? levelColor.bar : 'bg-gray-200'}`}
+                  title={level.name}
+                />
+              );
+            })}
           </div>
           <div className="text-xs text-gray-400 font-medium flex items-center gap-1">
             Así te ven tus compradores. <Info size={12} />
@@ -122,7 +174,6 @@ export default function ReputacionView({ data }: { data?: ReputationStats }) {
         <div className="flex-[1.5] lg:border-l lg:border-gray-100 lg:pl-10 min-w-0">
           <div className="flex items-center gap-1 text-[13px] font-semibold text-gray-800 mb-6 flex-wrap">
             Medimos tus ventas de los últimos 60 días
-            <span className="text-gray-400 font-normal ml-1">Desde el 25 de feb 2026</span>
             <Info size={14} className="text-blue-500 ml-1 cursor-pointer shrink-0" />
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-y-6 gap-x-2 text-center">
@@ -134,16 +185,15 @@ export default function ReputacionView({ data }: { data?: ReputationStats }) {
         </div>
       </div>
 
-      <div className="bg-orange-50 border border-orange-100 p-4 rounded-lg flex items-start gap-3 relative overflow-hidden">
-        <AlertCircle size={20} className="text-orange-500 shrink-0 mt-0.5" />
-        <div className="text-[13px] text-gray-700 pr-8 leading-relaxed">
-          <span className="font-bold">Estás cerca de dejar de ser MadsLíder Platinum.</span> Revisá las variables que
-          están por pasar los límites permitidos y mejoralas para evitarlo.
+      {nextLevel && nextRequirements && (
+        <div className="bg-blue-50 border border-blue-100 p-4 rounded-lg flex items-start gap-3 relative overflow-hidden">
+          <Info size={20} className="text-blue-500 shrink-0 mt-0.5" />
+          <div className="text-[13px] text-gray-700 pr-8 leading-relaxed">
+            <span className="font-bold">Para llegar a {nextLevel.name}</span> necesitás: {nextRequirements.join(', ')}.
+            <a href="#" className="text-blue-600 hover:underline ml-1">Ver detalles</a>
+          </div>
         </div>
-        <button className="absolute right-3 top-3 text-gray-400 hover:text-gray-600" type="button">
-          <X size={16} />
-        </button>
-      </div>
+      )}
 
       <div>
         <h3 className="font-semibold text-gray-800 mb-4 text-lg px-1">Variables sobre tus ventas</h3>
@@ -152,15 +202,15 @@ export default function ReputacionView({ data }: { data?: ReputationStats }) {
             title="Reclamos"
             percent={`${stats.claims.percent}%`}
             subtitle={`Son ${stats.claims.count} de tus ventas`}
-            limit={`Cerca del ${stats.claims.limit} permitido`}
-            footer="Mejorá tu desempeño para evitar que afecte tu nivel."
-            status="warning"
+            limit={`Límite: ${stats.claims.limit}`}
+            footer="Mantené tus reclamos bajo control."
+            status={parseFloat(stats.claims.percent.replace(',', '.')) > parseFloat(stats.claims.limit) ? "warning" : "success"}
           />
           <VariableCard
             title="Mediaciones"
             percent={`${stats.mediations.percent}%`}
             subtitle={`Es ${stats.mediations.count} de tus ventas`}
-            limit={`Por debajo del ${stats.mediations.limit} permitido`}
+            limit={`Límite: ${stats.mediations.limit}`}
             footer="¡Seguí así!"
             status="success"
           />
@@ -168,17 +218,17 @@ export default function ReputacionView({ data }: { data?: ReputationStats }) {
             title="Canceladas"
             percent={`${stats.cancelled.percent}%`}
             subtitle={`Son ${stats.cancelled.count} de tus ventas`}
-            limit={`Por debajo del ${stats.cancelled.limit} permitido`}
+            limit={`Límite: ${stats.cancelled.limit}`}
             footer="¡Bien hecho!"
-            status="success"
+            status={parseFloat(stats.cancelled.percent.replace(',', '.')) > parseFloat(stats.cancelled.limit) ? "warning" : "success"}
           />
           <VariableCard
             title="Envíos incorrectos"
             percent={`${stats.wrongShipping.percent}%`}
             subtitle={`Son ${stats.wrongShipping.count} de tus ventas`}
-            limit={`Por debajo del ${stats.wrongShipping.limit} permitido`}
+            limit={`Límite: ${stats.wrongShipping.limit}`}
             footer="¡Bien hecho!"
-            status="success"
+            status={parseFloat(stats.wrongShipping.percent.replace(',', '.')) > parseFloat(stats.wrongShipping.limit) ? "warning" : "success"}
           />
         </div>
       </div>
@@ -188,33 +238,63 @@ export default function ReputacionView({ data }: { data?: ReputationStats }) {
           <h3 className="font-semibold text-gray-800 mb-4 text-lg px-1">Tu desempeño</h3>
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="p-6 border-b border-gray-100 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full border-4 border-emerald-500 flex items-center justify-center text-emerald-500 font-bold text-sm shrink-0">
-                7/7
+              <div className={`w-12 h-12 rounded-full border-4 ${currentColor.border} flex items-center justify-center ${currentColor.text} font-bold text-sm shrink-0`}>
+                {currentLevel.order}/{LEVELS.length}
               </div>
               <div className="min-w-0">
-                <h4 className="font-bold text-gray-800 truncate">¡Estás en el nivel más alto!</h4>
-                <p className="text-sm text-gray-500 truncate sm:whitespace-normal">
-                  Mantené tu desempeño para continuar siendo uno de los mejores.
-                </p>
+                {nextLevel ? (
+                  <>
+                    <h4 className="font-bold text-gray-800 truncate">
+                      Tu próximo objetivo: {nextLevel.name}
+                    </h4>
+                    <p className="text-sm text-gray-500 truncate sm:whitespace-normal">
+                      Necesitás {nextLevel.minSales} ventas concretadas para llegar al siguiente nivel.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <h4 className="font-bold text-gray-800 truncate">¡Llegaste al nivel más alto!</h4>
+                    <p className="text-sm text-gray-500 truncate sm:whitespace-normal">
+                      Mantené tu desempeño para continuar siendo uno de los mejores.
+                    </p>
+                  </>
+                )}
               </div>
             </div>
 
-            <button
-              className="w-full p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 px-6 hover:bg-gray-100 transition-colors"
-              type="button"
-            >
-              <span className="text-sm text-blue-600 font-semibold">Ocultar requisitos alcanzados</span>
-              <ChevronDown size={18} className="text-gray-400 rotate-180" />
-            </button>
-
             <div className="p-6 flex flex-col gap-5">
-              <DesempenoCheck label="Facturado en ventas concretadas" checked />
-              <DesempenoCheck label="Ventas concretadas" checked />
-              <DesempenoCheck label="Reclamos" checked />
-              <DesempenoCheck label="Mediaciones" checked />
-              <DesempenoCheck label="Canceladas por vos" checked />
-              <DesempenoCheck label="Envíos incorrectos" checked />
-              <DesempenoCheck label="Antigüedad en Madsjeez" checked />
+              {LEVELS.map((level) => {
+                const isUnlocked = level.order <= currentLevel.order;
+                const levelColors = COLOR_CLASSES[level.color];
+                return (
+                  <div key={level.name} className="flex items-center gap-3">
+                    <div className="relative shrink-0">
+                      {isUnlocked ? (
+                        <div className={`w-5 h-5 rounded-full ${levelColors.bg} flex items-center justify-center`}>
+                          <CheckCircle2 size={14} className="text-white" />
+                        </div>
+                      ) : (
+                        <div className="w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                          <Lock size={12} className="text-gray-400" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className={`text-[13px] font-medium truncate ${isUnlocked ? "text-gray-800" : "text-gray-400"}`}>
+                        {level.name}
+                      </span>
+                      <span className="text-xs text-gray-400 ml-2">
+                        {level.minSales}+ ventas
+                      </span>
+                    </div>
+                    {isUnlocked && (
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded ${levelColors.bg} text-white`}>
+                        Alcanzado
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -229,41 +309,46 @@ export default function ReputacionView({ data }: { data?: ReputationStats }) {
             </div>
             <div className="flex justify-between items-center text-[13px] mb-6">
               <span className="text-gray-700 font-medium">Envíos Express</span>
-              <span className="text-emerald-500 font-bold flex items-center gap-1.5 shrink-0">
-                Excelente <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span className={`font-bold flex items-center gap-1.5 shrink-0 ${currentColor.text}`}>
+                {stats.salesWithShipping > 0 ? 'Excelente' : 'Nuevo'} 
+                <span className={`w-2 h-2 rounded-full ${currentColor.bg}`} />
               </span>
             </div>
-            <button
-              className="w-full text-left text-[13px] text-blue-600 font-semibold hover:underline flex justify-between items-center group"
-              type="button"
-            >
-              Revisar envíos correctos
-              <ChevronRight size={16} className="transform group-hover:translate-x-1 transition-transform" />
-            </button>
           </div>
 
           <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <h3 className="font-semibold text-gray-800 mb-4 text-base flex items-center gap-1">
-              Productos con problemas <Info size={14} className="text-gray-400" />
+              Tabla de niveles <Info size={14} className="text-gray-400" />
             </h3>
-            <div className="flex justify-between text-[11px] font-bold text-gray-400 border-b border-gray-100 pb-2 mb-4 uppercase">
-              <span>Producto</span>
-              <span>Total</span>
+            <div className="flex flex-col gap-3 mb-4">
+              {LEVELS.map((level) => {
+                const isCurrent = level.name === stats.level;
+                const levelColors = COLOR_CLASSES[level.color];
+                return (
+                  <div 
+                    key={level.name} 
+                    className={`flex items-center justify-between p-2 rounded ${isCurrent ? 'bg-gray-50 border border-gray-200' : ''}`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className={`w-3 h-3 rounded-full ${levelColors.bg}`} />
+                      <span className={`text-sm ${isCurrent ? 'font-bold' : 'text-gray-600'}`}>
+                        {level.name}
+                      </span>
+                    </div>
+                    <span className="text-xs text-gray-400">
+                      {level.minSales}+ ventas
+                    </span>
+                  </div>
+                );
+              })}
             </div>
-
-            <div className="flex flex-col gap-4 mb-6">
-              <ProblemItem name="Kit Juntas Y Bombin Carburador..." count={1} />
-              <ProblemItem name="Motor Completo Desmalezadora 2t..." count={1} />
-              <ProblemItem name="Kit Pistón, Perno Y Aros..." count={1} />
-            </div>
-
-            <button
+            <a
+              href="/admin/setup-reputation"
               className="w-full text-left text-[13px] text-blue-600 font-semibold hover:underline flex justify-between items-center group"
-              type="button"
             >
-              Analizar en Métricas
+              Ver requisitos completos
               <ChevronRight size={16} className="transform group-hover:translate-x-1 transition-transform" />
-            </button>
+            </a>
           </div>
         </div>
       </div>
