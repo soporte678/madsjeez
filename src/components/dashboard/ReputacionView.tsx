@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Star,
   ChevronRight,
@@ -9,10 +9,13 @@ import {
   TrendingUp,
   Search,
   X,
+  Loader2,
 } from "lucide-react";
 
 type ReputationStats = {
   level: string;
+  color?: string;
+  score?: number;
   sales60Days: number;
   salesWithShipping: number;
   salesCompleted: number;
@@ -21,22 +24,69 @@ type ReputationStats = {
   mediations: { percent: string; count: number; limit: string };
   cancelled: { percent: string; count: number; limit: string };
   wrongShipping: { percent: string; count: number; limit: string };
+  daysAsSeller?: number;
+  sellerSince?: string;
 };
 
 export default function ReputacionView({ data }: { data?: ReputationStats }) {
-  const stats: ReputationStats =
-    data ||
-    ({
-      level: "MadsLíder Platinum",
-      sales60Days: 635,
-      salesWithShipping: 609,
-      salesCompleted: 699,
-      amountBilled: "17.728.757",
-      claims: { percent: "0,94", count: 6, limit: "1%" },
-      mediations: { percent: "0,15", count: 1, limit: "0,5%" },
-      cancelled: { percent: "0", count: 0, limit: "0,5%" },
-      wrongShipping: { percent: "1,14", count: 7, limit: "2%" },
-    } satisfies ReputationStats);
+  const [apiData, setApiData] = useState<ReputationStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchReputationData = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/reputation');
+        if (!response.ok) {
+          throw new Error('Error al cargar datos de reputación');
+        }
+        const data = await response.json();
+        setApiData(data);
+      } catch (err) {
+        console.error('Error fetching reputation data:', err);
+        setError(err instanceof Error ? err.message : 'Error desconocido');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Si no se proporcionan datos, cargar desde la API
+    if (!data) {
+      fetchReputationData();
+    }
+  }, [data]);
+
+  // Usar datos proporcionados o datos de la API
+  const stats: ReputationStats = data || apiData || ({
+    level: "VENDEDOR NUEVO",
+    sales60Days: 0,
+    salesWithShipping: 0,
+    salesCompleted: 0,
+    amountBilled: "0",
+    claims: { percent: "0", count: 0, limit: "5%" },
+    mediations: { percent: "0", count: 0, limit: "2%" },
+    cancelled: { percent: "0", count: 0, limit: "3%" },
+    wrongShipping: { percent: "0", count: 0, limit: "8%" },
+  } satisfies ReputationStats);
+
+  if (loading && !data) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <span className="ml-2 text-gray-600">Cargando datos de reputación...</span>
+      </div>
+    );
+  }
+
+  if (error && !data) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <AlertCircle className="w-8 h-8 text-red-500" />
+        <span className="ml-2 text-red-600">{error}</span>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6 w-full animate-in fade-in duration-500 overflow-hidden">

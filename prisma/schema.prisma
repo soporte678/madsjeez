@@ -77,11 +77,33 @@ model User {
   
   // Sistema de reputación
   reputationColor   ReputationColor @default(VERDE) @map("reputation_color")
+  reputationLevel   String          @default("VENDEDOR NUEVO") @map("reputation_level") // Madslider level
+  reputationScore   Float           @default(0) @map("reputation_score") // Puntuación calculada
+  
+  // Métricas de ventas
   totalSales        Int             @default(0) @map("total_sales")
   successfulSales   Int             @default(0) @map("successful_sales")
   canceledSales     Int             @default(0) @map("canceled_sales")
+  totalRevenue      Float           @default(0) @map("total_revenue")
+  
+  // Métricas de reclamos y disputas
+  openClaims        Int             @default(0) @map("open_claims")
+  resolvedClaims    Int             @default(0) @map("resolved_claims")
+  claimsAgainst     Int             @default(0) @map("claims_against")
+  mediaciones       Int             @default(0) @map("mediaciones")
+  
+  // Métricas de envío
   delayedShipments  Int             @default(0) @map("delayed_shipments")
+  onTimeDeliveries  Int             @default(0) @map("on_time_deliveries")
+  averageShippingTime Float?        @map("average_shipping_time") // en días
+  
+  // Métricas de calidad
   claimRate         Float           @default(0) @map("claim_rate") // Porcentaje de reclamos
+  cancellationRate  Float           @default(0) @map("cancellation_rate") // Porcentaje de cancelaciones
+  delayRate         Float           @default(0) @map("delay_rate") // Porcentaje de envíos demorados
+  
+  // Tiempo como vendedor
+  daysAsSeller      Int?            @map("days_as_seller")
   
   // Suscripción
   subscriptionTier   SubscriptionTier @default(FREE) @map("subscription_tier")
@@ -113,6 +135,9 @@ model User {
   receivedMessages  OrderMessage[]  @relation("ReceivedMessages")
   campaigns         Campaign[]
   coupons           Coupon[]
+  
+  // Reputación
+  reputationHistory ReputationHistory[] @relation("ReputationHistory")
   
   @@map("users")
 }
@@ -740,4 +765,76 @@ model Coupon {
   @@index([code])
   @@index([isActive])
   @@map("coupons")
+}
+
+// Historial de métricas de reputación
+model ReputationHistory {
+  id          String   @id @default(cuid())
+  
+  userId      String   @map("user_id")
+  user        User     @relation("ReputationHistory", fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Métricas en este punto del tiempo
+  reputationLevel String   @map("reputation_level")
+  reputationScore Float   @map("reputation_score")
+  reputationColor ReputationColor @map("reputation_color")
+  
+  // Métricas base
+  totalSales        Int    @map("total_sales")
+  successfulSales   Int    @map("successful_sales")
+  canceledSales     Int    @map("canceled_sales")
+  totalRevenue      Float  @map("total_revenue")
+  
+  // Reclamos y disputas
+  openClaims        Int    @map("open_claims")
+  resolvedClaims    Int    @map("resolved_claims")
+  claimsAgainst     Int    @map("claims_against")
+  mediaciones       Int    @map("mediaciones")
+  
+  // Envíos
+  delayedShipments  Int    @map("delayed_shipments")
+  onTimeDeliveries  Int    @map("on_time_deliveries")
+  
+  // Tasas
+  claimRate         Float  @map("claim_rate")
+  cancellationRate  Float  @map("cancellation_rate")
+  delayRate         Float  @map("delay_rate")
+  
+  // Tiempo como vendedor
+  daysAsSeller      Int    @map("days_as_seller")
+  
+  createdAt         DateTime @default(now()) @map("created_at")
+  
+  @@index([userId])
+  @@index([createdAt])
+  @@map("reputation_history")
+}
+
+// Configuración de niveles Madslider
+model MadsliderLevel {
+  id                String  @id @default(cuid())
+  
+  level             String  @unique // "VENDEDOR NUEVO", "PLATA", etc.
+  color             String  // "ROJO", "NARANJA", etc.
+  
+  // Requisitos mínimos
+  minSales          Int     @default(0) @map("min_sales")
+  minDaysAsSeller   Int     @default(0) @map("min_days_as_seller")
+  minRevenue        Float   @default(0) @map("min_revenue")
+  
+  // Límites máximos para tasas negativas
+  maxClaimRate      Float   @default(1.0) @map("max_claim_rate") // 0.1 = 10%
+  maxCancellationRate Float @default(1.0) @map("max_cancellation_rate")
+  maxDelayRate      Float   @default(1.0) @map("max_delay_rate")
+  
+  // Beneficios del nivel
+  description       String? @db.Text
+  boostDiscount     Float   @default(0) @map("boost_discount") // Porcentaje de descuento en boosts
+  
+  order             Int     @default(0) // Orden visual
+  
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  
+  @@map("madslider_levels")
 }
