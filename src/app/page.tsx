@@ -314,14 +314,23 @@ export default function Home() {
             </div>
 
             <div className="flex items-center gap-8 overflow-x-auto scrollbar-hide flex-1 md:justify-center">
-              {["Categorías", "Ofertas", "Historial", "Supermercado", "Moda", "Vender", "Ayuda"].map((link) => (
+              {[
+                { label: "Categorías", href: "/categories", icon: true },
+                { label: "Ofertas", href: "/deals", icon: false },
+                { label: "Cupones", href: "/coupons", icon: false },
+                { label: "Historial", href: "/history", icon: false },
+                { label: "Supermercado", href: "/supermarket", icon: false },
+                { label: "Moda", href: "/fashion", icon: false },
+                { label: "Vender", href: "/seller/register", icon: false },
+                { label: "Ayuda", href: "/help", icon: false },
+              ].map((item) => (
                 <Link 
-                  key={link} 
-                  href={link === "Categorías" ? "/categories" : link === "Vender" ? "/seller/register" : "/"}
+                  key={item.label} 
+                  href={item.href}
                   className="hover:text-blue-700 transition-colors whitespace-nowrap font-semibold"
                 >
-                  {link === "Categorías" && <Menu size={16} className="inline mr-1 mb-0.5" />}
-                  {link}
+                  {item.icon && <Menu size={16} className="inline mr-1 mb-0.5" />}
+                  {item.label}
                 </Link>
               ))}
             </div>
@@ -333,7 +342,17 @@ export default function Home() {
                   <Link href="/auth/login" className="hover:text-blue-700 transition-colors">Ingresá</Link>
                 </>
               ) : (
-                <Link href="/account" className="hover:text-blue-700 transition-colors">{session.user?.name || "Mi cuenta"}</Link>
+                <>
+                  <Link href="/orders" className="hover:text-blue-700 transition-colors flex items-center gap-1">
+                    <Package size={16} />
+                    Mis compras
+                  </Link>
+                  <Link href="/favorites" className="hover:text-blue-700 transition-colors flex items-center gap-1">
+                    <Heart size={16} />
+                    Favoritos
+                  </Link>
+                  <Link href="/dashboard" className="hover:text-blue-700 transition-colors">{session.user?.name || "Mi cuenta"}</Link>
+                </>
               )}
               <div className="flex items-center gap-5 ml-4 pl-6 border-l border-slate-900/10">
                 <Bell size={20} className="cursor-pointer hover:text-blue-700 transition-colors" />
