@@ -1,4 +1,7 @@
+"use client";
+
 import React from 'react';
+import { signOut } from "next-auth/react";
 import { 
   User, ChevronDown, ChevronRight, ShoppingBag, Tag, 
   Megaphone, FileText, CreditCard, Settings, Star, 
@@ -132,7 +135,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ isOpen, onClose, userData, o
 
         {/* SECCIÓN 4: Salida */}
         <div className="py-1">
-          <DropdownItem text="Salir" />
+          <DropdownItem text="Salir" onClick={() => signOut({ callbackUrl: '/' })} />
         </div>
       </div>
     </>
