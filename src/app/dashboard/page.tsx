@@ -18,6 +18,7 @@ import OpinionesView from "@/components/dashboard/OpinionesView";
 import FavoritosView from "@/components/dashboard/FavoritosView";
 import ComprasView from "@/components/dashboard/ComprasView";
 import ProfileView from "@/components/dashboard/ProfileView";
+import NotificationsDropdown from "@/components/dashboard/NotificationsDropdown";
 
 function getInitialMenu() {
   if (typeof window !== 'undefined') {
@@ -56,6 +57,7 @@ export default function App() {
   const [facturacionOpen, setFacturacionOpen] = useState(true);
   const [configOpen, setConfigOpen] = useState(true);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
   const [activeMetricasTab, setActiveMetricasTab] = useState('negocio');
   const [activePromocionesSubTab, setActivePromocionesSubTab] = useState('promociones');
   const [showLiveMonitor, setShowLiveMonitor] = useState(false);
@@ -399,6 +401,18 @@ export default function App() {
                 />
               </div>
               <button className="hover:text-gray-600">Ayuda</button>
+              <div className="relative">
+                <button
+                  onClick={() => setNotifOpen(!notifOpen)}
+                  className="relative hover:text-gray-600 p-1 rounded-full hover:bg-black/5 transition-colors"
+                >
+                  <Bell size={20} />
+                </button>
+                <NotificationsDropdown
+                  isOpen={notifOpen}
+                  onClose={() => setNotifOpen(false)}
+                />
+              </div>
               <button className="relative hover:text-gray-600"><ShoppingCart size={20} /><span className="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">2</span></button>
             </div>
           </div>
