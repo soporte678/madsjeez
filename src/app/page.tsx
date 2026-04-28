@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
+import Navbar from "@/components/Navbar"
 import Link from "next/link"
 import { useSession } from "next-auth/react"
 import { 
@@ -234,140 +235,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[#F0F0F0] font-outfit text-slate-900 overflow-x-hidden">
-      {/* HEADER */}
-      <header className="bg-[#FFF159] pt-2 pb-1.5 px-4 shadow-md sticky top-0 z-[100]">
-        <div className="max-w-[1200px] mx-auto flex flex-col">
-          {/* FILA 1: Logo (160px) + Search (600px) + Promo */}
-          <div className="flex items-center h-12">
-            {/* LOGO - ANCHO FIJO 160px */}
-            <Link href="/" className="flex items-center gap-2 cursor-pointer group flex-shrink-0 w-[160px]">
-              <div className="relative w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center shadow-md overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/30 to-transparent"></div>
-                <svg viewBox="0 0 100 100" className="w-10 h-10 overflow-visible">
-                  <defs>
-                    <linearGradient id="logoBlue" x1="0%" y1="100%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#2563EB" /> 
-                      <stop offset="100%" stopColor="#60A5FA" /> 
-                    </linearGradient>
-                    <linearGradient id="logoGold" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#FACC15" /> 
-                      <stop offset="100%" stopColor="#F59E0B" /> 
-                    </linearGradient>
-                  </defs>
-                  <g className="transition-all duration-700 ease-out group-hover:scale-110">
-                    <polygon points="15,80 35,30 55,55 35,80" fill="url(#logoBlue)" className="opacity-90" />
-                    <polygon points="55,55 75,30 95,80 75,80" fill="url(#logoBlue)" className="opacity-90" />
-                    <path d="M 85 80 L 65 30 L 45 65" fill="none" stroke="url(#logoGold)" strokeWidth="14" strokeLinecap="round" strokeLinejoin="round" />
-                  </g>
-                </svg>
-              </div>
-              <div className="flex flex-col justify-center">
-                <span className="font-montserrat font-black text-[28px] tracking-tighter leading-none flex items-center uppercase overflow-hidden shimmer-text">
-                  {logoLetters.map((letter, i) => (
-                    <span 
-                      key={i} 
-                      className={`letter-piece ${letter.isBlue ? "text-blue-700" : "text-slate-900"}`}
-                      style={{"--dx": letter.dx, "--dy": letter.dy, "--rot": letter.rot, animationDelay: letter.delay} as React.CSSProperties}
-                    >
-                      {letter.char}
-                    </span>
-                  ))}
-                </span>
-                <span className="font-montserrat text-[9px] font-black tracking-[0.45em] text-slate-700 uppercase mt-0.5 opacity-80">
-                  Commerce Group
-                </span>
-              </div>
-            </Link>
-
-            {/* BARRA DE BÚSQUEDA - ANCHO 600px */}
-            <form onSubmit={handleSearch} className="w-[600px]">
-              <div className="flex items-center bg-white rounded-[2px] shadow-[0_1px_2px_0_rgba(0,0,0,0.12)] h-10 px-4">
-                <input 
-                  type="text" 
-                  placeholder="Buscar productos, marcas y más..." 
-                  className="flex-1 outline-none text-[16px] text-slate-800 placeholder-slate-400 font-light"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <div className="h-6 w-[1px] bg-slate-200 mx-2"></div>
-                <button type="submit" className="text-slate-500 hover:text-slate-800 transition-colors">
-                  <Search size={18} strokeWidth={2.5} />
-                </button>
-              </div>
-            </form>
-
-            {/* PROMO - ALINEADO CON MIS COMPRAS */}
-            <div className="flex-1 flex items-center cursor-pointer">
-              <div className="flex items-center gap-2 group hover:brightness-95 transition-all ml-[135px]">
-                 <Sparkles size={16} className="text-slate-700" />
-                 <span className="text-[13px] font-medium text-slate-700 whitespace-nowrap">Ofertas por tiempo limitado</span>
-              </div>
-            </div>
-          </div>
-
-          {/* FILA 2: Ubicación (160px) + Nav (600px) + Usuario */}
-          <div className="flex items-center h-10 mt-1">
-            {/* UBICACIÓN - ANCHO 160px PARA ALINEAR CON EL LOGO */}
-            <div className="flex items-center gap-1 cursor-pointer w-[160px] group flex-shrink-0">
-              <MapPin size={18} className="text-slate-900/60 group-hover:text-slate-900" />
-              <div className="flex flex-col leading-none">
-                <span className="text-[11px] text-slate-700/60 group-hover:text-slate-700 whitespace-nowrap">Enviar a Carlos</span>
-                <span className="text-[13px] text-slate-800 font-normal truncate">Spegazzini 1812</span>
-              </div>
-            </div>
-
-            {/* CONTENEDOR UNIFICADO: Nav (600px) + Usuario */}
-            <div className="flex-1 flex items-center ml-8 gap-x-6">
-              
-              {/* NAV MENU - ANCHO 600px ALINEADO CON BÚSQUEDA */}
-              <nav className="flex items-center gap-x-3 text-[14px] text-slate-800/70 font-light w-[600px]">
-                <a href="#" className="flex items-center gap-0.5 hover:text-blue-700 transition-colors whitespace-nowrap">
-                  Categorías <ChevronDown size={12} className="mt-0.5 opacity-40" />
-                </a>
-                <a href="#" className="hover:text-blue-700 transition-colors whitespace-nowrap">Ofertas</a>
-                <a href="#" className="hover:text-blue-700 transition-colors whitespace-nowrap">Historial</a>
-                <a href="#" className="hover:text-blue-700 transition-colors whitespace-nowrap">Supermercado</a>
-                <a href="#" className="hover:text-blue-700 transition-colors whitespace-nowrap">Moda</a>
-                <a href="#" className="hover:text-blue-700 transition-colors whitespace-nowrap">Vender</a>
-                <a href="#" className="hover:text-blue-700 transition-colors whitespace-nowrap">Ayuda</a>
-              </nav>
-
-              {/* ACCIONES DE USUARIO */}
-              <div className="flex items-center gap-x-4 text-[14px] text-slate-800 font-light">
-                {!session ? (
-                  <>
-                    <Link href="/auth/register" className="hover:text-blue-700 transition-colors">Creá tu cuenta</Link>
-                    <Link href="/auth/login" className="hover:text-blue-700 transition-colors">Ingresá</Link>
-                  </>
-                ) : (
-                  <>
-                    <Link href="/orders" className="hover:text-blue-700 transition-colors flex items-center gap-1">
-                      <Package size={16} />
-                      Mis compras
-                    </Link>
-                    <Link href="/favorites" className="hover:text-blue-700 transition-colors flex items-center gap-1">
-                      <Heart size={16} />
-                      Favoritos
-                    </Link>
-                    <Link href="/dashboard" className="hover:text-blue-700 transition-colors">{session.user?.name || "Mi cuenta"}</Link>
-                  </>
-                )}
-                <div className="flex items-center gap-5 ml-4 pl-6 border-l border-slate-900/10">
-                  <Bell size={20} className="cursor-pointer hover:text-blue-700 transition-colors" />
-                  <Link href="/cart" className="relative cursor-pointer hover:text-blue-700 transition-colors">
-                    <ShoppingCart size={20} />
-                    {cartItemsCount > 0 && (
-                      <span className="absolute -top-2.5 -right-2.5 bg-blue-600 text-white text-[10px] font-black h-[18px] w-[18px] flex items-center justify-center rounded-full border-2 border-yellow-400">
-                        {cartItemsCount}
-                      </span>
-                    )}
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       {/* HERO SECTION */}
       <section className="relative bg-black overflow-hidden h-[550px] md:h-[700px] flex items-center group pb-16 md:pb-24">
