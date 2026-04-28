@@ -17,6 +17,7 @@ import PreguntasView from "@/components/dashboard/PreguntasView";
 import OpinionesView from "@/components/dashboard/OpinionesView";
 import FavoritosView from "@/components/dashboard/FavoritosView";
 import ComprasView from "@/components/dashboard/ComprasView";
+import ProfileView from "@/components/dashboard/ProfileView";
 
 function getInitialMenu() {
   if (typeof window !== 'undefined') {
@@ -463,6 +464,7 @@ export default function App() {
           {activeMenu === 'opiniones' && <OpinionesView />}
           {activeMenu === 'favoritos' && <FavoritosView />}
           {activeMenu === 'compras' && <ComprasView />}
+          {activeMenu === 'perfil' && <ProfileView userData={currentUser || undefined} />}
           {activeMenu === 'publicaciones' && renderProductosCatalogo()}
         </section>
       </main>
