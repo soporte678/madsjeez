@@ -1,7 +1,7 @@
 # Dockerfile para Railway - MADSJEEZ Marketplace
 FROM node:22-alpine AS base
 
-# Forzar rebuild limpio - cambiar este número para invalidar cache: 5
+# Forzar rebuild limpio - cambiar este número para invalidar cache: 6
 
 # Instalar dependencias necesarias
 RUN apk add --no-cache libc6-compat
@@ -12,17 +12,14 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Copiar package.json y archivos de Prisma primero
+# Copiar package.json e instalar dependencias
 COPY package.json ./
-COPY prisma prisma/
-COPY prisma.config.ts ./
 
-# Instalar dependencias con más memoria y logs
 RUN echo "=== Instalando dependencias ===" && \
     npm install --production=false --no-audit --no-fund 2>&1 && \
     echo "=== Dependencias instaladas ==="
 
-# Copiar el resto del código
+# Copiar el resto del código (incluye prisma/schema.prisma)
 COPY . .
 
 # Generar cliente de Prisma
