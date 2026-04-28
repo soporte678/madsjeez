@@ -19,6 +19,7 @@ import FavoritosView from "@/components/dashboard/FavoritosView";
 import ComprasView from "@/components/dashboard/ComprasView";
 import ProfileView from "@/components/dashboard/ProfileView";
 import CartView from "@/components/dashboard/CartView";
+import HelpView from "@/components/dashboard/HelpView";
 import NotificationsDropdown from "@/components/dashboard/NotificationsDropdown";
 
 function getInitialMenu() {
@@ -179,6 +180,7 @@ export default function App() {
         { id: 'colaboradores', label: 'Colaboradores' },
       ]
     },
+    { id: 'ayuda', label: 'Ayuda', icon: <HelpCircle size={18} /> },
   ];
 
   // --- VISTAS DE COMPRAS AGREGADAS ---
@@ -485,6 +487,7 @@ export default function App() {
             {activeMenu === 'compras' && <ComprasView />}
             {activeMenu === 'perfil' && <ProfileView userData={currentUser || undefined} />}
             {activeMenu === 'carrito' && <CartView />}
+            {activeMenu === 'ayuda' && <HelpView userData={currentUser || undefined} />}
             {activeMenu === 'publicaciones' && renderProductosCatalogo()}
           </div>
         </section>
