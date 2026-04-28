@@ -354,7 +354,7 @@ export default function App() {
   if (showLiveMonitor) return renderLiveMonitor();
 
   return (
-    <div className="h-screen bg-gray-100 font-sans text-gray-800 flex flex-col relative overflow-hidden">
+    <div className="min-h-screen bg-gray-100 font-sans text-gray-800 flex flex-col relative">
       {/* HEADER AMARILLO */}
       <header className="bg-[#fff159] py-2 px-4 shadow-sm z-50 relative flex-shrink-0">
         <div className="max-w-[1200px] mx-auto flex flex-col gap-2">
@@ -431,9 +431,9 @@ export default function App() {
       </header>
 
       {/* CONTENIDO PRINCIPAL: sidebar pegado al borde izquierdo */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex">
         {/* SIDEBAR IZQUIERDO: pegado al borde, sin margen */}
-        <aside className="w-56 flex-shrink-0 bg-white border-r border-gray-200 overflow-y-auto h-full">
+        <aside className="w-56 flex-shrink-0 bg-white border-r border-gray-200">
           <div className="py-6 px-0">
             <h2 className="font-bold text-lg mb-4 flex items-center gap-2 px-4">
               <span className="grid grid-cols-2 gap-0.5"><span className="w-2 h-2 bg-blue-500 rounded-sm"></span><span className="w-2 h-2 bg-blue-500 rounded-sm"></span><span className="w-2 h-2 bg-blue-500 rounded-sm"></span><span className="w-2 h-2 bg-blue-500 rounded-sm"></span></span>
@@ -470,8 +470,8 @@ export default function App() {
           </div>
         </aside>
 
-        {/* ÁREA CENTRAL DINÁMICA: scroll independiente */}
-        <section className="flex-1 overflow-y-auto p-6 lg:p-8">
+        {/* ÁREA CENTRAL DINÁMICA */}
+        <section className="flex-1 p-6 lg:p-8">
           <div className="max-w-[1200px] mx-auto">
             {activeMenu === 'resumen' && <ResumenView />}
             {activeMenu === 'reputacion' && <ReputacionView />}
