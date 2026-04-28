@@ -104,7 +104,6 @@ export const UserMenu: React.FC<UserMenuProps> = ({ isOpen, onClose, userData, o
 
         {/* SECCIÓN 2: Servicios y Entretenimiento */}
         <div className="py-1">
-          <DropdownItem text="Créditos" />
           <DropdownItem text="Suscripciones" />
           {false && (
             <DropdownItem text="Mads Play" badge="GRATIS" badgeColor="bg-emerald-500" />
