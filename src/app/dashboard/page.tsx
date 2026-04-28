@@ -400,53 +400,6 @@ export default function App() {
               <input type="text" placeholder="Buscar productos, marcas y más..." className="w-full py-2 px-4 rounded-full shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               <button className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"><Search size={18} /></button>
             </div>
-            <div className="flex items-center gap-6 text-sm">
-              <div className="relative">
-                <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="flex items-center gap-1.5 hover:text-gray-600 font-semibold">
-                  {currentUser?.image ? (
-                    <img src={currentUser.image} alt={userData.name} className="w-7 h-7 rounded-full object-cover border border-gray-200" />
-                  ) : (
-                    <User size={18} />
-                  )}
-                  <span className="max-w-[120px] truncate">{userData.name}</span>
-                  <ChevronDown size={14} className={`transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
-                </button>
-                <UserMenu 
-                  isOpen={userMenuOpen}
-                  onClose={() => setUserMenuOpen(false)}
-                  userData={{
-                    name: userData.name,
-                    email: userData.email,
-                    image: currentUser?.image || null
-                  }}
-                  onNavigate={(view) => {
-                    setActiveMenu(view);
-                    setUserMenuOpen(false);
-                  }}
-                />
-              </div>
-              <button className="hover:text-gray-600">Ayuda</button>
-              <div className="relative">
-                <button
-                  onClick={() => setNotifOpen(!notifOpen)}
-                  className="relative hover:text-gray-600 p-1 rounded-full hover:bg-black/5 transition-colors"
-                >
-                  <Bell size={20} />
-                </button>
-                <NotificationsDropdown
-                  isOpen={notifOpen}
-                  onClose={() => setNotifOpen(false)}
-                />
-              </div>
-              <button className="relative hover:text-gray-600">
-                <ShoppingCart size={20} />
-                {cartItemCount > 0 && (
-                  <span className="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
-                    {cartItemCount > 9 ? '9+' : cartItemCount}
-                  </span>
-                )}
-              </button>
-            </div>
           </div>
           <div className="flex items-center text-xs mt-1 overflow-hidden">
             <button className="flex items-center gap-1 text-gray-600 hover:text-gray-900 font-medium truncate max-w-[140px] shrink-0 whitespace-nowrap">

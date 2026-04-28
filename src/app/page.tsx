@@ -11,7 +11,7 @@ import {
   CheckCircle2, Star, Truck, ChevronLeft, Zap, 
   ShieldCheck, TrendingUp, Timer, MapPin, 
   CreditCard, Package, Shield, HelpCircle,
-  Navigation, Box, Clock
+  Navigation, Box, Clock, ChevronDown
 } from "lucide-react"
 import { useCartStore } from "@/stores/cartStore"
 import { ProductCard } from "@/components/ProductCard"
@@ -235,12 +235,13 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#F0F0F0] font-outfit text-slate-900 overflow-x-hidden">
       {/* HEADER */}
-      <header className="bg-yellow-400 pt-3 pb-2 px-4 shadow-md sticky top-0 z-[100]">
-        <div className="max-w-7xl mx-auto flex flex-col gap-3">
-          <div className="flex items-center justify-between gap-8 md:gap-12">
-            {/* Logo */}
-            <Link href="/" className="flex items-center gap-4 cursor-pointer group flex-shrink-0">
-              <div className="relative w-14 h-14 bg-slate-900 rounded-2xl flex items-center justify-center shadow-2xl border border-white/10 group-hover:shadow-blue-500/20 transition-all overflow-hidden">
+      <header className="bg-[#FFF159] pt-2 pb-1.5 px-4 shadow-md sticky top-0 z-[100]">
+        <div className="max-w-[1200px] mx-auto flex flex-col">
+          {/* FILA 1: Logo (160px) + Search (600px) + Promo */}
+          <div className="flex items-center h-12">
+            {/* LOGO - ANCHO FIJO 160px */}
+            <Link href="/" className="flex items-center gap-2 cursor-pointer group flex-shrink-0 w-[160px]">
+              <div className="relative w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center shadow-md overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/30 to-transparent"></div>
                 <svg viewBox="0 0 100 100" className="w-10 h-10 overflow-visible">
                   <defs>
@@ -261,7 +262,7 @@ export default function Home() {
                 </svg>
               </div>
               <div className="flex flex-col justify-center">
-                <span className="font-montserrat font-black text-[28px] tracking-tighter leading-none flex items-center uppercase overflow-hidden shimmer-text">
+                <span className="font-montserrat font-black text-[22px] tracking-tighter leading-none flex items-center uppercase overflow-hidden shimmer-text">
                   {logoLetters.map((letter, i) => (
                     <span 
                       key={i} 
@@ -278,92 +279,90 @@ export default function Home() {
               </div>
             </Link>
 
-            {/* Search */}
-            <form onSubmit={handleSearch} className="flex-1 max-w-4xl relative group">
-              <input 
-                type="text" 
-                placeholder="Busca productos, servicios y marcas exclusivas..." 
-                className="w-full py-3.5 px-6 pr-14 rounded-xl border-0 shadow-lg bg-white focus:ring-4 focus:ring-blue-600/10 transition-all outline-none text-slate-800 font-medium text-[16px]"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <div className="absolute inset-y-0 right-0 pr-5 flex items-center">
-                <div className="h-6 w-px bg-slate-200 mr-4"></div>
-                <Search size={22} className="text-slate-400 group-focus-within:text-blue-600 transition-colors cursor-pointer" />
+            {/* BARRA DE BÚSQUEDA - ANCHO 600px */}
+            <form onSubmit={handleSearch} className="w-[600px]">
+              <div className="flex items-center bg-white rounded-[2px] shadow-[0_1px_2px_0_rgba(0,0,0,0.12)] h-10 px-4">
+                <input 
+                  type="text" 
+                  placeholder="Buscar productos, marcas y más..." 
+                  className="flex-1 outline-none text-[14px] text-slate-800 placeholder-slate-400 font-light"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <div className="h-6 w-[1px] bg-slate-200 mx-2"></div>
+                <button type="submit" className="text-slate-500 hover:text-slate-800 transition-colors">
+                  <Search size={18} strokeWidth={2.5} />
+                </button>
               </div>
             </form>
 
-            {/* Pro Badge */}
-            <Link href="/subscriptions" className="hidden xl:flex items-center gap-3 bg-slate-900 text-white pl-2 pr-6 py-2 rounded-2xl shadow-xl hover:scale-105 transition-transform cursor-pointer border border-white/5">
-              <div className="w-9 h-9 rounded-xl bg-yellow-400 flex items-center justify-center text-slate-900 font-black italic">M+</div>
-              <div className="flex flex-col">
-                <span className="text-[10px] font-bold opacity-60 uppercase tracking-widest leading-none mb-1">Suscribite a</span>
-                <span className="text-[13px] font-black italic leading-none text-yellow-400">MADSJEEZ PRO</span>
+            {/* PROMO - ALINEADO CON MIS COMPRAS */}
+            <div className="flex-1 flex items-center cursor-pointer">
+              <div className="flex items-center gap-2 group hover:brightness-95 transition-all ml-[135px]">
+                 <Sparkles size={16} className="text-slate-700" />
+                 <span className="text-[12px] font-medium text-slate-700 whitespace-nowrap">Ofertas por tiempo limitado</span>
               </div>
-            </Link>
+            </div>
           </div>
 
-          {/* Navigation */}
-          <div className="flex items-center text-[13px] font-medium text-slate-800/80 overflow-hidden">
-            <div className="hidden md:flex items-center gap-2 p-1.5 rounded-lg hover:bg-black/5 cursor-pointer transition-colors border border-transparent hover:border-black/5 shrink-0">
-              <MapPin size={22} className="text-slate-900" />
-              <div className="flex flex-col leading-tight">
-                <span className="text-[10px] opacity-60 font-bold uppercase">Enviar a</span>
-                <span className="text-[13px] font-extrabold">Spegazzini 1812</span>
+          {/* FILA 2: Ubicación (160px) + Nav (600px) + Usuario */}
+          <div className="flex items-center h-10 mt-1">
+            {/* UBICACIÓN - ANCHO 160px PARA ALINEAR CON EL LOGO */}
+            <div className="flex items-center gap-1 cursor-pointer w-[160px] group flex-shrink-0">
+              <MapPin size={18} className="text-slate-900/60 group-hover:text-slate-900" />
+              <div className="flex flex-col leading-none">
+                <span className="text-[11px] text-slate-700/60 group-hover:text-slate-700 whitespace-nowrap">Enviar a Carlos</span>
+                <span className="text-[13px] text-slate-800 font-normal truncate">Spegazzini 1812</span>
               </div>
             </div>
 
-            <nav className="flex items-center gap-3 overflow-x-auto scrollbar-hide flex-1 md:justify-center pl-4">
-              {[
-                { label: "Categorías", href: "/categories", icon: true },
-                { label: "Ofertas", href: "/deals", icon: false },
-                { label: "Cupones", href: "/coupons", icon: false },
-                { label: "Historial", href: "/history", icon: false },
-                { label: "Supermercado", href: "/supermarket", icon: false },
-                { label: "Moda", href: "/fashion", icon: false },
-                { label: "Vender", href: "/seller/register", icon: false },
-                { label: "Ayuda", href: "/help", icon: false },
-              ].map((item) => (
-                <Link 
-                  key={item.label} 
-                  href={item.href}
-                  className="hover:text-blue-700 transition-colors whitespace-nowrap font-semibold shrink-0"
-                >
-                  {item.icon && <Menu size={16} className="inline mr-1 mb-0.5" />}
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
+            {/* CONTENEDOR UNIFICADO: Nav (600px) + Usuario */}
+            <div className="flex-1 flex items-center ml-6 gap-x-4">
+              
+              {/* NAV MENU - ANCHO 600px ALINEADO CON BÚSQUEDA */}
+              <nav className="flex items-center gap-x-2 text-[13px] text-slate-800/70 font-light w-[600px]">
+                <a href="#" className="flex items-center gap-0.5 hover:text-blue-700 transition-colors whitespace-nowrap">
+                  Categorías <ChevronDown size={12} className="mt-0.5 opacity-40" />
+                </a>
+                <a href="#" className="hover:text-blue-700 transition-colors whitespace-nowrap">Ofertas</a>
+                <a href="#" className="hover:text-blue-700 transition-colors whitespace-nowrap">Historial</a>
+                <a href="#" className="hover:text-blue-700 transition-colors whitespace-nowrap">Supermercado</a>
+                <a href="#" className="hover:text-blue-700 transition-colors whitespace-nowrap">Moda</a>
+                <a href="#" className="hover:text-blue-700 transition-colors whitespace-nowrap">Vender</a>
+                <a href="#" className="hover:text-blue-700 transition-colors whitespace-nowrap">Ayuda</a>
+              </nav>
 
-            <div className="hidden lg:flex items-center gap-4 font-bold shrink-0">
-              {!session ? (
-                <>
-                  <Link href="/auth/register" className="hover:text-blue-700 transition-colors">Creá tu cuenta</Link>
-                  <Link href="/auth/login" className="hover:text-blue-700 transition-colors">Ingresá</Link>
-                </>
-              ) : (
-                <>
-                  <Link href="/orders" className="hover:text-blue-700 transition-colors flex items-center gap-1">
-                    <Package size={16} />
-                    Mis compras
+              {/* ACCIONES DE USUARIO */}
+              <div className="flex items-center gap-x-3 text-[13px] text-slate-800 font-light">
+                {!session ? (
+                  <>
+                    <Link href="/auth/register" className="hover:text-blue-700 transition-colors">Creá tu cuenta</Link>
+                    <Link href="/auth/login" className="hover:text-blue-700 transition-colors">Ingresá</Link>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/orders" className="hover:text-blue-700 transition-colors flex items-center gap-1">
+                      <Package size={16} />
+                      Mis compras
+                    </Link>
+                    <Link href="/favorites" className="hover:text-blue-700 transition-colors flex items-center gap-1">
+                      <Heart size={16} />
+                      Favoritos
+                    </Link>
+                    <Link href="/dashboard" className="hover:text-blue-700 transition-colors">{session.user?.name || "Mi cuenta"}</Link>
+                  </>
+                )}
+                <div className="flex items-center gap-5 ml-4 pl-6 border-l border-slate-900/10">
+                  <Bell size={20} className="cursor-pointer hover:text-blue-700 transition-colors" />
+                  <Link href="/cart" className="relative cursor-pointer hover:text-blue-700 transition-colors">
+                    <ShoppingCart size={20} />
+                    {cartItemsCount > 0 && (
+                      <span className="absolute -top-2.5 -right-2.5 bg-blue-600 text-white text-[10px] font-black h-[18px] w-[18px] flex items-center justify-center rounded-full border-2 border-yellow-400">
+                        {cartItemsCount}
+                      </span>
+                    )}
                   </Link>
-                  <Link href="/favorites" className="hover:text-blue-700 transition-colors flex items-center gap-1">
-                    <Heart size={16} />
-                    Favoritos
-                  </Link>
-                  <Link href="/dashboard" className="hover:text-blue-700 transition-colors">{session.user?.name || "Mi cuenta"}</Link>
-                </>
-              )}
-              <div className="flex items-center gap-5 ml-4 pl-6 border-l border-slate-900/10">
-                <Bell size={20} className="cursor-pointer hover:text-blue-700 transition-colors" />
-                <Link href="/cart" className="relative cursor-pointer hover:text-blue-700 transition-colors">
-                  <ShoppingCart size={20} />
-                  {cartItemsCount > 0 && (
-                    <span className="absolute -top-2.5 -right-2.5 bg-blue-600 text-white text-[10px] font-black h-[18px] w-[18px] flex items-center justify-center rounded-full border-2 border-yellow-400">
-                      {cartItemsCount}
-                    </span>
-                  )}
-                </Link>
+                </div>
               </div>
             </div>
           </div>
