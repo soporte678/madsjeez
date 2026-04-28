@@ -136,6 +136,7 @@ model User {
   receivedMessages  OrderMessage[]  @relation("ReceivedMessages")
   campaigns         Campaign[]
   coupons           Coupon[]
+  cart              Cart?
 
   // Reputación
   reputationHistory ReputationHistory[] @relation("ReputationHistory")
@@ -290,6 +291,37 @@ model OrderItem {
   product   Product @relation(fields: [productId], references: [id])
   
   @@map("order_items")
+}
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String     @unique @map("user_id")
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  items     CartItem[]
+
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  @@map("carts")
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  quantity  Int      @default(1)
+  price     Float    // Precio al momento de agregar al carrito
+
+  cartId    String   @map("cart_id")
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+
+  productId String   @map("product_id")
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([cartId, productId])
+  @@map("cart_items")
 }
 
 model Payment {

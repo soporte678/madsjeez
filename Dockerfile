@@ -1,7 +1,7 @@
 # Dockerfile para Railway - MADSJEEZ Marketplace
 FROM node:22-alpine AS base
 
-# Forzar rebuild limpio - cambiar este número para invalidar cache: 9
+# Forzar rebuild limpio - cambiar este número para invalidar cache: 10
 
 # Instalar dependencias necesarias
 RUN apk add --no-cache libc6-compat
@@ -27,9 +27,10 @@ RUN echo "=== Generando Prisma Client ===" && \
     npx prisma generate && \
     echo "=== Prisma Client generado ==="
 
-# Baselining: mark initial migration as applied, then deploy new migrations
+# Baselining: mark all existing migrations as applied, then deploy new ones
 RUN echo "=== Baselining Prisma migrations ===" && \
     npx prisma migrate resolve --applied 20250426170000_initial_setup 2>/dev/null || true && \
+    npx prisma migrate resolve --applied 20250427200000_add_favorites_table 2>/dev/null || true && \
     npx prisma migrate deploy && \
     echo "=== Migraciones aplicadas ==="
 

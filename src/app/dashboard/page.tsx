@@ -18,6 +18,7 @@ import OpinionesView from "@/components/dashboard/OpinionesView";
 import FavoritosView from "@/components/dashboard/FavoritosView";
 import ComprasView from "@/components/dashboard/ComprasView";
 import ProfileView from "@/components/dashboard/ProfileView";
+import CartView from "@/components/dashboard/CartView";
 import NotificationsDropdown from "@/components/dashboard/NotificationsDropdown";
 
 function getInitialMenu() {
@@ -106,6 +107,7 @@ export default function App() {
       setIsOpen: setComprasOpen,
       subItems: [
         { id: 'compras', label: 'Compras' },
+        { id: 'carrito', label: 'Carrito' },
         { id: 'preguntas', label: 'Preguntas' },
         { id: 'opiniones', label: 'Opiniones' },
         { id: 'favoritos', label: 'Favoritos' },
@@ -479,6 +481,7 @@ export default function App() {
           {activeMenu === 'favoritos' && <FavoritosView />}
           {activeMenu === 'compras' && <ComprasView />}
           {activeMenu === 'perfil' && <ProfileView userData={currentUser || undefined} />}
+          {activeMenu === 'carrito' && <CartView />}
           {activeMenu === 'publicaciones' && renderProductosCatalogo()}
         </section>
       </main>
