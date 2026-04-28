@@ -304,8 +304,8 @@ export default function Home() {
           </div>
 
           {/* Navigation */}
-          <div className="flex items-center justify-between gap-4 text-[13px] font-medium text-slate-800/80">
-            <div className="hidden md:flex items-center gap-2 p-1.5 rounded-lg hover:bg-black/5 cursor-pointer transition-colors border border-transparent hover:border-black/5">
+          <div className="flex items-center text-[13px] font-medium text-slate-800/80 overflow-hidden">
+            <div className="hidden md:flex items-center gap-2 p-1.5 rounded-lg hover:bg-black/5 cursor-pointer transition-colors border border-transparent hover:border-black/5 shrink-0">
               <MapPin size={22} className="text-slate-900" />
               <div className="flex flex-col leading-tight">
                 <span className="text-[10px] opacity-60 font-bold uppercase">Enviar a</span>
@@ -313,7 +313,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="flex items-center gap-8 overflow-x-auto scrollbar-hide flex-1 md:justify-center">
+            <nav className="flex items-center gap-3 overflow-x-auto scrollbar-hide flex-1 md:justify-center pl-4">
               {[
                 { label: "Categorías", href: "/categories", icon: true },
                 { label: "Ofertas", href: "/deals", icon: false },
@@ -327,15 +327,15 @@ export default function Home() {
                 <Link 
                   key={item.label} 
                   href={item.href}
-                  className="hover:text-blue-700 transition-colors whitespace-nowrap font-semibold"
+                  className="hover:text-blue-700 transition-colors whitespace-nowrap font-semibold shrink-0"
                 >
                   {item.icon && <Menu size={16} className="inline mr-1 mb-0.5" />}
                   {item.label}
                 </Link>
               ))}
-            </div>
+            </nav>
 
-            <div className="hidden lg:flex items-center gap-6 font-bold">
+            <div className="hidden lg:flex items-center gap-4 font-bold shrink-0">
               {!session ? (
                 <>
                   <Link href="/auth/register" className="hover:text-blue-700 transition-colors">Creá tu cuenta</Link>
