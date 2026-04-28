@@ -448,14 +448,67 @@ export default function App() {
               </button>
             </div>
           </div>
-          <div className="flex items-center justify-between text-sm mt-1">
-            <button className="flex items-center gap-1 text-gray-600 hover:text-gray-900 font-medium"><MapPin size={16} /> Enviar a Carlos Spegazzini 1812</button>
-            <nav className="flex items-center gap-4 text-gray-600 font-medium">
+          <div className="flex items-center text-sm mt-1">
+            <button className="flex items-center gap-1 text-gray-600 hover:text-gray-900 font-medium truncate max-w-[180px] shrink-0">
+              <MapPin size={16} /> Enviar a Carlos Spegazzini 1812
+            </button>
+            <nav className="flex-1 flex items-center gap-4 text-gray-600 font-medium pl-8">
               <a href="#" className="hover:text-gray-900">Categorías <ChevronDown size={14} className="inline" /></a>
               <a href="#" className="hover:text-gray-900">Ofertas</a>
+              <a href="#" className="hover:text-gray-900">Cupones</a>
+              <a href="#" className="hover:text-gray-900">Supermercado</a>
+              <a href="#" className="hover:text-gray-900">Moda</a>
               <a href="#" className="hover:text-gray-900">Vender</a>
+              <button onClick={() => setActiveMenu('ayuda')} className="hover:text-gray-900">Ayuda</button>
             </nav>
-            <div className="flex items-center gap-2 text-blue-900 font-bold text-xs tracking-wider"><Star size={14} fill="currentColor" /> MADSJEEZ PRO</div>
+            <div className="flex items-center gap-5 text-gray-600 font-medium shrink-0">
+              <div className="relative">
+                <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="flex items-center gap-1 hover:text-gray-900">
+                  {currentUser?.image ? (
+                    <img src={currentUser.image} alt={userData.name} className="w-5 h-5 rounded-full object-cover border border-gray-200" />
+                  ) : (
+                    <User size={16} />
+                  )}
+                  <span className="max-w-[100px] truncate">{userData.name}</span>
+                  <ChevronDown size={12} className={`transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
+                </button>
+                <UserMenu 
+                  isOpen={userMenuOpen}
+                  onClose={() => setUserMenuOpen(false)}
+                  userData={{
+                    name: userData.name,
+                    email: userData.email,
+                    image: currentUser?.image || null
+                  }}
+                  onNavigate={(view) => {
+                    setActiveMenu(view);
+                    setUserMenuOpen(false);
+                  }}
+                />
+              </div>
+              <button onClick={() => setActiveMenu('compras')} className="hover:text-gray-900">Mis compras</button>
+              <button onClick={() => setActiveMenu('favoritos')} className="hover:text-gray-900 flex items-center gap-1"><Heart size={14} /> Favoritos</button>
+              <button onClick={() => setActiveMenu('carrito')} className="relative hover:text-gray-900">
+                <ShoppingCart size={18} />
+                {cartItemCount > 0 && (
+                  <span className="absolute -top-1.5 -right-2 bg-red-500 text-white text-[9px] w-3.5 h-3.5 rounded-full flex items-center justify-center font-bold">
+                    {cartItemCount > 9 ? '9+' : cartItemCount}
+                  </span>
+                )}
+              </button>
+              <div className="relative">
+                <button
+                  onClick={() => setNotifOpen(!notifOpen)}
+                  className="relative hover:text-gray-900 p-0.5 transition-colors"
+                >
+                  <Bell size={18} />
+                </button>
+                <NotificationsDropdown
+                  isOpen={notifOpen}
+                  onClose={() => setNotifOpen(false)}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </header>
