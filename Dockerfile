@@ -12,8 +12,10 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Copiar solo package.json primero
+# Copiar package.json y archivos de Prisma primero
 COPY package.json ./
+COPY prisma prisma/
+COPY prisma.config.ts ./
 
 # Instalar dependencias con más memoria y logs
 RUN echo "=== Instalando dependencias ===" && \
