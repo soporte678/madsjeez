@@ -71,6 +71,7 @@ export default function App() {
   // Estado para el widget del Asistente
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<{ name: string; email: string; image: string | null } | null>(null);
+  const [cartItemCount, setCartItemCount] = useState(0);
 
   // Fetch real user data from session
   useEffect(() => {
@@ -83,6 +84,26 @@ export default function App() {
       })
       .catch((err) => {
         console.error('Error fetching user:', err);
+      });
+  }, []);
+
+  // Fetch cart item count
+  useEffect(() => {
+    fetch('/api/cart')
+      .then((r) => {
+        if (!r.ok) throw new Error('Failed to fetch cart');
+        return r.json();
+      })
+      .then((data) => {
+        if (data?.summary?.itemCount) {
+          setCartItemCount(data.summary.itemCount);
+        } else {
+          setCartItemCount(0);
+        }
+      })
+      .catch((err) => {
+        console.error('Error fetching cart count:', err);
+        setCartItemCount(0);
       });
   }, []);
 
@@ -417,7 +438,14 @@ export default function App() {
                   onClose={() => setNotifOpen(false)}
                 />
               </div>
-              <button className="relative hover:text-gray-600"><ShoppingCart size={20} /><span className="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">2</span></button>
+              <button className="relative hover:text-gray-600">
+                <ShoppingCart size={20} />
+                {cartItemCount > 0 && (
+                  <span className="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                    {cartItemCount > 9 ? '9+' : cartItemCount}
+                  </span>
+                )}
+              </button>
             </div>
           </div>
           <div className="flex items-center justify-between text-sm mt-1">
