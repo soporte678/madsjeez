@@ -448,20 +448,20 @@ export default function App() {
               </button>
             </div>
           </div>
-          <div className="flex items-center text-sm mt-1">
-            <button className="flex items-center gap-1 text-gray-600 hover:text-gray-900 font-medium truncate max-w-[180px] shrink-0">
-              <MapPin size={16} /> Enviar a Carlos Spegazzini 1812
+          <div className="flex items-center text-xs mt-1 overflow-hidden">
+            <button className="flex items-center gap-1 text-gray-600 hover:text-gray-900 font-medium truncate max-w-[140px] shrink-0 whitespace-nowrap">
+              <MapPin size={14} /> Enviar a Spagazzini 1812
             </button>
-            <nav className="flex-1 flex items-center gap-4 text-gray-600 font-medium pl-8">
-              <a href="#" className="hover:text-gray-900">Categorías <ChevronDown size={14} className="inline" /></a>
-              <a href="#" className="hover:text-gray-900">Ofertas</a>
-              <a href="#" className="hover:text-gray-900">Cupones</a>
-              <a href="#" className="hover:text-gray-900">Supermercado</a>
-              <a href="#" className="hover:text-gray-900">Moda</a>
-              <a href="#" className="hover:text-gray-900">Vender</a>
-              <button onClick={() => setActiveMenu('ayuda')} className="hover:text-gray-900">Ayuda</button>
+            <nav className="flex-1 flex items-center gap-3 text-gray-600 font-medium pl-4 overflow-hidden">
+              <a href="#" className="hover:text-gray-900 whitespace-nowrap">Categorías <ChevronDown size={12} className="inline" /></a>
+              <a href="#" className="hover:text-gray-900 whitespace-nowrap">Ofertas</a>
+              <a href="#" className="hover:text-gray-900 whitespace-nowrap">Cupones</a>
+              <a href="#" className="hover:text-gray-900 whitespace-nowrap">Supermercado</a>
+              <a href="#" className="hover:text-gray-900 whitespace-nowrap">Moda</a>
+              <a href="#" className="hover:text-gray-900 whitespace-nowrap">Vender</a>
+              <button onClick={() => setActiveMenu('ayuda')} className="hover:text-gray-900 whitespace-nowrap">Ayuda</button>
             </nav>
-            <div className="flex items-center gap-5 text-gray-600 font-medium shrink-0">
+            <div className="flex items-center gap-3 text-gray-600 font-medium shrink-0">
               <div className="relative">
                 <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="flex items-center gap-1 hover:text-gray-900">
                   {currentUser?.image ? (
