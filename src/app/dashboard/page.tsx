@@ -354,9 +354,9 @@ export default function App() {
   if (showLiveMonitor) return renderLiveMonitor();
 
   return (
-    <div className="min-h-screen bg-gray-100 font-sans text-gray-800 flex flex-col relative overflow-x-hidden">
+    <div className="h-screen bg-gray-100 font-sans text-gray-800 flex flex-col relative overflow-hidden">
       {/* HEADER AMARILLO */}
-      <header className="bg-[#fff159] py-2 px-4 shadow-sm z-50 relative">
+      <header className="bg-[#fff159] py-2 px-4 shadow-sm z-50 relative flex-shrink-0">
         <div className="max-w-[1200px] mx-auto flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <a href="/" className="flex items-center gap-2 group cursor-pointer">
@@ -430,61 +430,65 @@ export default function App() {
         </div>
       </header>
 
-      {/* CONTENIDO PRINCIPAL */}
-      <main className="max-w-[1200px] w-full mx-auto py-8 px-4 flex gap-8 flex-1 items-start">
-        {/* SIDEBAR IZQUIERDO */}
-        <aside className="w-56 flex-shrink-0 overflow-hidden">
-          <h2 className="font-bold text-lg mb-4 flex items-center gap-2">
-            <span className="grid grid-cols-2 gap-0.5"><span className="w-2 h-2 bg-blue-500 rounded-sm"></span><span className="w-2 h-2 bg-blue-500 rounded-sm"></span><span className="w-2 h-2 bg-blue-500 rounded-sm"></span><span className="w-2 h-2 bg-blue-500 rounded-sm"></span></span>
-            MI CUENTA
-          </h2>
-          <nav className="flex flex-col gap-1">
-            {menuItems.map((item) => (
-              <div key={item.id} className="mb-2">
-                {item.isParent ? (
-                  <>
-                    <button onClick={() => item.setIsOpen(!item.isOpen)} className="w-full flex items-center justify-between py-2 px-3 hover:bg-blue-50 rounded-lg text-blue-600 font-semibold transition-colors">
-                      <div className="flex items-center gap-3">{item.icon} {item.label}</div>
-                      <ChevronDown size={16} className={`transform transition-transform ${item.isOpen ? 'rotate-180' : ''}`} />
+      {/* CONTENIDO PRINCIPAL: sidebar pegado al borde izquierdo */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* SIDEBAR IZQUIERDO: pegado al borde, sin margen */}
+        <aside className="w-56 flex-shrink-0 bg-white border-r border-gray-200 overflow-y-auto h-full">
+          <div className="py-6 px-0">
+            <h2 className="font-bold text-lg mb-4 flex items-center gap-2 px-4">
+              <span className="grid grid-cols-2 gap-0.5"><span className="w-2 h-2 bg-blue-500 rounded-sm"></span><span className="w-2 h-2 bg-blue-500 rounded-sm"></span><span className="w-2 h-2 bg-blue-500 rounded-sm"></span><span className="w-2 h-2 bg-blue-500 rounded-sm"></span></span>
+              MI CUENTA
+            </h2>
+            <nav className="flex flex-col gap-1">
+              {menuItems.map((item) => (
+                <div key={item.id}>
+                  {item.isParent ? (
+                    <>
+                      <button onClick={() => item.setIsOpen(!item.isOpen)} className="w-full flex items-center justify-between py-2 px-4 hover:bg-blue-50 text-blue-600 font-semibold transition-colors text-sm">
+                        <div className="flex items-center gap-3">{item.icon} {item.label}</div>
+                        <ChevronDown size={16} className={`transform transition-transform ${item.isOpen ? 'rotate-180' : ''}`} />
+                      </button>
+                      {item.isOpen && (
+                        <div className="flex flex-col ml-4 mt-1 border-l-2 border-gray-200 pl-4 gap-1">
+                          {item.subItems.map(sub => (
+                            <button key={sub.id} onClick={() => setActiveMenu(sub.id)} className={`text-left text-sm py-1.5 px-2 transition-colors flex items-center justify-between rounded ${activeMenu === sub.id ? 'text-blue-600 font-bold bg-blue-50' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`}>
+                              <span>{sub.label}</span>
+                              {(sub as any).rightIcon && (sub as any).rightIcon}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <button onClick={() => setActiveMenu(item.id)} className={`w-full flex items-center justify-between py-2 px-4 font-medium transition-colors text-sm ${activeMenu === item.id ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-100'}`}>
+                      <div className="flex items-center gap-3">{item.icon || <LayoutGrid size={18}/>} {item.label}</div>
                     </button>
-                    {item.isOpen && (
-                      <div className="flex flex-col ml-9 mt-1 border-l-2 border-gray-200 pl-4 gap-2">
-                        {item.subItems.map(sub => (
-                          <button key={sub.id} onClick={() => setActiveMenu(sub.id)} className={`text-left text-sm py-1.5 transition-colors flex items-center justify-between ${activeMenu === sub.id ? 'text-blue-600 font-bold' : 'text-gray-500 hover:text-gray-900'}`}>
-                            <span>{sub.label}</span>
-                            {(sub as any).rightIcon && (sub as any).rightIcon}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <button onClick={() => setActiveMenu(item.id)} className={`w-full flex items-center justify-between py-2 px-3 rounded-lg font-medium transition-colors ${activeMenu === item.id ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-200'}`}>
-                    <div className="flex items-center gap-3">{item.icon || <LayoutGrid size={18}/>} {item.label}</div>
-                  </button>
-                )}
-              </div>
-            ))}
-          </nav>
+                  )}
+                </div>
+              ))}
+            </nav>
+          </div>
         </aside>
 
-        {/* ÁREA CENTRAL DINÁMICA */}
-        <section className="flex-1">
-          {activeMenu === 'resumen' && <ResumenView />}
-          {activeMenu === 'reputacion' && <ReputacionView />}
-          {activeMenu === 'metricas' && renderMetricas()}
-          {activeMenu === 'ventas-novedades' && renderNovedades()}
-          {activeMenu === 'posventa' && renderPosventa()}
-          {activeMenu === 'preferencias-venta' && renderPreferenciasVenta()}
-          {activeMenu === 'preguntas' && <PreguntasView />}
-          {activeMenu === 'opiniones' && <OpinionesView />}
-          {activeMenu === 'favoritos' && <FavoritosView />}
-          {activeMenu === 'compras' && <ComprasView />}
-          {activeMenu === 'perfil' && <ProfileView userData={currentUser || undefined} />}
-          {activeMenu === 'carrito' && <CartView />}
-          {activeMenu === 'publicaciones' && renderProductosCatalogo()}
+        {/* ÁREA CENTRAL DINÁMICA: scroll independiente */}
+        <section className="flex-1 overflow-y-auto p-6 lg:p-8">
+          <div className="max-w-[1200px] mx-auto">
+            {activeMenu === 'resumen' && <ResumenView />}
+            {activeMenu === 'reputacion' && <ReputacionView />}
+            {activeMenu === 'metricas' && renderMetricas()}
+            {activeMenu === 'ventas-novedades' && renderNovedades()}
+            {activeMenu === 'posventa' && renderPosventa()}
+            {activeMenu === 'preferencias-venta' && renderPreferenciasVenta()}
+            {activeMenu === 'preguntas' && <PreguntasView />}
+            {activeMenu === 'opiniones' && <OpinionesView />}
+            {activeMenu === 'favoritos' && <FavoritosView />}
+            {activeMenu === 'compras' && <ComprasView />}
+            {activeMenu === 'perfil' && <ProfileView userData={currentUser || undefined} />}
+            {activeMenu === 'carrito' && <CartView />}
+            {activeMenu === 'publicaciones' && renderProductosCatalogo()}
+          </div>
         </section>
-      </main>
+      </div>
 
       {/* ASISTENTE */}
       <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
