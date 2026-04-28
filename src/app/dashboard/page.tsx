@@ -380,88 +380,60 @@ export default function App() {
     <div className="min-h-screen bg-gray-100 font-sans text-gray-800 flex flex-col relative">
       {/* HEADER AMARILLO */}
       <header className="bg-[#fff159] py-2 px-4 shadow-sm z-50 relative flex-shrink-0">
-        <div className="max-w-[1200px] mx-auto flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <a href="/" className="flex items-center gap-2 group cursor-pointer">
-              <div className="relative w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center shadow-lg border border-white/10 overflow-hidden group-hover:shadow-blue-500/20 transition-all">
-                <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/30 to-transparent"></div>
-                <svg viewBox="0 0 100 100" className="w-7 h-7 overflow-visible">
-                  <polygon points="15,80 35,30 55,55 35,80" fill="#2563EB" className="opacity-90" />
-                  <polygon points="55,55 75,30 95,80 75,80" fill="#2563EB" className="opacity-90" />
-                  <path d="M 85 80 L 65 30 L 45 65" fill="none" stroke="#FACC15" strokeWidth="14" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
-              <span className="font-black text-[22px] tracking-tighter leading-none flex items-center uppercase">
-                <span className="text-slate-900">MADS</span>
-                <span className="text-blue-700">JEEZ</span>
-              </span>
-            </a>
-            <div className="flex-1 max-w-2xl mx-8 relative">
-              <input type="text" placeholder="Buscar productos, marcas y más..." className="w-full py-2 px-4 rounded-full shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              <button className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"><Search size={18} /></button>
+        <div className="max-w-[1200px] mx-auto flex items-center justify-between">
+          <a href="/" className="flex items-center gap-2 group cursor-pointer">
+            <div className="relative w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center shadow-lg border border-white/10 overflow-hidden group-hover:shadow-blue-500/20 transition-all">
+              <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/30 to-transparent"></div>
+              <svg viewBox="0 0 100 100" className="w-7 h-7 overflow-visible">
+                <polygon points="15,80 35,30 55,55 35,80" fill="#2563EB" className="opacity-90" />
+                <polygon points="55,55 75,30 95,80 75,80" fill="#2563EB" className="opacity-90" />
+                <path d="M 85 80 L 65 30 L 45 65" fill="none" stroke="#FACC15" strokeWidth="14" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </div>
-          </div>
-          <div className="flex items-center text-xs mt-1 overflow-hidden">
-            <button className="flex items-center gap-1 text-gray-600 hover:text-gray-900 font-medium truncate max-w-[140px] shrink-0 whitespace-nowrap">
-              <MapPin size={14} /> Enviar a Spagazzini 1812
-            </button>
-            <nav className="flex-1 flex items-center gap-3 text-gray-600 font-medium pl-4 overflow-hidden">
-              <a href="#" className="hover:text-gray-900 whitespace-nowrap">Categorías <ChevronDown size={12} className="inline" /></a>
-              <a href="#" className="hover:text-gray-900 whitespace-nowrap">Ofertas</a>
-              <a href="#" className="hover:text-gray-900 whitespace-nowrap">Cupones</a>
-              <a href="#" className="hover:text-gray-900 whitespace-nowrap">Supermercado</a>
-              <a href="#" className="hover:text-gray-900 whitespace-nowrap">Moda</a>
-              <a href="#" className="hover:text-gray-900 whitespace-nowrap">Vender</a>
-              <button onClick={() => setActiveMenu('ayuda')} className="hover:text-gray-900 whitespace-nowrap">Ayuda</button>
-            </nav>
-            <div className="flex items-center gap-3 text-gray-600 font-medium shrink-0">
-              <div className="relative">
-                <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="flex items-center gap-1 hover:text-gray-900">
-                  {currentUser?.image ? (
-                    <img src={currentUser.image} alt={userData.name} className="w-5 h-5 rounded-full object-cover border border-gray-200" />
-                  ) : (
-                    <User size={16} />
-                  )}
-                  <span className="max-w-[100px] truncate">{userData.name}</span>
-                  <ChevronDown size={12} className={`transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
-                </button>
-                <UserMenu 
-                  isOpen={userMenuOpen}
-                  onClose={() => setUserMenuOpen(false)}
-                  userData={{
-                    name: userData.name,
-                    email: userData.email,
-                    image: currentUser?.image || null
-                  }}
-                  onNavigate={(view) => {
-                    setActiveMenu(view);
-                    setUserMenuOpen(false);
-                  }}
-                />
-              </div>
-              <button onClick={() => setActiveMenu('compras')} className="hover:text-gray-900">Mis compras</button>
-              <button onClick={() => setActiveMenu('favoritos')} className="hover:text-gray-900 flex items-center gap-1"><Heart size={14} /> Favoritos</button>
-              <button onClick={() => setActiveMenu('carrito')} className="relative hover:text-gray-900">
-                <ShoppingCart size={18} />
-                {cartItemCount > 0 && (
-                  <span className="absolute -top-1.5 -right-2 bg-red-500 text-white text-[9px] w-3.5 h-3.5 rounded-full flex items-center justify-center font-bold">
-                    {cartItemCount > 9 ? '9+' : cartItemCount}
-                  </span>
+            <span className="font-black text-[22px] tracking-tighter leading-none flex items-center uppercase">
+              <span className="text-slate-900">MADS</span>
+              <span className="text-blue-700">JEEZ</span>
+            </span>
+          </a>
+          <div className="flex items-center gap-4 text-[13px] text-slate-800 font-light">
+            <div className="relative">
+              <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="flex items-center gap-1 hover:text-gray-900">
+                {currentUser?.image ? (
+                  <img src={currentUser.image} alt={userData.name} className="w-5 h-5 rounded-full object-cover border border-gray-200" />
+                ) : (
+                  <User size={16} />
                 )}
+                <span className="max-w-[100px] truncate">{userData.name}</span>
+                <ChevronDown size={12} className={`transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
               </button>
-              <div className="relative">
-                <button
-                  onClick={() => setNotifOpen(!notifOpen)}
-                  className="relative hover:text-gray-900 p-0.5 transition-colors"
-                >
-                  <Bell size={18} />
-                </button>
-                <NotificationsDropdown
-                  isOpen={notifOpen}
-                  onClose={() => setNotifOpen(false)}
-                />
-              </div>
+              <UserMenu 
+                isOpen={userMenuOpen}
+                onClose={() => setUserMenuOpen(false)}
+                userData={{
+                  name: userData.name,
+                  email: userData.email,
+                  image: currentUser?.image || null
+                }}
+                onNavigate={(view) => {
+                  setActiveMenu(view);
+                  setUserMenuOpen(false);
+                }}
+              />
             </div>
+            <button onClick={() => setActiveMenu('publicaciones')} className="hover:text-gray-900">Vender</button>
+            <button onClick={() => setActiveMenu('ayuda')} className="hover:text-gray-900">Ayuda</button>
+            <div className="relative">
+              <button onClick={() => setNotifOpen(!notifOpen)} className="relative hover:text-gray-900 p-0.5 transition-colors">
+                <Bell size={18} />
+              </button>
+              <NotificationsDropdown isOpen={notifOpen} onClose={() => setNotifOpen(false)} />
+            </div>
+            <button 
+              onClick={() => setIsAssistantOpen(true)} 
+              className="bg-slate-900 text-white px-3 py-1 rounded-full text-xs font-medium hover:bg-slate-800 transition-colors"
+            >
+              Asistente
+            </button>
           </div>
         </div>
       </header>

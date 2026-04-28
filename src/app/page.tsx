@@ -262,7 +262,7 @@ export default function Home() {
                 </svg>
               </div>
               <div className="flex flex-col justify-center">
-                <span className="font-montserrat font-black text-[22px] tracking-tighter leading-none flex items-center uppercase overflow-hidden shimmer-text">
+                <span className="font-montserrat font-black text-[28px] tracking-tighter leading-none flex items-center uppercase overflow-hidden shimmer-text">
                   {logoLetters.map((letter, i) => (
                     <span 
                       key={i} 
@@ -285,7 +285,7 @@ export default function Home() {
                 <input 
                   type="text" 
                   placeholder="Buscar productos, marcas y más..." 
-                  className="flex-1 outline-none text-[14px] text-slate-800 placeholder-slate-400 font-light"
+                  className="flex-1 outline-none text-[16px] text-slate-800 placeholder-slate-400 font-light"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -300,7 +300,7 @@ export default function Home() {
             <div className="flex-1 flex items-center cursor-pointer">
               <div className="flex items-center gap-2 group hover:brightness-95 transition-all ml-[135px]">
                  <Sparkles size={16} className="text-slate-700" />
-                 <span className="text-[12px] font-medium text-slate-700 whitespace-nowrap">Ofertas por tiempo limitado</span>
+                 <span className="text-[13px] font-medium text-slate-700 whitespace-nowrap">Ofertas por tiempo limitado</span>
               </div>
             </div>
           </div>
@@ -317,10 +317,10 @@ export default function Home() {
             </div>
 
             {/* CONTENEDOR UNIFICADO: Nav (600px) + Usuario */}
-            <div className="flex-1 flex items-center ml-6 gap-x-4">
+            <div className="flex-1 flex items-center ml-8 gap-x-6">
               
               {/* NAV MENU - ANCHO 600px ALINEADO CON BÚSQUEDA */}
-              <nav className="flex items-center gap-x-2 text-[13px] text-slate-800/70 font-light w-[600px]">
+              <nav className="flex items-center gap-x-3 text-[14px] text-slate-800/70 font-light w-[600px]">
                 <a href="#" className="flex items-center gap-0.5 hover:text-blue-700 transition-colors whitespace-nowrap">
                   Categorías <ChevronDown size={12} className="mt-0.5 opacity-40" />
                 </a>
@@ -333,7 +333,7 @@ export default function Home() {
               </nav>
 
               {/* ACCIONES DE USUARIO */}
-              <div className="flex items-center gap-x-3 text-[13px] text-slate-800 font-light">
+              <div className="flex items-center gap-x-4 text-[14px] text-slate-800 font-light">
                 {!session ? (
                   <>
                     <Link href="/auth/register" className="hover:text-blue-700 transition-colors">Creá tu cuenta</Link>
