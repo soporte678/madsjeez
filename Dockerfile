@@ -1,7 +1,7 @@
 # Dockerfile para Railway - MADSJEEZ Marketplace
 FROM node:22-alpine AS base
 
-# Forzar rebuild limpio - cambiar este número para invalidar cache: 8
+# Forzar rebuild limpio - cambiar este número para invalidar cache: 9
 
 # Instalar dependencias necesarias
 RUN apk add --no-cache libc6-compat
@@ -33,9 +33,9 @@ RUN echo "=== Baselining Prisma migrations ===" && \
     npx prisma migrate deploy && \
     echo "=== Migraciones aplicadas ==="
 
-# Build de Next.js
+# Build de Next.js (bypass package.json cached script)
 RUN echo "=== Iniciando build de Next.js ===" && \
-    npx next build && \
+    NODE_OPTIONS="--max-old-space-size=4096" npx next build && \
     echo "=== Build completado ==="
 
 # Exponer puerto
