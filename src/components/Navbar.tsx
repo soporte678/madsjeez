@@ -252,13 +252,11 @@ export default function Navbar() {
                 </>
               ) : (
                 <>
-                  <div className="flex items-center gap-1.5 cursor-pointer nav-link group flex-shrink-0">
-                    <div className="w-5 h-5 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center overflow-hidden">
-                       <User size={12} className="text-slate-600" />
-                    </div>
+                  <Link href="/dashboard" className="flex items-center gap-1.5 cursor-pointer nav-link group flex-shrink-0">
+                    <User size={16} className="text-slate-600" />
                     <span className="whitespace-nowrap font-normal text-slate-800">{session.user?.name || "Mi cuenta"}</span>
                     <ChevronDown size={10} className="opacity-40 group-hover:rotate-180 transition-transform" />
-                  </div>
+                  </Link>
                   <Link href="/orders" className="nav-link whitespace-nowrap font-medium text-slate-800">Mis compras</Link>
                   <Link href="/favorites" className="flex items-center gap-0.5 nav-link whitespace-nowrap">
                     Favoritos <ChevronDown size={10} className="opacity-40" />
@@ -269,7 +267,6 @@ export default function Navbar() {
               <div className="flex items-center gap-4 ml-1">
                  <Link href="/notifications" className="relative cursor-pointer nav-link">
                     <Bell size={18} strokeWidth={1.5} className="text-slate-800" />
-                    <span className="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-[9px] font-bold h-[14px] w-[14px] flex items-center justify-center rounded-full border border-[#FFF159]">2</span>
                  </Link>
                  <Link href="/cart" className="cursor-pointer nav-link relative">
                     <ShoppingCart size={18} strokeWidth={1.5} className="text-slate-800" />
