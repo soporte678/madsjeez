@@ -198,6 +198,7 @@ model Product {
   questions     Question[]
   variations    ProductVariation[]
   campaignProducts CampaignProduct[]
+  cartItems     CartItem[]
   
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
