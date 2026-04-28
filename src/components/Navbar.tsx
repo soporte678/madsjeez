@@ -1,9 +1,23 @@
-import React from 'react';
+"use client";
+
+import React, { useState } from 'react';
+import { useSession } from "next-auth/react";
+import Link from "next/link";
 import { 
   Search, Bell, ShoppingCart, MapPin, User, ChevronDown
 } from 'lucide-react';
 
 export default function Navbar() {
+  const { data: session } = useSession();
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      window.location.href = `/search?q=${encodeURIComponent(searchQuery)}`;
+    }
+  };
+
   // Efecto de desarmado/armado del logo MADSJEEZ
   const logoLetters = [
     { char: 'M', dx: '-10px', dy: '-12px', rot: '-15deg', delay: '0s' },
@@ -101,7 +115,7 @@ export default function Navbar() {
           <div className="flex items-center h-12">
             
             {/* LOGO */}
-            <div className="flex items-center gap-2 cursor-pointer group w-[160px] flex-shrink-0">
+            <Link href="/" className="flex items-center gap-2 cursor-pointer group w-[160px] flex-shrink-0">
               <div className="relative w-9 h-9 bg-slate-900 rounded-lg flex items-center justify-center shadow-md overflow-hidden">
                  <svg viewBox="0 0 100 100" className="w-6 h-6">
                     <path d="M 15 80 L 35 30 L 55 55" stroke="#3483fa" fill="none" strokeWidth="15" strokeLinecap="round"/>
@@ -121,22 +135,24 @@ export default function Navbar() {
                   ))}
                 </span>
               </div>
-            </div>
+            </Link>
 
             {/* BARRA DE BÚSQUEDA (600px con ml-8 para eje central perfecto) */}
-            <div className="w-[600px] flex-shrink-0 ml-8">
+            <form onSubmit={handleSearch} className="w-[600px] flex-shrink-0 ml-8">
               <div className="flex items-center bg-white rounded-[2px] search-shadow h-10 px-4">
                 <input 
                   type="text" 
                   placeholder="Buscar productos, marcas y más..." 
                   className="flex-1 outline-none text-[16px] text-slate-800 placeholder-slate-400 font-light"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                 />
                 <div className="h-6 w-[1px] bg-slate-200 mx-2"></div>
-                <button className="text-slate-500 hover:text-slate-800 transition-colors">
+                <button type="submit" className="text-slate-500 hover:text-slate-800 transition-colors">
                   <Search size={19} strokeWidth={2.5} />
                 </button>
               </div>
-            </div>
+            </form>
 
             {/* BOTÓN DESLIZANTE MADS PRO (Efecto Borrador) */}
             <div className="flex-1 flex items-center justify-end">
@@ -207,51 +223,57 @@ export default function Navbar() {
               <div className="flex items-center gap-1 cursor-pointer w-[160px] flex-shrink-0 group">
                 <MapPin size={18} className="text-slate-900/60 group-hover:text-slate-900" />
                 <div className="flex flex-col leading-none">
-                  <span className="text-[10px] text-slate-700/60 group-hover:text-slate-700 whitespace-nowrap">Enviar a MaqJeez</span>
-                  <span className="text-[12px] text-slate-800 font-normal truncate">Spegazzini 1812</span>
+                  <span className="text-[10px] text-slate-700/60 group-hover:text-slate-700 whitespace-nowrap">Enviar a Capital Federal</span>
+                  <span className="text-[12px] text-slate-800 font-normal truncate">Av. Corrientes 1234, CABA</span>
                 </div>
               </div>
 
               {/* Navegación (ml-8 para arrancar igual que el buscador) */}
               <nav className="flex items-center gap-x-4 text-[13px] font-light ml-8 w-[480px]">
-                <button className="flex items-center gap-0.5 nav-link whitespace-nowrap">
+                <Link href="/categories" className="flex items-center gap-0.5 nav-link whitespace-nowrap">
                   Categorías <ChevronDown size={11} className="mt-0.5 opacity-40" />
-                </button>
-                <button className="nav-link whitespace-nowrap">Ofertas</button>
-                <button className="nav-link whitespace-nowrap">Cupones</button>
-                <button className="nav-link whitespace-nowrap">Supermercado</button>
-                <button className="nav-link whitespace-nowrap">Moda</button>
-                <button className="nav-link whitespace-nowrap">Vender</button>
-                <button className="nav-link whitespace-nowrap">Ayuda</button>
+                </Link>
+                <Link href="/offers" className="nav-link whitespace-nowrap">Ofertas</Link>
+                <Link href="/coupons" className="nav-link whitespace-nowrap">Cupones</Link>
+                <Link href="/supermarket" className="nav-link whitespace-nowrap">Supermercado</Link>
+                <Link href="/fashion" className="nav-link whitespace-nowrap">Moda</Link>
+                <Link href="/dashboard/publicaciones" className="nav-link whitespace-nowrap">Vender</Link>
+                <Link href="/help" className="nav-link whitespace-nowrap">Ayuda</Link>
               </nav>
             </div>
 
             {/* BLOQUE DERECHO: Cuenta + Iconos (Anclado a la derecha) */}
             <div className="flex items-center gap-x-4 text-[13px] font-light flex-shrink-0">
               
-              {/* Perfil (125px ancho fijo) */}
-              <div className="flex items-center gap-1.5 cursor-pointer nav-link group w-[125px] flex-shrink-0">
-                <div className="w-5 h-5 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center overflow-hidden">
-                   <User size={12} className="text-slate-600" />
-                </div>
-                <span className="whitespace-nowrap font-normal text-slate-800">MaqJeez II</span>
-                <ChevronDown size={10} className="opacity-40 group-hover:rotate-180 transition-transform" />
-              </div>
-              
-              <button className="nav-link whitespace-nowrap font-medium text-slate-800">Mis compras</button>
-              
-              <button className="flex items-center gap-0.5 nav-link whitespace-nowrap">
-                Favoritos <ChevronDown size={10} className="opacity-40" />
-              </button>
+              {!session ? (
+                <>
+                  <Link href="/auth/register" className="nav-link whitespace-nowrap font-medium text-slate-800">Creá tu cuenta</Link>
+                  <Link href="/auth/login" className="nav-link whitespace-nowrap font-medium text-slate-800">Ingresá</Link>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-1.5 cursor-pointer nav-link group flex-shrink-0">
+                    <div className="w-5 h-5 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center overflow-hidden">
+                       <User size={12} className="text-slate-600" />
+                    </div>
+                    <span className="whitespace-nowrap font-normal text-slate-800">{session.user?.name || "Mi cuenta"}</span>
+                    <ChevronDown size={10} className="opacity-40 group-hover:rotate-180 transition-transform" />
+                  </div>
+                  <Link href="/orders" className="nav-link whitespace-nowrap font-medium text-slate-800">Mis compras</Link>
+                  <Link href="/favorites" className="flex items-center gap-0.5 nav-link whitespace-nowrap">
+                    Favoritos <ChevronDown size={10} className="opacity-40" />
+                  </Link>
+                </>
+              )}
               
               <div className="flex items-center gap-4 ml-1">
-                 <div className="relative cursor-pointer nav-link">
+                 <Link href="/notifications" className="relative cursor-pointer nav-link">
                     <Bell size={18} strokeWidth={1.5} className="text-slate-800" />
                     <span className="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-[9px] font-bold h-[14px] w-[14px] flex items-center justify-center rounded-full border border-[#FFF159]">2</span>
-                 </div>
-                 <div className="cursor-pointer nav-link relative">
+                 </Link>
+                 <Link href="/cart" className="cursor-pointer nav-link relative">
                     <ShoppingCart size={18} strokeWidth={1.5} className="text-slate-800" />
-                 </div>
+                 </Link>
               </div>
             </div>
 
