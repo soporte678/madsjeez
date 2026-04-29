@@ -1,9 +1,10 @@
 "use client"
-import React, { useState, useEffect, useRef } from "react"
+import React, { useState, useEffect, useRef, ChangeEvent } from "react"
 import {
   ChevronLeft, Search, ChevronRight, X, Info,
   Check, Image as ImageIcon, Upload, ChevronDown, Sparkles,
-  Package, Car, Home, PaintBucket, FileText, Calculator, Loader2
+  Package, Car, Home, PaintBucket, FileText, Calculator, Loader2,
+  Video, GripVertical, AlertTriangle, Camera
 } from "lucide-react"
 
 interface Cat { id: string; name: string; slug: string; children?: { id: string; name: string; slug: string }[] }
@@ -26,6 +27,7 @@ interface PublishData {
   warrantyTime: string
   warrantyUnit: string
   offersPickup: boolean
+  videoUrl: string
 }
 
 const defaultData: PublishData = {
@@ -46,6 +48,7 @@ const defaultData: PublishData = {
   warrantyTime: "60",
   warrantyUnit: "days",
   offersPickup: true,
+  videoUrl: "",
 }
 
 const fmt = (v: number) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(v)
@@ -86,7 +89,12 @@ export default function PublicarFlow({ onClose, onPublished, editProduct }: Prop
   const [catSearch, setCatSearch] = useState("")
   const [busy, setBusy] = useState(false)
   const [imageInput, setImageInput] = useState("")
+  const [uploadingImages, setUploadingImages] = useState(false)
+  const [dragOver, setDragOver] = useState(false)
+  const [videoError, setVideoError] = useState("")
   const mainRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const videoInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     fetch("/api/categories").then(r => r.json()).then(d => setCategories(d || [])).catch(() => {})
@@ -107,13 +115,93 @@ export default function PublicarFlow({ onClose, onPublished, editProduct }: Prop
     ? flatCats.filter(c => c.display.toLowerCase().includes(catSearch.toLowerCase()))
     : flatCats
 
+  // Compress & resize image to max 1200x1200, quality 0.82, output as base64 webp/jpeg
+  const compressImage = (file: File | Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const img = new window.Image()
+        img.onload = () => {
+          const MAX = 1200
+          let w = img.width, h = img.height
+          if (w > MAX || h > MAX) {
+            if (w > h) { h = Math.round(h * MAX / w); w = MAX }
+            else { w = Math.round(w * MAX / h); h = MAX }
+          }
+          const canvas = document.createElement("canvas")
+          canvas.width = w; canvas.height = h
+          const ctx = canvas.getContext("2d")!
+          ctx.fillStyle = "#ffffff"
+          ctx.fillRect(0, 0, w, h)
+          ctx.drawImage(img, 0, 0, w, h)
+          // Try webp first, fallback to jpeg
+          let dataUrl = canvas.toDataURL("image/webp", 0.82)
+          if (!dataUrl.startsWith("data:image/webp")) {
+            dataUrl = canvas.toDataURL("image/jpeg", 0.82)
+          }
+          resolve(dataUrl)
+        }
+        img.onerror = () => reject(new Error("Error al procesar imagen"))
+        img.src = reader.result as string
+      }
+      reader.onerror = () => reject(new Error("Error al leer archivo"))
+      reader.readAsDataURL(file)
+    })
+  }
+
+  const handleFileUpload = async (files: FileList | File[]) => {
+    const remaining = 10 - data.images.length
+    if (remaining <= 0) return
+    const validFiles = Array.from(files).filter(f => f.type.startsWith("image/")).slice(0, remaining)
+    if (validFiles.length === 0) return
+
+    setUploadingImages(true)
+    try {
+      const compressed = await Promise.all(validFiles.map(f => compressImage(f)))
+      upd({ images: [...data.images, ...compressed] })
+    } catch (e) { console.error("Error compressing images:", e) }
+    setUploadingImages(false)
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault(); setDragOver(false)
+    if (e.dataTransfer.files.length) handleFileUpload(e.dataTransfer.files)
+  }
+
+  const handleVideoFile = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setVideoError("")
+    if (!file.type.startsWith("video/")) { setVideoError("El archivo debe ser un video"); return }
+    if (file.size > 50 * 1024 * 1024) { setVideoError("El video no debe superar los 50MB"); return }
+    const video = document.createElement("video")
+    video.preload = "metadata"
+    video.onloadedmetadata = () => {
+      URL.revokeObjectURL(video.src)
+      if (video.duration < 10) { setVideoError("El video debe durar al menos 10 segundos"); return }
+      if (video.duration > 60) { setVideoError("El video no debe durar más de 60 segundos"); return }
+      // Convert to base64 for storage (or use URL.createObjectURL for preview)
+      const reader = new FileReader()
+      reader.onload = () => upd({ videoUrl: reader.result as string })
+      reader.readAsDataURL(file)
+    }
+    video.src = URL.createObjectURL(file)
+  }
+
   const addImage = () => {
-    if (imageInput.trim() && !data.images.includes(imageInput.trim())) {
+    if (imageInput.trim() && !data.images.includes(imageInput.trim()) && data.images.length < 10) {
       upd({ images: [...data.images, imageInput.trim()] })
       setImageInput("")
     }
   }
   const removeImage = (idx: number) => upd({ images: data.images.filter((_, i) => i !== idx) })
+  const moveImage = (from: number, to: number) => {
+    if (to < 0 || to >= data.images.length) return
+    const imgs = [...data.images]
+    const [moved] = imgs.splice(from, 1)
+    imgs.splice(to, 0, moved)
+    upd({ images: imgs })
+  }
 
   const publish = async () => {
     setBusy(true)
@@ -406,72 +494,178 @@ export default function PublicarFlow({ onClose, onPublished, editProduct }: Prop
         )}
 
         {/* ==========================================
-            PASO 4: Fotos
+            PASO 4: Fotos y Video
            ========================================== */}
         {step === 4 && (
           <div className="animate-in fade-in slide-in-from-right-4 duration-300">
             <div className="mb-6">
               <p className="text-[12px] text-slate-500 mb-1">Paso 3 de 5</p>
-              <h2 className="text-[26px] font-medium leading-tight">Fotos de tu producto</h2>
+              <h2 className="text-[26px] font-medium leading-tight">Fotos y video de tu producto</h2>
+              <p className="text-[14px] text-slate-500 mt-1">Las buenas fotos aumentan tus ventas. Mínimo 1, máximo 10.</p>
+            </div>
+
+            {/* Requisitos de la imagen de portada */}
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4 flex gap-3">
+              <AlertTriangle size={20} className="text-amber-600 shrink-0 mt-0.5" />
+              <div className="text-[13px] text-amber-800">
+                <p className="font-semibold mb-1">Requisitos para la foto de portada (1ra imagen):</p>
+                <ul className="list-disc pl-4 space-y-0.5">
+                  <li>Fondo <strong>blanco</strong> y limpio</li>
+                  <li>Sin logos, marcas de agua ni textos</li>
+                  <li>Producto centrado, bien iluminado</li>
+                  <li>Las imágenes se redimensionan y comprimen automáticamente</li>
+                </ul>
+              </div>
             </div>
 
             <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
               <div className="p-6 border-b border-slate-100">
-                <h3 className="text-[16px] font-medium text-slate-800 mb-1">Fotos</h3>
-                <p className="text-[13px] text-slate-500">Subí buenas fotos para que el producto se destaque. Podés agregar hasta 10.</p>
+                <h3 className="text-[16px] font-medium text-slate-800 mb-1">Fotos <span className="text-slate-400 font-normal text-sm">| {data.images.length}/10</span></h3>
+                <p className="text-[13px] text-slate-500">Arrastrá archivos o hacé clic para subir. También podés pegar una URL.</p>
               </div>
 
               <div className="p-6">
-                {/* Agregar por URL */}
-                <div className="flex gap-3 mb-6">
+                {/* Drag & Drop Zone */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={e => e.target.files && handleFileUpload(e.target.files)}
+                />
+                {data.images.length < 10 && (
+                  <div
+                    onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+                    onDragLeave={() => setDragOver(false)}
+                    onDrop={handleDrop}
+                    onClick={() => fileInputRef.current?.click()}
+                    className={`border-2 border-dashed rounded-lg p-8 mb-5 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all ${dragOver ? "border-[#3483fa] bg-blue-50" : "border-slate-300 hover:border-[#3483fa] hover:bg-blue-50/30"}`}
+                  >
+                    {uploadingImages ? (
+                      <>
+                        <Loader2 size={32} className="text-[#3483fa] animate-spin" />
+                        <p className="text-[14px] text-slate-500">Procesando imágenes...</p>
+                      </>
+                    ) : (
+                      <>
+                        <Camera size={32} className="text-[#3483fa]" strokeWidth={1.5} />
+                        <p className="text-[14px] text-slate-600 font-medium">Arrastrá tus fotos acá o hacé clic para seleccionar</p>
+                        <p className="text-[12px] text-slate-400">JPG, PNG, WEBP — Se comprimen automáticamente</p>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {/* URL input */}
+                <div className="flex gap-3 mb-5">
                   <input
                     type="text"
                     value={imageInput}
                     onChange={e => setImageInput(e.target.value)}
                     onKeyDown={e => e.key === "Enter" && (e.preventDefault(), addImage())}
-                    placeholder="Pegar URL de imagen..."
+                    placeholder="O pegá una URL de imagen..."
                     className="flex-1 border border-slate-300 rounded-md px-4 py-2.5 text-[14px] outline-none focus:border-[#3483fa]"
                   />
                   <button
                     onClick={addImage}
                     disabled={!imageInput.trim() || data.images.length >= 10}
-                    className="bg-[#3483fa] hover:bg-blue-600 text-white px-6 py-2.5 rounded text-[14px] font-medium disabled:bg-slate-200 disabled:text-slate-400 transition-colors"
+                    className="bg-[#3483fa] hover:bg-blue-600 text-white px-5 py-2.5 rounded text-[14px] font-medium disabled:bg-slate-200 disabled:text-slate-400 transition-colors"
                   >
                     Agregar
                   </button>
                 </div>
 
                 {/* Grid de imágenes */}
-                <div className="flex flex-wrap gap-4">
-                  {data.images.map((url, idx) => (
-                    <div key={idx} className="w-[120px] h-[120px] border border-slate-200 rounded relative overflow-hidden bg-white group">
-                      <img src={url} alt={`Foto ${idx + 1}`} className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).src = "" }} />
-                      <button
-                        onClick={() => removeImage(idx)}
-                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X size={14} />
-                      </button>
-                      {idx === 0 && <div className="absolute bottom-0 left-0 w-full bg-slate-900/80 text-white text-[10px] font-bold text-center py-1">PORTADA</div>}
-                    </div>
-                  ))}
-                  {data.images.length < 10 && (
-                    <label className="w-[120px] h-[120px] border-2 border-dashed border-[#3483fa]/50 hover:border-[#3483fa] hover:bg-blue-50/50 transition-colors rounded cursor-pointer flex flex-col items-center justify-center gap-2 text-[#3483fa]">
-                      <Upload size={24} strokeWidth={1.5} />
-                      <span className="text-[12px] font-medium">URL</span>
-                    </label>
-                  )}
-                </div>
+                {data.images.length > 0 && (
+                  <div className="flex flex-wrap gap-3">
+                    {data.images.map((url, idx) => (
+                      <div key={idx} className="relative group">
+                        <div className={`w-[110px] h-[110px] border-2 rounded-lg overflow-hidden bg-white ${idx === 0 ? "border-[#3483fa]" : "border-slate-200"}`}>
+                          <img src={url} alt={`Foto ${idx + 1}`} className="w-full h-full object-contain" onError={e => { (e.target as HTMLImageElement).style.display = "none" }} />
+                        </div>
+                        {/* Label */}
+                        {idx === 0 ? (
+                          <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-[#3483fa] text-white text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">PORTADA</div>
+                        ) : (
+                          <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-slate-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{idx + 1}</div>
+                        )}
+                        {/* Actions overlay */}
+                        <div className="absolute inset-0 bg-black/40 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
+                          {idx > 0 && (
+                            <button onClick={() => moveImage(idx, idx - 1)} className="bg-white/90 rounded-full p-1 hover:bg-white" title="Mover izquierda">
+                              <ChevronLeft size={14} />
+                            </button>
+                          )}
+                          <button onClick={() => removeImage(idx)} className="bg-red-500 text-white rounded-full p-1 hover:bg-red-600" title="Eliminar">
+                            <X size={14} />
+                          </button>
+                          {idx < data.images.length - 1 && (
+                            <button onClick={() => moveImage(idx, idx + 1)} className="bg-white/90 rounded-full p-1 hover:bg-white" title="Mover derecha">
+                              <ChevronRight size={14} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
-                {data.images.length === 0 && (
-                  <p className="text-sm text-slate-400 mt-4">Todavía no agregaste fotos. Pegá la URL de una imagen arriba.</p>
+                {data.images.length === 0 && !uploadingImages && (
+                  <p className="text-sm text-slate-400 text-center py-2">Todavía no agregaste fotos.</p>
                 )}
               </div>
+            </div>
 
-              <div className="flex justify-end gap-4 p-6 border-t border-slate-100 bg-slate-50/30">
-                <button onClick={prevStep} className="text-slate-400 hover:text-slate-600 font-medium text-[14px] px-6 py-2.5 transition-colors">Cancelar</button>
-                <button onClick={nextStep} className="bg-[#3483fa] hover:bg-blue-600 text-white font-medium text-[14px] px-8 py-2.5 rounded transition-colors shadow-sm">Confirmar</button>
+            {/* Video */}
+            <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden mt-4">
+              <div className="p-6 border-b border-slate-100">
+                <h3 className="text-[16px] font-medium text-slate-800 mb-1 flex items-center gap-2">
+                  <Video size={18} className="text-[#3483fa]" /> Video <span className="text-slate-400 font-normal text-sm">| Opcional</span>
+                </h3>
+                <p className="text-[13px] text-slate-500">Agregá un video de tu producto (10 seg mín. — 60 seg máx., hasta 50 MB).</p>
               </div>
+              <div className="p-6">
+                <input
+                  ref={videoInputRef}
+                  type="file"
+                  accept="video/*"
+                  className="hidden"
+                  onChange={handleVideoFile}
+                />
+                {!data.videoUrl ? (
+                  <button
+                    onClick={() => videoInputRef.current?.click()}
+                    className="w-full border-2 border-dashed border-slate-300 hover:border-[#3483fa] rounded-lg p-6 flex flex-col items-center gap-2 transition-colors hover:bg-blue-50/30"
+                  >
+                    <Video size={28} className="text-slate-400" strokeWidth={1.5} />
+                    <span className="text-[14px] text-slate-500 font-medium">Seleccionar video</span>
+                    <span className="text-[12px] text-slate-400">MP4, MOV, WEBM — 10s a 60s</span>
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-4 bg-green-50 border border-green-200 rounded-lg p-4">
+                    <Check size={20} className="text-green-600" />
+                    <span className="text-[14px] text-green-800 font-medium flex-1">Video cargado correctamente</span>
+                    <button onClick={() => upd({ videoUrl: "" })} className="text-red-500 hover:text-red-700 text-[13px] font-medium">Eliminar</button>
+                  </div>
+                )}
+                {videoError && (
+                  <div className="mt-3 flex items-center gap-2 text-red-600 text-[13px]">
+                    <AlertTriangle size={16} /> {videoError}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-4 mt-6">
+              <button onClick={prevStep} className="text-slate-400 hover:text-slate-600 font-medium text-[14px] px-6 py-2.5 transition-colors">Anterior</button>
+              <button
+                onClick={nextStep}
+                disabled={data.images.length === 0}
+                className={`font-medium text-[14px] px-8 py-2.5 rounded transition-colors shadow-sm ${data.images.length > 0 ? "bg-[#3483fa] hover:bg-blue-600 text-white" : "bg-slate-200 text-slate-400 cursor-not-allowed"}`}
+              >
+                Confirmar
+              </button>
             </div>
           </div>
         )}
@@ -758,7 +952,8 @@ export default function PublicarFlow({ onClose, onPublished, editProduct }: Prop
                 <div className="flex justify-between"><span className="text-slate-500">Condición</span><span className="font-medium">{data.condition === "new" ? "Nuevo" : data.condition === "used" ? "Usado" : "Reacondicionado"}</span></div>
                 <div className="flex justify-between"><span className="text-slate-500">Precio</span><span className="font-medium">{data.price ? fmt(parseFloat(data.price)) : "—"}</span></div>
                 <div className="flex justify-between"><span className="text-slate-500">Stock</span><span className="font-medium">{data.stock} {data.stock === 1 ? "unidad" : "unidades"}</span></div>
-                <div className="flex justify-between"><span className="text-slate-500">Fotos</span><span className="font-medium">{data.images.length}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Fotos</span><span className="font-medium">{data.images.length} {data.images.length === 1 ? "foto" : "fotos"}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Video</span><span className="font-medium">{data.videoUrl ? "✓ Cargado" : "Sin video"}</span></div>
                 <div className="flex justify-between"><span className="text-slate-500">Envío</span><span className="font-medium">{data.freeShipping ? "Gratis" : data.shippingCost ? fmt(parseFloat(data.shippingCost)) : "A cargo del comprador"}</span></div>
                 <div className="flex justify-between"><span className="text-slate-500">Retiro</span><span className="font-medium">{data.offersPickup ? "Sí" : "No"}</span></div>
                 <div className="flex justify-between"><span className="text-slate-500">Garantía</span><span className="font-medium">{data.warranty === "none" ? "Sin garantía" : `${data.warrantyTime} ${data.warrantyUnit === "days" ? "días" : data.warrantyUnit === "months" ? "meses" : "años"} (${data.warranty === "factory" ? "fábrica" : "vendedor"})`}</span></div>
