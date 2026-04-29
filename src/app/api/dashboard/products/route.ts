@@ -158,11 +158,26 @@ export async function PATCH(request: Request) {
     if (data.condition !== undefined) updateData.condition = data.condition
     if (data.freeShipping !== undefined) updateData.freeShipping = data.freeShipping
     if (data.shippingCost !== undefined) updateData.shippingCost = parseFloat(data.shippingCost)
+    if (data.categoryId !== undefined) updateData.categoryId = data.categoryId
 
     const product = await prisma.product.update({
       where: { id },
       data: updateData,
     })
+
+    // Actualizar imágenes si se proporcionan
+    if (data.images !== undefined) {
+      await prisma.productImage.deleteMany({ where: { productId: id } })
+      if (data.images.length > 0) {
+        await prisma.productImage.createMany({
+          data: data.images.map((url: string, idx: number) => ({
+            productId: id,
+            url,
+            order: idx,
+          })),
+        })
+      }
+    }
 
     return NextResponse.json({ product })
   } catch (error) {

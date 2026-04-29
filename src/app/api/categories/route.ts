@@ -5,8 +5,8 @@ export const dynamic = "force-dynamic"
 
 export async function GET() {
   try {
-    const categories = await prisma.categories.findMany({
-      where: { parent_id: null },
+    const categories = await prisma.category.findMany({
+      where: { parentId: null },
       include: {
         children: true,
         _count: {
@@ -20,9 +20,8 @@ export async function GET() {
       id: cat.id,
       name: cat.name,
       slug: cat.slug,
-      icon: cat.icon,
-      product_count: cat._count.products,
-      children_count: cat.children.length
+      productCount: cat._count.products,
+      children: cat.children.map(c => ({ id: c.id, name: c.name, slug: c.slug }))
     }))
 
     return NextResponse.json(formattedCategories)
