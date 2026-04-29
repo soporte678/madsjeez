@@ -74,6 +74,7 @@ export interface ProductImage {
   url: string
   alt: string | null
   order: number
+  is_primary?: boolean
 }
 
 export interface ProductAttribute {
@@ -127,6 +128,25 @@ export interface Subscription {
   startDate: Date
   endDate: Date
   stripeId: string | null
+}
+
+export interface Profile {
+  id: string
+  full_name: string | null
+  email: string | null
+  avatar_url: string | null
+  is_seller: boolean
+  seller_name: string | null
+}
+
+export interface ReputationScore {
+  id: string
+  color: ReputationColor
+  total_sales: number
+  successful_sales: number
+  canceled_sales: number
+  delayed_shipments: number
+  claim_rate: number
 }
 
 export interface ProductBoost {
