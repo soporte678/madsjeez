@@ -108,14 +108,10 @@ export default function PublicacionesView() {
       <style>{`
         .pub-grid {
           display: grid;
-          grid-template-columns: minmax(260px, 2.5fr) 95px 135px 115px 85px 85px 85px minmax(200px, 1.8fr);
-          gap: 12px;
+          grid-template-columns: 2.5fr 1fr 1.3fr 1.1fr 0.9fr 0.9fr 0.9fr 2fr;
+          gap: 8px;
           align-items: start;
         }
-        .table-scrollbar::-webkit-scrollbar { height: 10px; }
-        .table-scrollbar::-webkit-scrollbar-track { background: #f8fafc; border-top: 1px solid #e2e8f0; }
-        .table-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; border: 2px solid #f8fafc; }
-        .table-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .quality-circle {
           width: 34px; height: 34px; border-radius: 50%; border: 2px solid #00a650;
@@ -209,9 +205,9 @@ export default function PublicacionesView() {
           </div>
         </div>
 
-        {/* SCROLLABLE TABLE */}
-        <div className="overflow-x-auto table-scrollbar w-full">
-          <div className="min-w-[1250px] flex flex-col">
+        {/* TABLE */}
+        <div className="w-full">
+          <div className="flex flex-col w-full">
 
             {/* HEADER */}
             <div className="pub-grid px-4 py-3 border-b border-slate-200 bg-[#ebebeb]/50">
