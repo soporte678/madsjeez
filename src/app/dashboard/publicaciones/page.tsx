@@ -2,13 +2,13 @@
 import { useState, useEffect, useCallback } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { Search, Edit, Trash2, Pause, Play, Plus, X, ChevronLeft, ChevronRight } from "lucide-react"
+import { Search, Edit, Trash2, Pause, Play, Plus, ChevronLeft, ChevronRight } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import PublicarFlow from "@/components/dashboard/PublicarFlow"
 
 interface P { id: string; title: string; description: string | null; sku: string | null; price: number; originalPrice: number | null; stock: number; isActive: boolean; views: number; sales: number; condition: string; freeShipping: boolean; shippingCost: number; qualityScore: number; categoryId: string | null; category: { name: string } | null; images: { url: string }[] }
 interface S { active: number; paused: number; lowStock: number; noSales: number }
-interface Cat { id: string; name: string; children?: { id: string; name: string }[] }
 
 const fmt = (v: number) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(v)
 const ql = (s: number) => s >= 80 ? "Excelente" : s >= 60 ? "Buena" : s >= 40 ? "Regular" : "Mala"
@@ -16,23 +16,18 @@ const qc: Record<string, string> = { Excelente: "text-green-600 bg-green-50", Bu
 const el = (sales: number, views: number) => views === 0 ? "Neutral" : sales / views >= 0.1 ? "Muy positiva" : sales / views >= 0.05 ? "Positiva" : sales / views >= 0.02 ? "Mejorar" : "Negativa"
 const rc = (p: P) => !p.isActive ? "PAUSADA" : p.stock <= 0 ? "Sin stock" : p.qualityScore < 40 ? "Mejorar fotos" : p.sales === 0 && p.views > 100 ? "Ajustar precio" : "Bien hecho"
 
-const defaultForm = { title: "", description: "", sku: "", price: "", originalPrice: "", stock: "", condition: "new", freeShipping: false, shippingCost: "", imageUrl: "", categoryId: "" }
-
 export default function Page() {
   const { status } = useSession()
   const router = useRouter()
   const [products, setProducts] = useState<P[]>([])
   const [summary, setSummary] = useState<S | null>(null)
-  const [categories, setCategories] = useState<Cat[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [filter, setFilter] = useState("all")
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
-  const [modal, setModal] = useState(false)
-  const [editId, setEditId] = useState<string | null>(null)
-  const [form, setForm] = useState(defaultForm)
-  const [busy, setBusy] = useState(false)
+  const [showFlow, setShowFlow] = useState(false)
+  const [editingProduct, setEditingProduct] = useState<P | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -50,21 +45,8 @@ export default function Page() {
     setLoading(false)
   }, [filter, page])
 
-  const loadCategories = async () => {
-    try {
-      const r = await fetch("/api/categories")
-      if (r.ok) {
-        const d = await r.json()
-        setCategories(d || [])
-      }
-    } catch (e) { console.error(e) }
-  }
-
   useEffect(() => {
-    if (status === "authenticated") {
-      load()
-      loadCategories()
-    }
+    if (status === "authenticated") load()
   }, [status, load])
 
   useEffect(() => {
@@ -79,70 +61,13 @@ export default function Page() {
     return p.title.toLowerCase().includes(q) || (p.sku || "").toLowerCase().includes(q)
   })
 
-  // Flatten categories for selector (parent > child)
-  const flatCats: { id: string; name: string }[] = []
-  categories.forEach(c => {
-    flatCats.push({ id: c.id, name: c.name })
-    c.children?.forEach(sub => flatCats.push({ id: sub.id, name: `${c.name} > ${sub.name}` }))
-  })
+  const openCreate = () => { setEditingProduct(null); setShowFlow(true) }
+  const openEdit = (p: P) => { setEditingProduct(p); setShowFlow(true) }
 
-  const openCreate = () => {
-    setEditId(null)
-    setForm(defaultForm)
-    setModal(true)
-  }
-
-  const openEdit = (p: P) => {
-    setEditId(p.id)
-    setForm({
-      title: p.title,
-      description: p.description || "",
-      sku: p.sku || "",
-      price: String(p.price),
-      originalPrice: p.originalPrice ? String(p.originalPrice) : "",
-      stock: String(p.stock),
-      condition: p.condition,
-      freeShipping: p.freeShipping,
-      shippingCost: String(p.shippingCost || 0),
-      imageUrl: p.images[0]?.url || "",
-      categoryId: p.categoryId || "",
-    })
-    setModal(true)
-  }
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!form.categoryId) { alert("Seleccioná una categoría"); return }
-    setBusy(true)
-    const body: Record<string, unknown> = {
-      title: form.title,
-      description: form.description,
-      sku: form.sku || undefined,
-      price: parseFloat(form.price),
-      originalPrice: form.originalPrice ? parseFloat(form.originalPrice) : null,
-      stock: parseInt(form.stock),
-      condition: form.condition,
-      freeShipping: form.freeShipping,
-      shippingCost: form.shippingCost ? parseFloat(form.shippingCost) : 0,
-      images: form.imageUrl ? [form.imageUrl] : [],
-      categoryId: form.categoryId,
-    }
-    try {
-      const r = await fetch("/api/dashboard/products", {
-        method: editId ? "PATCH" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editId ? { id: editId, ...body } : body),
-      })
-      if (!r.ok) {
-        const err = await r.json().catch(() => null)
-        throw new Error(err?.error || "Error al guardar")
-      }
-      setModal(false)
-      load()
-    } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Error al guardar")
-    }
-    setBusy(false)
+  const handlePublished = () => {
+    setShowFlow(false)
+    setEditingProduct(null)
+    load()
   }
 
   const toggle = async (id: string, active: boolean) => {
@@ -154,6 +79,17 @@ export default function Page() {
     if (!confirm("¿Eliminar publicación?")) return
     await fetch(`/api/dashboard/products?id=${id}`, { method: "DELETE" })
     load()
+  }
+
+  // PublicarFlow overlay
+  if (showFlow) {
+    return (
+      <PublicarFlow
+        onClose={() => { setShowFlow(false); setEditingProduct(null) }}
+        onPublished={handlePublished}
+        editProduct={editingProduct || undefined}
+      />
+    )
   }
 
   return (
@@ -245,92 +181,6 @@ export default function Page() {
         )}
       </div>
 
-      {/* Modal crear/editar */}
-      {modal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-4 border-b">
-              <h2 className="text-lg font-bold">{editId ? "Editar" : "Nueva"} publicación</h2>
-              <button onClick={() => setModal(false)} className="p-1 hover:bg-gray-100 rounded"><X size={20} /></button>
-            </div>
-            <form onSubmit={submit} className="p-4 space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Título <span className="text-red-500">*</span></label>
-                <input required value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Descripción</label>
-                <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={3} placeholder="Describí tu producto..." className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Categoría <span className="text-red-500">*</span></label>
-                <select required value={form.categoryId} onChange={e => setForm({ ...form, categoryId: e.target.value })} className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
-                  <option value="">Seleccionar categoría...</option>
-                  {flatCats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">SKU</label>
-                <input value={form.sku} onChange={e => setForm({ ...form, sku: e.target.value })} placeholder="Opcional, se genera automáticamente" className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Precio <span className="text-red-500">*</span></label>
-                  <input required type="number" step="0.01" min="0" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Precio original</label>
-                  <input type="number" step="0.01" min="0" value={form.originalPrice} onChange={e => setForm({ ...form, originalPrice: e.target.value })} placeholder="Tachado" className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Stock <span className="text-red-500">*</span></label>
-                  <input required type="number" min="0" value={form.stock} onChange={e => setForm({ ...form, stock: e.target.value })} className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Condición</label>
-                  <select value={form.condition} onChange={e => setForm({ ...form, condition: e.target.value })} className="w-full px-3 py-2 border rounded-lg outline-none">
-                    <option value="new">Nuevo</option>
-                    <option value="used">Usado</option>
-                    <option value="refurbished">Reacondicionado</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={form.freeShipping} onChange={e => setForm({ ...form, freeShipping: e.target.checked })} className="rounded" />
-                  <span className="text-sm">Envío gratis</span>
-                </label>
-                {!form.freeShipping && (
-                  <div className="flex-1">
-                    <input type="number" step="0.01" min="0" value={form.shippingCost} onChange={e => setForm({ ...form, shippingCost: e.target.value })} placeholder="Costo de envío" className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Imagen URL</label>
-                <input value={form.imageUrl} onChange={e => setForm({ ...form, imageUrl: e.target.value })} placeholder="https://..." className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" />
-                {form.imageUrl && (
-                  <div className="mt-2"><img src={form.imageUrl} alt="Preview" className="w-20 h-20 rounded-lg object-cover border" onError={e => (e.currentTarget.style.display = "none")} /></div>
-                )}
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <Button type="button" variant="outline" onClick={() => setModal(false)}>Cancelar</Button>
-                <Button type="submit" disabled={busy} className="bg-yellow-400 hover:bg-yellow-500 text-slate-900">{busy ? "Guardando..." : "Guardar"}</Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
