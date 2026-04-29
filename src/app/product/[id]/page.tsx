@@ -2,58 +2,26 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Header } from "@/components/Header";
-import { ReputationBadge } from "@/components/ReputationBadge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import {
-  Shield,
-  Truck,
-  RotateCcw,
-  Store,
-  MessageCircle,
-  Heart,
-  Share2,
-  Check,
-  Package,
-  CreditCard,
-  Award,
-  ThumbsUp,
-  Clock,
   ChevronRight,
+  Heart,
+  Star,
+  Truck,
+  ShieldCheck,
+  Undo,
+  Award,
+  Share2,
+  ChevronDown,
+  MapPin,
+  CreditCard,
+  MessageCircle,
+  Clock,
+  Package,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { ImageGallery } from "@/components/product/ImageGallery";
-import { AdBanner } from "@/components/product/AdBanner";
+import { ProductDetailClient } from "@/components/product/ProductDetailClient";
 
-// Supabase returns snake_case fields
-interface ProductWithDetails {
-  id: string;
-  title: string;
-  description: string | null;
-  price: number;
-  original_price: number | null;
-  stock: number;
-  condition: string;
-  is_active: boolean;
-  shipping_free: boolean;
-  shipping_cost: number;
-  sold_count: number;
-  view_count: number;
-  seller_id: string;
-  category_id: string | null;
-  quality_score: number;
-  attributes: Record<string, any> | null;
-  video_url: string | null;
-  warranty_type: string | null;
-  warranty_time: string | null;
-  product_images: { id: string; url: string; alt: string | null; order: number; is_primary?: boolean }[];
-  seller: { id: string; name: string | null; sellerName: string | null; image: string | null; reputation_color: string; reputation_level: string; reputation_score: number; total_sales: number; successful_sales: number } | null;
-  categories: { id: string; name: string; slug: string } | null;
-  [key: string]: any;
-}
-
-async function getProduct(id: string): Promise<ProductWithDetails | null> {
+async function getProduct(id: string) {
   const supabase = await createClient();
 
   const { data: product } = await supabase
@@ -75,7 +43,7 @@ async function getProduct(id: string): Promise<ProductWithDetails | null> {
     .update({ views: (product.views || 0) + 1 })
     .eq("id", id);
 
-  return product as ProductWithDetails;
+  return product;
 }
 
 async function getRelatedProducts(categoryId: string | null, currentProductId: string) {
@@ -94,12 +62,9 @@ async function getRelatedProducts(categoryId: string | null, currentProductId: s
     .neq("id", currentProductId)
     .limit(6);
 
-  return products?.map((product: any) => ({
-    ...product,
-    primary_image: product.product_images?.find((img: { is_primary: boolean }) => img.is_primary)?.url ||
-                   product.product_images?.[0]?.url,
-    seller_name: product.seller?.sellerName || product.seller?.name,
-    seller_reputation: product.seller?.reputation_color,
+  return products?.map((p: any) => ({
+    ...p,
+    primary_image: p.product_images?.find((img: any) => img.is_primary)?.url || p.product_images?.[0]?.url,
   })) || [];
 }
 
@@ -109,38 +74,17 @@ async function getSellerProducts(sellerId: string, currentProductId: string) {
     .from("products")
     .select(`
       *,
-      product_images(url, is_primary),
-      seller:seller_id(reputation_color)
+      product_images(url, is_primary)
     `)
     .eq("seller_id", sellerId)
     .eq("is_active", true)
     .neq("id", currentProductId)
-    .limit(4);
+    .limit(5);
 
-  return products?.map((product: any) => ({
-    ...product,
-    primary_image: product.product_images?.find((img: { is_primary: boolean }) => img.is_primary)?.url ||
-                   product.product_images?.[0]?.url,
-    seller_reputation: product.seller?.reputation_color,
+  return products?.map((p: any) => ({
+    ...p,
+    primary_image: p.product_images?.find((img: any) => img.is_primary)?.url || p.product_images?.[0]?.url,
   })) || [];
-}
-
-async function getSellerStats(sellerId: string) {
-  const supabase = await createClient();
-  const { count: productCount } = await supabase
-    .from("products")
-    .select("id", { count: "exact", head: true })
-    .eq("seller_id", sellerId)
-    .eq("is_active", true);
-
-  const { data: totalSales } = await supabase
-    .from("products")
-    .select("sold_count")
-    .eq("seller_id", sellerId);
-
-  const sales = totalSales?.reduce((sum: number, p: any) => sum + (p.sold_count || 0), 0) || 0;
-
-  return { productCount: productCount || 0, totalSales: sales };
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -148,9 +92,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const product = await getProduct(id);
 
   if (!product) {
-    return {
-      title: "Producto no encontrado | MADSJEEZ",
-    };
+    return { title: "Producto no encontrado | MADSJEEZ" };
   }
 
   return {
@@ -159,440 +101,328 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   };
 }
 
-const fmt = (v: number) => `$ ${v.toLocaleString("es-AR")}`;
-
 export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const product = await getProduct(id);
+  if (!product) notFound();
 
-  if (!product) {
-    notFound();
-  }
-
-  const [relatedProducts, sellerProducts, sellerStats] = await Promise.all([
+  const [relatedProducts, sellerProducts] = await Promise.all([
     getRelatedProducts(product.category_id, product.id),
     getSellerProducts(product.seller_id, product.id),
-    getSellerStats(product.seller_id),
   ]);
 
-  const primaryImage = product.product_images?.find((img: any) => img.is_primary) || product.product_images?.[0];
-  const otherImages = product.product_images?.filter((img: any) => !img.is_primary) || [];
-  const allImages = primaryImage ? [primaryImage, ...otherImages] : [];
-
+  const sellerName = product.seller?.sellerName || product.seller?.name || "Vendedor";
+  const sellerTotalSales = product.seller?.total_sales || 0;
+  const conditionLabel = product.condition === "new" ? "Nuevo" : product.condition === "used" ? "Usado" : "Reacondicionado";
+  const salesCount = product.sales || 0;
+  const cuotas6 = Math.ceil(product.price / 6);
   const discount = product.original_price
     ? Math.round(((product.original_price - product.price) / product.original_price) * 100)
     : null;
 
-  const cuotas6 = Math.ceil(product.price / 6);
-  const warranty = product.warranty_type || null;
-  const warrantyTime = product.warranty_time || null;
+  const images = product.product_images?.sort((a: any, b: any) => (a.order || 0) - (b.order || 0)).map((img: any) => img.url) || [];
+
+  const categoryName = product.categories?.name || "Productos";
+  const categorySlug = product.categories?.slug || "";
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
 
-      <main className="flex-1 bg-[#EBEBEB]">
-        {/* Breadcrumb */}
-        <div className="bg-white border-b">
-          <div className="container mx-auto px-4 py-3">
-            <nav className="flex items-center gap-2 text-sm text-gray-500">
-              <Link href="/" className="hover:text-[#3483FA]">Inicio</Link>
-              <span>/</span>
+      <div className="min-h-screen bg-[#ededed] font-sans text-[#333] pb-20">
+        {/* Top Banner */}
+        <div className="bg-white border-b border-gray-200 py-3 px-4 text-sm justify-center hidden md:flex">
+          <span className="text-gray-600">También puede interesarte: </span>
+          <Link href={`/category/${categorySlug}`} className="font-semibold text-gray-800 ml-1 hover:text-blue-600 transition-colors">
+            {categoryName}
+          </Link>
+        </div>
+
+        <div className="max-w-[1200px] mx-auto px-4 pt-4">
+          {/* Breadcrumbs */}
+          <div className="flex justify-between items-center text-[13px] mb-4">
+            <div className="flex items-center gap-2 text-blue-600">
+              <Link href="/" className="hover:underline">Inicio</Link>
+              <ChevronRight size={12} className="text-gray-400" />
               {product.categories && (
                 <>
-                  <Link href={`/category/${product.categories.slug}`} className="hover:text-[#3483FA]">
+                  <Link href={`/category/${product.categories.slug}`} className="hover:underline">
                     {product.categories.name}
                   </Link>
-                  <span>/</span>
+                  <ChevronRight size={12} className="text-gray-400" />
                 </>
               )}
-              <span className="text-gray-700 truncate max-w-xs">{product.title}</span>
-            </nav>
-          </div>
-        </div>
-
-        <div className="container mx-auto px-4 py-6">
-          <div className="grid lg:grid-cols-3 gap-6">
-            {/* ===== LEFT COLUMN ===== */}
-            <div className="lg:col-span-2 space-y-4">
-              {/* Image Gallery + Title */}
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <span>{product.condition === "new" ? "Nuevo" : product.condition === "used" ? "Usado" : "Reacondicionado"}</span>
-                      <span>|</span>
-                      <span>{product.sold_count || 0} vendidos</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <button className="text-[#3483FA] text-sm hover:underline">Compartir</button>
-                    </div>
-                  </div>
-
-                  <h1 className="text-2xl font-semibold leading-tight mb-6">{product.title}</h1>
-
-                  <ImageGallery
-                    images={allImages}
-                    title={product.title}
-                    videoUrl={product.video_url || null}
-                  />
-                </CardContent>
-              </Card>
-
-              {/* Description & Attributes */}
-              <Card>
-                <CardContent className="p-6">
-                  <h2 className="text-xl font-semibold mb-4">Descripción</h2>
-                  <div className="prose max-w-none text-gray-700 whitespace-pre-wrap leading-relaxed">
-                    {product.description || "Este producto no tiene descripción."}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {product.attributes && Object.keys(product.attributes).length > 0 && (
-                <Card>
-                  <CardContent className="p-6">
-                    <h2 className="text-xl font-semibold mb-4">Características del producto</h2>
-                    <div className="grid md:grid-cols-2 gap-x-8">
-                      {Object.entries(product.attributes).map(([key, value], i) => (
-                        <div key={key} className={`flex justify-between py-3 ${i % 2 === 0 ? "bg-gray-50" : ""} px-3 rounded`}>
-                          <span className="text-gray-500 text-sm">{key}</span>
-                          <span className="font-medium text-sm">{String(value)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Preguntas y Respuestas */}
-              <Card>
-                <CardContent className="p-6">
-                  <h2 className="text-xl font-semibold mb-4">Preguntas y respuestas</h2>
-                  <div className="flex gap-3">
-                    <input
-                      type="text"
-                      placeholder="Escribí tu pregunta..."
-                      className="flex-1 border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none focus:border-[#3483FA] focus:ring-1 focus:ring-[#3483FA]"
-                      readOnly
-                    />
-                    <Link href={`/messages?seller=${product.seller_id}&product=${product.id}`}>
-                      <Button className="bg-[#3483FA] hover:bg-[#2968C8] h-12 px-6">
-                        Preguntar
-                      </Button>
-                    </Link>
-                  </div>
-                  <Link href={`/messages?seller=${product.seller_id}&product=${product.id}`} className="text-[#3483FA] text-sm mt-3 inline-block hover:underline">
-                    Ver todas las preguntas
-                  </Link>
-                </CardContent>
-              </Card>
-
-              {/* Productos del vendedor */}
-              {sellerProducts.length > 0 && (
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-xl font-semibold">Productos del vendedor</h2>
-                      <Link href={`/seller/${product.seller_id}`} className="text-[#3483FA] text-sm hover:underline flex items-center gap-1">
-                        Ver más productos del vendedor <ChevronRight size={14} />
-                      </Link>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {sellerProducts.map((item: any) => (
-                        <Link key={item.id} href={`/product/${item.id}`}>
-                          <div className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow bg-white">
-                            <div className="aspect-square bg-gray-50">
-                              {item.primary_image ? (
-                                <img src={item.primary_image} alt={item.title} className="w-full h-full object-contain p-2" />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center text-gray-300">
-                                  <Package className="h-10 w-10" />
-                                </div>
-                              )}
-                            </div>
-                            <div className="p-3">
-                              <p className="font-semibold text-lg">{fmt(item.price)}</p>
-                              {item.shipping_free && <p className="text-xs text-green-600 font-medium">Envío gratis</p>}
-                              <p className="text-xs text-gray-500 line-clamp-2 mt-1">{item.title}</p>
-                            </div>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Ad Banner Horizontal */}
-              <AdBanner variant="horizontal" />
-
-              {/* Related Products */}
-              {relatedProducts.length > 0 && (
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-xl font-semibold">Productos relacionados</h2>
-                      <span className="text-[10px] font-bold text-gray-400 tracking-widest">Ad</span>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                      {relatedProducts.map((item: any) => (
-                        <Link key={item.id} href={`/product/${item.id}`}>
-                          <div className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow bg-white">
-                            <div className="aspect-square bg-gray-50">
-                              {item.primary_image ? (
-                                <img src={item.primary_image} alt={item.title} className="w-full h-full object-contain p-2" />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center text-gray-300">
-                                  <Package className="h-10 w-10" />
-                                </div>
-                              )}
-                            </div>
-                            <div className="p-3">
-                              <p className="font-semibold">{fmt(item.price)}</p>
-                              {item.original_price && item.original_price > item.price && (
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs text-gray-400 line-through">{fmt(item.original_price)}</span>
-                                  <span className="text-xs text-green-600 font-medium">{Math.round(((item.original_price - item.price) / item.original_price) * 100)}% OFF</span>
-                                </div>
-                              )}
-                              <p className="text-xs text-gray-500 line-clamp-2 mt-1">{item.title}</p>
-                              {item.shipping_free && <p className="text-xs text-green-600 font-medium mt-1">Envío gratis</p>}
-                            </div>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+              <span className="text-gray-500 font-medium truncate max-w-[200px]">{product.title}</span>
             </div>
+            <div className="flex items-center gap-3 text-blue-600">
+              <button className="hover:underline flex items-center gap-1"><Share2 size={14}/> Compartir</button>
+            </div>
+          </div>
 
-            {/* ===== RIGHT COLUMN ===== */}
-            <div className="space-y-4">
-              {/* Shipping Banner */}
-              {product.shipping_free && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-3">
-                  <Truck className="h-5 w-5 text-green-600" />
-                  <div>
-                    <p className="text-sm font-semibold text-green-800">Llega gratis mañana</p>
-                    <p className="text-xs text-green-600">Más detalles y formas de entrega</p>
+          {/* MAIN CONTAINER */}
+          <div className="bg-white rounded-lg shadow-sm flex flex-col lg:flex-row p-0 lg:p-4 gap-6">
+
+            {/* LEFT COLUMN */}
+            <div className="flex-[2] flex flex-col min-w-0">
+
+              {/* Gallery + Title Section */}
+              <div className="flex flex-col md:flex-row gap-6 p-4 lg:p-0">
+                {/* Image Gallery - Client Component */}
+                <ProductDetailClient images={images} title={product.title} />
+
+                {/* Product Info */}
+                <div className="flex-1 flex flex-col pt-2 md:pt-0">
+                  <span className="text-[13px] text-gray-500 mb-1">{conditionLabel} | +{salesCount} vendidos</span>
+                  <h1 className="text-[22px] font-bold text-gray-800 leading-tight mb-2 pr-8">{product.title}</h1>
+
+                  <div className="flex flex-col mb-4">
+                    {product.original_price && product.original_price > product.price && (
+                      <span className="text-[15px] text-gray-400 line-through">$ {product.original_price.toLocaleString("es-AR")}</span>
+                    )}
+                    <span className="text-[36px] font-light text-gray-800 leading-none">$ {product.price.toLocaleString("es-AR")}</span>
+                    {discount && <span className="text-[15px] font-medium text-emerald-500 mt-1">{discount}% OFF</span>}
+                    <span className="text-[15px] font-medium text-emerald-500 mt-1">Mismo precio en 6 cuotas de $ {cuotas6.toLocaleString("es-AR")}</span>
+                    <Link href="#" className="text-[13px] text-blue-500 hover:underline mt-1">Ver los medios de pago</Link>
                   </div>
                 </div>
+              </div>
+
+              <div className="w-full h-px bg-gray-200 my-8 hidden md:block"></div>
+
+              {/* Description */}
+              {product.description && (
+                <>
+                  <div className="px-4 lg:px-0">
+                    <h2 className="text-[24px] font-semibold text-gray-800 mb-6">Descripción</h2>
+                    <div className="text-[15px] text-gray-600 leading-relaxed whitespace-pre-wrap">
+                      {product.description}
+                    </div>
+                  </div>
+                  <div className="w-full h-px bg-gray-200 my-8 hidden md:block"></div>
+                </>
               )}
 
-              {/* Price Card */}
-              <Card className="sticky top-4">
-                <CardContent className="p-6 space-y-4">
-                  {/* Price */}
-                  <div className="space-y-1">
-                    {product.original_price && (
-                      <p className="text-sm text-gray-400 line-through">
-                        {fmt(product.original_price)}
-                      </p>
-                    )}
-                    <div className="flex items-baseline gap-3">
-                      <p className="text-[32px] font-light">{fmt(product.price)}</p>
-                      {discount && (
-                        <span className="text-lg font-medium text-green-600">{discount}% OFF</span>
-                      )}
-                    </div>
-                    <p className="text-sm text-[#3483FA]">
-                      Mismo precio en 6 cuotas de {fmt(cuotas6)}
-                    </p>
-                    <Link href="#" className="text-xs text-[#3483FA] hover:underline">Ver los medios de pago</Link>
-                  </div>
-
-                  {/* Shipping */}
-                  <div className="flex items-start gap-3 py-3 border-y">
-                    <Truck className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-                    <div>
-                      <p className="font-medium text-green-700">
-                        {product.shipping_free ? "Envío gratis" : "Envío a calcular"}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {product.shipping_free ? "Llega mañana o pasado" : "Ver opciones de envío"}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Return */}
-                  <div className="flex items-start gap-3">
-                    <RotateCcw className="h-5 w-5 text-[#3483FA] mt-0.5 shrink-0" />
-                    <div>
-                      <p className="text-sm"><span className="text-[#3483FA]">Devolución gratis</span> Tenés 30 días desde que lo recibís.</p>
-                    </div>
-                  </div>
-
-                  {/* Protection */}
-                  <div className="flex items-start gap-3">
-                    <Shield className="h-5 w-5 text-[#3483FA] mt-0.5 shrink-0" />
-                    <div>
-                      <p className="text-sm"><span className="text-[#3483FA]">Compra Protegida.</span> Recibí el producto que esperabas o te devolvemos tu dinero.</p>
-                    </div>
-                  </div>
-
-                  {/* Warranty */}
-                  {warranty && warranty !== "none" && (
-                    <div className="flex items-start gap-3">
-                      <Award className="h-5 w-5 text-gray-500 mt-0.5 shrink-0" />
-                      <p className="text-sm text-gray-600">
-                        {warrantyTime || "30 días"} de garantía de {warranty === "factory" ? "fábrica" : "vendedor"}.
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Stock */}
-                  <div>
-                    <p className="text-sm font-medium">Stock disponible</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-sm text-gray-500">Cantidad: <strong>1 unidad</strong></span>
-                      <span className="text-xs text-gray-400">({product.stock} disponibles)</span>
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="space-y-3 pt-2">
-                    <Link href={`/checkout?product=${product.id}`}>
-                      <Button className="w-full bg-[#3483FA] hover:bg-[#2968C8] h-12 text-lg font-medium rounded-md">
-                        Comprar ahora
-                      </Button>
-                    </Link>
-                    <Button variant="outline" className="w-full h-12 text-lg text-[#3483FA] border-[#3483FA] hover:bg-blue-50 rounded-md">
-                      Agregar al carrito
-                    </Button>
-                  </div>
-
-                  {/* Seller Info */}
-                  <Separator />
-                  <div>
-                    <p className="text-xs text-gray-400 mb-2">Vendido por</p>
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-[#3483FA] rounded-full flex items-center justify-center text-white font-bold text-sm">
-                        {(product.seller?.sellerName || product.seller?.name || "V")[0].toUpperCase()}
-                      </div>
-                      <div className="flex-1">
-                        <Link href={`/seller/${product.seller_id}`} className="font-medium text-sm text-[#3483FA] hover:underline">
-                          {product.seller?.sellerName || product.seller?.name || "Vendedor"}
-                        </Link>
-                        {product.seller?.reputation_color && (
-                          <ReputationBadge color={product.seller.reputation_color} />
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Seller Stats */}
-                    <div className="grid grid-cols-3 gap-2 mt-3 bg-gray-50 rounded-lg p-3">
-                      <div className="text-center">
-                        <p className="text-sm font-bold">{sellerStats.totalSales}+</p>
-                        <p className="text-[10px] text-gray-500">Ventas</p>
-                      </div>
-                      <div className="text-center border-x border-gray-200">
-                        <ThumbsUp className="h-4 w-4 mx-auto text-green-600" />
-                        <p className="text-[10px] text-gray-500">Buena atención</p>
-                      </div>
-                      <div className="text-center">
-                        <Clock className="h-4 w-4 mx-auto text-green-600" />
-                        <p className="text-[10px] text-gray-500">Entrega a tiempo</p>
-                      </div>
-                    </div>
-
-                    <Link href={`/seller/${product.seller_id}`}>
-                      <Button variant="outline" className="w-full mt-3 text-[#3483FA] border-[#3483FA] hover:bg-blue-50 text-sm">
-                        Ver más productos del vendedor
-                      </Button>
-                    </Link>
-                  </div>
-
-                  {/* Wish / Share */}
-                  <div className="flex gap-2 pt-1">
-                    <Button variant="ghost" size="sm" className="flex-1 text-[#3483FA]">
-                      <Heart className="h-4 w-4 mr-1" />
-                      Agregar a lista
-                    </Button>
-                    <Button variant="ghost" size="sm" className="flex-1 text-[#3483FA]">
-                      <Share2 className="h-4 w-4 mr-1" />
-                      Compartir
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Payment Methods */}
-              <Card>
-                <CardContent className="p-5">
-                  <p className="font-semibold mb-4">Medios de pago</p>
-
-                  <div className="bg-green-50 rounded-lg p-3 mb-4 flex items-center gap-3">
-                    <CreditCard className="h-5 w-5 text-green-600" />
-                    <p className="text-sm text-green-800 font-medium">¡Pagá el mismo precio en hasta 6 cuotas!</p>
-                  </div>
-
-                  <p className="text-xs text-gray-500 font-medium mb-2">Cuotas sin Tarjeta</p>
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="bg-blue-100 text-[#3483FA] px-3 py-1 rounded text-xs font-bold">Madsjeez Pago</div>
-                  </div>
-
-                  <p className="text-xs text-gray-500 font-medium mb-2">Tarjetas de crédito</p>
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    <div className="bg-[#1a1f71] text-white px-3 py-1 rounded text-xs font-bold">VISA</div>
-                    <div className="bg-[#ff5f00] text-white px-3 py-1 rounded text-xs font-bold">MC</div>
-                    <div className="bg-[#006fcf] text-white px-3 py-1 rounded text-xs font-bold">AMEX</div>
-                    <div className="bg-[#f26122] text-white px-3 py-1 rounded text-xs font-bold">NaranjaX</div>
-                  </div>
-
-                  <p className="text-xs text-gray-500 font-medium mb-2">Tarjetas de débito</p>
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    <div className="bg-[#1a1f71] text-white px-3 py-1 rounded text-xs font-bold">VISA Débito</div>
-                    <div className="bg-[#ff5f00] text-white px-3 py-1 rounded text-xs font-bold">MC Débito</div>
-                    <div className="bg-[#0072ce] text-white px-3 py-1 rounded text-xs font-bold">Cabal</div>
-                  </div>
-
-                  <p className="text-xs text-gray-500 font-medium mb-2">Efectivo</p>
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    <div className="bg-[#00b9f1] text-white px-3 py-1 rounded text-xs font-bold">Rapipago</div>
-                    <div className="bg-[#009ee3] text-white px-3 py-1 rounded text-xs font-bold">PagoFácil</div>
-                  </div>
-
-                  <Link href="#" className="text-[#3483FA] text-sm hover:underline">
-                    Conocé otros medios de pago
-                  </Link>
-                </CardContent>
-              </Card>
-
-              {/* Sidebar Ad */}
-              <AdBanner variant="sidebar" />
-
-              {/* Related in sidebar */}
+              {/* Related Products Carousel */}
               {relatedProducts.length > 0 && (
-                <Card>
-                  <CardContent className="p-5">
-                    <p className="font-semibold mb-3">Productos relacionados</p>
-                    <div className="space-y-3">
-                      {relatedProducts.slice(0, 4).map((item: any) => (
-                        <Link key={item.id} href={`/product/${item.id}`} className="flex items-center gap-3 hover:bg-gray-50 p-2 rounded-lg transition-colors">
-                          <div className="w-14 h-14 bg-gray-50 rounded-lg overflow-hidden shrink-0">
-                            {item.primary_image ? (
-                              <img src={item.primary_image} alt={item.title} className="w-full h-full object-contain" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center"><Package className="h-6 w-6 text-gray-300" /></div>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm text-gray-700 line-clamp-2">{item.title}</p>
-                            <p className="text-sm font-semibold">{fmt(item.price)}</p>
-                            {item.shipping_free && <p className="text-xs text-green-600">Envío gratis</p>}
-                          </div>
-                        </Link>
-                      ))}
+                <>
+                  <div className="px-4 lg:px-0">
+                    <h2 className="text-[24px] font-semibold text-gray-800 mb-6">Quienes vieron este producto también compraron</h2>
+                    <div className="relative group">
+                      <div className="flex gap-4 overflow-x-auto pb-4">
+                        {relatedProducts.map((item: any) => (
+                          <Link key={item.id} href={`/product/${item.id}`} className="min-w-[200px] max-w-[200px] border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow cursor-pointer flex flex-col bg-white">
+                            <div className="h-32 mb-3 flex items-center justify-center p-2">
+                              {item.primary_image ? (
+                                <img src={item.primary_image} alt={item.title} className="max-h-full max-w-full object-contain" />
+                              ) : (
+                                <Package className="h-12 w-12 text-gray-300" />
+                              )}
+                            </div>
+                            <h4 className="text-[13px] text-gray-700 leading-snug mb-2 line-clamp-2 min-h-[36px] font-medium">{item.title}</h4>
+                            <div className="mt-auto">
+                              {item.original_price && item.original_price > item.price && (
+                                <span className="text-[11px] text-gray-400 line-through block">$ {item.original_price.toLocaleString("es-AR")}</span>
+                              )}
+                              <span className="text-[18px] font-medium text-gray-800">$ {item.price.toLocaleString("es-AR")}</span>
+                              {item.free_shipping && <span className="text-[11px] text-emerald-500 block mt-1">Envío gratis</span>}
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                  <div className="w-full h-px bg-gray-200 my-8 hidden md:block"></div>
+                </>
               )}
+
+              {/* Questions */}
+              <div className="px-4 lg:px-0 mb-10">
+                <h2 className="text-[24px] font-semibold text-gray-800 mb-6">Preguntas y respuestas</h2>
+                <div className="flex gap-4 mb-8">
+                  <input
+                    type="text"
+                    placeholder="Escribí tu pregunta..."
+                    className="flex-1 py-3 px-4 rounded-lg border border-gray-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-sm"
+                    readOnly
+                  />
+                  <Link href={`/messages?seller=${product.seller_id}&product=${product.id}`} className="bg-blue-600 text-white font-bold px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                    Preguntar
+                  </Link>
+                </div>
+                <Link href={`/messages?seller=${product.seller_id}&product=${product.id}`} className="text-blue-500 font-semibold text-[14px] hover:underline">
+                  Ver todas las preguntas
+                </Link>
+              </div>
+
+            </div>
+
+            {/* RIGHT COLUMN - Buy Box */}
+            <div className="w-full lg:w-[350px] flex-shrink-0 flex flex-col gap-4 px-4 lg:px-0">
+
+              {/* BUY BOX */}
+              <div className="border border-gray-200 rounded-lg p-5">
+                <div className="flex flex-col gap-1 mb-6">
+                  {product.free_shipping ? (
+                    <>
+                      <span className="text-emerald-500 font-semibold text-[15px] flex items-center gap-1"><Truck size={18}/> Llega gratis mañana</span>
+                      <Link href="#" className="text-blue-500 text-[13px] hover:underline mt-1">Más detalles y formas de entrega</Link>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-gray-700 font-semibold text-[15px] flex items-center gap-1"><Truck size={18}/> Envío a calcular</span>
+                      <Link href="#" className="text-blue-500 text-[13px] hover:underline mt-1">Ver opciones de envío</Link>
+                    </>
+                  )}
+                </div>
+
+                <div className="mb-6">
+                  <span className="font-semibold text-gray-800 text-[15px] block mb-2">Stock disponible</span>
+                  <div className="flex items-center gap-2">
+                    <button className="flex items-center justify-between w-full max-w-[200px] py-2 px-3 border border-gray-300 rounded bg-gray-50 hover:bg-gray-100 transition-colors">
+                      <span className="text-[14px] font-semibold text-gray-800">Cantidad: 1 unidad</span>
+                      <ChevronDown size={16} className="text-gray-500" />
+                    </button>
+                    <span className="text-[13px] text-gray-400 font-medium">(+{product.stock} disponibles)</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2 mb-6">
+                  <Link href={`/checkout?product=${product.id}`} className="w-full bg-blue-600 text-white font-bold py-3.5 rounded-lg hover:bg-blue-700 transition-colors shadow-sm text-center">
+                    Comprar ahora
+                  </Link>
+                  <button className="w-full bg-blue-50 text-blue-600 font-bold py-3.5 rounded-lg hover:bg-blue-100 transition-colors">
+                    Agregar al carrito
+                  </button>
+                </div>
+
+                {/* Seller info */}
+                <div className="mb-6 border-b border-gray-200 pb-6">
+                  <p className="text-[13px] text-gray-800 mb-1">Vendido por <Link href={`/seller/${product.seller_id}`} className="text-blue-500 font-semibold hover:underline">{sellerName}</Link></p>
+                  <p className="text-[13px] font-bold text-gray-800 mb-1">MadsLíder Gold | +{sellerTotalSales} ventas</p>
+                </div>
+
+                <div className="flex flex-col gap-4 text-[13px] text-gray-500 mb-6">
+                  <div className="flex items-start gap-3">
+                    <Undo size={18} className="text-gray-400 shrink-0 mt-0.5" />
+                    <p><span className="text-blue-500">Devolución gratis.</span> Tenés 30 días desde que lo recibís.</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <ShieldCheck size={18} className="text-gray-400 shrink-0 mt-0.5" />
+                    <p><span className="text-blue-500">Compra Protegida.</span> Recibí el producto que esperabas o te devolvemos tu dinero.</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Award size={18} className="text-gray-400 shrink-0 mt-0.5" />
+                    <p>30 días de garantía de fábrica.</p>
+                  </div>
+                </div>
+
+                <button className="w-full py-2 flex items-center justify-center gap-2 text-blue-500 font-semibold text-[14px] hover:bg-blue-50 rounded-lg transition-colors">
+                  <Heart size={16} /> Agregar a una lista
+                </button>
+              </div>
+
+              {/* SELLER REPUTATION BOX */}
+              <div className="border border-gray-200 rounded-lg p-5">
+                <h3 className="text-[16px] font-semibold text-gray-800 mb-4">Vendido por {sellerName}</h3>
+                <p className="text-[14px] font-semibold text-gray-800 mb-1">+{sellerTotalSales} Productos</p>
+                <div className="flex items-center gap-2 text-emerald-500 font-bold text-[13px] mb-1">
+                  <Award size={16} fill="currentColor" /> MadsLíder Gold
+                </div>
+                <p className="text-[12px] text-gray-500 mb-4">¡Uno de los mejores del sitio!</p>
+
+                {/* Thermometer */}
+                <div className="flex h-2 rounded-full overflow-hidden gap-1 mb-4">
+                  <div className="bg-red-200 flex-1"></div>
+                  <div className="bg-orange-200 flex-1"></div>
+                  <div className="bg-yellow-200 flex-1"></div>
+                  <div className="bg-lime-200 flex-1"></div>
+                  <div className="bg-emerald-500 flex-1 h-full shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]"></div>
+                </div>
+
+                <div className="flex justify-between text-center mb-6">
+                  <div className="flex flex-col items-center flex-1 border-r border-gray-200">
+                    <span className="text-[18px] font-bold text-gray-800">+{sellerTotalSales}</span>
+                    <span className="text-[10px] text-gray-500 leading-tight">Ventas</span>
+                  </div>
+                  <div className="flex flex-col items-center flex-1 border-r border-gray-200 px-2">
+                    <MessageCircle size={20} className="text-emerald-500 mb-1" />
+                    <span className="text-[10px] text-gray-500 leading-tight">Buena atención</span>
+                  </div>
+                  <div className="flex flex-col items-center flex-1">
+                    <Clock size={20} className="text-emerald-500 mb-1" />
+                    <span className="text-[10px] text-gray-500 leading-tight">Entrega a tiempo</span>
+                  </div>
+                </div>
+
+                <Link href={`/seller/${product.seller_id}`} className="block text-center text-blue-500 font-semibold text-[14px] hover:underline">
+                  Ver más datos de este vendedor
+                </Link>
+              </div>
+
+              {/* PAYMENT METHODS */}
+              <div className="border border-gray-200 rounded-lg p-5">
+                <h3 className="text-[16px] font-semibold text-gray-800 mb-4">Medios de pago</h3>
+
+                <div className="bg-emerald-500 text-white p-3 rounded-lg mb-4 text-[13px] font-bold flex items-center gap-2">
+                  <CreditCard size={18} /> ¡Pagá el mismo precio en hasta 6 cuotas!
+                </div>
+
+                <div className="mb-4">
+                  <p className="text-[13px] font-semibold text-gray-800 mb-2">Cuotas sin Tarjeta</p>
+                  <div className="flex items-center gap-2">
+                    <div className="bg-blue-500 text-white text-[10px] px-1 py-0.5 rounded font-bold italic">Mads Pago</div>
+                  </div>
+                </div>
+
+                <div className="mb-4">
+                  <p className="text-[13px] font-semibold text-gray-800 mb-2">Tarjetas de crédito</p>
+                  <div className="flex items-center gap-2">
+                    <div className="w-10 h-6 bg-blue-900 rounded flex items-center justify-center text-white text-[8px] font-bold italic">VISA</div>
+                    <div className="w-10 h-6 bg-blue-500 rounded flex items-center justify-center text-white text-[8px] font-bold italic">AMEX</div>
+                    <div className="w-10 h-6 bg-orange-500 rounded flex items-center justify-center text-white text-[8px] font-bold italic">MASTER</div>
+                  </div>
+                </div>
+
+                <div className="mb-4">
+                  <p className="text-[13px] font-semibold text-gray-800 mb-2">Efectivo</p>
+                  <div className="flex items-center gap-2">
+                    <div className="w-16 h-6 bg-yellow-400 rounded flex items-center justify-center text-blue-900 text-[10px] font-bold italic">PagoFácil</div>
+                  </div>
+                </div>
+
+                <Link href="#" className="text-blue-500 font-semibold text-[13px] hover:underline">Conocé otros medios de pago</Link>
+              </div>
+
             </div>
           </div>
+
+          {/* Seller Products Carousel */}
+          {sellerProducts.length > 0 && (
+            <div className="mt-12 bg-white p-6 rounded-lg shadow-sm">
+              <h2 className="text-[24px] font-semibold text-gray-800 mb-6">Publicaciones del vendedor</h2>
+              <div className="flex gap-4 overflow-x-auto pb-4">
+                {sellerProducts.map((item: any) => (
+                  <Link key={item.id} href={`/product/${item.id}`} className="min-w-[200px] max-w-[200px] border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow cursor-pointer flex flex-col bg-white">
+                    <div className="h-32 mb-3 flex items-center justify-center p-2">
+                      {item.primary_image ? (
+                        <img src={item.primary_image} alt={item.title} className="max-h-full max-w-full object-contain" />
+                      ) : (
+                        <Package className="h-12 w-12 text-gray-300" />
+                      )}
+                    </div>
+                    <h4 className="text-[13px] text-gray-700 leading-snug mb-2 line-clamp-2 min-h-[36px] font-medium">{item.title}</h4>
+                    <div className="mt-auto">
+                      <span className="text-[18px] font-medium text-gray-800">$ {item.price.toLocaleString("es-AR")}</span>
+                      {item.free_shipping && <span className="text-[11px] text-emerald-500 block mt-1">Envío gratis</span>}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
         </div>
-      </main>
+      </div>
     </div>
   );
 }
