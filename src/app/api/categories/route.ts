@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { seedCategoriesIfEmpty } from "@/lib/seed-categories"
 
 export const dynamic = "force-dynamic"
 
 export async function GET() {
   try {
+    // Auto-seed categories on first request if DB is empty
+    await seedCategoriesIfEmpty()
+
     const categories = await prisma.category.findMany({
       where: { parentId: null },
       include: {

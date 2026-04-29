@@ -227,6 +227,7 @@ export default function PublicarFlow({ onClose, onPublished, editProduct }: Prop
             <div className="mb-6">
               <p className="text-[12px] text-slate-500 mb-1">Paso 1 de 5</p>
               <h2 className="text-[26px] font-medium leading-tight">Seleccioná la categoría de tu producto</h2>
+              <p className="text-[14px] text-slate-500 mt-1">Escribí el nombre de tu producto o buscá una categoría</p>
             </div>
 
             <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
@@ -235,29 +236,55 @@ export default function PublicarFlow({ onClose, onPublished, editProduct }: Prop
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                   <input
                     type="text"
-                    placeholder="Buscar categoría..."
+                    placeholder="Ej: celular, zapatillas, heladera..."
                     value={catSearch}
                     onChange={e => setCatSearch(e.target.value)}
+                    autoFocus
                     className="w-full border-2 border-[#3483fa] rounded-md pl-11 pr-4 py-3 text-[14px] text-slate-800 outline-none"
                   />
                 </div>
 
-                {filteredCats.length === 0 && (
-                  <p className="text-sm text-slate-500 text-center py-8">No se encontraron categorías. Verificá el término de búsqueda.</p>
+                {categories.length === 0 && (
+                  <div className="text-center py-8">
+                    <div className="animate-spin h-6 w-6 border-2 border-[#3483fa] border-t-transparent rounded-full mx-auto mb-3" />
+                    <p className="text-sm text-slate-500">Cargando categorías...</p>
+                  </div>
                 )}
 
-                <div className="flex flex-col border border-slate-200 rounded-md max-h-[400px] overflow-y-auto">
-                  {filteredCats.map((cat) => (
-                    <div
-                      key={cat.id}
-                      onClick={() => { upd({ categoryId: cat.id, categoryName: cat.display }); nextStep() }}
-                      className={`flex items-center justify-between p-4 cursor-pointer hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0 ${data.categoryId === cat.id ? "bg-blue-50" : ""}`}
-                    >
-                      <span className="text-[14px] text-slate-700">{cat.display}</span>
-                      <ChevronRight size={16} className="text-[#3483fa]" />
-                    </div>
-                  ))}
-                </div>
+                {categories.length > 0 && catSearch.trim() === "" && (
+                  <div className="flex flex-col border border-slate-200 rounded-md max-h-[420px] overflow-y-auto">
+                    {categories.map((parentCat) => (
+                      <div key={parentCat.id}>
+                        <div
+                          className="flex items-center justify-between p-4 cursor-pointer hover:bg-blue-50 transition-colors border-b border-slate-100 bg-slate-50/50"
+                          onClick={() => { upd({ categoryId: parentCat.id, categoryName: parentCat.name }); nextStep() }}
+                        >
+                          <span className="text-[14px] font-medium text-slate-800">{parentCat.name}</span>
+                          <span className="text-[12px] text-slate-400">{parentCat.children?.length || 0} sub</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {categories.length > 0 && catSearch.trim() !== "" && filteredCats.length === 0 && (
+                  <p className="text-sm text-slate-500 text-center py-8">No se encontraron categorías para &ldquo;{catSearch}&rdquo;. Probá con otro término.</p>
+                )}
+
+                {catSearch.trim() !== "" && filteredCats.length > 0 && (
+                  <div className="flex flex-col border border-slate-200 rounded-md max-h-[420px] overflow-y-auto">
+                    {filteredCats.map((cat) => (
+                      <div
+                        key={cat.id}
+                        onClick={() => { upd({ categoryId: cat.id, categoryName: cat.display }); nextStep() }}
+                        className={`flex items-center justify-between p-4 cursor-pointer hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0 ${data.categoryId === cat.id ? "bg-blue-50" : ""}`}
+                      >
+                        <span className="text-[14px] text-slate-700">{cat.display}</span>
+                        <ChevronRight size={16} className="text-[#3483fa]" />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
