@@ -17,9 +17,11 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get("limit") || "20")
     const skip = (page - 1) * limit
 
-    const where: any = {
-      order_items: { some: { product: { seller_id: userId } } }
-    }
+    const role = searchParams.get("role") || "seller"
+    const where: any = role === "buyer"
+      ? { buyerId: userId }
+      : { items: { some: { product: { sellerId: userId } } } }
+
     if (status && status !== "all") {
       where.status = status
     }
@@ -27,16 +29,21 @@ export async function GET(request: Request) {
     const [orders, total] = await Promise.all([
       prisma.order.findMany({
         where,
-        orderBy: { created_at: "desc" },
+        orderBy: { createdAt: "desc" },
         skip,
         take: limit,
         include: {
-          order_items: {
+          items: {
             include: {
               product: {
-                select: { id: true, title: true, price: true }
-              }
-            }
+                select: {
+                  id: true,
+                  title: true,
+                  price: true,
+                  images: { select: { url: true }, take: 1 },
+                },
+              },
+            },
           },
         },
       }),
@@ -44,11 +51,12 @@ export async function GET(request: Request) {
     ])
 
     // Resumen por estado
+    const baseWhere = role === "buyer"
+      ? { buyerId: userId }
+      : { items: { some: { product: { sellerId: userId } } } }
     const statusSummary = await prisma.order.groupBy({
       by: ["status"],
-      where: {
-        order_items: { some: { product: { seller_id: userId } } }
-      },
+      where: baseWhere,
       _count: { id: true },
       _sum: { total: true },
     })

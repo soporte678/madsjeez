@@ -141,6 +141,10 @@ model User {
   // Reputación
   reputationHistory ReputationHistory[] @relation("ReputationHistory")
   
+  // Soporte
+  supportTickets    SupportTicket[]     @relation("UserTickets")
+  supportMessages   SupportMessage[]    @relation("UserSupportMessages")
+  
   @@map("users")
 }
 
@@ -179,6 +183,13 @@ model Product {
   // Métricas
   views       Int      @default(0)
   sales       Int      @default(0)
+  
+  // Campos para publicaciones tipo Mercado Libre
+  originalPrice  Float?    @map("original_price")
+  freeShipping   Boolean   @default(false) @map("free_shipping")
+  shippingCost   Float     @default(0) @map("shipping_cost")
+  qualityScore   Int       @default(0) @map("quality_score")
+  hasVideo       Boolean   @default(false) @map("has_video")
   
   // Relaciones
   sellerId    String   @map("seller_id")
@@ -271,7 +282,8 @@ model Order {
   // Nuevas relaciones Fase 1
   claims        Claim[]
   messages      OrderMessage[]
-  shipment      Shipment?
+  shipment        Shipment?
+  supportTickets  SupportTicket[]
   
   createdAt     DateTime    @default(now()) @map("created_at")
   updatedAt     DateTime    @updatedAt @map("updated_at")
@@ -799,22 +811,15 @@ model Coupon {
   maxUses     Int?     @map("max_uses")
   usedCount   Int      @default(0) @map("used_count")
   maxUsesPerUser Int?  @map("max_uses_per_user")
-  
   // Validity
   startsAt    DateTime @map("starts_at")
   expiresAt   DateTime @map("expires_at")
   
-  isActive    Boolean  @default(true) @map("is_active")
+  isBoosted   Boolean   @default(false) @map("is_boosted")
   
-  // Applicable products (empty = all products)
-  productIds  String[] @map("product_ids")
+  // Reputación y Métricas
+  reputationScore Int     @default(0) @map("reputation_score")
   
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-  
-  @@index([sellerId])
-  @@index([code])
-  @@index([isActive])
   @@map("coupons")
 }
 
@@ -888,4 +893,84 @@ model MadsliderLevel {
   updatedAt         DateTime @updatedAt @map("updated_at")
   
   @@map("madslider_levels")
+}
+
+// =====================
+// SISTEMA DE SOPORTE
+// =====================
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_USER
+  RESOLVED
+  CLOSED
+}
+
+enum TicketCategory {
+  COMPRAS
+  VENTAS
+  ENVIOS
+  PAGOS
+  CUENTA
+  RECLAMOS
+  OTROS
+}
+
+model SupportTicket {
+  id          String         @id @default(cuid())
+  
+  subject     String
+  category    TicketCategory @default(OTROS)
+  status      TicketStatus   @default(OPEN)
+  
+  // Relación opcional con orden
+  orderId     String?        @map("order_id")
+  order       Order?         @relation(fields: [orderId], references: [id])
+  
+  userId      String         @map("user_id")
+  user        User           @relation("UserTickets", fields: [userId], references: [id], onDelete: Cascade)
+  
+  messages    SupportMessage[]
+  
+  resolvedAt  DateTime?      @map("resolved_at")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+  
+  @@index([userId])
+  @@index([status])
+  @@map("support_tickets")
+}
+
+model SupportMessage {
+  id          String   @id @default(cuid())
+  
+  content     String   @db.Text
+  isAgent     Boolean  @default(false) @map("is_agent")
+  
+  ticketId    String   @map("ticket_id")
+  ticket      SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  
+  senderId    String   @map("sender_id")
+  sender      User     @relation("UserSupportMessages", fields: [senderId], references: [id])
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  
+  @@index([ticketId])
+  @@map("support_messages")
+}
+
+model FAQ {
+  id          String   @id @default(cuid())
+  
+  question    String
+  answer      String   @db.Text
+  category    String   @default("general")
+  order       Int      @default(0)
+  isActive    Boolean  @default(true) @map("is_active")
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  @@map("faqs")
 }

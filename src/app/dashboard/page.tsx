@@ -493,7 +493,7 @@ export default function App() {
             {activeMenu === 'compras' && <ComprasView />}
             {activeMenu === 'perfil' && <ProfileView userData={currentUser || undefined} />}
             {activeMenu === 'carrito' && <CartView />}
-            {activeMenu === 'ayuda' && <HelpView userData={currentUser || undefined} />}
+            {activeMenu === 'ayuda' && <HelpView userData={currentUser || undefined} onNavigate={(section) => setActiveMenu(section)} />}
             {activeMenu === 'publicaciones' && renderProductosCatalogo()}
           </div>
         </section>
