@@ -19,9 +19,9 @@ export async function GET(request: Request) {
     // Ventas de hoy del vendedor
     const todaySellerItems = await prisma.orderItem.findMany({
       where: {
-        product: { seller_id: userId },
+        product: { sellerId: userId },
         order: {
-          created_at: { gte: startOfDay },
+          createdAt: { gte: startOfDay },
           status: { not: "CANCELLED" }
         }
       },
@@ -35,19 +35,19 @@ export async function GET(request: Request) {
 
     // Visitas de hoy (total de views de todos los productos del vendedor)
     const viewsData = await prisma.product.aggregate({
-      where: { seller_id: userId },
+      where: { sellerId: userId },
       _sum: { views: true },
     })
 
     // Productos más vendidos hoy
     const topProductMap = new Map<string, { product: any, quantity: number, revenue: number }>()
     for (const item of todaySellerItems) {
-      const existing = topProductMap.get(item.product_id)
+      const existing = topProductMap.get(item.productId)
       if (existing) {
         existing.quantity += item.quantity
         existing.revenue += item.price * item.quantity
       } else {
-        topProductMap.set(item.product_id, {
+        topProductMap.set(item.productId, {
           product: item.product,
           quantity: item.quantity,
           revenue: item.price * item.quantity,
@@ -85,12 +85,12 @@ export async function GET(request: Request) {
     // Compradores únicos
     const uniqueBuyers = await prisma.order.findMany({
       where: {
-        order_items: { some: { product: { seller_id: userId } } },
-        created_at: { gte: startOfDay },
+        items: { some: { product: { sellerId: userId } } },
+        createdAt: { gte: startOfDay },
         status: { not: "CANCELLED" }
       },
-      select: { buyer_id: true },
-      distinct: ['buyer_id'],
+      select: { buyerId: true },
+      distinct: ['buyerId'],
     })
 
     const totalViews = viewsData._sum.views || 0

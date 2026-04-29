@@ -60,9 +60,8 @@ export async function GET(request: NextRequest) {
         },
         include: {
           order: true,
-          product: { select: { id: true, name: true, sellerId: true } }
+          product: { select: { id: true, title: true, sellerId: true } }
         },
-        orderBy: { createdAt: 'desc' }
       });
 
       // Agrupar por orden y sumar
@@ -145,9 +144,9 @@ export async function GET(request: NextRequest) {
         where: { sellerId: userId },
         select: {
           id: true,
-          name: true,
+          title: true,
           price: true,
-          status: true,
+          isActive: true,
           stock: true,
           createdAt: true,
           images: { select: { id: true } }
@@ -158,7 +157,7 @@ export async function GET(request: NextRequest) {
       productsToImprove = products.filter(p => {
         const noImages = !p.images || p.images.length === 0;
         const noStock = (p.stock || 0) === 0;
-        const inactive = p.status === 'INACTIVE' || p.status === 'OUT_OF_STOCK';
+        const inactive = p.isActive === false;
         return noImages || noStock || inactive;
       }).length;
     } catch (e) {
@@ -235,13 +234,13 @@ export async function GET(request: NextRequest) {
         where: {
           userId: userId,
           status: 'active',
-          currentPeriodEnd: { gte: now }
+          endDate: { gte: now }
         },
-        orderBy: { currentPeriodEnd: 'desc' }
+        orderBy: { endDate: 'desc' }
       });
 
       if (activeSubscription) {
-        activeSubscriptionAmount = activeSubscription.amount || 0;
+        activeSubscriptionAmount = activeSubscription.price || 0;
         billingBalance += activeSubscriptionAmount;
       }
 
