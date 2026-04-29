@@ -21,6 +21,7 @@ import ProfileView from "@/components/dashboard/ProfileView";
 import CartView from "@/components/dashboard/CartView";
 import HelpView from "@/components/dashboard/HelpView";
 import NotificationsDropdown from "@/components/dashboard/NotificationsDropdown";
+import PublicacionesPage from "@/app/dashboard/publicaciones/page";
 
 function getInitialMenu() {
   if (typeof window !== 'undefined') {
@@ -328,14 +329,7 @@ export default function App() {
     </div>
   );
 
-  const renderProductosCatalogo = () => (
-    <div className="flex-1 flex flex-col gap-6 w-full max-w-5xl">
-      <div className="flex justify-between items-center"><h1 className="text-[26px] font-semibold text-gray-800">Productos de Catálogo</h1><button className="bg-blue-500 text-white px-4 py-2 rounded-md font-semibold text-sm hover:bg-blue-600 shadow-sm">Crear productos</button></div>
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-16 flex flex-col items-center justify-center text-center mt-4">
-        <Box size={32} className="text-gray-300 mb-3" /><p className="text-sm font-semibold text-gray-700">Aún no tienes sugerencias de catálogo</p>
-      </div>
-    </div>
-  );
+  const renderPublicaciones = () => <PublicacionesPage />;
 
   const renderPosventa = () => (
     <div className="flex-1 flex flex-col gap-6 w-full max-w-5xl">
@@ -494,7 +488,7 @@ export default function App() {
             {activeMenu === 'perfil' && <ProfileView userData={currentUser || undefined} />}
             {activeMenu === 'carrito' && <CartView />}
             {activeMenu === 'ayuda' && <HelpView userData={currentUser || undefined} onNavigate={(section) => setActiveMenu(section)} />}
-            {activeMenu === 'publicaciones' && renderProductosCatalogo()}
+            {activeMenu === 'publicaciones' && renderPublicaciones()}
           </div>
         </section>
       </div>
