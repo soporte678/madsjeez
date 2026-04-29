@@ -24,17 +24,20 @@ import { ProductDetailClient } from "@/components/product/ProductDetailClient";
 async function getProduct(id: string) {
   const supabase = await createClient();
 
-  const { data: product } = await supabase
+  const { data: product, error } = await supabase
     .from("products")
     .select(`
       *,
       product_images(*),
-      seller:seller_id(id, name, "sellerName", image, reputation_color, reputation_level, reputation_score, total_sales, successful_sales),
+      seller:seller_id(*),
       categories:category_id(id, name, slug)
     `)
     .eq("id", id)
     .single();
 
+  if (error) {
+    console.error("getProduct error:", error.message, error.details);
+  }
   if (!product) return null;
 
   // Increment view count
@@ -55,7 +58,7 @@ async function getRelatedProducts(categoryId: string | null, currentProductId: s
     .select(`
       *,
       product_images(url, is_primary),
-      seller:seller_id(name, "sellerName", reputation_color)
+      seller:seller_id(*)
     `)
     .eq("category_id", categoryId)
     .eq("is_active", true)
@@ -111,7 +114,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
     getSellerProducts(product.seller_id, product.id),
   ]);
 
-  const sellerName = product.seller?.sellerName || product.seller?.name || "Vendedor";
+  const sellerName = (product.seller as any)?.sellerName || (product.seller as any)?.name || "Vendedor";
   const sellerTotalSales = product.seller?.total_sales || 0;
   const conditionLabel = product.condition === "new" ? "Nuevo" : product.condition === "used" ? "Usado" : "Reacondicionado";
   const salesCount = product.sales || 0;
