@@ -48,8 +48,7 @@ interface ProductWithDetails {
   warranty_type: string | null;
   warranty_time: string | null;
   product_images: { id: string; url: string; alt: string | null; order: number; is_primary?: boolean }[];
-  profiles: { id: string; full_name: string | null; avatar_url: string | null } | null;
-  reputation_scores: { color: string } | null;
+  seller: { id: string; name: string | null; seller_name: string | null; image: string | null; reputation_color: string; reputation_level: string; reputation_score: number; total_sales: number; successful_sales: number } | null;
   categories: { id: string; name: string; slug: string } | null;
   [key: string]: any;
 }
@@ -62,9 +61,8 @@ async function getProduct(id: string): Promise<ProductWithDetails | null> {
     .select(`
       *,
       product_images(*),
-      profiles:seller_id(*),
-      reputation_scores:seller_id(*),
-      categories:category_id(*)
+      seller:seller_id(id, name, seller_name, image, reputation_color, reputation_level, reputation_score, total_sales, successful_sales),
+      categories:category_id(id, name, slug)
     `)
     .eq("id", id)
     .single();
@@ -89,8 +87,7 @@ async function getRelatedProducts(categoryId: string | null, currentProductId: s
     .select(`
       *,
       product_images(url, is_primary),
-      profiles:seller_id(full_name),
-      reputation_scores:seller_id(color)
+      seller:seller_id(name, seller_name, reputation_color)
     `)
     .eq("category_id", categoryId)
     .eq("is_active", true)
@@ -101,8 +98,8 @@ async function getRelatedProducts(categoryId: string | null, currentProductId: s
     ...product,
     primary_image: product.product_images?.find((img: { is_primary: boolean }) => img.is_primary)?.url ||
                    product.product_images?.[0]?.url,
-    seller_name: product.profiles?.full_name,
-    seller_reputation: product.reputation_scores?.color,
+    seller_name: product.seller?.seller_name || product.seller?.name,
+    seller_reputation: product.seller?.reputation_color,
   })) || [];
 }
 
@@ -113,7 +110,7 @@ async function getSellerProducts(sellerId: string, currentProductId: string) {
     .select(`
       *,
       product_images(url, is_primary),
-      reputation_scores:seller_id(color)
+      seller:seller_id(reputation_color)
     `)
     .eq("seller_id", sellerId)
     .eq("is_active", true)
@@ -124,7 +121,7 @@ async function getSellerProducts(sellerId: string, currentProductId: string) {
     ...product,
     primary_image: product.product_images?.find((img: { is_primary: boolean }) => img.is_primary)?.url ||
                    product.product_images?.[0]?.url,
-    seller_reputation: product.reputation_scores?.color,
+    seller_reputation: product.seller?.reputation_color,
   })) || [];
 }
 
@@ -472,14 +469,14 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                     <p className="text-xs text-gray-400 mb-2">Vendido por</p>
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-[#3483FA] rounded-full flex items-center justify-center text-white font-bold text-sm">
-                        {(product.profiles?.full_name || "V")[0].toUpperCase()}
+                        {(product.seller?.seller_name || product.seller?.name || "V")[0].toUpperCase()}
                       </div>
                       <div className="flex-1">
                         <Link href={`/seller/${product.seller_id}`} className="font-medium text-sm text-[#3483FA] hover:underline">
-                          {product.profiles?.full_name || "Vendedor"}
+                          {product.seller?.seller_name || product.seller?.name || "Vendedor"}
                         </Link>
-                        {product.reputation_scores && (
-                          <ReputationBadge color={product.reputation_scores.color} />
+                        {product.seller?.reputation_color && (
+                          <ReputationBadge color={product.seller.reputation_color} />
                         )}
                       </div>
                     </div>
