@@ -55,7 +55,7 @@ export default function PublicacionesView() {
       const p = new URLSearchParams()
       if (filter !== "all") p.set("status", filter)
       p.set("page", String(page))
-      p.set("limit", "25")
+      p.set("limit", "50")
       const r = await fetch(`/api/dashboard/products?${p}`)
       const d = await r.json()
       setProducts(d.products || [])
@@ -104,12 +104,12 @@ export default function PublicacionesView() {
   if (loading) return <div className="flex items-center justify-center h-96"><div className="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full" /></div>
 
   return (
-    <div className="text-[#333]">
+    <div className="text-[#333] w-full px-6 lg:px-8">
       <style>{`
         .pub-grid {
           display: grid;
-          grid-template-columns: minmax(280px, 2.5fr) 100px 140px 120px 90px 90px 90px minmax(210px, 1.8fr);
-          gap: 16px;
+          grid-template-columns: minmax(260px, 2.5fr) 95px 135px 115px 85px 85px 85px minmax(200px, 1.8fr);
+          gap: 12px;
           align-items: start;
         }
         .table-scrollbar::-webkit-scrollbar { height: 10px; }
@@ -124,10 +124,21 @@ export default function PublicacionesView() {
         }
         .quality-circle.low { border-color: #cc0000; color: #cc0000; }
         .quality-circle.mid { border-color: #3483fa; color: #3483fa; }
+        .pub-row-card {
+          border: 1px solid #e2e8f0;
+          border-radius: 6px;
+          margin: 4px 8px;
+          background: white;
+          transition: box-shadow 0.15s;
+        }
+        .pub-row-card:hover {
+          box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+          background: #fafbfc;
+        }
       `}</style>
 
       {/* TABS */}
-      <div className="flex items-center gap-8 border-b border-slate-200 mb-6 -mx-6 -mt-6 px-6 bg-white">
+      <div className="flex items-center gap-8 border-b border-slate-200 mb-6 bg-white rounded-t-lg px-4">
         {TABS.map((tab, i) => (
           <button key={i} onClick={() => setActiveTab(i)} className={`pb-3 pt-4 text-[14px] font-medium cursor-pointer relative ${i === activeTab ? "text-[#3483fa]" : "text-slate-500 hover:text-slate-800"}`}>
             {tab}
@@ -143,7 +154,7 @@ export default function PublicacionesView() {
 
       {/* ALERT CARDS */}
       {summary && (
-        <div className="flex items-center gap-3 mb-6 overflow-x-auto scrollbar-hide pb-1">
+        <div className="flex items-center gap-3 mb-6 overflow-x-auto scrollbar-hide pb-1 px-0">
           {[
             { title: "Pendientes por corregir", desc: "Revisá qué debés hacer para reactivarlas.", count: summary.paused, action: () => { setFilter("paused"); setPage(1) } },
             { title: "Para ganar la competencia en Madsjeez", desc: "Revisá qué debés hacer para ser el vendedor destacado.", count: summary.noSales, action: () => { setFilter("no_sales"); setPage(1) } },
@@ -178,7 +189,7 @@ export default function PublicacionesView() {
       </div>
 
       {/* TABLE CONTAINER */}
-      <div className="border border-slate-200 rounded-lg flex flex-col w-full overflow-hidden bg-white">
+      <div className="border border-slate-200 rounded-lg flex flex-col w-full overflow-hidden bg-[#f4f5f7]">
 
         {/* TOOLBAR */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 w-full bg-[#f8f9fa]">
@@ -210,7 +221,7 @@ export default function PublicacionesView() {
             </div>
 
             {/* ROWS */}
-            <div className="divide-y divide-slate-200">
+            <div className="flex flex-col">
               {filtered.map(p => {
                 const rec = getRecommendation(p)
                 const comission = p.price * COMMISSION
@@ -221,7 +232,7 @@ export default function PublicacionesView() {
                 const cuotaPrice = hasCuotas ? Math.ceil(p.price / 3) : 0
 
                 return (
-                  <div key={p.id} className="pub-grid px-4 py-4 hover:bg-slate-50/50 transition-colors group">
+                  <div key={p.id} className="pub-row-card pub-grid px-4 py-3 group">
 
                     {/* 1. PUBLICACIÓN */}
                     <div className="flex items-start gap-3">
@@ -379,7 +390,7 @@ export default function PublicacionesView() {
               })}
 
               {filtered.length === 0 && (
-                <div className="p-12 text-center text-slate-500">
+                <div className="p-12 text-center text-slate-500 bg-white rounded-lg mx-2 my-2 border border-slate-200">
                   No hay publicaciones. <button onClick={openCreate} className="text-[#3483fa] font-medium hover:underline">Crear una</button>
                 </div>
               )}
