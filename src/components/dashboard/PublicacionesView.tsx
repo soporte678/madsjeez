@@ -126,6 +126,8 @@ export default function PublicacionesView() {
           margin: 4px 8px;
           background: white;
           transition: box-shadow 0.15s;
+          position: relative;
+          overflow: visible;
         }
         .pub-row-card:hover {
           box-shadow: 0 2px 8px rgba(0,0,0,0.06);
@@ -185,7 +187,7 @@ export default function PublicacionesView() {
       </div>
 
       {/* TABLE CONTAINER */}
-      <div className="border border-slate-200 rounded-lg flex flex-col w-full overflow-hidden bg-[#f4f5f7]">
+      <div className="border border-slate-200 rounded-lg flex flex-col w-full bg-[#f4f5f7]">
 
         {/* TOOLBAR */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 w-full bg-[#f8f9fa]">
