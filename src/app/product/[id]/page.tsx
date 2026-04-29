@@ -6,7 +6,6 @@ import { ReputationBadge } from "@/components/ReputationBadge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
 import {
   Shield,
   Truck,
@@ -16,26 +15,43 @@ import {
   Heart,
   Share2,
   Check,
-  Star,
   Package,
   CreditCard,
-  Wallet,
-  Banknote,
   Award,
   ThumbsUp,
   Clock,
   ChevronRight,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import type { Product, ProductImage, Profile, ReputationScore, Category } from "@/types";
 import { ImageGallery } from "@/components/product/ImageGallery";
 import { AdBanner } from "@/components/product/AdBanner";
 
-interface ProductWithDetails extends Product {
-  product_images: ProductImage[];
-  profiles: Profile;
-  reputation_scores: ReputationScore | null;
-  categories: Category | null;
+// Supabase returns snake_case fields
+interface ProductWithDetails {
+  id: string;
+  title: string;
+  description: string | null;
+  price: number;
+  original_price: number | null;
+  stock: number;
+  condition: string;
+  is_active: boolean;
+  shipping_free: boolean;
+  shipping_cost: number;
+  sold_count: number;
+  view_count: number;
+  seller_id: string;
+  category_id: string | null;
+  quality_score: number;
+  attributes: Record<string, any> | null;
+  video_url: string | null;
+  warranty_type: string | null;
+  warranty_time: string | null;
+  product_images: { id: string; url: string; alt: string | null; order: number; is_primary?: boolean }[];
+  profiles: { id: string; full_name: string | null; avatar_url: string | null } | null;
+  reputation_scores: { color: string } | null;
+  categories: { id: string; name: string; slug: string } | null;
+  [key: string]: any;
 }
 
 async function getProduct(id: string): Promise<ProductWithDetails | null> {
@@ -51,7 +67,6 @@ async function getProduct(id: string): Promise<ProductWithDetails | null> {
       categories:category_id(*)
     `)
     .eq("id", id)
-    .eq("is_active", true)
     .single();
 
   if (!product) return null;
@@ -172,12 +187,12 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
     : null;
 
   const cuotas6 = Math.ceil(product.price / 6);
-  const warranty = (product as any).warranty_type || (product as any).warranty || null;
-  const warrantyTime = (product as any).warranty_time || null;
+  const warranty = product.warranty_type || null;
+  const warrantyTime = product.warranty_time || null;
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header user={null} />
+      <Header />
 
       <main className="flex-1 bg-[#EBEBEB]">
         {/* Breadcrumb */}
@@ -188,8 +203,8 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
               <span>/</span>
               {product.categories && (
                 <>
-                  <Link href={`/category/${(product.categories as any).slug}`} className="hover:text-[#3483FA]">
-                    {(product.categories as any).name}
+                  <Link href={`/category/${product.categories.slug}`} className="hover:text-[#3483FA]">
+                    {product.categories.name}
                   </Link>
                   <span>/</span>
                 </>
@@ -222,7 +237,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                   <ImageGallery
                     images={allImages}
                     title={product.title}
-                    videoUrl={(product as any).video_url || null}
+                    videoUrl={product.video_url || null}
                   />
                 </CardContent>
               </Card>
