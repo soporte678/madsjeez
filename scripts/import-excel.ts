@@ -1,16 +1,29 @@
 /**
  * Import products from MeLi Excel "PUBLICACIONES MAQJEEZ I.xlsx"
- * Reads the Excel, extracts product data, and sends it to the API.
+ * Connects directly to Supabase via Prisma.
  *
- * Usage: npx tsx scripts/import-excel.ts <BASE_URL> <SESSION_COOKIE>
- * Example: npx tsx scripts/import-excel.ts https://madsjeez.up.railway.app "next-auth.session-token=abc123"
- *
- * NOTE: Get the session cookie from your browser's DevTools → Application → Cookies
+ * Usage: npx tsx scripts/import-excel.ts
  */
 import * as XLSX from 'xlsx'
 import path from 'path'
+import dotenv from 'dotenv'
+
+dotenv.config({ path: path.resolve(__dirname, '../.env.local') })
+
+// Use session-mode pooler (port 5432) which resolves to IPv4 and is Prisma-compatible
+const POOLER_URL = `postgresql://postgres.doweovsukuskflgnxhhn:NXnPpq963f1oFIGI@aws-0-us-east-1.pooler.supabase.com:6543/postgres`
+
+async function getPrisma() {
+  const { Pool } = await import('pg')
+  const { PrismaPg } = await import('@prisma/adapter-pg')
+  const { PrismaClient } = await import('@prisma/client')
+  const pool = new Pool({ connectionString: POOLER_URL })
+  const adapter = new PrismaPg(pool)
+  return { prisma: new PrismaClient({ adapter }), pool }
+}
 
 const EXCEL_PATH = path.join('C:\\Users\\Mi Pc\\Desktop\\BBBB', 'PUBLICACIONES MAQJEEZ I.xlsx')
+const SKU_PREFIX = 'MAQJEEZ'
 
 const COL = {
   ITEM_ID: 1,
@@ -38,14 +51,9 @@ function cleanStock(val: any): number {
 }
 
 async function main() {
-  const baseUrl = process.argv[2]
-  const sessionCookie = process.argv[3]
-
-  if (!baseUrl || !sessionCookie) {
-    console.error('Usage: npx tsx scripts/import-excel.ts <BASE_URL> <SESSION_COOKIE>')
-    console.error('Example: npx tsx scripts/import-excel.ts https://madsjeez.up.railway.app "next-auth.session-token=abc123"')
-    process.exit(1)
-  }
+  console.log('🔌 Connecting to database...')
+  console.log(`   URL: ${process.env.DATABASE_URL?.replace(/:[^@]+@/, ':****@')}`)
+  const { prisma, pool } = await getPrisma()
 
   console.log('📖 Reading Excel file...')
   const wb = XLSX.readFile(EXCEL_PATH)
@@ -82,75 +90,140 @@ async function main() {
 
   console.log(`📦 Found ${dataRows.length} products in Excel`)
 
-  // Convert to API format
-  const products = dataRows.map(row => {
+  // Get seller
+  const seller = await prisma.user.findFirst({ where: { isSeller: true } })
+  if (!seller) throw new Error('No seller found. Create a seller account first.')
+  console.log(`👤 Seller: ${seller.name || seller.email} (${seller.id})`)
+
+  // Get or create default category
+  let defaultCategory = await prisma.category.findFirst({ where: { slug: 'general' } })
+  if (!defaultCategory) {
+    defaultCategory = await prisma.category.create({
+      data: { name: 'General', slug: 'general', description: 'Categoría general' },
+    })
+  }
+
+  // Category map
+  const allCats = await prisma.category.findMany()
+  const catMap = new Map<string, string>()
+  allCats.forEach(c => catMap.set(c.name.toLowerCase(), c.id))
+
+  // Existing products (avoid duplicates)
+  const existing = await prisma.product.findMany({
+    where: { sellerId: seller.id },
+    select: { title: true, sku: true },
+  })
+  const existingTitles = new Set(existing.map(p => p.title.toLowerCase().trim()))
+
+  // Find highest MAQJEEZ SKU number
+  let skuCounter = 0
+  existing.forEach(p => {
+    if (p.sku) {
+      const m = p.sku.match(/MAQJEEZ-(\d+)/)
+      if (m) skuCounter = Math.max(skuCounter, parseInt(m[1]))
+    }
+  })
+  skuCounter++
+
+  let imported = 0
+  let skipped = 0
+  const errors: string[] = []
+
+  for (const row of dataRows) {
     const title = String(row[COL.TITLE] || '').trim()
+    if (!title) { skipped++; continue }
+
     const price = cleanNum(row[COL.PRICE])
-    const stockWarehouse = cleanStock(row[COL.STOCK_WAREHOUSE])
-    const stockFull = cleanStock(row[COL.STOCK_FULL])
-    const stock = stockWarehouse + stockFull
+    if (price <= 0) { skipped++; continue }
+
+    if (existingTitles.has(title.toLowerCase())) {
+      console.log(`  ⏭ Duplicate: "${title.substring(0, 50)}..."`)
+      skipped++
+      continue
+    }
+
+    const stockW = cleanStock(row[COL.STOCK_WAREHOUSE])
+    const stockF = cleanStock(row[COL.STOCK_FULL])
+    const stock = stockW + stockF
+
     const description = String(row[COL.DESCRIPTION] || '').trim()
-    const conditionRaw = String(row[COL.CONDITION] || 'Nuevo').trim().toLowerCase()
-    const condition = conditionRaw === 'usado' ? 'used' : conditionRaw === 'reacondicionado' ? 'refurbished' : 'new'
-    const shippingRaw = String(row[COL.SHIPPING] || '').toLowerCase()
-    const freeShipping = shippingRaw.includes('gratis')
+    const condRaw = String(row[COL.CONDITION] || 'Nuevo').trim().toLowerCase()
+    const condition = condRaw === 'usado' ? 'used' : condRaw === 'reacondicionado' ? 'refurbished' : 'new'
+
+    const shipRaw = String(row[COL.SHIPPING] || '').toLowerCase()
+    const freeShipping = shipRaw.includes('gratis')
+
     const statusRaw = String(row[COL.STATUS] || 'Activa').trim().toLowerCase()
     const isActive = statusRaw === 'activa'
-    const category = String(row[COL.CATEGORY] || '').trim()
+
+    const categoryName = String(row[COL.CATEGORY] || '').trim()
+    let categoryId = defaultCategory.id
+    if (categoryName) {
+      const catKey = categoryName.toLowerCase()
+      if (catMap.has(catKey)) {
+        categoryId = catMap.get(catKey)!
+      } else {
+        const slug = categoryName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').substring(0, 80)
+        try {
+          const newCat = await prisma.category.create({
+            data: { name: categoryName, slug: slug || `cat-${Date.now()}`, description: categoryName },
+          })
+          catMap.set(catKey, newCat.id)
+          categoryId = newCat.id
+        } catch {
+          // slug conflict — use default
+        }
+      }
+    }
+
     const wholesalePrice = cleanNum(row[COL.WHOLESALE_1_PRICE])
     const originalPrice = wholesalePrice > price ? wholesalePrice : null
 
-    return { title, description, price, originalPrice, stock, condition, freeShipping, isActive, category }
-  }).filter(p => p.title && p.price > 0)
-
-  console.log(`📤 Sending ${products.length} products to ${baseUrl}/api/import-products ...`)
-
-  // Send in batches of 50 to avoid timeouts
-  const BATCH_SIZE = 50
-  let totalImported = 0
-  let totalSkipped = 0
-  let totalErrors = 0
-
-  for (let i = 0; i < products.length; i += BATCH_SIZE) {
-    const batch = products.slice(i, i + BATCH_SIZE)
-    console.log(`  📦 Batch ${Math.floor(i / BATCH_SIZE) + 1}: sending ${batch.length} products...`)
+    const sku = `${SKU_PREFIX}-${String(skuCounter).padStart(6, '0')}`
+    skuCounter++
 
     try {
-      const res = await fetch(`${baseUrl}/api/import-products`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Cookie': sessionCookie,
+      await prisma.product.create({
+        data: {
+          title,
+          description: description || `${title} - Producto importado`,
+          price,
+          originalPrice,
+          stock,
+          sku,
+          condition,
+          isActive,
+          isFeatured: false,
+          isBoosted: false,
+          views: 0,
+          sales: 0,
+          freeShipping,
+          shippingCost: 0,
+          qualityScore: Math.floor(Math.random() * 30) + 50,
+          hasVideo: false,
+          sellerId: seller.id,
+          categoryId,
         },
-        body: JSON.stringify({ products: batch }),
       })
-
-      const result = await res.json()
-
-      if (!res.ok) {
-        console.error(`  ❌ Batch failed: ${result.error}`)
-        totalErrors += batch.length
-        continue
-      }
-
-      totalImported += result.imported || 0
-      totalSkipped += result.skipped || 0
-      totalErrors += result.errors || 0
-      console.log(`  ✅ Imported: ${result.imported}, Skipped: ${result.skipped}, Errors: ${result.errors}`)
-      if (result.errorDetails?.length > 0) {
-        result.errorDetails.forEach((e: string) => console.log(`     ⚠ ${e}`))
-      }
+      existingTitles.add(title.toLowerCase())
+      imported++
+      if (imported % 10 === 0) console.log(`  ✅ ${imported}/${dataRows.length} imported...`)
     } catch (err: any) {
-      console.error(`  ❌ Network error: ${err.message}`)
-      totalErrors += batch.length
+      errors.push(`"${title.substring(0, 40)}": ${err.message}`)
+      console.error(`  ❌ ${title.substring(0, 40)}: ${err.message?.substring(0, 80)}`)
     }
   }
 
   console.log('\n═══════════════════════════════════')
-  console.log(`✅ Total imported: ${totalImported}`)
-  console.log(`⏭ Total skipped: ${totalSkipped}`)
-  console.log(`❌ Total errors: ${totalErrors}`)
+  console.log(`✅ Imported: ${imported}`)
+  console.log(`⏭ Skipped: ${skipped}`)
+  console.log(`❌ Errors: ${errors.length}`)
+  if (errors.length > 0) errors.forEach(e => console.log(`  - ${e}`))
   console.log('═══════════════════════════════════')
+
+  await prisma.$disconnect()
+  await pool.end()
+  process.exit(0)
 }
 
 main().catch(err => {
