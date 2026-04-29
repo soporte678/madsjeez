@@ -17,19 +17,10 @@ ARG NEXT_PUBLIC_SUPABASE_URL
 ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
 ARG NEXT_PUBLIC_ENABLE_PROMOTIONS
 ARG DATABASE_URL
-ARG NEXTAUTH_SECRET
-ARG NEXTAUTH_URL
-ARG GOOGLE_CLIENT_ID
-ARG GOOGLE_CLIENT_SECRET
-
 ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
 ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
 ENV NEXT_PUBLIC_ENABLE_PROMOTIONS=$NEXT_PUBLIC_ENABLE_PROMOTIONS
 ENV DATABASE_URL=$DATABASE_URL
-ENV NEXTAUTH_SECRET=$NEXTAUTH_SECRET
-ENV NEXTAUTH_URL=$NEXTAUTH_URL
-ENV GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID
-ENV GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET
 
 # Copiar package.json e instalar dependencias
 COPY package.json ./
@@ -46,12 +37,9 @@ RUN echo "=== Generando Prisma Client ===" && \
     npx prisma generate && \
     echo "=== Prisma Client generado ==="
 
-# Baselining: mark all existing migrations as applied, then deploy new ones
-RUN echo "=== Baselining Prisma migrations ===" && \
-    npx prisma migrate resolve --applied 20250426170000_initial_setup 2>/dev/null || true && \
-    npx prisma migrate resolve --applied 20250427200000_add_favorites_table 2>/dev/null || true && \
-    npx prisma migrate deploy && \
-    echo "=== Migraciones aplicadas ==="
+# Skip migrations during build - they are already applied
+# If you need to run migrations, do it manually via Supabase SQL Editor
+# RUN npx prisma migrate deploy
 
 # Build de Next.js (bypass package.json cached script)
 RUN echo "=== Iniciando build de Next.js ===" && \
