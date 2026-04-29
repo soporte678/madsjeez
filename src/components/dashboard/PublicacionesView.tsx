@@ -41,7 +41,7 @@ export default function PublicacionesView() {
       const p = new URLSearchParams()
       if (filter !== "all") p.set("status", filter)
       p.set("page", String(page))
-      p.set("limit", "20")
+      p.set("limit", "25")
       const r = await fetch(`/api/dashboard/products?${p}`)
       const d = await r.json()
       setProducts(d.products || [])
@@ -120,8 +120,8 @@ export default function PublicacionesView() {
         </select>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-        <div className="overflow-x-auto">
+      <div className="bg-white rounded-xl shadow-sm border overflow-hidden flex flex-col" style={{ minHeight: "calc(100vh - 280px)" }}>
+        <div className="overflow-x-auto flex-1">
           <table className="w-full">
             <thead className="bg-gray-50 border-b"><tr>
               <th className="text-left p-4 text-xs font-medium text-gray-500 uppercase">Publicación</th>
@@ -134,10 +134,10 @@ export default function PublicacionesView() {
             </tr></thead>
             <tbody className="divide-y">
               {filtered.map(p => (
-                <tr key={p.id} className="hover:bg-gray-50">
-                  <td className="p-4">
+                <tr key={p.id} className="hover:bg-gray-50 h-[52px]">
+                  <td className="px-4 py-2">
                     <div className="flex items-center gap-3">
-                      <img src={p.images[0]?.url || "https://via.placeholder.com/48"} alt={p.title} className="w-12 h-12 rounded-lg object-cover" />
+                      <img src={p.images[0]?.url || "https://via.placeholder.com/48"} alt={p.title} className="w-10 h-10 rounded-lg object-cover" />
                       <div>
                         <h4 className="text-sm font-medium text-gray-900 line-clamp-2">{p.title}</h4>
                         <div className="flex gap-2 mt-1">
@@ -148,12 +148,12 @@ export default function PublicacionesView() {
                       </div>
                     </div>
                   </td>
-                  <td className="p-4"><div className="text-sm font-medium">{fmt(p.price)}</div>{p.originalPrice && <div className="text-xs text-gray-400 line-through">{fmt(p.originalPrice)}</div>}</td>
-                  <td className="p-4"><div className="text-sm">{p.stock}</div><div className={`text-xs ${p.stock <= 5 ? "text-red-500" : "text-gray-400"}`}>{p.stock <= 5 ? "Bajo" : "OK"}</div></td>
-                  <td className="p-4"><div className="text-sm text-gray-600"><div>👁 {p.views}</div><div>🛒 {p.sales} vendidos</div></div></td>
-                  <td className="p-4"><Badge className={qc[ql(p.qualityScore)]}>{ql(p.qualityScore)}</Badge><div className="text-xs mt-1">{el(p.sales, p.views)}</div></td>
-                  <td className="p-4"><Badge className={p.isActive ? "text-green-600 bg-green-50" : "text-yellow-600 bg-yellow-50"}>{p.isActive ? "Activo" : "Pausado"}</Badge><div className="text-xs text-gray-500 mt-1">{rc(p)}</div></td>
-                  <td className="p-4">
+                  <td className="px-4 py-2"><div className="text-sm font-medium">{fmt(p.price)}</div>{p.originalPrice && <div className="text-xs text-gray-400 line-through">{fmt(p.originalPrice)}</div>}</td>
+                  <td className="px-4 py-2"><div className="text-sm">{p.stock}</div><div className={`text-xs ${p.stock <= 5 ? "text-red-500" : "text-gray-400"}`}>{p.stock <= 5 ? "Bajo" : "OK"}</div></td>
+                  <td className="px-4 py-2"><div className="text-sm text-gray-600"><div>👁 {p.views}</div><div>🛒 {p.sales} vendidos</div></div></td>
+                  <td className="px-4 py-2"><Badge className={qc[ql(p.qualityScore)]}>{ql(p.qualityScore)}</Badge><div className="text-xs mt-1">{el(p.sales, p.views)}</div></td>
+                  <td className="px-4 py-2"><Badge className={p.isActive ? "text-green-600 bg-green-50" : "text-yellow-600 bg-yellow-50"}>{p.isActive ? "Activo" : "Pausado"}</Badge><div className="text-xs text-gray-500 mt-1">{rc(p)}</div></td>
+                  <td className="px-4 py-2">
                     <div className="relative">
                       <button onClick={() => setOpenMenu(openMenu === p.id ? null : p.id)} className="p-1.5 hover:bg-gray-100 rounded">
                         <MoreVertical size={18} className="text-gray-500" />
@@ -188,15 +188,17 @@ export default function PublicacionesView() {
           </table>
         </div>
 
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t bg-gray-50">
-            <span className="text-sm text-gray-500">Página {page} de {totalPages}</span>
+        <div className="flex items-center justify-between px-4 py-3 border-t bg-gray-50 mt-auto">
+          <span className="text-sm text-gray-500">
+            Mostrando {filtered.length} publicaciones · Página {page} de {totalPages}
+          </span>
+          {totalPages > 1 && (
             <div className="flex gap-2">
               <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}><ChevronLeft size={16} /></Button>
               <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(page + 1)}><ChevronRight size={16} /></Button>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   )
