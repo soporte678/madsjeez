@@ -21,7 +21,7 @@ import ProfileView from "@/components/dashboard/ProfileView";
 import CartView from "@/components/dashboard/CartView";
 import HelpView from "@/components/dashboard/HelpView";
 import NotificationsDropdown from "@/components/dashboard/NotificationsDropdown";
-import PublicacionesPage from "@/app/dashboard/publicaciones/page";
+import PublicacionesView from "@/components/dashboard/PublicacionesView";
 
 function getInitialMenu() {
   if (typeof window !== 'undefined') {
@@ -329,7 +329,7 @@ export default function App() {
     </div>
   );
 
-  const renderPublicaciones = () => <PublicacionesPage />;
+  const renderPublicaciones = () => <PublicacionesView />;
 
   const renderPosventa = () => (
     <div className="flex-1 flex flex-col gap-6 w-full max-w-5xl">
