@@ -1,6 +1,6 @@
 "use client"
-import { useState, useEffect, useCallback } from "react"
-import { Search, Edit, Trash2, Pause, Play, Plus, ChevronLeft, ChevronRight } from "lucide-react"
+import { useState, useEffect, useCallback, useRef } from "react"
+import { Search, Edit, Trash2, Pause, Play, Plus, ChevronLeft, ChevronRight, MoreVertical, Eye, Copy, BarChart3 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import PublicarFlow from "@/components/dashboard/PublicarFlow"
@@ -24,6 +24,16 @@ export default function PublicacionesView() {
   const [totalPages, setTotalPages] = useState(1)
   const [showFlow, setShowFlow] = useState(false)
   const [editingProduct, setEditingProduct] = useState<P | null>(null)
+  const [openMenu, setOpenMenu] = useState<string | null>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (openMenu && menuRef.current && !menuRef.current.contains(e.target as Node)) setOpenMenu(null)
+    }
+    document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
+  }, [openMenu])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -144,10 +154,31 @@ export default function PublicacionesView() {
                   <td className="p-4"><Badge className={qc[ql(p.qualityScore)]}>{ql(p.qualityScore)}</Badge><div className="text-xs mt-1">{el(p.sales, p.views)}</div></td>
                   <td className="p-4"><Badge className={p.isActive ? "text-green-600 bg-green-50" : "text-yellow-600 bg-yellow-50"}>{p.isActive ? "Activo" : "Pausado"}</Badge><div className="text-xs text-gray-500 mt-1">{rc(p)}</div></td>
                   <td className="p-4">
-                    <div className="flex items-center gap-2">
-                      <button onClick={() => toggle(p.id, !p.isActive)} className="p-1.5 hover:bg-gray-100 rounded" title={p.isActive ? "Pausar" : "Activar"}>{p.isActive ? <Pause size={16} /> : <Play size={16} />}</button>
-                      <button onClick={() => openEdit(p)} className="p-1.5 hover:bg-gray-100 rounded"><Edit size={16} /></button>
-                      <button onClick={() => remove(p.id)} className="p-1.5 hover:bg-red-50 text-red-600 rounded"><Trash2 size={16} /></button>
+                    <div className="relative">
+                      <button onClick={() => setOpenMenu(openMenu === p.id ? null : p.id)} className="p-1.5 hover:bg-gray-100 rounded">
+                        <MoreVertical size={18} className="text-gray-500" />
+                      </button>
+                      {openMenu === p.id && (
+                        <div ref={menuRef} className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 w-52 py-1 animate-in fade-in slide-in-from-top-2 duration-150">
+                          <a href={`/product/${p.id}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors" onClick={() => setOpenMenu(null)}>
+                            <Eye size={16} className="text-blue-500" /> Ver publicación
+                          </a>
+                          <button onClick={() => { openEdit(p); setOpenMenu(null) }} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors w-full text-left">
+                            <Edit size={16} className="text-gray-500" /> Editar publicación
+                          </button>
+                          <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/product/${p.id}`); setOpenMenu(null) }} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors w-full text-left">
+                            <Copy size={16} className="text-gray-500" /> Copiar enlace
+                          </button>
+                          <button onClick={() => { toggle(p.id, !p.isActive); setOpenMenu(null) }} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors w-full text-left">
+                            {p.isActive ? <Pause size={16} className="text-yellow-500" /> : <Play size={16} className="text-green-500" />}
+                            {p.isActive ? "Pausar" : "Activar"}
+                          </button>
+                          <div className="border-t border-gray-100 my-1" />
+                          <button onClick={() => { remove(p.id); setOpenMenu(null) }} className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors w-full text-left">
+                            <Trash2 size={16} /> Eliminar
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </td>
                 </tr>
