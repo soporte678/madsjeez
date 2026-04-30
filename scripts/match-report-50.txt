@@ -1,0 +1,964 @@
+﻿🔍 Fetching products from Supabase...
+  📦 170 products found in database
+  📂 604 folders found in photo bank
+  🎯 Match threshold: 0.5
+  🧪 DRY RUN MODE - no changes will be made
+
+═══════════════════════════════════════════════
+  MATCHES FOUND: 229
+═══════════════════════════════════════════════
+
+✅ [100%] "Switch Stop Llave On Off Compatible Honda Generadores Otros"
+   → Product: "Switch Stop Llave On Off Compatible Honda Generadores Otros" (SKU: MAQJEEZ-000072)
+   → Images: 7 found, 0 existing, 7 to upload
+
+✅ [90%] "ACELERADOR"
+   → Product: "Acelerador Completo Para Desmalezadoras Niwa Omaha Lusqtoff" (SKU: MAQJEEZ-000071)
+   → Images: 7 found, 0 existing, 7 to upload
+
+✅ [90%] "BOMBIN MOTOSIERRA"
+   → Product: "Kit Reparación Motosierra 38 45 52 Cc Bombin Bujía Juntas #3" (SKU: MAQJEEZ-000139)
+   → Images: 1 found, 0 existing, 1 to upload
+
+✅ [90%] "CANILLA HEMBRA GRUPO ELECTROGENO"
+   → Product: "Canilla Grifo Paso Nafta Grupo Electrógeno Rosca Hembra" (SKU: MAQJEEZ-000062)
+   → Images: 8 found, 0 existing, 8 to upload
+
+✅ [90%] "CAPUCHON DE BUJIA"
+   → Product: "Capuchon De Bujia P/desmalezadoras Chinas 33/43/52cc Niwa" (SKU: MAQJEEZ-000047)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [90%] "CAPUCHON DE BUJIA GRUPO ELECTROGENO"
+   → Product: "Capuchon De Bujia P/grupo Electrogeno Niwa, Gamma, Lusqtoff" (SKU: MAQJEEZ-000169)
+   → Images: 5 found, 0 existing, 5 to upload
+
+✅ [90%] "CARRETEL AUTOMATICO REFORZADO"
+   → Product: "Carretel Automatico Reforzado Mediano Porta Tanza Universal" (SKU: MAQJEEZ-000069)
+   → Images: 7 found, 0 existing, 7 to upload
+
+✅ [90%] "CARTER DESMALEZADORA 52CC"
+   → Product: "Carter Volante Desmalezadora Niwa Gamma  52cc China" (SKU: MAQJEEZ-000163)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [90%] "CUCHILLA 3 PUNTAS DESMALEZADORA CHINA"
+   → Product: "Cuchilla 3 Puntas Raisman® Para Desmalezadora China" (SKU: MAQJEEZ-000079)
+   → Images: 8 found, 0 existing, 8 to upload
+
+✅ [90%] "EMBRAGUE FS 160 220 280"
+   → Product: "Embrague Raisman Para Stihl Fs 160 220  280" (SKU: MAQJEEZ-000023)
+   → Images: 7 found, 0 existing, 7 to upload
+
+✅ [90%] "EMBRAGUE FS 160-220-280"
+   → Product: "Embrague Raisman Para Stihl Fs 160 220  280" (SKU: MAQJEEZ-000023)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [90%] "INTERRUPTOR G720"
+   → Product: "2 Interruptor Llave Tecla G720 Amoladora Black Decker" (SKU: MAQJEEZ-000095)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [90%] "JUNTA ALUMINIO TAPA ARRANQUE DESMALEZADORA"
+   → Product: "Junta Aluminio X 3 Para Tapa De Arranque Desmalezadora China" (SKU: MAQJEEZ-000138)
+   → Images: 10 found, 0 existing, 10 to upload
+
+✅ [90%] "JUNTAS MOTOR MOTOSIERRA 52CC"
+   → Product: "Juego De Juntas De Motor Motosierra 45cc/52cc  Chinas Niwa" (SKU: MAQJEEZ-000154)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [90%] "KIT SERVICE DESMALEZADORA"
+   → Product: "Kit Service Desmalezadora Llave Saca Bujía Y Herramientas" (SKU: MAQJEEZ-000078)
+   → Images: 7 found, 0 existing, 7 to upload
+
+✅ [90%] "MANGUERA MOTOSIERRA NAFTA + FILTRO"
+   → Product: "Manguera De Nafta Motosierra 45cc/52cc China + Filtro Niwa K" (SKU: MAQJEEZ-000061)
+   → Images: 10 found, 0 existing, 10 to upload
+
+✅ [90%] "MOTOR COMPLETO DESMALEZADORA 52CC"
+   → Product: "Motor Completo - Cilindro/block Para Desmalezadora 52cc" (SKU: MAQJEEZ-000117)
+   → Images: 5 found, 0 existing, 5 to upload
+
+✅ [90%] "MOTOR MOTOSIERRA COMPLETO"
+   → Product: "Motor Completo Para Motosierra China 52/58cc Omaha Kld Niwa" (SKU: MAQJEEZ-000111)
+   → Images: 1 found, 0 existing, 1 to upload
+
+✅ [90%] "PISTON DESMALEZADORA"
+   → Product: "Piston  Desmalezadora Chinas 52cc De 44mm De Diametro" (SKU: MAQJEEZ-000014)
+   → Images: 5 found, 0 existing, 5 to upload
+
+✅ [90%] "POLEA GRUPO 13HP"
+   → Product: "Polea De Arranque De Grupo Electrógeno Generador  13hp  15hp" (SKU: MAQJEEZ-000085)
+   → Images: 4 found, 0 existing, 4 to upload
+
+✅ [90%] "SOPORTE METALICO"
+   → Product: "Soporte Tanque Metálico Desmalezadora China 43/52 Cc" (SKU: MAQJEEZ-000091)
+   → Images: 5 found, 0 existing, 5 to upload
+
+✅ [90%] "SOPORTE TANQUE DESMALEZADORA"
+   → Product: "Soporte Tanque De Combustible Desmalezadora China De 1 Litro" (SKU: MAQJEEZ-000064)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [90%] "TANQUE NAFTA MOTOSIERRA"
+   → Product: "Kit Tapónes Para Tanque De Aceite Y Nafta Motosierra Garden" (SKU: MAQJEEZ-000107)
+   → Images: 10 found, 0 existing, 10 to upload
+
+✅ [90%] "TAPA ARRANQUE 26CC DESMALEZADORA"
+   → Product: "Tapa Arranque 26cc Motoguadaña Desmalezadora Chinas 87x77mm Bull Service" (SKU: MAQJEEZ-000029)
+   → Images: 10 found, 0 existing, 10 to upload
+
+✅ [90%] "TAPA DE FRENO KLD"
+   → Product: "Tapa De Arranque Motosierras + Tapa Freno 45/52/58cc Kld" (SKU: MAQJEEZ-000119)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [90%] "TECLA ENCENDIDO PARA MOTOSIERRA"
+   → Product: "Tecla De Encendido On / Off Para Motosierra China" (SKU: MAQJEEZ-000059)
+   → Images: 4 found, 0 existing, 4 to upload
+
+✅ [79%] "RETENES PARA DESMALEZADORAS CHINAS DE 33 A 52CC"
+   → Product: "Embrague Completo Para Desmalezadoras Chinas De 33 A 52cc" (SKU: MAQJEEZ-000021)
+   → Images: 4 found, 0 existing, 4 to upload
+
+✅ [77%] "BOMBA ACEITE MAS SIN FIN MOTOSIERRA 52CC"
+   → Product: "Bomba Sin Fin Aceite Mangueras Filtro Motosierra 45cc 52cc" (SKU: MAQJEEZ-000066)
+   → Images: 8 found, 0 existing, 8 to upload
+
+✅ [77%] "Protector Cobertor Plastico Desmalezadora Niwa Gamma Chinas"
+   → Product: "Protector Cobertor Plastico Desmalezadoras Niwa Gamma Chinas" (SKU: MAQJEEZ-000004)
+   → Images: 10 found, 0 existing, 10 to upload
+
+✅ [75%] "CAMPANA STHIL FS 160 220 280"
+   → Product: "Porta Campana Embrague Orig Motoguadaña Stihl Fs 220 160 280" (SKU: MAQJEEZ-000153)
+   → Images: 10 found, 0 existing, 10 to upload
+
+✅ [75%] "KIT BOBINA MAS FILTRO MAS BUJIA"
+   → Product: "Kit De Filtro De Aire Más Bujía Para Desmalezadoras Chinas" (SKU: MAQJEEZ-000136)
+   → Images: 4 found, 0 existing, 4 to upload
+
+✅ [75%] "KIT DE MANGUERA DESMALEZADORA SIN FILTRO"
+   → Product: "Kit De Manguera Para Desmalezadora  Y Filtro 26cc 33cc 52cc" (SKU: MAQJEEZ-000096)
+   → Images: 7 found, 0 existing, 7 to upload
+
+✅ [75%] "KIT PISTON 52CC 44MM DESMALEZADORA CHINAS"
+   → Product: "Piston  Desmalezadora Chinas 52cc De 44mm De Diametro" (SKU: MAQJEEZ-000014)
+   → Images: 7 found, 0 existing, 7 to upload
+
+✅ [75%] "MANGUERA Y FILTRO NAFTA MOTOSIERRA CHINA"
+   → Product: "Manguera De Nafta Motosierra 45cc/52cc China + Filtro Niwa K" (SKU: MAQJEEZ-000061)
+   → Images: 10 found, 0 existing, 10 to upload
+
+✅ [75%] "MOTOR COMPLETO PARA MOTOSIERRA 52CC 58CC"
+   → Product: "Motor Completo Para Motosierra China 52/58cc Omaha Kld Niwa" (SKU: MAQJEEZ-000111)
+   → Images: 10 found, 0 existing, 10 to upload
+
+✅ [75%] "MOTOR COMPLETO PARA MOTOSIERRA CHINA 52CC"
+   → Product: "Motor Completo Para Motosierra China 52/58cc Omaha Kld Niwa" (SKU: MAQJEEZ-000111)
+   → Images: 1 found, 0 existing, 1 to upload
+
+✅ [75%] "TUERCA PARA FRENO DE MOTOSIERRA 52CC"
+   → Product: "Tapa Lateral De Freno Completo Para Motosierra 45/52cc Gp" (SKU: MAQJEEZ-000053)
+   → Images: 2 found, 0 existing, 2 to upload
+
+✅ [72%] "BARRAL COMPLETO PARA DESMALEZADORA 52CC"
+   → Product: "Motor Completo - Cilindro/block Para Desmalezadora 52cc" (SKU: MAQJEEZ-000117)
+   → Images: 7 found, 0 existing, 7 to upload
+
+✅ [72%] "BOMBA + SIN FIN MOTOSIERRA  CHINA"
+   → Product: "Bomba Sin Fin Aceite Mangueras Filtro Motosierra 45cc 52cc" (SKU: MAQJEEZ-000066)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [72%] "CAMPANA DESMALEZADORA 26MM 9 ESTRIAS"
+   → Product: "Caja De Engranaje Desmalezadora 9 Estrias 26mm 43 - 52 Cc" (SKU: MAQJEEZ-000049)
+   → Images: 10 found, 0 existing, 10 to upload
+
+✅ [72%] "CARTER COMPLETO MOTOSIERRA 52CC CHINA"
+   → Product: "Tapa Arranque Completo Motosierra China 45/52cc" (SKU: MAQJEEZ-000058)
+   → Images: 5 found, 0 existing, 5 to upload
+
+✅ [72%] "CAZOLETA PARA 2 ALAMBRE DESMALEZADORA"
+   → Product: "Cazoleta De Arranque Para Desmalezadora China P/alambre" (SKU: MAQJEEZ-000051)
+   → Images: 4 found, 0 existing, 4 to upload
+
+✅ [72%] "CILINDRO COMPLETO DESMALEZADORA CHINA 52CC"
+   → Product: "Motor Completo - Cilindro/block Para Desmalezadora 52cc" (SKU: MAQJEEZ-000117)
+   → Images: 10 found, 0 existing, 10 to upload
+
+✅ [72%] "ESTACTOR GRUPO ELECTROGENO 2.5"
+   → Product: "Avr Regulador Voltaje Tensión Grupo Electrogeno 2 A 3,5 Kva" (SKU: MAQJEEZ-000134)
+   → Images: 3 found, 0 existing, 3 to upload
+
+✅ [72%] "FILTRO UNIVERSAL MOTOSIERRA CHINA 52CC"
+   → Product: "Manguera De Nafta Motosierra 45cc/52cc China + Filtro Niwa K" (SKU: MAQJEEZ-000061)
+   → Images: 8 found, 0 existing, 8 to upload
+
+✅ [72%] "KIT DE CARBURADOR Y FILTRO"
+   → Product: "Kit De Manguera Para Desmalezadora  Y Filtro 26cc 33cc 52cc" (SKU: MAQJEEZ-000096)
+   → Images: 8 found, 0 existing, 8 to upload
+
+✅ [72%] "MANGUERA NAFTA MOTOSIERRA SIN FILTRO"
+   → Product: "Manguera De Nafta Motosierra 45cc/52cc China + Filtro Niwa K" (SKU: MAQJEEZ-000061)
+   → Images: 10 found, 0 existing, 10 to upload
+
+✅ [72%] "MEDIO MOTOR PARA DESMALEZADORA 52CC"
+   → Product: "Motor Nuevo Para Desmalezadora 52cc Niwa Omaha Lusqtoff Gamm" (SKU: MAQJEEZ-000009)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [72%] "TANQUE DE NAFTA DESMALEZADORA 52CC"
+   → Product: "Tanque Nafta, Filtro De Aire, Soporte Plástico Desmalezadora" (SKU: MAQJEEZ-000161)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [72%] "TAPA DE ARRANQUE FACIL DESMALEZADORA"
+   → Product: "Tapa Arranque Facil + Cazoleta Desmalezadora Chinas 43-52cc" (SKU: MAQJEEZ-000010)
+   → Images: 10 found, 0 existing, 10 to upload
+
+✅ [72%] "TAPA DE FRENO CORTA MOTOSIERRA"
+   → Product: "Tapa Lateral De Freno Completo Para Motosierra 45/52cc Gp" (SKU: MAQJEEZ-000053)
+   → Images: 5 found, 0 existing, 5 to upload
+
+✅ [70%] "CUBRE VOLANTE Y TAPA DE FRENO TINROX MOTOSIERRA 52CC"
+   → Product: "Cubre Volante Motosierra +tapa Freno 45/52cc Tinrox Original" (SKU: MAQJEEZ-000120)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [68%] "BARRAL COMPLETO PARA DESMALEZADORA"
+   → Product: "Motor Completo - Cilindro/block Para Desmalezadora 52cc" (SKU: MAQJEEZ-000117)
+   → Images: 0 found, 0 existing, 0 to upload
+
+✅ [68%] "BASE ADMISION DESMALEZADORA 52CC"
+   → Product: "Base De Admision Desmalezadoras Chinas 52cc" (SKU: MAQJEEZ-000056)
+   → Images: 7 found, 0 existing, 7 to upload
+
+✅ [68%] "BASE DE FILTRO MOTOSIERRA"
+   → Product: "Manguera De Nafta Motosierra 45cc/52cc China + Filtro Niwa K" (SKU: MAQJEEZ-000061)
+   → Images: 5 found, 0 existing, 5 to upload
+
+✅ [68%] "BOBINA DESMALEZADORA CHINA 52CC"
+   → Product: "Juego Juntas Motor Desmalezadora China 52cc Gamma Lusqtoff" (SKU: MAQJEEZ-000017)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [68%] "BOBINA ENCENDIDO DESMALEZADORA 33CC"
+   → Product: "Bobina Modulo De Encendido Desmalezadora 43 A 52cc Gamma Lq" (SKU: MAQJEEZ-000033)
+   → Images: 5 found, 0 existing, 5 to upload
+
+✅ [68%] "BOBINA GRUPO ELECTROGENO 13HP"
+   → Product: "Polea De Arranque De Grupo Electrógeno Generador  13hp  15hp" (SKU: MAQJEEZ-000085)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [68%] "BRIDA ADMISION MOTOSIERRA CHINA"
+   → Product: "Brida Admision Motosierra 45cc / 52cc Gamma Lusqtoff Chinas" (SKU: MAQJEEZ-000045)
+   → Images: 5 found, 0 existing, 5 to upload
+
+✅ [68%] "CABEZAL AUTOMATICO REFORZADO OMAHA"
+   → Product: "Carretel Cabezal Automático Desmalezadora Omaha Cds-52 Unive" (SKU: MAQJEEZ-000140)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [68%] "CAJA DE ENGRANAJES 26MM"
+   → Product: "Caja De Engranaje Desmalezadora 9 Estrias 26mm 43 - 52 Cc" (SKU: MAQJEEZ-000049)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [68%] "CARBURADOR 13HP GRUPO ELECTROGENO"
+   → Product: "Polea De Arranque De Grupo Electrógeno Generador  13hp  15hp" (SKU: MAQJEEZ-000085)
+   → Images: 5 found, 0 existing, 5 to upload
+
+✅ [68%] "CARBURADOR FS160 220 280"
+   → Product: "Juego De Juntas Compatible Desmalezadora Sthil Fs160/220/280" (SKU: MAQJEEZ-000067)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [68%] "CARBURADOR GRUPO 5.5"
+   → Product: "Tapa De Arranque Grupo Electrogeno / Generador 5.5 - 6.5 Hp" (SKU: MAQJEEZ-000026)
+   → Images: 5 found, 0 existing, 5 to upload
+
+✅ [68%] "Carburador Motosierra 45 52cc"
+   → Product: "Tapa Lateral De Freno Completo Para Motosierra 45/52cc Gp" (SKU: MAQJEEZ-000053)
+   → Images: 10 found, 0 existing, 10 to upload
+
+✅ [68%] "CARBURADOR MOTOSIERRA CHINA 52CC"
+   → Product: "Tapa Arranque Completo Motosierra China 45/52cc" (SKU: MAQJEEZ-000058)
+   → Images: 5 found, 0 existing, 5 to upload
+
+✅ [68%] "CARBURADOR PARA DESMALEZADORA 52CC"
+   → Product: "Carretel Kommberg Automatico Para Desmalezadora 42/52cc Negro" (SKU: MAQJEEZ-000002)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [68%] "CARRETEL AUTOMATICO OMAHA REFORZADO"
+   → Product: "Carretel Automatico Reforzado Mediano Porta Tanza Universal" (SKU: MAQJEEZ-000069)
+   → Images: 4 found, 0 existing, 4 to upload
+
+✅ [68%] "CARRETEL AUTOMATICO STHIL X2"
+   → Product: "X2 Carretel Porta Tanza Desmalezadora Automático Universal" (SKU: MAQJEEZ-000126)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [68%] "CARRETEL DESMALEZADORA 26CC AUTOMATICO"
+   → Product: "Carretel Kommberg Automatico Para Desmalezadora 42/52cc Negro" (SKU: MAQJEEZ-000002)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [68%] "CAÑO ESCAPE PARA DESMALEZADORA"
+   → Product: "Escape Para Desmalezadora Motoguadaña Stihl Fs 160/220/280" (SKU: MAQJEEZ-000109)
+   → Images: 5 found, 0 existing, 5 to upload
+
+✅ [68%] "EMBRAGUE DESMALEZADORA 43CC 52CC"
+   → Product: "Kit Bobina Bujia Para De Desmalezadora 43cc 52cc Niwa Omaha" (SKU: MAQJEEZ-000103)
+   → Images: 7 found, 0 existing, 7 to upload
+
+✅ [68%] "ESCAPE STHIL FS 280"
+   → Product: "Escape Para Desmalezadora Motoguadaña Stihl Fs 160/220/280" (SKU: MAQJEEZ-000109)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [68%] "ESPONJA FILTRO PARA DESMALEZADORA"
+   → Product: "Tapa Filtro Filtrera Completa Para Desmalezadora China 52cc" (SKU: MAQJEEZ-000080)
+   → Images: 5 found, 0 existing, 5 to upload
+
+✅ [68%] "JAULA PARA DESMALEZADORA 52CC"
+   → Product: "Carretel Kommberg Automatico Para Desmalezadora 42/52cc Negro" (SKU: MAQJEEZ-000002)
+   → Images: 4 found, 0 existing, 4 to upload
+
+✅ [68%] "KIT CILINDRO 26CC DESMALEZADORA"
+   → Product: "Kit Cilindro Pistón P/desmalezadora 52cc Gamma Chinas+juntas" (SKU: MAQJEEZ-000060)
+   → Images: 4 found, 0 existing, 4 to upload
+
+✅ [68%] "KIT DE ACEITE COMPLETO"
+   → Product: "Kit Tapónes Para Tanque De Aceite Y Nafta Motosierra Garden" (SKU: MAQJEEZ-000107)
+   → Images: 5 found, 0 existing, 5 to upload
+
+✅ [68%] "KIT DE HERRAMIENTAS MOTOSIERRA"
+   → Product: "Kit Cigüeñal De Motosierra 52cc Chinas Niwa Lusqtoff Omaha L" (SKU: MAQJEEZ-000093)
+   → Images: 10 found, 0 existing, 10 to upload
+
+✅ [68%] "KIT DE HERRAMIENTAS SERVICE"
+   → Product: "Kit Service Motosierras Llave Saca Bujía Y Herramientas Kld" (SKU: MAQJEEZ-000054)
+   → Images: 10 found, 0 existing, 10 to upload
+
+✅ [68%] "KIT DE MANGUERA PARA DESMALEZADORA 26CC A 58CC"
+   → Product: "Kit De Manguera Para Desmalezadora  Y Filtro 26cc 33cc 52cc" (SKU: MAQJEEZ-000096)
+   → Images: 8 found, 0 existing, 8 to upload
+
+✅ [68%] "KIT PARA CARBURADOR DESMALEZADORAS"
+   → Product: "Kit Repuestos Bull Service Para Desmalezadoras 26-52cc" (SKU: MAQJEEZ-000070)
+   → Images: 9 found, 0 existing, 9 to upload
+
+✅ [68%] "MAGNETO MOTOSIERRA CHINA 52CC"
+   → Product: "Tapa Arranque Completo Motosierra China 45/52cc" (SKU: MAQJEEZ-000058)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [68%] "MANGUERA NAFTA MOTOSIERRA CHINAS"
+   → Product: "Kit Manguera Nafta + Filtro Desmalezadora Chinas 43-52cc" (SKU: MAQJEEZ-000015)
+   → Images: 10 found, 0 existing, 10 to upload
+
+✅ [68%] "MANGUERA PARA NAFTA MOTOSIERRA"
+   → Product: "Manguera De Nafta Motosierra 45cc/52cc China + Filtro Niwa K" (SKU: MAQJEEZ-000061)
+   → Images: 4 found, 0 existing, 4 to upload
+
+✅ [68%] "MOTOR HOYADORA 52CC LUSQTOFF"
+   → Product: "Motor Nuevo Para Desmalezadora 52cc Niwa Omaha Lusqtoff Gamm" (SKU: MAQJEEZ-000009)
+   → Images: 9 found, 0 existing, 9 to upload
+
+✅ [68%] "MOTOSIERRA OMAHA 58CC PROFESIONAL"
+   → Product: "Tapa Arranque Motosierra 58cc Gamma Lusqtoff Niwa Omaha" (SKU: MAQJEEZ-000035)
+   → Images: 10 found, 0 existing, 10 to upload
+
+✅ [68%] "OJAL PARA CARRETEL AUTOMATICO"
+   → Product: "Carretel Kommberg Automatico Para Desmalezadora 42/52cc Negro" (SKU: MAQJEEZ-000002)
+   → Images: 10 found, 0 existing, 10 to upload
+
+✅ [68%] "OJALES PARA CARRETEL AUTOMATICO"
+   → Product: "Carretel Kommberg Automatico Para Desmalezadora 42/52cc Negro" (SKU: MAQJEEZ-000002)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [68%] "REPUESTO POLEA ARRANQUE 13HP"
+   → Product: "Polea De Arranque De Grupo Electrógeno Generador  13hp  15hp" (SKU: MAQJEEZ-000085)
+   → Images: 3 found, 0 existing, 3 to upload
+
+✅ [68%] "RESORTE PARA EMBRAGUE STHIL FS 160 220 280"
+   → Product: "Embrague Raisman Para Stihl Fs 160 220  280" (SKU: MAQJEEZ-000023)
+   → Images: 9 found, 0 existing, 9 to upload
+
+✅ [68%] "RESORTE TAPA DE ARRANQUE"
+   → Product: "Tapa De Arranque Desmalezadora 33 43 52cc Chinas Shimaha Pro" (SKU: MAQJEEZ-000025)
+   → Images: 7 found, 0 existing, 7 to upload
+
+✅ [68%] "SOPORTE TANQUE NAFTA METALLICO"
+   → Product: "Tanque Nafta, Filtro De Aire, Soporte Plástico Desmalezadora" (SKU: MAQJEEZ-000161)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [68%] "TACOS DE GRUPO 13HP"
+   → Product: "Patas De Motor / Tacos De Motor Generador 13hp 15hp Niwa Kld" (SKU: MAQJEEZ-000040)
+   → Images: 3 found, 0 existing, 3 to upload
+
+✅ [68%] "TANQUE APTO BOMBIN NEGRO"
+   → Product: "Tanque Nafta Para Motosierras Apto Bombín Y Tecla Encendido" (SKU: MAQJEEZ-000121)
+   → Images: 5 found, 0 existing, 5 to upload
+
+✅ [68%] "TANQUE MAS SOPORTE Y FILTRO DE AIRE DESMALEZADORA"
+   → Product: "Tanque Nafta, Filtro De Aire, Soporte Plástico Desmalezadora" (SKU: MAQJEEZ-000161)
+   → Images: 9 found, 0 existing, 9 to upload
+
+✅ [68%] "TANQUE MOTOSIERRAS CHINAS 52CC"
+   → Product: "Juego Tacos Motosierras 45 50 52cc Gamma Toyama Niwa Chinas" (SKU: MAQJEEZ-000075)
+   → Images: 4 found, 0 existing, 4 to upload
+
+✅ [68%] "TAPA ARRANQUE GRUPO 13HP"
+   → Product: "Tapa De Arranque Grupo Electrogeno / Generador 5.5 - 6.5 Hp" (SKU: MAQJEEZ-000026)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [68%] "TAPA DE ARRANQUE TINROX"
+   → Product: "Tapa De Arranque Desmalezadora 33 43 52cc Chinas Shimaha Pro" (SKU: MAQJEEZ-000025)
+   → Images: 4 found, 0 existing, 4 to upload
+
+✅ [68%] "TAPA DE FRENO TINROX"
+   → Product: "Tapa Lateral De Freno Completo Para Motosierra 45/52cc Gp" (SKU: MAQJEEZ-000053)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [68%] "TAPA DE TANQUE NAFTA DESMALEZADORA CHINAS 43 52CC"
+   → Product: "Tapa De Arranque Desmalezadora 33 43 52cc Chinas Shimaha Pro" (SKU: MAQJEEZ-000025)
+   → Images: 9 found, 0 existing, 9 to upload
+
+✅ [64%] "CAJA DE ENGRANAJES 9 ESTRIAS Y 26MM"
+   → Product: "Caja De Engranaje Desmalezadora 9 Estrias 26mm 43 - 52 Cc" (SKU: MAQJEEZ-000049)
+   → Images: 8 found, 0 existing, 8 to upload
+
+✅ [64%] "CAZOLETA PARA TAPA DE 2 ALAMBRE DESMALEZADORA"
+   → Product: "Cazoleta De Arranque Para Desmalezadora China P/alambre" (SKU: MAQJEEZ-000051)
+   → Images: 5 found, 0 existing, 5 to upload
+
+✅ [64%] "Goma Amortiguador Desmalezadora Chinas 33-52 Cc"
+   → Product: "Resorte Embrague Desmalezadora 33 43 52 Cc Chinas Gamma" (SKU: MAQJEEZ-000011)
+   → Images: 8 found, 0 existing, 8 to upload
+
+✅ [64%] "MARIPOSA PARA TAPA DE FILTRO MOTOSIERRA 52CC"
+   → Product: "Tapa Lateral De Freno Completo Para Motosierra 45/52cc Gp" (SKU: MAQJEEZ-000053)
+   → Images: 5 found, 0 existing, 5 to upload
+
+✅ [60%] "ACEITE CADENA MOTOSIERRA"
+   → Product: "Bomba Sin Fin Aceite Mangueras Filtro Motosierra 45cc 52cc" (SKU: MAQJEEZ-000066)
+   → Images: 8 found, 0 existing, 8 to upload
+
+✅ [60%] "ACELERADOR MOTOSIERRA ALAMBRE"
+   → Product: "Cebador Perilla Con Alambre Para Motosierra Chinas 52cc" (SKU: MAQJEEZ-000149)
+   → Images: 10 found, 0 existing, 10 to upload
+
+✅ [60%] "ACELERADOR UNIVERSAL DESMALEZADORA"
+   → Product: "Arnés Desmalezadora Motoguadaña Universal 33 43 52cc Calidad" (SKU: MAQJEEZ-000016)
+   → Images: 10 found, 0 existing, 10 to upload
+
+✅ [60%] "ACOPLE OMAHA 58CC"
+   → Product: "Tapa Arranque Motosierra 58cc Gamma Lusqtoff Niwa Omaha" (SKU: MAQJEEZ-000035)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [60%] "ADMISION BRIDA DESMALEZADORA"
+   → Product: "Brida Tobera Admisión Carburador Desmalezadoras Chinas 43 52" (SKU: MAQJEEZ-000022)
+   → Images: 9 found, 0 existing, 9 to upload
+
+✅ [60%] "ARNES REFORZADO LUSQTOFF"
+   → Product: "Arnes Desmalezadora Motoguadaña 52 43 33 Lusqtoff Color Naranja" (SKU: MAQJEEZ-000008)
+   → Images: 1 found, 0 existing, 1 to upload
+
+✅ [60%] "AROS PARA MOTOSIERRAS"
+   → Product: "Kit Bobina + Filtro+ Bujia  Para Motosierras Omaha/kld 52cc" (SKU: MAQJEEZ-000076)
+   → Images: 10 found, 0 existing, 10 to upload
+
+✅ [60%] "BIDON MEZCLA 2T"
+   → Product: "Bidon Mix 2t Economico Desmalezadora Motosierra Cuatriciclos" (SKU: MAQJEEZ-000012)
+   → Images: 2 found, 0 existing, 2 to upload
+
+✅ [60%] "BOBINA STHIL FS 160 220 280"
+   → Product: "Embrague Raisman Para Stihl Fs 160 220  280" (SKU: MAQJEEZ-000023)
+   → Images: 10 found, 0 existing, 10 to upload
+
+✅ [60%] "BOMBA DE ACEITE MOTOSIERRA 38CC CHINA"
+   → Product: "Sin Fin De Bomba De Aceite Motosierra 45cc/52cc Gamma Chinas" (SKU: MAQJEEZ-000127)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [60%] "BOMBIM MOTOSIERRA CHINAS"
+   → Product: "Brida Admision Motosierra 45cc / 52cc Gamma Lusqtoff Chinas" (SKU: MAQJEEZ-000045)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [60%] "BOMBIN MOTOSIERRA TORNILLOS"
+   → Product: "Kit Reparación Motosierra 38 45 52 Cc Bombin Bujía Juntas #3" (SKU: MAQJEEZ-000139)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [60%] "BRIDA DE ADMISION DE MOTOSIERRA 52CC"
+   → Product: "Brida Admision Motosierra 45cc / 52cc Gamma Lusqtoff Chinas" (SKU: MAQJEEZ-000045)
+   → Images: 2 found, 0 existing, 2 to upload
+
+✅ [60%] "CAJA 28 DESMALEZADORA"
+   → Product: "Caja De Engranaje Desmalezadora 9 Estrias 26mm 43 - 52 Cc" (SKU: MAQJEEZ-000049)
+   → Images: 4 found, 0 existing, 4 to upload
+
+✅ [60%] "CAMPANA DESMALEZADORA 280"
+   → Product: "Juego De Juntas Compatible Desmalezadora Sthil Fs160/220/280" (SKU: MAQJEEZ-000067)
+   → Images: 2 found, 0 existing, 2 to upload
+
+✅ [60%] "CANILLA GRUPO ELECTROGENO 5.5HP MACHO"
+   → Product: "Canilla Grifo Paso Nafta Grupo Electrógeno Rosca Macho" (SKU: MAQJEEZ-000032)
+   → Images: 7 found, 0 existing, 7 to upload
+
+✅ [60%] "CARBURADOR 26CC 33CC"
+   → Product: "Kit De Manguera Para Desmalezadora  Y Filtro 26cc 33cc 52cc" (SKU: MAQJEEZ-000096)
+   → Images: 2 found, 0 existing, 2 to upload
+
+✅ [60%] "CARBURADOR 52CC + FILTRO DE AIRE DESMALEZADORA"
+   → Product: "Kit De Manguera Para Desmalezadora  Y Filtro 26cc 33cc 52cc" (SKU: MAQJEEZ-000096)
+   → Images: 7 found, 0 existing, 7 to upload
+
+✅ [60%] "CARBURADOR 52CC CHINO"
+   → Product: "Kit Juntas Y Bombin Carburador Desmalezadora 33/43/52cc" (SKU: MAQJEEZ-000007)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [60%] "CARBURADOR DESMALEZADORA 52CC + BRIDA+JUNTAS +TORNILLOS"
+   → Product: "Kit Juntas Y Bombin Carburador Desmalezadora 33/43/52cc" (SKU: MAQJEEZ-000007)
+   → Images: 7 found, 0 existing, 7 to upload
+
+✅ [60%] "CARBURADOR GRUPO 13HP"
+   → Product: "Kit Juntas Motor Gx390 13hp Grupo Electrgenos 6500w Chinos" (SKU: MAQJEEZ-000077)
+   → Images: 9 found, 0 existing, 9 to upload
+
+✅ [60%] "CARCASA MOTOSIERRA OMAHA"
+   → Product: "Tapa Arranque Motosierra 58cc Gamma Lusqtoff Niwa Omaha" (SKU: MAQJEEZ-000035)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [60%] "CARRETEL AUTOMATICO LUSQTOFF"
+   → Product: "Carretel Kommberg Automatico Para Desmalezadora 42/52cc Negro" (SKU: MAQJEEZ-000002)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [60%] "CEBADOR MOTOSIERRA CHINA"
+   → Product: "Tapa Arranque Completo Motosierra China 45/52cc" (SKU: MAQJEEZ-000058)
+   → Images: 9 found, 0 existing, 9 to upload
+
+✅ [60%] "CILINDRO COMPLETO PARA MOTOSIERRA CHINA 52CC"
+   → Product: "Tapa Lateral De Freno Completo Para Motosierra 45/52cc Gp" (SKU: MAQJEEZ-000053)
+   → Images: 10 found, 0 existing, 10 to upload
+
+✅ [60%] "CILINDRO DESMALEZADORA 33CC"
+   → Product: "Kit Cilindro Pistón P/desmalezadora 52cc Gamma Chinas+juntas" (SKU: MAQJEEZ-000060)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [60%] "DESMALEZADORA CLORJAX 52CC"
+   → Product: "Carretel Kommberg Automatico Para Desmalezadora 42/52cc Negro" (SKU: MAQJEEZ-000002)
+   → Images: 7 found, 0 existing, 7 to upload
+
+✅ [60%] "EMBRAGUE 26CC DESMALEZADORA"
+   → Product: "Resorte Embrague Desmalezadora 33 43 52 Cc Chinas Gamma" (SKU: MAQJEEZ-000011)
+   → Images: 5 found, 0 existing, 5 to upload
+
+✅ [60%] "EMBRAGUE 63CC GAMMA"
+   → Product: "Resorte Embrague Desmalezadora 33 43 52 Cc Chinas Gamma" (SKU: MAQJEEZ-000011)
+   → Images: 3 found, 0 existing, 3 to upload
+
+✅ [60%] "EMBRAGUE MOTOSIERRA 38CC"
+   → Product: "Juntas , Diafragma Carburador Motosierra 38cc 45cc 52cc" (SKU: MAQJEEZ-000151)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [60%] "FILTRO AIRE 26-33-43-52CC"
+   → Product: "Carretel Cabezal Desmalezadora Lusqtoff Manual Universal Rosca Cabezal 8,5mm Apto Potencias 23 26 31 33 34 40 43 52cc Color Negro" (SKU: MAQJEEZ-000037)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [60%] "INTERRUPTOR METAL PARA MOTOSIERRA ON-OFF"
+   → Product: "Tecla De Encendido On / Off Para Motosierra China" (SKU: MAQJEEZ-000059)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [60%] "JUNTAS STHIL FS 160 220 280"
+   → Product: "Embrague Raisman Para Stihl Fs 160 220  280" (SKU: MAQJEEZ-000023)
+   → Images: 5 found, 0 existing, 5 to upload
+
+✅ [60%] "KIT DE 2 EMBRAGUE DESMALEZADORAS CHINAS"
+   → Product: "Embrague Completo Para Desmalezadoras Chinas De 33 A 52cc" (SKU: MAQJEEZ-000021)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [60%] "KIT DE ACEITE MOTOSIERRA CHINA 52CC"
+   → Product: "Manguera De Nafta Motosierra 45cc/52cc China + Filtro Niwa K" (SKU: MAQJEEZ-000061)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [60%] "KIT DE BOMBINES PARA DESMALEZADORA X50"
+   → Product: "Kit De Manguera Para Desmalezadora  Y Filtro 26cc 33cc 52cc" (SKU: MAQJEEZ-000096)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [60%] "KIT DE JUNTAS GRUPO ELECTROGENO 13HP"
+   → Product: "Kit Juntas Motor Gx390 13hp Grupo Electrgenos 6500w Chinos" (SKU: MAQJEEZ-000077)
+   → Images: 5 found, 0 existing, 5 to upload
+
+✅ [60%] "KIT DE PISTON MOTOSIERRA 52CC 45MM"
+   → Product: "Kit Cigüeñal De Motosierra 52cc Chinas Niwa Lusqtoff Omaha L" (SKU: MAQJEEZ-000093)
+   → Images: 0 found, 0 existing, 0 to upload
+
+✅ [60%] "MANGUERA GRUPO ELECTROGENO"
+   → Product: "Tapa De Arranque Grupo Electrogeno / Generador 5.5 - 6.5 Hp" (SKU: MAQJEEZ-000026)
+   → Images: 7 found, 0 existing, 7 to upload
+
+✅ [60%] "MOTOR COMPLETO PARA DESMALEZADORA SIN CARBURADOR"
+   → Product: "Motor Completo - Cilindro/block Para Desmalezadora 52cc" (SKU: MAQJEEZ-000117)
+   → Images: 5 found, 0 existing, 5 to upload
+
+✅ [60%] "PROTECTOR CIGUEÑAL MOTOSIERRA"
+   → Product: "Kit Cigüeñal De Motosierra 52cc Chinas Niwa Lusqtoff Omaha L" (SKU: MAQJEEZ-000093)
+   → Images: 3 found, 0 existing, 3 to upload
+
+✅ [60%] "PROTECTOR DE CARRETEL"
+   → Product: "Ojal De Bronce Universal Carretel Porta Tanza Desmalezadoras" (SKU: MAQJEEZ-000050)
+   → Images: 0 found, 0 existing, 0 to upload
+
+✅ [60%] "RESORTE CARRETEL AUTOMATICO"
+   → Product: "Carretel Kommberg Automatico Para Desmalezadora 42/52cc Negro" (SKU: MAQJEEZ-000002)
+   → Images: 5 found, 0 existing, 5 to upload
+
+✅ [60%] "RESORTE RETRACTIL PARA DESMALEZADORA 43CC 52CC"
+   → Product: "Kit Bobina Bujia Para De Desmalezadora 43cc 52cc Niwa Omaha" (SKU: MAQJEEZ-000103)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [60%] "SOPORTE PLASTICO PARA TANQUE DESMALEZADORA CHINA"
+   → Product: "Soporte Tanque De Combustible Desmalezadora China De 1 Litro" (SKU: MAQJEEZ-000064)
+   → Images: 10 found, 0 existing, 10 to upload
+
+✅ [60%] "SOPORTE TANQUE METALLICO"
+   → Product: "Soporte Tanque De Combustible Desmalezadora China De 1 Litro" (SKU: MAQJEEZ-000064)
+   → Images: 10 found, 0 existing, 10 to upload
+
+✅ [60%] "TANQUE GRUPO 13HP"
+   → Product: "Kit Juntas Motor Gx390 13hp Grupo Electrgenos 6500w Chinos" (SKU: MAQJEEZ-000077)
+   → Images: 2 found, 0 existing, 2 to upload
+
+✅ [60%] "TANQUE NAFTA FS 160 220 280"
+   → Product: "Embrague Raisman Para Stihl Fs 160 220  280" (SKU: MAQJEEZ-000023)
+   → Images: 7 found, 0 existing, 7 to upload
+
+✅ [60%] "TAPA DE ARRANQUE CON CAZOLETA MOÑO"
+   → Product: "Tapa Arranque Moño + Cazoleta Desmalezadora Chinas 43-52cc" (SKU: MAQJEEZ-000094)
+   → Images: 3 found, 0 existing, 3 to upload
+
+✅ [60%] "TAPA DE ARRANQUE DE 2 ALAMBRES"
+   → Product: "Tapa De Arranque Desmalezadora 33 43 52cc Chinas Shimaha Pro" (SKU: MAQJEEZ-000025)
+   → Images: 10 found, 0 existing, 10 to upload
+
+✅ [60%] "TAPA DE ARRANQUE MAS FRENO MOTOSIERRA"
+   → Product: "Tapa Lateral De Freno Completo Para Motosierra 45/52cc Gp" (SKU: MAQJEEZ-000053)
+   → Images: 10 found, 0 existing, 10 to upload
+
+✅ [56%] "Bobina O Modulo De Encendido Para Motosierras 52cc"
+   → Product: "Bobina Modulo De Encendido Desmalezadora 43 A 52cc Gamma Lq" (SKU: MAQJEEZ-000033)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [56%] "CILINDRO COMPLETO PARA MOTOSIERRA CHINA 45 A 58CC"
+   → Product: "Motor Completo Para Motosierra China 52/58cc Omaha Kld Niwa" (SKU: MAQJEEZ-000111)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [56%] "CODO MANILLAR UNION DESMALEZADORA FS 160 220 280"
+   → Product: "Escape Para Desmalezadora Motoguadaña Stihl Fs 160/220/280" (SKU: MAQJEEZ-000109)
+   → Images: 5 found, 0 existing, 5 to upload
+
+✅ [56%] "KIT DE MANGUERAS PARA DESMALEZADORA CON FILTRO CERAMICO"
+   → Product: "Kit De Manguera Para Desmalezadora  Y Filtro 26cc 33cc 52cc" (SKU: MAQJEEZ-000096)
+   → Images: 5 found, 0 existing, 5 to upload
+
+✅ [56%] "TAPA DE ARRANQUE DE 2 ALAMBRES DESMALEZADORAS CHINAS"
+   → Product: "Tapa De Arranque Desmalezadora 33 43 52cc Chinas Shimaha Pro" (SKU: MAQJEEZ-000025)
+   → Images: 7 found, 0 existing, 7 to upload
+
+✅ [54%] "ADMISION PARA CARBURADOR DESMALEZADORA 52CC"
+   → Product: "Carretel Kommberg Automatico Para Desmalezadora 42/52cc Negro" (SKU: MAQJEEZ-000002)
+   → Images: 4 found, 0 existing, 4 to upload
+
+✅ [54%] "AVR GRUPO ELECTROGENO 6500 5000"
+   → Product: "Avr Regulador Voltaje Tensión Grupo Electrogeno 2 A 3,5 Kva" (SKU: MAQJEEZ-000134)
+   → Images: 10 found, 0 existing, 10 to upload
+
+✅ [54%] "AVR GRUPO ELECTROGENO HASTA 3000W"
+   → Product: "Avr Regulador Voltaje Tensión Grupo Electrogeno 2 A 3,5 Kva" (SKU: MAQJEEZ-000134)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [54%] "BALANCIN GRUPO ELECTROGENO 13HP GX390"
+   → Product: "Kit Juntas Motor Gx390 13hp Grupo Electrgenos 6500w Chinos" (SKU: MAQJEEZ-000077)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [54%] "Barral Desmalezadora Motoguadaña Campana Embrague"
+   → Product: "Porta Campana Embrague Orig Motoguadaña Stihl Fs 220 160 280" (SKU: MAQJEEZ-000153)
+   → Images: 5 found, 0 existing, 5 to upload
+
+✅ [54%] "BASE SOPORTE CARBURADOR MOTOSIERRA 52CC"
+   → Product: "Base Brida Placa P/tubo Carburador Motosierra Completo Niwa" (SKU: MAQJEEZ-000105)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [54%] "BIELA GRUPO ELECTROGENO 5.5HP"
+   → Product: "Tapa De Arranque Grupo Electrogeno / Generador 5.5 - 6.5 Hp" (SKU: MAQJEEZ-000026)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [54%] "BOMBIN CLICK PARA MOTOSIERRA CHINA"
+   → Product: "Tecla De Encendido On / Off Para Motosierra China" (SKU: MAQJEEZ-000059)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [54%] "BRIDA DESMALEZADORA MAS JUNTAS 52CC"
+   → Product: "Kit Juntas Y Bombin Carburador Desmalezadora 33/43/52cc" (SKU: MAQJEEZ-000007)
+   → Images: 10 found, 0 existing, 10 to upload
+
+✅ [54%] "CADENA Y ESPADA MOTOSIERRA CHINA"
+   → Product: "Tapa Tanque Nafta Y Aceite  Motosierra China 45- 52- 58 Cc" (SKU: MAQJEEZ-000122)
+   → Images: 5 found, 0 existing, 5 to upload
+
+✅ [54%] "CAMPANA GAMMA 28MM 9 ESTRIAS"
+   → Product: "Campana De Embrague P/desmalezadoras 9 Estrías Genérico" (SKU: MAQJEEZ-000042)
+   → Images: 3 found, 0 existing, 3 to upload
+
+✅ [54%] "CARBURADOR CON JUNTA PARA DESMALEZADORA"
+   → Product: "Escape Con Espárragos Tuercas Junta Para Motosierra Niwa Kld" (SKU: MAQJEEZ-000098)
+   → Images: 4 found, 0 existing, 4 to upload
+
+✅ [54%] "CARBURADOR DESMALEZADORA 52 + BUJIA + JUNTA"
+   → Product: "Bujia Motor 52/43cc Desmalezadora Monopatín Motosierra" (SKU: MAQJEEZ-000031)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [54%] "CARBURADOR DESMALEZADORA KIT CON MANGUERAS"
+   → Product: "Kit Juntas Y Bombin Carburador Desmalezadora 33/43/52cc" (SKU: MAQJEEZ-000007)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [54%] "CARCASA PLASTICA DESMALEZADORA CHINAS 52CC"
+   → Product: "Tapa Arranque Facil + Cazoleta Desmalezadora Chinas 43-52cc" (SKU: MAQJEEZ-000010)
+   → Images: 4 found, 0 existing, 4 to upload
+
+✅ [54%] "CARCASA PLASTICA MOTOSIERRA CHINA OMAHA"
+   → Product: "Motor Completo Para Motosierra China 52/58cc Omaha Kld Niwa" (SKU: MAQJEEZ-000111)
+   → Images: 10 found, 0 existing, 10 to upload
+
+✅ [54%] "CARDAN COMPLETO PARA DESMALEZADORA CHINA"
+   → Product: "Cazoleta De Arranque Para Desmalezadora China P/alambre" (SKU: MAQJEEZ-000051)
+   → Images: 3 found, 0 existing, 3 to upload
+
+✅ [54%] "CIGUEÑAL MOTOSIERRA 52CC MAS JUNTAS"
+   → Product: "Kit Cigüeñal De Motosierra 52cc Chinas Niwa Lusqtoff Omaha L" (SKU: MAQJEEZ-000093)
+   → Images: 10 found, 0 existing, 10 to upload
+
+✅ [54%] "CILINDRO PARA DESMALEZADORA CON JUNTAS"
+   → Product: "Kit Cilindro Pistón P/desmalezadora 52cc Gamma Chinas+juntas" (SKU: MAQJEEZ-000060)
+   → Images: 5 found, 0 existing, 5 to upload
+
+✅ [54%] "ESCAPE PARA MOTOSIERRA 52CC 58CC"
+   → Product: "Tapa Lateral Freno Motosierra 52cc-58cc Compatible Repo Incluye Tensor" (SKU: MAQJEEZ-000044)
+   → Images: 10 found, 0 existing, 10 to upload
+
+✅ [54%] "FILTRO AIRE 26CC DESMALEZADORA CHINA"
+   → Product: "Tapa Filtro Filtrera Completa Para Desmalezadora China 52cc" (SKU: MAQJEEZ-000080)
+   → Images: 4 found, 0 existing, 4 to upload
+
+✅ [54%] "FILTRO DE AIRE GRUPO ELECTROGENO"
+   → Product: "Tapa De Arranque Grupo Electrogeno / Generador 5.5 - 6.5 Hp" (SKU: MAQJEEZ-000026)
+   → Images: 0 found, 0 existing, 0 to upload
+
+✅ [54%] "GUIA DE CADENA PARA MOTOSIERRA"
+   → Product: "Tapa Lateral De Freno Completo Para Motosierra 45/52cc Gp" (SKU: MAQJEEZ-000053)
+   → Images: 10 found, 0 existing, 10 to upload
+
+✅ [54%] "JUNTAS Y BRIDA ADMISION MOTOSIERRA"
+   → Product: "Brida Admision Motosierra 45cc / 52cc Gamma Lusqtoff Chinas" (SKU: MAQJEEZ-000045)
+   → Images: 5 found, 0 existing, 5 to upload
+
+✅ [54%] "KIT ABRAZADERAS DESMALEZADORA Y CARCASA"
+   → Product: "Kit Juntas Y Bombin Carburador Desmalezadora 33/43/52cc" (SKU: MAQJEEZ-000007)
+   → Images: 2 found, 0 existing, 2 to upload
+
+✅ [54%] "KIT CILINDRO STHIL FS 280"
+   → Product: "Kit Repuestos Stihl Fs 220/160/280 - Porta Campana Embrague" (SKU: MAQJEEZ-000158)
+   → Images: 5 found, 0 existing, 5 to upload
+
+✅ [54%] "KIT COMPLETO PARA COMPRESOR OMAHA"
+   → Product: "Acelerador Completo Para Desmalezadoras Niwa Omaha Lusqtoff" (SKU: MAQJEEZ-000071)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [54%] "KIT DE CARBURADOR DESMALEZADORAS 52CC"
+   → Product: "Kit Juntas Y Bombin Carburador Desmalezadora 33/43/52cc" (SKU: MAQJEEZ-000007)
+   → Images: 0 found, 0 existing, 0 to upload
+
+✅ [54%] "KIT DE ESCAPE MAS JUNTAS"
+   → Product: "Kit De Filtro De Aire Más Bujía Para Desmalezadoras Chinas" (SKU: MAQJEEZ-000136)
+   → Images: 4 found, 0 existing, 4 to upload
+
+✅ [54%] "KIT DE JUNTAS MOTOSIERRA 38CC"
+   → Product: "Kit Cigüeñal De Motosierra 52cc Chinas Niwa Lusqtoff Omaha L" (SKU: MAQJEEZ-000093)
+   → Images: 5 found, 0 existing, 5 to upload
+
+✅ [54%] "KIT DE PISTON 33CC 36MM"
+   → Product: "Kit De Manguera Para Desmalezadora  Y Filtro 26cc 33cc 52cc" (SKU: MAQJEEZ-000096)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [54%] "KIT DE PISTON 43CC 40MM"
+   → Product: "Kit Bobina Bujia Para De Desmalezadora 43cc 52cc Niwa Omaha" (SKU: MAQJEEZ-000103)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [54%] "KIT DESMALEZADORA CILINDRO COMPLETO 43CC"
+   → Product: "Kit Cilindro Pistón P/desmalezadora 52cc Gamma Chinas+juntas" (SKU: MAQJEEZ-000060)
+   → Images: 5 found, 0 existing, 5 to upload
+
+✅ [54%] "KIT MANGUERA DESMALEZADORA SIN FINTRO"
+   → Product: "Kit Manguera Nafta + Filtro Desmalezadora Chinas 43-52cc" (SKU: MAQJEEZ-000015)
+   → Images: 7 found, 0 existing, 7 to upload
+
+✅ [54%] "KIT MAYORISTA TANQUE Y SOPORTES"
+   → Product: "Kit Tapónes Para Tanque De Aceite Y Nafta Motosierra Garden" (SKU: MAQJEEZ-000107)
+   → Images: 2 found, 0 existing, 2 to upload
+
+✅ [54%] "MOTOR COMPLETO KLD DESMALEZADORA AZUL"
+   → Product: "Motor Completo Para Motosierra China 52/58cc Omaha Kld Niwa" (SKU: MAQJEEZ-000111)
+   → Images: 0 found, 0 existing, 0 to upload
+
+✅ [54%] "MOTOR CON MEDIDAS DESMALEZADORA 52CC"
+   → Product: "Motor Nuevo Para Desmalezadora 52cc Niwa Omaha Lusqtoff Gamm" (SKU: MAQJEEZ-000009)
+   → Images: 4 found, 0 existing, 4 to upload
+
+✅ [54%] "MOTOR DESMALEZADORA 52CC CON CARBURADOR"
+   → Product: "Kit Juntas Y Bombin Carburador Desmalezadora 33/43/52cc" (SKU: MAQJEEZ-000007)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [54%] "OJALAES BRONCE PARA CARRETEL MANUAL"
+   → Product: "Ojal Para Carretel Manual Desmalezadora Kit X2 Gamma Kld Oma" (SKU: MAQJEEZ-000087)
+   → Images: 9 found, 0 existing, 9 to upload
+
+✅ [54%] "OJALES PARA CARRETEL DESMALEZADORA REDONDOS"
+   → Product: "Carretel Kommberg Automatico Para Desmalezadora 42/52cc Negro" (SKU: MAQJEEZ-000002)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [54%] "PROTECTOR PARA CARRETEL DE DESMALEZADORA"
+   → Product: "Carretel Kommberg Automatico Para Desmalezadora 42/52cc Negro" (SKU: MAQJEEZ-000002)
+   → Images: 7 found, 0 existing, 7 to upload
+
+✅ [54%] "SELLO DE GOMA PARA BUJIA"
+   → Product: "Kit Bobina Bujia Para De Desmalezadora 43cc 52cc Niwa Omaha" (SKU: MAQJEEZ-000103)
+   → Images: 4 found, 0 existing, 4 to upload
+
+✅ [54%] "TANQUE NAFTA TAPA CENTRAL DESMALEZADORA"
+   → Product: "Tanque Nafta Compatible Desmalezadora" (SKU: MAQJEEZ-000092)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [54%] "TAPA DE ARRANQUE GAMMA VIEJA"
+   → Product: "Tapa De Arranque Desmalezadora 33 43 52cc Chinas Shimaha Pro" (SKU: MAQJEEZ-000025)
+   → Images: 10 found, 0 existing, 10 to upload
+
+✅ [54%] "TAPA DE ARRANQUE MOTOSIERRA 38CC"
+   → Product: "Tapa De Arranque Desmalezadora 33 43 52cc Chinas Shimaha Pro" (SKU: MAQJEEZ-000025)
+   → Images: 5 found, 0 existing, 5 to upload
+
+✅ [54%] "TAPA DE ARRANQUE MOTOSIERRA NEGRA"
+   → Product: "Tapa De Arranque Desmalezadora 33 43 52cc Chinas Shimaha Pro" (SKU: MAQJEEZ-000025)
+   → Images: 0 found, 0 existing, 0 to upload
+
+✅ [54%] "TORRETA 3 PUNTAS PARA HUSQVARNA"
+   → Product: "Cuchilla 3 Puntas Raisman® Para Desmalezadora China" (SKU: MAQJEEZ-000079)
+   → Images: 7 found, 0 existing, 7 to upload
+
+✅ [54%] "TRINQUETE 26CC PARA DESMALEZADORA CHINAS"
+   → Product: "Tapa Arranque Para Desmalezadora Motoguadaña Chinas Moño" (SKU: MAQJEEZ-000020)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [54%] "TUERCA IZQUIERDA PARA CUCHILLA DESMALEZADORAS"
+   → Product: "Cuchilla Para Desmalezadora - Tres Puntas + Tuerca." (SKU: MAQJEEZ-000104)
+   → Images: 5 found, 0 existing, 5 to upload
+
+✅ [51%] "BARRAL CAÑO STHIL FS 160 220 280"
+   → Product: "Embrague Raisman Para Stihl Fs 160 220  280" (SKU: MAQJEEZ-000023)
+   → Images: 4 found, 0 existing, 4 to upload
+
+✅ [51%] "CADENA MOTOSIERRA CHINAS 52CC DE 76 ESLABONES"
+   → Product: "Sin Fin De Bomba De Aceite Motosierra 45cc/52cc Gamma Chinas" (SKU: MAQJEEZ-000127)
+   → Images: 5 found, 0 existing, 5 to upload
+
+✅ [51%] "CAJA REDUCTORA STHIL FS 160 220 280"
+   → Product: "Embrague Raisman Para Stihl Fs 160 220  280" (SKU: MAQJEEZ-000023)
+   → Images: 3 found, 0 existing, 3 to upload
+
+✅ [51%] "CAZOLETA PARA TAPA DE 2 ALAMBRES DESMALEZADORA"
+   → Product: "Cazoleta De Arranque Para Desmalezadora China P/alambre" (SKU: MAQJEEZ-000051)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [51%] "CILINDRO DESMALEZADORA 52CC CON JAULA Y JUNTAS"
+   → Product: "Kit Juntas Y Bombin Carburador Desmalezadora 33/43/52cc" (SKU: MAQJEEZ-000007)
+   → Images: 7 found, 0 existing, 7 to upload
+
+✅ [51%] "JUNTA ESCAPE MOTOSIERRA CHINA 45CC 52CC 58CC"
+   → Product: "Manguera De Nafta Motosierra 45cc/52cc China + Filtro Niwa K" (SKU: MAQJEEZ-000061)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [51%] "KIT DE 6 RESORTES PARA EMBRAGUE DESMALEZADORA"
+   → Product: "Kit De Manguera Para Desmalezadora  Y Filtro 26cc 33cc 52cc" (SKU: MAQJEEZ-000096)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [51%] "KIT DE CILINDRO MOTOSIERRA 52CC CON JUNTAS"
+   → Product: "Kit Cilindro Pistón P/desmalezadora 52cc Gamma Chinas+juntas" (SKU: MAQJEEZ-000060)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [51%] "KIT DE MANGUERA MS 361 CON FILTRO"
+   → Product: "Kit De Manguera Para Desmalezadora  Y Filtro 26cc 33cc 52cc" (SKU: MAQJEEZ-000096)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [51%] "KIT DE MANGUERAS Y BOMBIN PARA DESMALEZADORAS"
+   → Product: "Kit De Manguera Para Desmalezadora  Y Filtro 26cc 33cc 52cc" (SKU: MAQJEEZ-000096)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [51%] "KIT DE PISTON GRUPO ELECTROGENO 13HP 188F"
+   → Product: "Polea De Arranque De Grupo Electrógeno Generador  13hp  15hp" (SKU: MAQJEEZ-000085)
+   → Images: 5 found, 0 existing, 5 to upload
+
+✅ [51%] "KIT JUNTAS GRUPO ELECTROGENO 13HP Y 17HP"
+   → Product: "Kit Juntas Motor Gx390 13hp Grupo Electrgenos 6500w Chinos" (SKU: MAQJEEZ-000077)
+   → Images: 10 found, 0 existing, 10 to upload
+
+✅ [51%] "TAMBOR DE ARRANQUE GRUPO ELECTROGENO CON LLAVE"
+   → Product: "Tapa De Arranque Grupo Electrogeno / Generador 5.5 - 6.5 Hp" (SKU: MAQJEEZ-000026)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [51%] "TAPA DE ARRANQUE GRUPO O 4 RUEDAS"
+   → Product: "Tapa De Arranque Grupo Electrogeno / Generador 5.5 - 6.5 Hp" (SKU: MAQJEEZ-000026)
+   → Images: 6 found, 0 existing, 6 to upload
+
+✅ [51%] "TAPA DE FILTRO Y FILTRO MS 361"
+   → Product: "Kit De Manguera Para Desmalezadora  Y Filtro 26cc 33cc 52cc" (SKU: MAQJEEZ-000096)
+   → Images: 7 found, 0 existing, 7 to upload
+
+✅ [51%] "TAPA FILTRO STHIL FS 160 220 280"
+   → Product: "Embrague Raisman Para Stihl Fs 160 220  280" (SKU: MAQJEEZ-000023)
+   → Images: 9 found, 0 existing, 9 to upload
+
+✅ [50%] "CAÑO DE MANILLAR DESMALEZADORA STHIL FS 160-220-280"
+   → Product: "Juego De Juntas Compatible Desmalezadora Sthil Fs160/220/280" (SKU: MAQJEEZ-000067)
+   → Images: 3 found, 0 existing, 3 to upload
+
+✅ [50%] "TAPA DE ARRANQUE PARA MOTOSIERRA CHINA 45CC A 58CC"
+   → Product: "Junta Aluminio X 3 Para Tapa De Arranque Desmalezadora China" (SKU: MAQJEEZ-000138)
+   → Images: 10 found, 0 existing, 10 to upload
+
+✅ [50%] "TAPA DE FRENO KLD Y CUBRE MANGNETO MOTOSIERRA 52CC"
+   → Product: "Tapa Lateral De Freno Completo Para Motosierra 45/52cc Gp" (SKU: MAQJEEZ-000053)
+   → Images: 8 found, 0 existing, 8 to upload
+
+✅ [50%] "TAPA DE TANQUE COMBUSTIBLE DE GRUPO ELECTROGENO O MOTOBOMBA"
+   → Product: "Tapa De Arranque Grupo Electrogeno / Generador 5.5 - 6.5 Hp" (SKU: MAQJEEZ-000026)
+   → Images: 6 found, 0 existing, 6 to upload
+
+
+═══════════════════════════════════════════════
+  NO MATCH: 375 folders
+═══════════════════════════════════════════════
+
+❌ [45%] "2 MANGUERAS 2 BOMBINES 2 PASAMANGUERA" → closest: "Tanque Nafta 2 Agujeros Repuesto Desmalezadoras 33/43/52cc"
+❌ [26%] "4 PRODUCTOS X5 UNIDADES MAYORISTA PARA DESMALEZADORAS" → closest: "Embrague Completo Para Desmalezadoras Chinas De 33 A 52cc"
+❌ [30%] "ABRAZADERA ACOPLE 4 EN 1 - 1" → closest: "Soporte Tanque De Combustible Desmalezadora China De 1 Litro"
+❌ [45%] "ABRAZADERA MANILLAR DESMALEZADORA 1" → closest: "Soporte Tanque De Combustible Desmalezadora China De 1 Litro"
+❌ [30%] "ABRAZADERA SUJECCION ARNES" → closest: "Arnes Desmalezadora Motoguadaña 52 43 33 Lusqtoff Color Naranja"
+❌ [15%] "ACEITE 100ML LUSQTOFF SEMI SINTETICO PROFESIONAL" → closest: "Arnes Desmalezadora Motoguadaña 52 43 33 Lusqtoff Color Naranja"
+❌ [30%] "ACEITE 2T LUSQTOFF NARANJA SEIMI SINTETICO" → closest: "Arnes Desmalezadora Motoguadaña 52 43 33 Lusqtoff Color Naranja"
+❌ [26%] "ACEITE BLEND LUSQTOFF 2T X LITRO PREMIUM" → closest: "Aceite Lubricante Motores 2t 100 Cm3 Desmalezadora"
+❌ [45%] "ACEITE PARA CADENA  500CC" → closest: "Kit Tapónes Para Tanque De Aceite Y Nafta Motosierra Garden"
+❌ [30%] "ACELERADOR COMPLETO + MANILLAR Y MANIJA IZQUIERDA" → closest: "Acelerador Completo Para Desmalezadoras Niwa Omaha Lusqtoff"
+❌ [45%] "ACELERADOR COMPLETO GAMMA ELITE" → closest: "Acelerador Completo Para Desmalezadoras Niwa Omaha Lusqtoff"
+❌ [30%] "ACELERADOR HUSQVARNA 143RII" → closest: "Acelerador Completo Para Desmalezadoras Niwa Omaha Lusqtoff"
+❌ [18%] "ACEPERAD0R  PARA 4 EN 1" → closest: "Carretel Kommberg Automatico Para Desmalezadora 42/52cc Negro"
+❌ [45%] "ACOPLE CARRETEL CORTE BAJO" → closest: "Cabezal Porta Tanza Carretel Desmalezadora Motoguadaña Bajo"
+❌ [18%] "ADAPTADOR CABEZAL CORTA CERCO 26MM" → closest: "Cabezal Porta Tanza Carretel Desmalezadora Motoguadaña Bajo"
+❌ [26%] "ADAPTADOR PODADOR DE ALTURA KLD 12 PULGADAS" → closest: "Patas De Motor / Tacos De Motor Generador 13hp 15hp Niwa Kld"
+❌ [18%] "ALAMBRE FLUX 0.9 LUSQTOFF" → closest: "Arnes Desmalezadora Motoguadaña 52 43 33 Lusqtoff Color Naranja"
+❌ [28%] "ALERTA PARE FALTA ACEITE GRUPO ELECTROGENO TODOS LOS TAMAÑOS 5.5HP A 13HP" → closest: "Avr Regulador Voltaje Tensión Grupo Electrogeno 2 A 3,5 Kva"
+❌ [36%] "AMOLADORA A BATERIA LUSQTOF BLACK" → closest: "2 Interruptor Llave Tecla G720 Amoladora Black Decker"
+❌ [36%] "AMOLADORA LUSQTOF 850W 4.5" → closest: "Pata De Motor / Tacos De Motor Generador X 4 Gn5.5/6.5"
+❌ [36%] "AMORTIGUADOR CAMPANA VIEJA 52CC DESMALEZADORA" → closest: "Carretel Kommberg Automatico Para Desmalezadora 42/52cc Negro"
+❌ [27%] "Anillo De Piñón Para Accesorio Podador De Altura 38 Lp" → closest: "Embrague Completo Para Desmalezadoras Chinas De 33 A 52cc"
+❌ [30%] "Arandela Centradora Desmalezadora Chinas 6 Estrias" → closest: "Tapa Arranque Facil + Cazoleta Desmalezadora Chinas 43-52cc"
+❌ [45%] "Arbol De Levas Para Motoguadaña Umk435" → closest: "Filtro De Aire Cmc Para Motoguadaña Stihl Fs 450"
+❌ [30%] "ARNES GAMMA REFORZADO" → closest: "Protector Cobertor Plastico Desmalezadoras Niwa Gamma Chinas"
+❌ [45%] "ARNES GANCHO" → closest: "Arnes Desmalezadora Motoguadaña 52 43 33 Lusqtoff Color Naranja"
+❌ [30%] "ARNES HUSQVARNA 143RII" → closest: "Arnes Desmalezadora Motoguadaña 52 43 33 Lusqtoff Color Naranja"
+❌ [30%] "ARNES KLD PROFECIONAL" → closest: "Arnes Desmalezadora Motoguadaña 52 43 33 Lusqtoff Color Naranja"
+❌ [30%] "ARNES OMAHA PROFECIONAL" → closest: "Arnes Desmalezadora Motoguadaña 52 43 33 Lusqtoff Color Naranja"
+❌ [45%] "ARNES PROFECIONAL" → closest: "Arnes Desmalezadora Motoguadaña 52 43 33 Lusqtoff Color Naranja"
+   ... and 345 more
+
+📊 Summary: 229 matched, 375 unmatched out of 604 folders

@@ -1,478 +1,370 @@
-"use client";
+"use client"
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic"
 
-import { useState, useEffect, Suspense } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { Header } from "@/components/Header";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
+import { useState, useEffect } from "react"
+import Link from "next/link"
 import {
+  TrendingUp,
+  Truck,
+  Scale,
+  ShieldCheck,
+  Download,
   Users,
   Package,
-  ShoppingCart,
   DollarSign,
-  TrendingUp,
   AlertTriangle,
-  CheckCircle,
-  XCircle,
-  Search,
-  Eye,
-  Ban,
-} from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
-import { toast } from "sonner";
+  ArrowUpRight,
+  ArrowDownRight,
+} from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
+import { toast } from "sonner"
 
 interface DashboardStats {
-  totalUsers: number;
-  totalProducts: number;
-  totalOrders: number;
-  totalRevenue: number;
-  pendingOrders: number;
-  reportedProducts: number;
-}
-
-interface User {
-  id: string;
-  email: string;
-  full_name: string | null;
-  created_at: string;
-  is_active: boolean;
-}
-
-interface Product {
-  id: string;
-  title: string;
-  seller_name: string;
-  is_active: boolean;
-  is_reported: boolean;
-  created_at: string;
-}
-
-function AdminDashboardContent() {
-  const router = useRouter();
-
-  const [user, setUser] = useState<any>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [stats, setStats] = useState<DashboardStats>({
-    totalUsers: 0,
-    totalProducts: 0,
-    totalOrders: 0,
-    totalRevenue: 0,
-    pendingOrders: 0,
-    reportedProducts: 0,
-  });
-  const [users, setUsers] = useState<User[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
-    const supabase = createClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      router.push("/auth/login");
-      return;
-    }
-
-    setUser(session.user);
-
-    // Verificar si es admin
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", session.user.id)
-      .single();
-
-    if (profile?.role !== "admin") {
-      toast.error("No tienes permisos de administrador");
-      router.push("/");
-      return;
-    }
-
-    setIsAdmin(true);
-    fetchDashboardData();
-  };
-
-  const fetchDashboardData = async () => {
-    const supabase = createClient();
-    setLoading(true);
-
-    // Stats
-    const { count: usersCount } = await supabase
-      .from("profiles")
-      .select("*", { count: "exact", head: true });
-
-    const { count: productsCount } = await supabase
-      .from("products")
-      .select("*", { count: "exact", head: true });
-
-    const { count: ordersCount } = await supabase
-      .from("orders")
-      .select("*", { count: "exact", head: true });
-
-    const { count: pendingOrdersCount } = await supabase
-      .from("orders")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "pending");
-
-    const { data: revenueData } = await supabase
-      .from("orders")
-      .select("total_amount")
-      .eq("status", "completed");
-
-    const totalRevenue =
-      revenueData?.reduce((acc, order) => acc + order.total_amount, 0) || 0;
-
-    setStats({
-      totalUsers: usersCount || 0,
-      totalProducts: productsCount || 0,
-      totalOrders: ordersCount || 0,
-      totalRevenue,
-      pendingOrders: pendingOrdersCount || 0,
-      reportedProducts: 0,
-    });
-
-    // Recent users
-    const { data: usersData } = await supabase
-      .from("profiles")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(10);
-
-    if (usersData) setUsers(usersData);
-
-    // Recent products
-    const { data: productsData } = await supabase
-      .from("products")
-      .select(`
-        *,
-        seller:profiles(full_name)
-      `)
-      .order("created_at", { ascending: false })
-      .limit(10);
-
-    if (productsData) {
-      setProducts(
-        productsData.map((p: any) => ({
-          ...p,
-          seller_name: p.seller?.full_name,
-        }))
-      );
-    }
-
-    setLoading(false);
-  };
-
-  const toggleUserStatus = async (userId: string, currentStatus: boolean) => {
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("profiles")
-      .update({ is_active: !currentStatus })
-      .eq("id", userId);
-
-    if (error) {
-      toast.error("Error al actualizar usuario");
-    } else {
-      toast.success(currentStatus ? "Usuario desactivado" : "Usuario activado");
-      fetchDashboardData();
-    }
-  };
-
-  const toggleProductStatus = async (
-    productId: string,
-    currentStatus: boolean
-  ) => {
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("products")
-      .update({ is_active: !currentStatus })
-      .eq("id", productId);
-
-    if (error) {
-      toast.error("Error al actualizar producto");
-    } else {
-      toast.success(
-        currentStatus ? "Producto desactivado" : "Producto activado"
-      );
-      fetchDashboardData();
-    }
-  };
-
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin h-8 w-8 border-2 border-[#3483FA] border-t-transparent rounded-full"></div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-
-      <main className="flex-1 bg-[#EBEBEB]">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-2xl font-bold">Panel de Administración</h1>
-              <p className="text-gray-600">Gestiona usuarios, productos y pedidos</p>
-            </div>
-            <Badge className="bg-purple-100 text-purple-800">Admin</Badge>
-          </div>
-
-          {/* Stats */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-500">Usuarios</p>
-                    <p className="text-2xl font-bold">{stats.totalUsers}</p>
-                  </div>
-                  <Users className="h-8 w-8 text-blue-500" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-500">Productos</p>
-                    <p className="text-2xl font-bold">{stats.totalProducts}</p>
-                  </div>
-                  <Package className="h-8 w-8 text-green-500" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-500">Pedidos</p>
-                    <p className="text-2xl font-bold">{stats.totalOrders}</p>
-                  </div>
-                  <ShoppingCart className="h-8 w-8 text-orange-500" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-500">Ingresos</p>
-                    <p className="text-2xl font-bold">
-                      ${stats.totalRevenue.toLocaleString()}
-                    </p>
-                  </div>
-                  <DollarSign className="h-8 w-8 text-green-600" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Alerts */}
-          {(stats.pendingOrders > 0 || stats.reportedProducts > 0) && (
-            <div className="grid md:grid-cols-2 gap-4 mb-8">
-              {stats.pendingOrders > 0 && (
-                <Card className="bg-yellow-50 border-yellow-200">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <AlertTriangle className="h-5 w-5 text-yellow-600" />
-                      <div>
-                        <p className="font-medium text-yellow-800">
-                          {stats.pendingOrders} pedidos pendientes
-                        </p>
-                        <Link href="/admin/orders">
-                          <Button variant="link" className="p-0 h-auto text-yellow-700">
-                            Ver pedidos
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          )}
-
-          {/* Tabs */}
-          <Tabs defaultValue="users">
-            <TabsList className="mb-6">
-              <TabsTrigger value="users">Usuarios</TabsTrigger>
-              <TabsTrigger value="products">Productos</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="users">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="font-semibold">Usuarios recientes</h2>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                      <Input
-                        placeholder="Buscar usuarios..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 w-64"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left py-3 px-4">Usuario</th>
-                          <th className="text-left py-3 px-4">Email</th>
-                          <th className="text-left py-3 px-4">Registro</th>
-                          <th className="text-left py-3 px-4">Estado</th>
-                          <th className="text-left py-3 px-4">Acciones</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {users.map((u) => (
-                          <tr key={u.id} className="border-b">
-                            <td className="py-3 px-4">{u.full_name || "N/A"}</td>
-                            <td className="py-3 px-4">{u.email}</td>
-                            <td className="py-3 px-4">
-                              {new Date(u.created_at).toLocaleDateString("es-AR")}
-                            </td>
-                            <td className="py-3 px-4">
-                              <Badge
-                                variant={u.is_active ? "default" : "secondary"}
-                              >
-                                {u.is_active ? "Activo" : "Inactivo"}
-                              </Badge>
-                            </td>
-                            <td className="py-3 px-4">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() =>
-                                  toggleUserStatus(u.id, u.is_active)
-                                }
-                              >
-                                {u.is_active ? (
-                                  <Ban className="h-4 w-4 text-red-500" />
-                                ) : (
-                                  <CheckCircle className="h-4 w-4 text-green-500" />
-                                )}
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="products">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="font-semibold">Productos recientes</h2>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                      <Input
-                        placeholder="Buscar productos..."
-                        className="pl-10 w-64"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left py-3 px-4">Producto</th>
-                          <th className="text-left py-3 px-4">Vendedor</th>
-                          <th className="text-left py-3 px-4">Fecha</th>
-                          <th className="text-left py-3 px-4">Estado</th>
-                          <th className="text-left py-3 px-4">Acciones</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {products.map((p) => (
-                          <tr key={p.id} className="border-b">
-                            <td className="py-3 px-4">{p.title}</td>
-                            <td className="py-3 px-4">{p.seller_name}</td>
-                            <td className="py-3 px-4">
-                              {new Date(p.created_at).toLocaleDateString("es-AR")}
-                            </td>
-                            <td className="py-3 px-4">
-                              <Badge
-                                variant={p.is_active ? "default" : "secondary"}
-                              >
-                                {p.is_active ? "Activo" : "Inactivo"}
-                              </Badge>
-                            </td>
-                            <td className="py-3 px-4">
-                              <div className="flex gap-2">
-                                <Link href={`/product/${p.id}`}>
-                                  <Button variant="ghost" size="sm">
-                                    <Eye className="h-4 w-4" />
-                                  </Button>
-                                </Link>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() =>
-                                    toggleProductStatus(p.id, p.is_active)
-                                  }
-                                >
-                                  {p.is_active ? (
-                                    <Ban className="h-4 w-4 text-red-500" />
-                                  ) : (
-                                    <CheckCircle className="h-4 w-4 text-green-500" />
-                                  )}
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </div>
-      </main>
-    </div>
-  );
+  ventasDia: number
+  enviosDemora: number
+  mediacionesAbiertas: number
+  fraudesBloqueados: number
+  totalUsuarios: number
+  totalProductos: number
+  totalOrdenes: number
+  ingresosMes: number
 }
 
 export default function AdminDashboardPage() {
+  const [stats, setStats] = useState<DashboardStats>({
+    ventasDia: 0,
+    enviosDemora: 0,
+    mediacionesAbiertas: 0,
+    fraudesBloqueados: 0,
+    totalUsuarios: 0,
+    totalProductos: 0,
+    totalOrdenes: 0,
+    ingresosMes: 0,
+  })
+  const [loading, setLoading] = useState(true)
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
+
+  useEffect(() => {
+    fetchDashboardData()
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchDashboardData, 30000)
+    return () => clearInterval(interval)
+  }, [])
+
+  const fetchDashboardData = async () => {
+    const supabase = createClient()
+    setLoading(true)
+
+    try {
+      // Get today's sales
+      const today = new Date().toISOString().split("T")[0]
+      const { data: ventasHoy } = await supabase
+        .from("orders")
+        .select("total_amount")
+        .gte("created_at", today)
+        .eq("status", "completed")
+
+      const ventasDia = ventasHoy?.reduce((acc, order) => acc + (order.total_amount || 0), 0) || 0
+
+      // Get delayed shipments
+      const { count: enviosDemora } = await supabase
+        .from("shipments")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "delayed")
+
+      // Get open disputes
+      const { count: mediacionesAbiertas } = await supabase
+        .from("disputes")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "open")
+
+      // Get blocked fraud attempts
+      const { count: fraudesBloqueados } = await supabase
+        .from("fraud_logs")
+        .select("*", { count: "exact", head: true })
+        .eq("action_taken", "blocked")
+        .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+
+      // Get total users
+      const { count: totalUsuarios } = await supabase
+        .from("profiles")
+        .select("*", { count: "exact", head: true })
+
+      // Get total products
+      const { count: totalProductos } = await supabase
+        .from("products")
+        .select("*", { count: "exact", head: true })
+
+      // Get total orders
+      const { count: totalOrdenes } = await supabase
+        .from("orders")
+        .select("*", { count: "exact", head: true })
+
+      // Get monthly revenue
+      const firstDayOfMonth = new Date()
+      firstDayOfMonth.setDate(1)
+      firstDayOfMonth.setHours(0, 0, 0, 0)
+      
+      const { data: revenueData } = await supabase
+        .from("orders")
+        .select("total_amount")
+        .gte("created_at", firstDayOfMonth.toISOString())
+        .eq("status", "completed")
+
+      const ingresosMes = revenueData?.reduce((acc, order) => acc + (order.total_amount || 0), 0) || 0
+
+      setStats({
+        ventasDia,
+        enviosDemora: enviosDemora || 0,
+        mediacionesAbiertas: mediacionesAbiertas || 0,
+        fraudesBloqueados: fraudesBloqueados || 0,
+        totalUsuarios: totalUsuarios || 0,
+        totalProductos: totalProductos || 0,
+        totalOrdenes: totalOrdenes || 0,
+        ingresosMes,
+      })
+      setLastUpdated(new Date())
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error)
+      toast.error("Error al cargar estadísticas")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("es-AR", {
+      style: "currency",
+      currency: "ARS",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount)
+  }
+
+  const statCards = [
+    {
+      title: "Ventas del Día",
+      value: formatCurrency(stats.ventasDia),
+      trend: "+15%",
+      icon: TrendingUp,
+      color: "text-green-600",
+      bgColor: "bg-green-50",
+      href: "/admin/ordenes",
+    },
+    {
+      title: "Envíos con Demora",
+      value: stats.enviosDemora.toString(),
+      trend: "-2%",
+      icon: Truck,
+      color: "text-red-600",
+      bgColor: "bg-red-50",
+      alert: stats.enviosDemora > 0,
+      href: "/admin/envios",
+    },
+    {
+      title: "Mediaciones Abiertas",
+      value: stats.mediacionesAbiertas.toString(),
+      trend: "+12%",
+      icon: Scale,
+      color: "text-orange-600",
+      bgColor: "bg-orange-50",
+      alert: stats.mediacionesAbiertas > 10,
+      href: "/admin/mediaciones",
+    },
+    {
+      title: "Intentos de Fraude Bloq.",
+      value: stats.fraudesBloqueados.toLocaleString(),
+      trend: "Automático",
+      icon: ShieldCheck,
+      color: "text-green-600",
+      bgColor: "bg-green-50",
+      href: "/admin/fraude",
+    },
+  ]
+
+  const secondaryStats = [
+    { label: "Usuarios Totales", value: stats.totalUsuarios.toLocaleString(), icon: Users },
+    { label: "Productos Activos", value: stats.totalProductos.toLocaleString(), icon: Package },
+    { label: "Órdenes del Mes", value: stats.totalOrdenes.toLocaleString(), icon: DollarSign },
+    { label: "Ingresos del Mes", value: formatCurrency(stats.ingresosMes), icon: TrendingUp },
+  ]
+
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen flex flex-col">
-          <Header />
-          <div className="flex-1 bg-[#EBEBEB] flex items-center justify-center">
-            <div className="text-center">
-              <div className="animate-spin h-8 w-8 border-2 border-[#3483FA] border-t-transparent rounded-full mx-auto mb-4"></div>
-              <p className="text-gray-600">Cargando panel de administración...</p>
+    <div className="space-y-6 animate-in fade-in duration-300">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800">Centro de Comando Global</h2>
+          <p className="text-sm text-gray-500">Métricas en tiempo real de MaqJeez</p>
+          <p className="text-xs text-gray-400 mt-1">
+            Actualizado: {lastUpdated.toLocaleTimeString("es-AR")}
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={fetchDashboardData}
+            disabled={loading}
+            className="flex items-center gap-2 text-sm text-gray-600 font-medium hover:bg-gray-100 px-3 py-2 rounded-md transition-colors border border-gray-200 bg-white disabled:opacity-50"
+          >
+            {loading ? (
+              <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <TrendingUp size={16} />
+            )}
+            Actualizar
+          </button>
+          <button className="flex items-center gap-2 text-sm text-blue-600 font-medium hover:bg-blue-50 px-3 py-2 rounded-md transition-colors border border-blue-200 bg-white">
+            <Download size={16} /> Descargar Reporte DGT
+          </button>
+        </div>
+      </div>
+
+      {/* Main Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {statCards.map((stat, i) => (
+          <Link
+            key={i}
+            href={stat.href}
+            className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow group"
+          >
+            <div className="flex justify-between items-start mb-2">
+              <p className="text-sm font-medium text-gray-500">{stat.title}</p>
+              <div className={`p-2 rounded-lg ${stat.bgColor}`}>
+                <stat.icon size={20} className={stat.color} />
+              </div>
+            </div>
+            <div className="flex items-end justify-between">
+              <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+              <span
+                className={`text-xs font-bold flex items-center gap-1 ${
+                  stat.alert ? "text-red-600" : stat.color
+                }`}
+              >
+                {stat.trend === "+15%" || stat.trend === "+12%" ? (
+                  <ArrowUpRight size={12} />
+                ) : stat.trend === "-2%" ? (
+                  <ArrowDownRight size={12} />
+                ) : null}
+                {stat.trend}
+              </span>
+            </div>
+            {stat.alert && (
+              <div className="mt-3 flex items-center gap-1.5 text-xs text-red-600">
+                <AlertTriangle size={12} />
+                <span>Requiere atención</span>
+              </div>
+            )}
+          </Link>
+        ))}
+      </div>
+
+      {/* Secondary Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {secondaryStats.map((stat, i) => (
+          <div key={i} className="bg-white p-4 rounded-lg border border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gray-100 rounded-lg">
+                <stat.icon size={18} className="text-gray-600" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">{stat.label}</p>
+                <p className="text-lg font-bold text-gray-900">{stat.value}</p>
+              </div>
             </div>
           </div>
+        ))}
+      </div>
+
+      {/* Quick Actions */}
+      <div className="bg-white p-6 rounded-lg border border-gray-200">
+        <h3 className="text-lg font-bold text-gray-800 mb-4">Acciones Rápidas</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <Link
+            href="/admin/mediaciones"
+            className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors"
+          >
+            <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+              <Scale size={20} className="text-orange-600" />
+            </div>
+            <div>
+              <p className="font-medium text-gray-800">Mediaciones</p>
+              <p className="text-xs text-gray-500">Gestionar disputas</p>
+            </div>
+          </Link>
+          
+          <Link
+            href="/admin/envios"
+            className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors"
+          >
+            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+              <Truck size={20} className="text-blue-600" />
+            </div>
+            <div>
+              <p className="font-medium text-gray-800">Envíos</p>
+              <p className="text-xs text-gray-500">Radar de demoras</p>
+            </div>
+          </Link>
+          
+          <Link
+            href="/admin/mensajes"
+            className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors"
+          >
+            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+              <AlertTriangle size={20} className="text-purple-600" />
+            </div>
+            <div>
+              <p className="font-medium text-gray-800">Moderación</p>
+              <p className="text-xs text-gray-500">Preguntas y mensajes</p>
+            </div>
+          </Link>
+          
+          <Link
+            href="/admin/vendedores"
+            className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors"
+          >
+            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+              <Users size={20} className="text-green-600" />
+            </div>
+            <div>
+              <p className="font-medium text-gray-800">Vendedores</p>
+              <p className="text-xs text-gray-500">Gestión de reputación</p>
+            </div>
+          </Link>
         </div>
-      }
-    >
-      <AdminDashboardContent />
-    </Suspense>
-  );
+      </div>
+
+      {/* System Status */}
+      <div className="bg-gradient-to-r from-slate-800 to-slate-900 p-6 rounded-lg text-white">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h3 className="text-lg font-bold">Estado del Sistema</h3>
+            <p className="text-slate-400 text-sm">Todos los servicios operativos</p>
+          </div>
+          <div className="flex items-center gap-2 bg-green-500/20 text-green-400 px-4 py-2 rounded-full">
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+            <span className="text-sm font-medium">Operativo</span>
+          </div>
+        </div>
+        <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-green-400 rounded-full" />
+            <span className="text-slate-300">Base de datos</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-green-400 rounded-full" />
+            <span className="text-slate-300">API REST</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-green-400 rounded-full" />
+            <span className="text-slate-300">Storage</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-green-400 rounded-full" />
+            <span className="text-slate-300">Auth Service</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 }
