@@ -215,29 +215,30 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
               {relatedProducts.length > 0 && (
                 <>
                   <div className="px-4 lg:px-0">
-                    <h2 className="text-[24px] font-semibold text-gray-800 mb-6">Productos relacionados</h2>
-                    <div className="relative group">
-                      <div className="flex gap-4 overflow-x-auto pb-4">
+                    <h2 className="text-[20px] font-normal text-gray-800 mb-5">Relacionado con esta publicación</h2>
+                    <div className="relative group bg-white border border-gray-200 rounded-lg p-4">
+                      <div className="flex gap-0 overflow-x-auto scroll-smooth" style={{ scrollbarWidth: 'none' }}>
                         {relatedProducts.map((item: any) => (
-                          <Link key={item.id} href={`/product/${item.id}`} className="min-w-[200px] max-w-[200px] border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow cursor-pointer flex flex-col bg-white">
-                            <div className="h-32 mb-3 flex items-center justify-center p-2">
+                          <Link key={item.id} href={`/product/${item.id}`} className="min-w-[160px] max-w-[160px] px-3 py-2 cursor-pointer flex flex-col hover:opacity-80 transition-opacity border-r border-gray-100 last:border-r-0">
+                            <div className="h-[140px] mb-3 flex items-center justify-center">
                               {item.primary_image ? (
                                 <img src={item.primary_image} alt={item.title} className="max-h-full max-w-full object-contain" />
                               ) : (
-                                <Package className="h-12 w-12 text-gray-300" />
+                                <Package className="h-16 w-16 text-gray-300" />
                               )}
                             </div>
-                            <h4 className="text-[13px] text-gray-700 leading-snug mb-2 line-clamp-2 min-h-[36px] font-medium">{item.title}</h4>
+                            <h4 className="text-[13px] text-[#3483fa] leading-snug mb-2 line-clamp-2 min-h-[36px]">{item.title}</h4>
                             <div className="mt-auto">
-                              {item.original_price && item.original_price > item.price && (
-                                <span className="text-[11px] text-gray-400 line-through block">$ {item.original_price.toLocaleString("es-AR")}</span>
-                              )}
-                              <span className="text-[18px] font-medium text-gray-800">$ {item.price.toLocaleString("es-AR")}</span>
-                              {item.free_shipping && <span className="text-[11px] text-emerald-500 block mt-1">Envío gratis</span>}
+                              <span className="text-[18px] font-normal text-gray-800">$ {item.price.toLocaleString("es-AR")}</span>
+                              <span className="text-[12px] text-emerald-500 block mt-1">Llega mañana</span>
                             </div>
                           </Link>
                         ))}
                       </div>
+                      {/* Right arrow */}
+                      <button className="absolute right-[-16px] top-1/2 -translate-y-1/2 w-10 h-10 bg-white border border-gray-200 rounded-full shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:shadow-lg">
+                        <ChevronRight size={20} className="text-gray-600" />
+                      </button>
                     </div>
                   </div>
                   <div className="w-full h-px bg-gray-200 my-8 hidden md:block"></div>
@@ -419,26 +420,30 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
 
           {/* Seller Products Carousel */}
           {sellerProducts.length > 0 && (
-            <div className="mt-12 bg-white p-6 rounded-lg shadow-sm">
-              <h2 className="text-[24px] font-semibold text-gray-800 mb-6">Publicaciones del vendedor</h2>
-              <div className="flex gap-4 overflow-x-auto pb-4">
+            <div className="mt-8 bg-white p-6 rounded-lg border border-gray-200 relative group">
+              <h2 className="text-[20px] font-normal text-gray-800 mb-5">Elegidos para vos de {sellerName}</h2>
+              <div className="flex gap-0 overflow-x-auto scroll-smooth" style={{ scrollbarWidth: 'none' }}>
                 {sellerProducts.map((item: any) => (
-                  <Link key={item.id} href={`/product/${item.id}`} className="min-w-[200px] max-w-[200px] border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow cursor-pointer flex flex-col bg-white">
-                    <div className="h-32 mb-3 flex items-center justify-center p-2">
+                  <Link key={item.id} href={`/product/${item.id}`} className="min-w-[160px] max-w-[160px] px-3 py-2 cursor-pointer flex flex-col hover:opacity-80 transition-opacity border-r border-gray-100 last:border-r-0">
+                    <div className="h-[140px] mb-3 flex items-center justify-center">
                       {item.primary_image ? (
                         <img src={item.primary_image} alt={item.title} className="max-h-full max-w-full object-contain" />
                       ) : (
-                        <Package className="h-12 w-12 text-gray-300" />
+                        <Package className="h-16 w-16 text-gray-300" />
                       )}
                     </div>
-                    <h4 className="text-[13px] text-gray-700 leading-snug mb-2 line-clamp-2 min-h-[36px] font-medium">{item.title}</h4>
+                    <h4 className="text-[13px] text-[#3483fa] leading-snug mb-2 line-clamp-2 min-h-[36px]">{item.title}</h4>
                     <div className="mt-auto">
-                      <span className="text-[18px] font-medium text-gray-800">$ {item.price.toLocaleString("es-AR")}</span>
-                      {item.free_shipping && <span className="text-[11px] text-emerald-500 block mt-1">Envío gratis</span>}
+                      <span className="text-[18px] font-normal text-gray-800">$ {item.price.toLocaleString("es-AR")}</span>
+                      <span className="text-[12px] text-emerald-500 block mt-1">Llega mañana</span>
                     </div>
                   </Link>
                 ))}
               </div>
+              {/* Right arrow */}
+              <button className="absolute right-[-16px] top-1/2 -translate-y-1/2 w-10 h-10 bg-white border border-gray-200 rounded-full shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:shadow-lg">
+                <ChevronRight size={20} className="text-gray-600" />
+              </button>
             </div>
           )}
 
