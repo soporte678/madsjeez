@@ -1,15 +1,16 @@
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://doweovsukuskflgnxhhn.supabase.co"
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvd2VvdnN1a3Vza2ZsZ254aGhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyMTkyNzEsImV4cCI6MjA5Mjc5NTI3MX0.a0H7VrFwHWZavy8L0DjUyoAecQAdEf22UsA-a0p0u4Y"
-
 export async function createClient() {
   const cookieStore = await cookies()
 
+  // Use hardcoded values - Next.js inlines NEXT_PUBLIC_* as undefined during Docker builds
+  const url = "https://doweovsukuskflgnxhhn.supabase.co"
+  const key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvd2VvdnN1a3Vza2ZsZ254aGhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyMTkyNzEsImV4cCI6MjA5Mjc5NTI3MX0.a0H7VrFwHWZavy8L0DjUyoAecQAdEf22UsA-a0p0u4Y"
+
   return createServerClient(
-    SUPABASE_URL,
-    SUPABASE_ANON_KEY,
+    url,
+    key,
     {
       cookies: {
         getAll() {
