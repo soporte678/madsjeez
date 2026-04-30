@@ -12,109 +12,21 @@ import {
   CheckCircle2, Star, Truck, ChevronLeft, Zap, 
   ShieldCheck, TrendingUp, Timer, MapPin, 
   CreditCard, Package, Shield, HelpCircle,
-  Navigation, Box, Clock, ChevronDown
+  Navigation, Box, Clock, ChevronDown,
+  Tv, Utensils, Car, Smartphone, ShoppingBasket, Wrench
 } from "lucide-react"
 import { useCartStore } from "@/stores/cartStore"
-import { ProductCard } from "@/components/ProductCard"
+import { ProductCarousel } from "@/components/ProductCarousel"
+import { createClient } from "@/lib/supabase/client"
 
-// Datos de productos destacados - Estilo Mercado Libre
-const productosDestacados = [
-  {
-    id: "1",
-    title: "Auriculares Inalámbricos Bluetooth Sony WH-1000XM4 Cancelación Ruido",
-    price: 125000,
-    originalPrice: 150000,
-    image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=500&q=80",
-    seller: "TechStore Official",
-    rating: 4.8,
-    sales: 234,
-    freeShipping: true,
-    installments: "6x $20.833"
-  },
-  {
-    id: "2",
-    title: "Smart TV Samsung 55\" 4K UHD Crystal Processor HDR",
-    price: 450000,
-    originalPrice: null,
-    image: "https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?auto=format&fit=crop&w=500&q=80",
-    seller: "ElectroHogar SA",
-    rating: 4.9,
-    sales: 512,
-    freeShipping: true,
-    installments: "12x $37.500"
-  },
-  {
-    id: "3",
-    title: "Zapatillas Nike Air Max 270 Running Hombre Negras",
-    price: 85000,
-    originalPrice: 95000,
-    image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=500&q=80",
-    seller: "SportLife Store",
-    rating: 4.5,
-    sales: 189,
-    freeShipping: false,
-    installments: "3x $28.333"
-  },
-  {
-    id: "4",
-    title: "Silla Gamer Ergonómica DXRacer Formula Series Reclinable",
-    price: 190000,
-    originalPrice: 220000,
-    image: "https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?auto=format&fit=crop&w=500&q=80",
-    seller: "GamingZone",
-    rating: 4.7,
-    sales: 156,
-    freeShipping: true,
-    installments: "6x $31.667"
-  },
-  {
-    id: "5",
-    title: "Smartphone 128GB 5G Cámara Dual",
-    price: 320000,
-    originalPrice: 350000,
-    image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=500&q=80",
-    seller: "TechMobile Store",
-    rating: 4.6,
-    sales: 298,
-    freeShipping: true,
-    installments: "12x $26.667"
-  },
-  {
-    id: "6",
-    title: "Tablet 10\" 64GB WiFi",
-    price: 180000,
-    originalPrice: null,
-    image: "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?auto=format&fit=crop&w=500&q=80",
-    seller: "TabletWorld",
-    rating: 4.4,
-    sales: 87,
-    freeShipping: true,
-    installments: "6x $30.000"
-  },
-  {
-    id: "7",
-    title: "Laptop Gaming Intel Core i7 RTX 3060",
-    price: 550000,
-    originalPrice: 600000,
-    image: "https://images.unsplash.com/photo-1593642632827-cf2a2e98e5f8?auto=format&fit=crop&w=500&q=80",
-    seller: "PCMaster",
-    rating: 4.9,
-    sales: 423,
-    freeShipping: true,
-    installments: "12x $45.833"
-  },
-  {
-    id: "8",
-    title: "Reloj Smartwatch Fitness Tracker",
-    price: 95000,
-    originalPrice: null,
-    image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=500&q=80",
-    seller: "WearTech",
-    rating: 4.3,
-    sales: 134,
-    freeShipping: false,
-    installments: "3x $31.667"
-  }
+const landingCategories = [
+  { icon: Car, label: 'Vehículos', slug: 'vehiculos' },
+  { icon: HomeIcon, label: 'Inmuebles', slug: 'inmuebles' },
+  { icon: ShoppingBasket, label: 'Supermercado', slug: 'supermercado' },
+  { icon: Smartphone, label: 'Tecnología', slug: 'tecnologia' },
+  { icon: HomeIcon, label: 'Hogar y Muebles', slug: 'hogar' },
+  { icon: Gamepad2, label: 'Juguetes', slug: 'juguetes' },
+  { icon: Wrench, label: 'Herramientas', slug: 'herramientas' },
 ]
 
 // Configuración de letras para el logo cinético
@@ -218,12 +130,41 @@ export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [searchQuery, setSearchQuery] = useState("")
   const cartItemsCount = getTotalItems()
+  const [products, setProducts] = useState<any[]>([])
+  const [recentProducts, setRecentProducts] = useState<any[]>([])
 
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev === 5 ? 0 : prev + 1))
     }, 6000)
     return () => clearInterval(timer)
+  }, [])
+
+  useEffect(() => {
+    async function fetchProducts() {
+      const supabase = createClient()
+      const { data: prods } = await supabase
+        .from('products')
+        .select('id, title, price, original_price, free_shipping, sales, product_images(url, is_primary)')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(12)
+
+      if (prods) {
+        const mapped = prods.map((p: any) => ({
+          id: p.id,
+          title: p.title,
+          price: p.price,
+          original_price: p.original_price,
+          free_shipping: p.free_shipping,
+          sales: p.sales || 0,
+          image: p.product_images?.find((img: any) => img.is_primary)?.url || p.product_images?.[0]?.url || null,
+        }))
+        setProducts(mapped.slice(0, 6))
+        setRecentProducts(mapped.slice(6, 12))
+      }
+    }
+    fetchProducts()
   }, [])
 
   const handleSearch = (e: React.FormEvent) => {
@@ -371,19 +312,92 @@ export default function Home() {
         </div>
       </section>
 
-      {/* PRODUCTOS DESTACADOS */}
-      <section className="max-w-7xl mx-auto px-4 pb-24">
-        <div className="flex items-center justify-between mb-10">
-          <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase font-montserrat">
-            Basado en <span className="text-blue-600">tu historial</span>
-          </h2>
-          <Link href="/search" className="text-blue-600 font-bold hover:underline text-sm uppercase tracking-widest">Ver más productos</Link>
+      {/* MADS PRO BANNER */}
+      <section className="max-w-[1184px] mx-auto px-4 mb-10">
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div className="flex flex-col sm:flex-row justify-between items-center px-6 py-4 border-b border-gray-100 gap-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-gradient-to-r from-[#a90f90] to-[#e4007c] text-white px-3 py-1 rounded-full font-bold italic text-lg tracking-tight">
+                mads+
+              </div>
+              <span className="font-bold text-[#333333] text-[15px]">VIVÍ MADSJEEZ COMO UN EXPERTO</span>
+            </div>
+            <Link href="/subscriptions" className="bg-[#3483fa] hover:bg-[#2968c8] text-white font-semibold py-2 px-6 rounded transition-colors text-[15px]">
+              Suscribirme desde $ 3.490
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6">
+            {[
+              { Icon: Package, color: 'text-[#a90f90]', bg: 'bg-pink-50', text: 'Envíos gratis en productos desde $ 16.000' },
+              { Icon: Tv, color: 'text-[#3483fa]', bg: 'bg-blue-50', text: 'Las mejores plataformas de entretenimiento' },
+              { Icon: CreditCard, color: 'text-[#a90f90]', bg: 'bg-purple-50', text: 'Hasta 3 cuotas extra en tus compras' },
+              { Icon: Utensils, color: 'text-orange-500', bg: 'bg-orange-50', text: 'Envíos gratis en pedidos de Restaurantes' },
+            ].map((item, idx) => (
+              <div key={idx} className={`flex flex-col items-center text-center group cursor-pointer ${idx > 0 ? 'border-l border-gray-100' : ''}`}>
+                <div className="w-24 h-24 mb-4 relative flex justify-center items-center">
+                  <div className={`absolute inset-0 ${item.bg} rounded-full scale-0 group-hover:scale-100 transition-transform duration-300`}></div>
+                  <item.Icon className={`w-12 h-12 ${item.color} relative z-10`} />
+                </div>
+                <p className="text-[13px] text-[#333] font-medium px-4">{item.text}</p>
+              </div>
+            ))}
+          </div>
         </div>
-        
-        {/* Grid de productos destacados */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {productosDestacados.map((producto) => (
-            <ProductCard key={producto.id} {...producto} />
+      </section>
+
+      {/* PRIMER CARRUSEL - Productos recientes */}
+      <section className="max-w-[1184px] mx-auto px-4">
+        <ProductCarousel
+          title="Relacionado con tus visitas"
+          products={products}
+        />
+      </section>
+
+      {/* BANNERS PROMOCIONALES */}
+      <section className="max-w-[1184px] mx-auto px-4 mb-10">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1 bg-white rounded shadow-sm flex overflow-hidden cursor-pointer group hover:shadow-md transition-shadow h-[250px]">
+            <div className="w-1/2 p-8 flex flex-col justify-center">
+              <span className="text-[10px] font-bold tracking-[2px] text-[#666] mb-2 uppercase">Organizá mejor</span>
+              <h3 className="text-[22px] font-bold text-[#333] leading-tight mb-4">MÁS ESPACIO Y<br/>ORDEN PRÁCTICO</h3>
+              <Link href="/search" className="bg-[#3483fa] text-white px-5 py-2 rounded-md font-semibold text-[14px] w-fit group-hover:bg-[#2968c8] transition-colors">Ver ofertas</Link>
+            </div>
+            <div className="w-1/2 bg-gray-100 overflow-hidden relative">
+              <img src="https://images.unsplash.com/photo-1595515106969-1ce29566ff1c?auto=format&fit=crop&q=80&w=400" alt="Mueble" className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" />
+            </div>
+          </div>
+          <div className="flex-1 bg-white rounded shadow-sm flex overflow-hidden cursor-pointer group hover:shadow-md transition-shadow h-[250px]">
+            <div className="w-1/2 p-8 flex flex-col justify-center">
+              <span className="text-[10px] font-bold tracking-[2px] text-[#666] mb-2 uppercase">Renová tu hogar</span>
+              <h3 className="text-[22px] font-bold text-[#333] leading-tight mb-4">¡HOGAR Y MUEBLES!<br/>HASTA 35% OFF</h3>
+              <Link href="/search" className="bg-[#3483fa] text-white px-5 py-2 rounded-md font-semibold text-[14px] w-fit group-hover:bg-[#2968c8] transition-colors">Ver ofertas</Link>
+            </div>
+            <div className="w-1/2 bg-gray-100 overflow-hidden relative">
+              <img src="https://images.unsplash.com/photo-1505843490538-5133c6c7d0e1?auto=format&fit=crop&q=80&w=400" alt="Silla" className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SEGUNDO CARRUSEL - Elegidos para vos */}
+      <section className="max-w-[1184px] mx-auto px-4">
+        <ProductCarousel
+          title="Elegidos para vos"
+          products={recentProducts}
+        />
+      </section>
+
+      {/* CATEGORÍAS */}
+      <section className="max-w-[1184px] mx-auto px-4 mb-12">
+        <h2 className="text-[22px] font-normal text-[#333333] mb-6 px-2">Categorías populares</h2>
+        <div className="flex flex-wrap gap-4 md:gap-8 justify-center">
+          {landingCategories.map((cat, idx) => (
+            <Link key={idx} href={`/category/${cat.slug}`} className="flex flex-col items-center group cursor-pointer w-24">
+              <div className="w-[80px] h-[80px] bg-white rounded-full shadow-sm flex items-center justify-center mb-3 group-hover:shadow-md group-hover:bg-[#3483fa] transition-all duration-300">
+                <cat.icon className="w-8 h-8 text-[#3483fa] group-hover:text-white transition-colors" strokeWidth={1.5} />
+              </div>
+              <span className="text-[13px] text-[#333] text-center font-normal group-hover:text-[#3483fa] transition-colors">{cat.label}</span>
+            </Link>
           ))}
         </div>
       </section>
