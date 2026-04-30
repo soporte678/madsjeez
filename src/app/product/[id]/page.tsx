@@ -114,8 +114,12 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
     getSellerProducts(product.seller_id, product.id),
   ]);
 
-  const sellerName = (product.seller as any)?.sellerName || (product.seller as any)?.name || "Vendedor";
-  const sellerTotalSales = product.seller?.total_sales || 0;
+  const seller = product.seller as any;
+  const sellerName = seller?.sellerName || seller?.name || "Vendedor";
+  const sellerTotalSales = seller?.total_sales || 0;
+  const sellerRepLevel = seller?.reputation_level || "VENDEDOR NUEVO";
+  const sellerRepColor = seller?.reputation_color || "VERDE";
+  const sellerProductCount = sellerProducts.length;
   const conditionLabel = product.condition === "new" ? "Nuevo" : product.condition === "used" ? "Usado" : "Reacondicionado";
   const salesCount = product.sales || 0;
   const cuotas6 = Math.ceil(product.price / 6);
@@ -301,7 +305,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                 {/* Seller info */}
                 <div className="mb-6 border-b border-gray-200 pb-6">
                   <p className="text-[13px] text-gray-800 mb-1">Vendido por <Link href={`/seller/${product.seller_id}`} className="text-blue-500 font-semibold hover:underline">{sellerName}</Link></p>
-                  <p className="text-[13px] font-bold text-gray-800 mb-1">MadsLíder Gold | +{sellerTotalSales} ventas</p>
+                  <p className="text-[13px] font-bold text-gray-800 mb-1">{sellerRepLevel} | +{sellerTotalSales} ventas</p>
                 </div>
 
                 <div className="flex flex-col gap-4 text-[13px] text-gray-500 mb-6">
@@ -327,19 +331,19 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
               {/* SELLER REPUTATION BOX */}
               <div className="border border-gray-200 rounded-lg p-5">
                 <h3 className="text-[16px] font-semibold text-gray-800 mb-4">Vendido por {sellerName}</h3>
-                <p className="text-[14px] font-semibold text-gray-800 mb-1">+{sellerTotalSales} Productos</p>
+                <p className="text-[14px] font-semibold text-gray-800 mb-1">+{sellerProductCount} Productos</p>
                 <div className="flex items-center gap-2 text-emerald-500 font-bold text-[13px] mb-1">
-                  <Award size={16} fill="currentColor" /> MadsLíder Gold
+                  <Award size={16} fill="currentColor" /> {sellerRepLevel}
                 </div>
                 <p className="text-[12px] text-gray-500 mb-4">¡Uno de los mejores del sitio!</p>
 
                 {/* Thermometer */}
                 <div className="flex h-2 rounded-full overflow-hidden gap-1 mb-4">
-                  <div className="bg-red-200 flex-1"></div>
-                  <div className="bg-orange-200 flex-1"></div>
-                  <div className="bg-yellow-200 flex-1"></div>
-                  <div className="bg-lime-200 flex-1"></div>
-                  <div className="bg-emerald-500 flex-1 h-full shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]"></div>
+                  <div className={`flex-1 ${sellerRepColor === "ROJO" ? "bg-red-500" : "bg-red-200"}`}></div>
+                  <div className={`flex-1 ${sellerRepColor === "NARANJA" ? "bg-orange-500" : "bg-orange-200"}`}></div>
+                  <div className={`flex-1 ${sellerRepColor === "AMARILLO" ? "bg-yellow-500" : "bg-yellow-200"}`}></div>
+                  <div className={`flex-1 ${sellerRepColor === "VERDE" ? "bg-lime-500" : "bg-lime-200"}`}></div>
+                  <div className={`flex-1 ${sellerRepColor === "VERDE_OSCURO" ? "bg-emerald-500 shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]" : "bg-emerald-200"}`}></div>
                 </div>
 
                 <div className="flex justify-between text-center mb-6">
