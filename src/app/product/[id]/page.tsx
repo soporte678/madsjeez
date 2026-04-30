@@ -120,6 +120,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   const sellerRepLevel = seller?.reputation_level || "VENDEDOR NUEVO";
   const sellerRepColor = seller?.reputation_color || "VERDE";
   const sellerProductCount = sellerProducts.length;
+  const isNewSeller = sellerTotalSales === 0;
   const conditionLabel = product.condition === "new" ? "Nuevo" : product.condition === "used" ? "Usado" : "Reacondicionado";
   const salesCount = product.sales || 0;
   const cuotas6 = Math.ceil(product.price / 6);
@@ -333,32 +334,44 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
               <div className="border border-gray-200 rounded-lg p-5">
                 <h3 className="text-[16px] font-semibold text-gray-800 mb-4">Vendido por {sellerName}</h3>
                 <p className="text-[14px] font-semibold text-gray-800 mb-1">+{sellerProductCount} Productos</p>
-                <div className="flex items-center gap-2 text-emerald-500 font-bold text-[13px] mb-1">
+                <div className={`flex items-center gap-2 font-bold text-[13px] mb-1 ${isNewSeller ? "text-gray-400" : "text-emerald-500"}`}>
                   <Award size={16} fill="currentColor" /> {sellerRepLevel}
                 </div>
-                <p className="text-[12px] text-gray-500 mb-4">¡Uno de los mejores del sitio!</p>
+                <p className="text-[12px] text-gray-500 mb-4">{isNewSeller ? "Vendedor nuevo en MADSJEEZ" : "¡Uno de los mejores del sitio!"}</p>
 
                 {/* Thermometer */}
                 <div className="flex h-2 rounded-full overflow-hidden gap-1 mb-4">
-                  <div className={`flex-1 ${sellerRepColor === "ROJO" ? "bg-red-500" : "bg-red-200"}`}></div>
-                  <div className={`flex-1 ${sellerRepColor === "NARANJA" ? "bg-orange-500" : "bg-orange-200"}`}></div>
-                  <div className={`flex-1 ${sellerRepColor === "AMARILLO" ? "bg-yellow-500" : "bg-yellow-200"}`}></div>
-                  <div className={`flex-1 ${sellerRepColor === "VERDE" ? "bg-lime-500" : "bg-lime-200"}`}></div>
-                  <div className={`flex-1 ${sellerRepColor === "VERDE_OSCURO" ? "bg-emerald-500 shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]" : "bg-emerald-200"}`}></div>
+                  {isNewSeller ? (
+                    <>
+                      <div className="flex-1 bg-gray-200"></div>
+                      <div className="flex-1 bg-gray-200"></div>
+                      <div className="flex-1 bg-gray-200"></div>
+                      <div className="flex-1 bg-gray-200"></div>
+                      <div className="flex-1 bg-gray-200"></div>
+                    </>
+                  ) : (
+                    <>
+                      <div className={`flex-1 ${sellerRepColor === "ROJO" ? "bg-red-500" : "bg-red-200"}`}></div>
+                      <div className={`flex-1 ${sellerRepColor === "NARANJA" ? "bg-orange-500" : "bg-orange-200"}`}></div>
+                      <div className={`flex-1 ${sellerRepColor === "AMARILLO" ? "bg-yellow-500" : "bg-yellow-200"}`}></div>
+                      <div className={`flex-1 ${sellerRepColor === "VERDE" ? "bg-lime-500" : "bg-lime-200"}`}></div>
+                      <div className={`flex-1 ${sellerRepColor === "VERDE_OSCURO" ? "bg-emerald-500 shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]" : "bg-emerald-200"}`}></div>
+                    </>
+                  )}
                 </div>
 
                 <div className="flex justify-between text-center mb-6">
                   <div className="flex flex-col items-center flex-1 border-r border-gray-200">
-                    <span className="text-[18px] font-bold text-gray-800">+{sellerTotalSales}</span>
+                    <span className={`text-[18px] font-bold ${isNewSeller ? "text-gray-400" : "text-gray-800"}`}>+{sellerTotalSales}</span>
                     <span className="text-[10px] text-gray-500 leading-tight">Ventas</span>
                   </div>
                   <div className="flex flex-col items-center flex-1 border-r border-gray-200 px-2">
-                    <MessageCircle size={20} className="text-emerald-500 mb-1" />
-                    <span className="text-[10px] text-gray-500 leading-tight">Buena atención</span>
+                    <MessageCircle size={20} className={`mb-1 ${isNewSeller ? "text-gray-300" : "text-emerald-500"}`} />
+                    <span className="text-[10px] text-gray-500 leading-tight">{isNewSeller ? "Calibrando" : "Buena atención"}</span>
                   </div>
                   <div className="flex flex-col items-center flex-1">
-                    <Clock size={20} className="text-emerald-500 mb-1" />
-                    <span className="text-[10px] text-gray-500 leading-tight">Entrega a tiempo</span>
+                    <Clock size={20} className={`mb-1 ${isNewSeller ? "text-gray-300" : "text-emerald-500"}`} />
+                    <span className="text-[10px] text-gray-500 leading-tight">{isNewSeller ? "Calculando" : "Entrega a tiempo"}</span>
                   </div>
                 </div>
 
