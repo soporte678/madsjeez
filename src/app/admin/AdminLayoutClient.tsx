@@ -204,6 +204,13 @@ export function AdminLayoutClient({ children, user: propUser, role: propRole, ad
     .toUpperCase()
     .slice(0, 2)
 
+  // Don't render sidebar on login page
+  const isLoginPage = pathname === "/admin/login"
+  
+  if (isLoginPage) {
+    return <>{children}</>
+  }
+
   return (
     <div className="flex h-screen bg-[#f3f4f6] font-sans text-gray-900 overflow-hidden">
       {/* Desktop Sidebar */}
