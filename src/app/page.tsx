@@ -17,16 +17,45 @@ import {
 } from "lucide-react"
 import { useCartStore } from "@/stores/cartStore"
 import { ProductCarousel } from "@/components/ProductCarousel"
+import { CategoryCarousel } from "@/components/CategoryCarousel"
 import { createClient } from "@/lib/supabase/client"
 
-const landingCategories = [
-  { icon: Car, label: 'Vehículos', slug: 'vehiculos' },
-  { icon: HomeIcon, label: 'Inmuebles', slug: 'inmuebles' },
-  { icon: ShoppingBasket, label: 'Supermercado', slug: 'supermercado' },
-  { icon: Smartphone, label: 'Tecnología', slug: 'tecnologia' },
-  { icon: HomeIcon, label: 'Hogar y Muebles', slug: 'hogar' },
-  { icon: Gamepad2, label: 'Juguetes', slug: 'juguetes' },
-  { icon: Wrench, label: 'Herramientas', slug: 'herramientas' },
+const demoClothing = [
+  { id: 'd1', title: '12 Soquetes Medias Unisex Docena Talle Adultos', price: 16999, installments: 'Mismo precio 6 cuotas de $ 2.833', shipping: 'Llega mañana', image: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=300&q=80' },
+  { id: 'd2', title: 'Remera Algodón Premium Oversize Unisex Lisa', price: 24800, installments: 'Mismo precio 6 cuotas de $ 4.133', shipping: 'Llega mañana', image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=300&q=80' },
+  { id: 'd3', title: 'Zapatillas Urbanas Running Deportivas Unisex', originalPrice: 45000, price: 38250, discount: '15% OFF', shipping: 'Llega mañana', isFlash: true, image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=300&q=80' },
+  { id: 'd4', title: 'Campera Rompeviento Impermeable Capucha Hombre', price: 32990, installments: 'Mismo precio 6 cuotas de $ 5.498', shipping: 'Llega mañana', image: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=300&q=80' },
+  { id: 'd5', title: 'Jean Chupin Elastizado Hombre Premium Calidad', price: 27500, shipping: 'Llega gratis mañana', isFlash: true, image: 'https://images.unsplash.com/photo-1542272454315-4c01d7abdf4a?auto=format&fit=crop&w=300&q=80' },
+  { id: 'd6', title: 'Mochila Urbana Notebook 17 Pulgadas Impermeable', price: 19900, volumePrice: '$ 18.905 llevando 3 o más', exclusive: true, shipping: 'Llega mañana', image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=300&q=80' },
+]
+
+const demoRepurchase = [
+  { id: 'r1', title: 'Papel Higiénico Doble Hoja Premium Pack x30', price: 12990, installments: 'Mismo precio 6 cuotas de $ 2.165', shipping: 'Llega gratis mañana', image: 'https://images.unsplash.com/photo-1584556812952-905ffd0c611a?auto=format&fit=crop&w=300&q=80' },
+  { id: 'r2', title: 'Detergente Concentrado Ropa Pack x3 Litros', price: 8950, volumePrice: '$ 8.500 llevando 5 o más', exclusive: true, shipping: 'Llega mañana', image: 'https://images.unsplash.com/photo-1583947215259-38e31be8751f?auto=format&fit=crop&w=300&q=80' },
+  { id: 'r3', title: 'Café Molido Tostado Premium 1kg Colombia', price: 15985, shipping: 'Llega mañana', image: 'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?auto=format&fit=crop&w=300&q=80' },
+  { id: 'r4', title: 'Yerba Mate Orgánica Premium 1kg Pack x2', price: 10494, shipping: 'Llega mañana', image: 'https://images.unsplash.com/photo-1592663527359-cf6642f54cff?auto=format&fit=crop&w=300&q=80' },
+  { id: 'r5', title: 'Desodorante Antitranspirante Pack x6 Unidades', originalPrice: 19990, price: 18990, discount: '5% OFF', shipping: 'Llega mañana', image: 'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?auto=format&fit=crop&w=300&q=80' },
+]
+
+const categoriesData = [
+  { id: 1, name: 'Autos, Motos y Otros', image: 'https://cdn-icons-png.flaticon.com/512/3204/3204061.png', slug: 'autos-motos' },
+  { id: 2, name: 'Accesorios para Vehículos', image: 'https://cdn-icons-png.flaticon.com/512/3085/3085330.png', slug: 'accesorios-vehiculos' },
+  { id: 3, name: 'Hogar, Muebles y Jardín', image: 'https://cdn-icons-png.flaticon.com/512/2550/2550232.png', slug: 'hogar-muebles' },
+  { id: 4, name: 'Celulares y Teléfonos', image: 'https://cdn-icons-png.flaticon.com/512/3014/3014493.png', slug: 'celulares' },
+  { id: 5, name: 'Ropa y Accesorios', image: 'https://cdn-icons-png.flaticon.com/512/3159/3159614.png', slug: 'ropa-accesorios' },
+  { id: 6, name: 'Computación', image: 'https://cdn-icons-png.flaticon.com/512/3081/3081559.png', slug: 'computacion' },
+  { id: 7, name: 'Electrodomésticos y Aires Ac.', image: 'https://cdn-icons-png.flaticon.com/512/3613/3613243.png', slug: 'electrodomesticos' },
+  { id: 8, name: 'Deportes y Fitness', image: 'https://cdn-icons-png.flaticon.com/512/2964/2964514.png', slug: 'deportes' },
+  { id: 9, name: 'Inmuebles', image: 'https://cdn-icons-png.flaticon.com/512/2550/2550232.png', slug: 'inmuebles' },
+  { id: 10, name: 'Herramientas', image: 'https://cdn-icons-png.flaticon.com/512/2916/2916315.png', slug: 'herramientas' },
+  { id: 11, name: 'Belleza y Cuidado Personal', image: 'https://cdn-icons-png.flaticon.com/512/1005/1005769.png', slug: 'belleza' },
+  { id: 12, name: 'Electrónica, Audio y Video', image: 'https://cdn-icons-png.flaticon.com/512/1252/1252006.png', slug: 'electronica' },
+  { id: 13, name: 'Agro', image: 'https://cdn-icons-png.flaticon.com/512/2965/2965313.png', slug: 'agro' },
+  { id: 14, name: 'Alimentos y Bebidas', image: 'https://cdn-icons-png.flaticon.com/512/3082/3082008.png', slug: 'alimentos' },
+  { id: 15, name: 'Juegos y Juguetes', image: 'https://cdn-icons-png.flaticon.com/512/3082/3082060.png', slug: 'juguetes' },
+  { id: 16, name: 'Mascotas', image: 'https://cdn-icons-png.flaticon.com/512/3047/3047928.png', slug: 'mascotas' },
+  { id: 17, name: 'Construcción', image: 'https://cdn-icons-png.flaticon.com/512/3038/3038089.png', slug: 'construccion' },
+  { id: 18, name: 'Cámaras y Accesorios', image: 'https://cdn-icons-png.flaticon.com/512/3004/3004613.png', slug: 'camaras' },
 ]
 
 // Configuración de letras para el logo cinético
@@ -345,11 +374,48 @@ export default function Home() {
         </div>
       </section>
 
-      {/* PRIMER CARRUSEL - Productos recientes */}
+      {/* 1. CARRUSEL: Relacionado con tus visitas (datos reales) */}
       <section className="max-w-[1184px] mx-auto px-4">
         <ProductCarousel
-          title="Relacionado con tus visitas"
+          title="Relacionado con tus visitas en Hogar, Muebles y Jardín"
           products={products}
+        />
+      </section>
+
+      {/* 2. CARRUSEL: Elegidos para vos (datos reales) */}
+      <section className="max-w-[1184px] mx-auto px-4">
+        <ProductCarousel
+          title="Elegidos para vos en Accesorios para Vehículos"
+          products={recentProducts}
+        />
+      </section>
+
+      {/* 3. CARRUSEL: Pensados para vos en Ropa */}
+      <section className="max-w-[1184px] mx-auto px-4">
+        <ProductCarousel
+          title="Pensados para vos en Ropa y Accesorios"
+          products={demoClothing}
+        />
+      </section>
+
+      {/* 4. CARRUSEL: Vuelven a comprar */}
+      <section className="max-w-[1184px] mx-auto px-4">
+        <ProductCarousel
+          title="Productos que otras personas vuelven a comprar"
+          products={demoRepurchase}
+        />
+      </section>
+
+      {/* 5. CATEGORÍAS (Grilla 3 filas con scroll) */}
+      <section className="max-w-[1184px] mx-auto px-4">
+        <CategoryCarousel categories={categoriesData} />
+      </section>
+
+      {/* 6. CARRUSEL: También puede interesarte */}
+      <section className="max-w-[1184px] mx-auto px-4">
+        <ProductCarousel
+          title="También puede interesarte"
+          products={[...demoClothing].reverse()}
         />
       </section>
 
@@ -376,29 +442,6 @@ export default function Home() {
               <img src="https://images.unsplash.com/photo-1505843490538-5133c6c7d0e1?auto=format&fit=crop&q=80&w=400" alt="Silla" className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" />
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* SEGUNDO CARRUSEL - Elegidos para vos */}
-      <section className="max-w-[1184px] mx-auto px-4">
-        <ProductCarousel
-          title="Elegidos para vos"
-          products={recentProducts}
-        />
-      </section>
-
-      {/* CATEGORÍAS */}
-      <section className="max-w-[1184px] mx-auto px-4 mb-12">
-        <h2 className="text-[22px] font-normal text-[#333333] mb-6 px-2">Categorías populares</h2>
-        <div className="flex flex-wrap gap-4 md:gap-8 justify-center">
-          {landingCategories.map((cat, idx) => (
-            <Link key={idx} href={`/category/${cat.slug}`} className="flex flex-col items-center group cursor-pointer w-24">
-              <div className="w-[80px] h-[80px] bg-white rounded-full shadow-sm flex items-center justify-center mb-3 group-hover:shadow-md group-hover:bg-[#3483fa] transition-all duration-300">
-                <cat.icon className="w-8 h-8 text-[#3483fa] group-hover:text-white transition-colors" strokeWidth={1.5} />
-              </div>
-              <span className="text-[13px] text-[#333] text-center font-normal group-hover:text-[#3483fa] transition-colors">{cat.label}</span>
-            </Link>
-          ))}
         </div>
       </section>
 
