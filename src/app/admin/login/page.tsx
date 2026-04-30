@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
-import { Eye, EyeOff, Lock, Mail, AlertTriangle } from "lucide-react"
+import { Eye, EyeOff, Lock, Mail, AlertTriangle, Shield } from "lucide-react"
 
 export default function AdminLoginPage() {
   const router = useRouter()
@@ -48,7 +48,29 @@ export default function AdminLoginPage() {
       if (adminError || !adminUser) {
         // Sign out and show error
         await supabase.auth.signOut()
-        throw new Error("No tienes permisos para acceder al panel de administración")
+        throw new Error("No tienes permisos para acceder al panel de administracion")
+      }
+
+      // Get IP and user agent for logging
+      try {
+        const ipResponse = await fetch("https://api.ipify.org?format=json")
+        const { ip } = await ipResponse.json()
+        
+        // Send login alert
+        await fetch("/api/admin/login-alert", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            adminUserId: adminUser.id,
+            email: adminUser.email,
+            ip,
+            userAgent: navigator.userAgent,
+            timestamp: new Date().toISOString(),
+          }),
+        })
+      } catch (alertError) {
+        console.error("Failed to send login alert:", alertError)
+        // Don't block login if alert fails
       }
 
       toast.success(`Bienvenido, ${adminUser.first_name || adminUser.email}`)
@@ -78,11 +100,11 @@ export default function AdminLoginPage() {
         {/* Security Notice */}
         <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 mb-6">
           <div className="flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-amber-400 mt-0.5 flex-shrink-0" />
+            <Shield className="w-5 h-5 text-amber-400 mt-0.5 flex-shrink-0" />
             <div>
-              <p className="text-sm text-amber-200 font-medium">Área Restringida</p>
+              <p className="text-sm text-amber-200 font-medium">Acceso Unico - Solo Personal Autorizado</p>
               <p className="text-xs text-amber-300/70 mt-1">
-                Este sistema es exclusivo para personal autorizado. Todas las acciones son registradas.
+                Este sistema es exclusivo para personal autorizado. Las cuentas solo pueden ser creadas por el administrador del sistema. Todas las acciones son registradas.
               </p>
             </div>
           </div>
@@ -159,9 +181,14 @@ export default function AdminLoginPage() {
           </div>
 
           <div className="bg-gray-50 px-8 py-4 border-t border-gray-100">
-            <p className="text-xs text-gray-500 text-center">
-              ¿Problemas para acceder? Contacta al administrador del sistema
-            </p>
+            <div className="text-center space-y-1">
+              <p className="text-xs text-gray-500">
+                Acceso exclusivo. No es posible crear cuentas desde aqui.
+              </p>
+              <p className="text-xs text-gray-400">
+                ¿Problemas para acceder? Contacta al administrador del sistema
+              </p>
+            </div>
           </div>
         </div>
 
