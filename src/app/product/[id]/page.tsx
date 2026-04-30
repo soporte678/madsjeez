@@ -90,6 +90,47 @@ async function getSellerProducts(sellerId: string, currentProductId: string) {
   })) || [];
 }
 
+async function getProductReviews(productId: string) {
+  const supabase = await createClient();
+  const { data: reviews } = await supabase
+    .from("reviews")
+    .select(`
+      id,
+      rating,
+      comment,
+      created_at,
+      reviewer_id
+    `)
+    .eq("product_id", productId)
+    .eq("is_visible", true)
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  return reviews || [];
+}
+
+async function getTopRatedProducts(categoryId: string | null, currentProductId: string) {
+  if (!categoryId) return [];
+
+  const supabase = await createClient();
+  const { data: products } = await supabase
+    .from("products")
+    .select(`
+      *,
+      product_images(url, is_primary)
+    `)
+    .eq("category_id", categoryId)
+    .eq("is_active", true)
+    .neq("id", currentProductId)
+    .order("sales", { ascending: false })
+    .limit(6);
+
+  return products?.map((p: any) => ({
+    ...p,
+    primary_image: p.product_images?.find((img: any) => img.is_primary)?.url || p.product_images?.[0]?.url,
+  })) || [];
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const product = await getProduct(id);
@@ -109,10 +150,20 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   const product = await getProduct(id);
   if (!product) notFound();
 
-  const [relatedProducts, sellerProducts] = await Promise.all([
+  const [relatedProducts, sellerProducts, productReviews, topRatedProducts] = await Promise.all([
     getRelatedProducts(product.category_id, product.id),
     getSellerProducts(product.seller_id, product.id),
+    getProductReviews(product.id),
+    getTopRatedProducts(product.category_id, product.id),
   ]);
+
+  const totalReviews = productReviews.length;
+  const avgRating = totalReviews > 0
+    ? productReviews.reduce((sum: number, r: any) => sum + r.rating, 0) / totalReviews
+    : 0;
+  const ratingCounts = [0, 0, 0, 0, 0];
+  productReviews.forEach((r: any) => { if (r.rating >= 1 && r.rating <= 5) ratingCounts[r.rating - 1]++; });
+  const ratingPercents = ratingCounts.map((c) => totalReviews > 0 ? Math.round((c / totalReviews) * 100) : 0);
 
   const seller = product.seller as any;
   const sellerName = seller?.sellerName || seller?.name || "Vendedor";
@@ -262,6 +313,160 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                 <Link href={`/messages?seller=${product.seller_id}&product=${product.id}`} className="text-blue-500 font-semibold text-[14px] hover:underline">
                   Ver todas las preguntas
                 </Link>
+              </div>
+
+              <div className="w-full h-px bg-gray-200 my-8 hidden md:block"></div>
+
+              {/* OPINIONES Y CALIFICACIONES */}
+              <div className="px-4 lg:px-0 mb-10">
+                <h2 className="text-[24px] font-semibold text-gray-800 mb-6">Opiniones del producto</h2>
+                <div className="bg-white p-6 rounded-lg border border-gray-200 flex flex-col md:flex-row gap-12">
+                  {/* Rating General */}
+                  <div className="flex flex-col w-full md:w-64 shrink-0">
+                    <div className="flex items-end gap-3 mb-3">
+                      <span className="text-[54px] font-semibold leading-none text-blue-900 tracking-tight">
+                        {totalReviews > 0 ? avgRating.toFixed(1) : '—'}
+                      </span>
+                      <div className="flex flex-col mb-1.5">
+                        <div className="flex text-blue-600 mb-1">
+                          {[1, 2, 3, 4, 5].map((s) => {
+                            const filled = avgRating >= s;
+                            const partial = !filled && avgRating > s - 1;
+                            return (
+                              <div key={s} className="relative">
+                                <Star size={16} className="text-blue-200" fill="currentColor" />
+                                {filled && (
+                                  <div className="absolute top-0 left-0 overflow-hidden w-full">
+                                    <Star size={16} className="text-blue-600" fill="currentColor" />
+                                  </div>
+                                )}
+                                {partial && (
+                                  <div className="absolute top-0 left-0 overflow-hidden" style={{ width: `${((avgRating - (s - 1)) * 100)}%` }}>
+                                    <Star size={16} className="text-blue-600" fill="currentColor" />
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <span className="text-[12px] text-gray-500 font-medium">{totalReviews} calificaciones</span>
+                      </div>
+                    </div>
+
+                    {/* Barras de progreso */}
+                    <div className="flex flex-col gap-1.5 mt-2">
+                      {[5, 4, 3, 2, 1].map((s) => (
+                        <div key={s} className="flex items-center gap-3 text-[13px] text-gray-500">
+                          <span className="w-2 text-right">{s}</span>
+                          <Star size={12} fill="currentColor" className="text-gray-400" />
+                          <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                            <div className="h-full bg-blue-500 rounded-full" style={{ width: `${ratingPercents[s - 1]}%` }}></div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Opiniones con comentarios */}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-gray-800 mb-5 text-[15px]">Opiniones destacadas</h3>
+                    {totalReviews === 0 ? (
+                      <p className="text-gray-400 text-[14px]">Este producto aún no tiene opiniones. ¡Sé el primero en opinar!</p>
+                    ) : (
+                      <div className="flex flex-col gap-4 max-h-[300px] overflow-y-auto pr-2" style={{ scrollbarWidth: 'thin' }}>
+                        {productReviews.slice(0, 5).map((review: any) => (
+                          <div key={review.id} className="border-b border-gray-100 pb-4 last:border-b-0">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="flex text-blue-600">
+                                {[1, 2, 3, 4, 5].map((s) => (
+                                  <Star key={s} size={12} fill="currentColor" className={s <= review.rating ? "text-blue-600" : "text-gray-200"} />
+                                ))}
+                              </div>
+                              <span className="text-[11px] text-gray-400">
+                                {new Date(review.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                              </span>
+                            </div>
+                            {review.comment && (
+                              <p className="text-[13px] text-gray-600 leading-relaxed">{review.comment}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="w-full h-px bg-gray-200 my-8 hidden md:block"></div>
+
+              {/* CON 4 ESTRELLAS O MÁS */}
+              {topRatedProducts.length > 0 && (
+                <>
+                  <div className="px-4 lg:px-0">
+                    <div className="bg-white p-6 rounded-lg border border-gray-200 relative group">
+                      <h2 className="text-[22px] font-semibold text-gray-800 mb-6">Con 4 estrellas o más</h2>
+                      <div className="flex gap-4 overflow-x-auto pb-4" style={{ scrollbarWidth: 'none' }}>
+                        {topRatedProducts.map((item: any) => (
+                          <Link key={item.id} href={`/product/${item.id}`} className="min-w-[200px] max-w-[200px] border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer flex flex-col bg-white">
+                            <div className="h-32 mb-4 flex items-center justify-center">
+                              {item.primary_image ? (
+                                <img src={item.primary_image} alt={item.title} className="max-h-full max-w-full object-contain mix-blend-multiply" />
+                              ) : (
+                                <Package className="h-12 w-12 text-gray-300" />
+                              )}
+                            </div>
+                            <h4 className="text-[13px] text-gray-700 leading-snug mb-3 line-clamp-2 min-h-[36px] font-medium">{item.title}</h4>
+                            <div className="mt-auto flex flex-col gap-1">
+                              <span className="text-[18px] font-medium text-gray-800">$ {item.price.toLocaleString("es-AR")}</span>
+                              <span className="text-[12px] text-emerald-500 font-medium">Llega mañana</span>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                      <button className="absolute -right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.15)] flex items-center justify-center text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-gray-50">
+                        <ChevronRight size={24} />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="w-full h-px bg-gray-200 my-8 hidden md:block"></div>
+                </>
+              )}
+
+              {/* FOOTER - CATEGORÍAS DESTACADAS */}
+              <div className="px-4 lg:px-0 mb-10">
+                <div className="bg-white p-8 rounded-lg border border-gray-200">
+                  <h3 className="text-[18px] font-semibold text-gray-800 mb-6">Destacado en {categoryName}</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-6 text-[13px] text-gray-500">
+                    <div className="flex flex-col gap-3">
+                      <h4 className="font-bold text-gray-800 mb-1">Más vendidos</h4>
+                      <Link href={`/category/${categorySlug}?sort=sales`} className="hover:text-blue-600 transition-colors">Los más vendidos de la categoría</Link>
+                      <Link href={`/category/${categorySlug}?sort=price_asc`} className="hover:text-blue-600 transition-colors">Precios más bajos</Link>
+                      <Link href={`/category/${categorySlug}?sort=newest`} className="hover:text-blue-600 transition-colors">Recién llegados</Link>
+                      <Link href={`/category/${categorySlug}`} className="text-blue-500 hover:underline flex items-center gap-1 mt-1 font-medium">Ver todo <ChevronDown size={14}/></Link>
+                    </div>
+                    <div className="flex flex-col gap-3">
+                      <h4 className="font-bold text-gray-800 mb-1">Mejores opiniones</h4>
+                      <Link href={`/category/${categorySlug}?sort=rating`} className="hover:text-blue-600 transition-colors">Mejor calificados</Link>
+                      <Link href={`/category/${categorySlug}?filter=free_shipping`} className="hover:text-blue-600 transition-colors">Con envío gratis</Link>
+                      <Link href={`/category/${categorySlug}?filter=discount`} className="hover:text-blue-600 transition-colors">En oferta</Link>
+                      <Link href={`/category/${categorySlug}`} className="text-blue-500 hover:underline flex items-center gap-1 mt-1 font-medium">Ver todo <ChevronDown size={14}/></Link>
+                    </div>
+                    <div className="flex flex-col gap-3">
+                      <h4 className="font-bold text-gray-800 mb-1">Por precio</h4>
+                      <Link href={`/category/${categorySlug}?price=0-10000`} className="hover:text-blue-600 transition-colors">Hasta $ 10.000</Link>
+                      <Link href={`/category/${categorySlug}?price=10000-50000`} className="hover:text-blue-600 transition-colors">$ 10.000 a $ 50.000</Link>
+                      <Link href={`/category/${categorySlug}?price=50000-`} className="hover:text-blue-600 transition-colors">Más de $ 50.000</Link>
+                      <Link href={`/category/${categorySlug}`} className="text-blue-500 hover:underline flex items-center gap-1 mt-1 font-medium">Ver todo <ChevronDown size={14}/></Link>
+                    </div>
+                    <div className="flex flex-col gap-3">
+                      <h4 className="font-bold text-gray-800 mb-1">Marcas populares</h4>
+                      <Link href={`/category/${categorySlug}?brand=premium`} className="hover:text-blue-600 transition-colors">Marcas Premium</Link>
+                      <Link href={`/category/${categorySlug}?condition=new`} className="hover:text-blue-600 transition-colors">Solo nuevos</Link>
+                      <Link href={`/category/${categorySlug}?condition=used`} className="hover:text-blue-600 transition-colors">Usados y reacondicionados</Link>
+                      <Link href={`/category/${categorySlug}`} className="text-blue-500 hover:underline flex items-center gap-1 mt-1 font-medium">Ver todo <ChevronDown size={14}/></Link>
+                    </div>
+                  </div>
+                </div>
               </div>
 
             </div>
