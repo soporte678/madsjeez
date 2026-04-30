@@ -9,7 +9,7 @@ import {
   Search, Bell, Heart, ShoppingCart, Menu, 
   Laptop, Home as HomeIcon, Armchair, Dumbbell, Shirt, 
   Gamepad2, Sparkles, CarFront, ChevronRight,
-  CheckCircle2, Star, Truck, ChevronLeft, Zap, 
+  CheckCircle2, Check, Star, Truck, ChevronLeft, Zap, 
   ShieldCheck, TrendingUp, Timer, MapPin, 
   CreditCard, Package, Shield, HelpCircle,
   Navigation, Box, Clock, ChevronDown,
@@ -403,53 +403,78 @@ export default function Home() {
       </section>
 
       {/* PLANES DE VENDEDOR */}
-      <section className="bg-slate-950 py-28 relative overflow-hidden">
-        <div className="absolute inset-0 bg-pattern opacity-[0.05]"></div>
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-full bg-blue-600/10 blur-[150px] rounded-full pointer-events-none"></div>
-
-        <div className="max-w-7xl mx-auto px-4 relative z-10 text-center">
-          <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter font-montserrat uppercase mb-6">
-            ¿Listo para <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-blue-600">Escalar?</span>
+      <section className="bg-[#070b19] py-20 px-4">
+        <div className="text-center max-w-2xl mx-auto mb-16">
+          <h2 className="text-4xl md:text-5xl font-black text-white mb-4 tracking-tight">
+            ¿LISTO PARA <span className="text-[#3483fa]">ESCALAR?</span>
           </h2>
-          <p className="text-xl text-white/50 font-medium max-w-2xl mx-auto mb-20 leading-relaxed">
+          <p className="text-gray-400 text-sm md:text-base font-light">
             Únete a la red Commerce Group más avanzada. Herramientas de grado empresarial para marcas que no conocen fronteras.
           </p>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {[
-              { name: "Plata", price: "$9.999", comm: "12% Comisión", icon: Box },
-              { name: "Gold", price: "$19.999", comm: "8% Comisión", featured: true, icon: Zap },
-              { name: "Platinum", price: "$49.999", comm: "5% Comisión", icon: Sparkles }
-            ].map((plan) => (
-              <Link 
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-[1100px] mx-auto items-center">
+          {[
+            {
+              name: "PLATA", price: "9.999", comm: "12%", icon: Box, featured: false,
+              benefits: ['Exposición estándar en búsquedas', 'Hasta 100 publicaciones activas', 'Soporte vía correo electrónico', 'Panel de métricas básicas', 'Acceso a MadsEnvíos']
+            },
+            {
+              name: "GOLD", price: "19.999", comm: "8%", icon: Zap, featured: true,
+              benefits: ['Exposición alta en resultados', 'Publicaciones ilimitadas', 'Soporte prioritario por WhatsApp', 'Panel de métricas avanzado', 'Descuentos en costos de envío']
+            },
+            {
+              name: "PLATINUM", price: "49.999", comm: "5%", icon: Sparkles, featured: false,
+              benefits: ['Exposición máxima (Top Resultados)', 'Publicidad en Banners (Home y Categorías)', 'Ejecutivo de cuenta dedicado', 'Comisión más baja garantizada', 'Retiro de dinero inmediato']
+            }
+          ].map((plan) => (
+            <div
+              key={plan.name}
+              className={`relative flex flex-col rounded-3xl p-8 transition-all duration-300 ${
+                plan.featured
+                  ? 'bg-[#121827] border border-yellow-500/50 shadow-[0_0_30px_rgba(234,179,8,0.15)] md:-mt-8 md:mb-8'
+                  : 'bg-[#121827] border border-gray-800 hover:border-gray-700'
+              }`}
+            >
+              {plan.featured && (
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-1 bg-yellow-500 rounded-b-full shadow-[0_0_20px_rgba(234,179,8,0.6)]"></div>
+              )}
+
+              <div className="flex flex-col items-center text-center mb-8 border-b border-gray-800/60 pb-8">
+                <plan.icon className={`w-8 h-8 mb-4 ${plan.featured ? 'text-yellow-400' : plan.name === 'PLATINUM' ? 'text-blue-300' : 'text-gray-400'}`} />
+                <h3 className={`text-xl font-black mb-2 ${plan.featured ? 'text-yellow-400' : 'text-white'}`}>{plan.name}</h3>
+                <div className="flex items-baseline justify-center gap-1 mb-4">
+                  <span className="text-5xl font-black text-white">${plan.price}</span>
+                  <span className="text-gray-500 text-sm">/mes</span>
+                </div>
+                <div className="bg-[#1f2937] text-gray-300 text-xs font-bold py-1.5 px-4 rounded-full">
+                  {plan.comm} COMISIÓN
+                </div>
+              </div>
+
+              <ul className="flex flex-col gap-4 mb-8 flex-grow">
+                {plan.benefits.map((b: string, i: number) => (
+                  <li key={i} className="flex items-start gap-3">
+                    <div className={`mt-0.5 rounded-full p-0.5 ${plan.featured ? 'bg-yellow-500/20 text-yellow-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                      <Check size={14} strokeWidth={3} />
+                    </div>
+                    <span className="text-sm text-gray-300 leading-tight">{b}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <Link
                 href="/subscriptions"
-                key={plan.name} 
-                className={`group relative p-10 pb-28 rounded-[3rem] border transition-all duration-700 hover:-translate-y-4 ${
-                  plan.featured 
-                    ? "bg-gradient-to-b from-slate-800 to-slate-900 border-yellow-500/30 shadow-[0_0_60px_-15px_rgba(234,179,8,0.3)] md:scale-110 z-20" 
-                    : "bg-white/5 border-white/10 hover:bg-white/10"
+                className={`w-full py-3.5 rounded-xl font-bold text-sm tracking-wide transition-all text-center ${
+                  plan.featured
+                    ? 'bg-yellow-400 hover:bg-yellow-500 text-gray-900 shadow-[0_0_15px_rgba(234,179,8,0.3)]'
+                    : 'bg-white hover:bg-gray-100 text-gray-900'
                 }`}
               >
-                {plan.featured && <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-1 bg-yellow-400 rounded-full blur-sm opacity-50"></div>}
-                <plan.icon size={48} className={plan.featured ? "text-yellow-400 mx-auto mb-8" : "text-white/20 mx-auto mb-8"} strokeWidth={1} />
-                <h3 className={`text-2xl font-black font-montserrat uppercase mb-2 ${plan.featured ? "text-yellow-400" : "text-white"}`}>{plan.name}</h3>
-                <div className="flex items-baseline justify-center gap-1 mb-8">
-                  <span className="text-6xl font-black text-white tracking-tighter">{plan.price}</span>
-                  <span className="text-white/40 font-bold">/mes</span>
-                </div>
-                <div className={`inline-block px-4 py-2 rounded-2xl font-black text-[11px] uppercase tracking-widest mb-10 ${
-                  plan.featured ? "bg-yellow-400 text-slate-900" : "bg-white/10 text-white"
-                }`}>
-                  {plan.comm}
-                </div>
-                <div className={`absolute bottom-10 left-10 right-10 py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-[13px] text-center transition-all ${
-                  plan.featured ? "bg-yellow-400 text-slate-900 shadow-2xl hover:bg-white" : "bg-white text-slate-900 hover:bg-blue-600 hover:text-white"
-                }`}>
-                  Seleccionar
-                </div>
+                SELECCIONAR
               </Link>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       </section>
 
