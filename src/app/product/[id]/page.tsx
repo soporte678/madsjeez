@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Header } from "@/components/Header";
+import Navbar from "@/components/Navbar";
 import {
   ChevronRight,
   Heart,
@@ -134,7 +134,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
+      <Navbar />
 
       <div className="min-h-screen bg-[#ededed] font-sans text-[#333] pb-20">
         {/* Top Banner */}
@@ -161,7 +161,8 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
               )}
               <span className="text-gray-500 font-medium truncate max-w-[200px]">{product.title}</span>
             </div>
-            <div className="flex items-center gap-3 text-blue-600">
+            <div className="flex items-center gap-4 text-[13px] text-blue-600">
+              <Link href={`/seller/${product.seller_id}`} className="hover:underline">Vender uno igual</Link>
               <button className="hover:underline flex items-center gap-1"><Share2 size={14}/> Compartir</button>
             </div>
           </div>
@@ -179,8 +180,8 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
 
                 {/* Product Info */}
                 <div className="flex-1 flex flex-col pt-2 md:pt-0">
-                  <span className="text-[13px] text-gray-500 mb-1">{conditionLabel} | +{salesCount} vendidos</span>
-                  <h1 className="text-[22px] font-bold text-gray-800 leading-tight mb-2 pr-8">{product.title}</h1>
+                  <span className="text-[13px] text-gray-500 mb-1">{conditionLabel}  |  +{salesCount} vendidos</span>
+                  <h1 className="text-[22px] font-normal text-gray-800 leading-tight mb-2 pr-8">{product.title}</h1>
 
                   <div className="flex flex-col mb-4">
                     {product.original_price && product.original_price > product.price && (
@@ -213,7 +214,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
               {relatedProducts.length > 0 && (
                 <>
                   <div className="px-4 lg:px-0">
-                    <h2 className="text-[24px] font-semibold text-gray-800 mb-6">Quienes vieron este producto también compraron</h2>
+                    <h2 className="text-[24px] font-semibold text-gray-800 mb-6">Productos relacionados</h2>
                     <div className="relative group">
                       <div className="flex gap-4 overflow-x-auto pb-4">
                         {relatedProducts.map((item: any) => (
@@ -272,6 +273,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                   {product.free_shipping ? (
                     <>
                       <span className="text-emerald-500 font-semibold text-[15px] flex items-center gap-1"><Truck size={18}/> Llega gratis mañana</span>
+                      <span className="text-emerald-500 text-[13px] mt-0.5">Llega mañana entre las 10 y 12 hs.</span>
                       <Link href="#" className="text-blue-500 text-[13px] hover:underline mt-1">Más detalles y formas de entrega</Link>
                     </>
                   ) : (
@@ -284,28 +286,27 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
 
                 <div className="mb-6">
                   <span className="font-semibold text-gray-800 text-[15px] block mb-2">Stock disponible</span>
-                  <div className="flex items-center gap-2">
-                    <button className="flex items-center justify-between w-full max-w-[200px] py-2 px-3 border border-gray-300 rounded bg-gray-50 hover:bg-gray-100 transition-colors">
-                      <span className="text-[14px] font-semibold text-gray-800">Cantidad: 1 unidad</span>
-                      <ChevronDown size={16} className="text-gray-500" />
-                    </button>
-                    <span className="text-[13px] text-gray-400 font-medium">(+{product.stock} disponibles)</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-[14px] text-gray-800">Cantidad: <strong>1 unidad</strong></span>
+                    <ChevronDown size={14} className="text-blue-500" />
+                    <span className="text-[13px] text-gray-400">(+{product.stock} disponibles)</span>
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-2 mb-6">
-                  <Link href={`/checkout?product=${product.id}`} className="w-full bg-blue-600 text-white font-bold py-3.5 rounded-lg hover:bg-blue-700 transition-colors shadow-sm text-center">
+                  <Link href={`/checkout?product=${product.id}`} className="w-full bg-[#3483fa] text-white font-semibold py-3.5 rounded-md hover:bg-[#2968c8] transition-colors text-center text-[16px]">
                     Comprar ahora
                   </Link>
-                  <button className="w-full bg-blue-50 text-blue-600 font-bold py-3.5 rounded-lg hover:bg-blue-100 transition-colors">
+                  <button className="w-full bg-[#d7e7ff] text-[#3483fa] font-semibold py-3.5 rounded-md hover:bg-[#c5dcfa] transition-colors text-[16px]">
                     Agregar al carrito
                   </button>
                 </div>
 
                 {/* Seller info */}
                 <div className="mb-6 border-b border-gray-200 pb-6">
-                  <p className="text-[13px] text-gray-800 mb-1">Vendido por <Link href={`/seller/${product.seller_id}`} className="text-blue-500 font-semibold hover:underline">{sellerName}</Link></p>
-                  <p className="text-[13px] font-bold text-gray-800 mb-1">{sellerRepLevel} | +{sellerTotalSales} ventas</p>
+                  <p className="text-[13px] text-gray-800 mb-0.5">Vendido por <Link href={`/seller/${product.seller_id}`} className="text-blue-500 font-semibold hover:underline">{sellerName}</Link></p>
+                  <p className="text-[13px] text-gray-800 mb-0.5">{sellerRepLevel} | +{sellerTotalSales} ventas</p>
+                  <p className="text-[12px] text-gray-400">Hace Factura A</p>
                 </div>
 
                 <div className="flex flex-col gap-4 text-[13px] text-gray-500 mb-6">
@@ -323,7 +324,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                   </div>
                 </div>
 
-                <button className="w-full py-2 flex items-center justify-center gap-2 text-blue-500 font-semibold text-[14px] hover:bg-blue-50 rounded-lg transition-colors">
+                <button className="w-full py-2 flex items-center justify-center gap-2 text-[#3483fa] font-semibold text-[14px] hover:bg-blue-50 rounded-md transition-colors">
                   <Heart size={16} /> Agregar a una lista
                 </button>
               </div>
