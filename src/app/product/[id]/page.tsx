@@ -226,12 +226,12 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
             <div className="flex-[2] flex flex-col min-w-0">
 
               {/* Gallery + Title Section */}
-              <div className="flex flex-col md:flex-row gap-6 p-4 lg:p-0">
+              <div className="flex flex-col md:flex-row gap-6 p-4 lg:p-0 overflow-hidden">
                 {/* Image Gallery - Client Component */}
                 <ProductDetailClient images={images} title={product.title} />
 
                 {/* Product Info */}
-                <div className="flex-1 flex flex-col pt-2 md:pt-0">
+                <div className="flex-1 min-w-0 flex flex-col pt-2 md:pt-0 relative z-10">
                   <span className="text-[13px] text-gray-500 mb-1">{conditionLabel}  |  +{salesCount} vendidos</span>
                   <h1 className="text-[22px] font-normal text-gray-800 leading-tight mb-2 pr-8">{product.title}</h1>
 
