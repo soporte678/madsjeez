@@ -5,8 +5,8 @@ let _supabase: ReturnType<typeof createClient> | null = null
 export function getSupabaseClient() {
   if (_supabase) return _supabase
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://doweovsukuskflgnxhhn.supabase.co"
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "sb_publishable_DmXmnt4V6A3tpwCq73ZIuA_a0dtWb0h"
 
   if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error(
