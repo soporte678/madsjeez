@@ -123,18 +123,18 @@ const menuGroups: MenuGroup[] = [
 
 interface AdminLayoutClientProps {
   children: React.ReactNode
-  user: {
+  user?: {
     id: string
     email?: string
     user_metadata?: { name?: string; full_name?: string }
   }
-  role: {
+  role?: {
     id: string
     name: string
     level: number
     permissions: string[]
   } | null
-  adminUser: {
+  adminUser?: {
     id: string
     first_name: string
     last_name: string
@@ -142,11 +142,16 @@ interface AdminLayoutClientProps {
   }
 }
 
-export function AdminLayoutClient({ children, user, role, adminUser }: AdminLayoutClientProps) {
+export function AdminLayoutClient({ children, user: propUser, role: propRole, adminUser: propAdminUser }: AdminLayoutClientProps) {
   const router = useRouter()
   const pathname = usePathname()
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  
+  // Use props or default values
+  const user = propUser || { id: "", email: "", user_metadata: {} }
+  const role = propRole || null
+  const adminUser = propAdminUser || { id: "", first_name: "", last_name: "" }
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(
     menuGroups.reduce((acc, group) => ({ ...acc, [group.title]: true }), {})
   )
@@ -183,14 +188,14 @@ export function AdminLayoutClient({ children, user, role, adminUser }: AdminLayo
   }, [])
 
   const hasPermission = (permission: string) => {
-    if (!role) return false
-    if (role.level >= 5) return true // SuperAdmin
-    return role.permissions?.includes(permission) || false
+    if (!propRole) return false
+    if (propRole.level >= 5) return true // SuperAdmin
+    return propRole.permissions?.includes(permission) || false
   }
 
-  const displayName = adminUser.first_name && adminUser.last_name 
-    ? `${adminUser.first_name} ${adminUser.last_name}`
-    : user.user_metadata?.name || user.user_metadata?.full_name || user.email?.split("@")[0] || "Admin"
+  const displayName = propAdminUser?.first_name && propAdminUser?.last_name 
+    ? `${propAdminUser.first_name} ${propAdminUser.last_name}`
+    : propUser?.user_metadata?.name || propUser?.user_metadata?.full_name || propUser?.email?.split("@")[0] || "Admin"
 
   const initials = displayName
     .split(" ")
@@ -227,8 +232,8 @@ export function AdminLayoutClient({ children, user, role, adminUser }: AdminLayo
         {/* Profile */}
         <div className={`p-4 border-b border-slate-800 bg-slate-950 shrink-0 flex items-center ${!isSidebarOpen && "justify-center"}`}>
           <div className="w-10 h-10 rounded bg-blue-600 text-white flex items-center justify-center font-bold mr-3 shadow-lg shrink-0">
-            {adminUser.avatar_url ? (
-              <img src={adminUser.avatar_url} alt="" className="w-full h-full rounded object-cover" />
+            {propAdminUser?.avatar_url ? (
+              <img src={propAdminUser.avatar_url} alt="" className="w-full h-full rounded object-cover" />
             ) : (
               initials
             )}
@@ -237,7 +242,7 @@ export function AdminLayoutClient({ children, user, role, adminUser }: AdminLayo
             <div className="overflow-hidden">
               <p className="text-sm font-bold text-white truncate">{displayName}</p>
               <p className="text-[10px] text-blue-400 font-bold uppercase tracking-wider">
-                {role?.name || "Admin"} Nivel {role?.level || 1}
+                {propRole?.name || "Admin"} Nivel {propRole?.level || 1}
               </p>
             </div>
           )}
