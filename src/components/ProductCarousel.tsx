@@ -78,11 +78,13 @@ export function ProductCarousel({ title, products, linkText }: ProductCarouselPr
               className="flex-none w-[224px] snap-start p-4 group/card cursor-pointer transition-all"
             >
               <div className="bg-white group-hover/card:shadow-[0_7px_16px_0_rgba(0,0,0,0.1)] transition-shadow duration-300 rounded pb-4 h-full flex flex-col relative">
-                <div className="h-[224px] w-full flex items-center justify-center mb-4 border-b border-gray-100 group-hover/card:border-transparent transition-colors overflow-hidden">
+                <div className="h-[200px] w-full mb-4 border-b border-gray-100 group-hover/card:border-transparent transition-colors overflow-hidden bg-white">
                   {product.image ? (
-                    <img src={product.image} alt={product.title} className="w-[180px] h-[180px] object-contain mix-blend-multiply flex-shrink-0" />
+                    <img src={product.image} alt={product.title} className="w-full h-full object-cover" />
                   ) : (
-                    <Package className="h-16 w-16 text-gray-300" />
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Package className="h-16 w-16 text-gray-300" />
+                    </div>
                   )}
                 </div>
                 <div className="px-4 flex flex-col flex-grow">
