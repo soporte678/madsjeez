@@ -45,7 +45,8 @@ import {
   UserCheck,
   LogOut,
   Menu,
-  X
+  X,
+  FlaskConical
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
@@ -104,6 +105,7 @@ const menuGroups: MenuGroup[] = [
       { id: "mensajes", label: "Preguntas y Mensajes", icon: MessageCircle, href: "/admin/mensajes" },
       { id: "consultas", label: "Consultas Generales", icon: Inbox, href: "/admin/consultas" },
       { id: "whatsapp", label: "WhatsApp Business", icon: Smartphone, href: "/admin/whatsapp" },
+      { id: "whatsapp-test", label: "Test WhatsApp API", icon: FlaskConical, href: "/admin/whatsapp-test" },
     ],
   },
   {
