@@ -37,6 +37,7 @@ import {
   ImageOff,
   MessageCircle,
   Megaphone,
+  Smartphone,
   PowerOff,
   ChevronDown,
   ChevronRight,
@@ -102,6 +103,7 @@ const menuGroups: MenuGroup[] = [
     items: [
       { id: "mensajes", label: "Preguntas y Mensajes", icon: MessageCircle, href: "/admin/mensajes" },
       { id: "consultas", label: "Consultas Generales", icon: Inbox, href: "/admin/consultas" },
+      { id: "whatsapp", label: "WhatsApp Business", icon: Smartphone, href: "/admin/whatsapp" },
     ],
   },
   {
