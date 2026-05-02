@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Outfit, Montserrat } from "next/font/google"
 import "./globals.css"
 import { Providers } from "@/components/providers"
+import { WhatsAppFloatingButton } from "@/components/WhatsAppFloatingButton"
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -86,7 +87,10 @@ export default function RootLayout({
         `}</style>
       </head>
       <body className="min-h-full flex flex-col font-outfit">
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+          <WhatsAppFloatingButton />
+        </Providers>
       </body>
     </html>
   )

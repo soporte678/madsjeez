@@ -26,7 +26,7 @@ export class WhatsAppClient {
 
   // Enviar mensaje de template
   async sendTemplateMessage(params: SendMessageParams) {
-    const { to, templateName, languageCode = "es_AR", parameters = [] } = params
+    const { to, templateName, languageCode = "en_US", parameters = [] } = params
 
     // Limpiar número (quitar + y espacios)
     const cleanNumber = to.replace(/\+/g, "").replace(/\s/g, "")

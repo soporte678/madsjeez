@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
@@ -15,17 +15,43 @@ export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
+  // Clear any stale sessions on mount
+  React.useEffect(() => {
+    const clearStaleSession = async () => {
+      const supabase = createClient()
+      // Check if there's a broken session and clear it
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        // If there's a session but we're on the login page, clear it
+        await supabase.auth.signOut()
+      }
+    }
+    clearStaleSession()
+  }, [])
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError("")
+
+    // Validate inputs before sending to Supabase
+    if (!email || !email.trim()) {
+      setError("Ingresa tu correo electrónico")
+      setLoading(false)
+      return
+    }
+    if (!password || !password.trim()) {
+      setError("Ingresa tu contraseña")
+      setLoading(false)
+      return
+    }
 
     const supabase = createClient()
 
     try {
       // Sign in with email/password
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password,
       })
 
