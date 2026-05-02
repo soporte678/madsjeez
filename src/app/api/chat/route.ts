@@ -214,8 +214,9 @@ export async function POST(req: NextRequest) {
     console.error("Chat API error:", error)
     console.error("Error details:", error?.message, error?.stack)
     // Return a helpful fallback so the bot doesn't appear broken
+    // Return status 200 so frontend shows the message instead of error
     return NextResponse.json({
       message: "Disculpá, estoy teniendo dificultades técnicas en este momento. Podés probá de nuevo en unos segundos, o contactarnos por WhatsApp +54 11 2181-6064.",
-    })
+    }, { status: 200 })
   }
 }
