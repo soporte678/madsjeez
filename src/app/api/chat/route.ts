@@ -157,14 +157,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Messages array required" }, { status: 400 })
     }
 
+    const lastMessage = messages[messages.length - 1]
     const apiKey = process.env.GEMINI_API_KEY
     if (!apiKey) {
-      console.error("GEMINI_API_KEY not configured")
-      return NextResponse.json({ error: "GEMINI_API_KEY not configured" }, { status: 500 })
+      console.error("GEMINI_API_KEY not configured - using fallback responses")
+      // Return a helpful static response based on the user's query
+      const lower = lastMessage.content.toLowerCase()
+      let fallbackResponse = ""
+      
+      if (lower.includes("carburador") || lower.includes("bujía") || lower.includes("repuesto")) {
+        fallbackResponse = "Para buscar carburadores, bujías y repuestos, te recomiendo usar el buscador en /search. Tenemos una gran variedad de repuestos para desmalezadoras y motosierras. ¿Podés ser más específico sobre el equipo que tenés?"
+      } else if (lower.includes("necesito") || lower.includes("busco") || lower.includes("comprar")) {
+        fallbackResponse = "¡Claro! Podés buscar productos en /search. Tenemos herramientas, maquinaria, ferretería y más. ¿Qué tipo de producto estás buscando?"
+      } else if (lower.includes("envío") || lower.includes("envios") || lower.includes("entrega")) {
+        fallbackResponse = "Hacemos envíos a todo el país con Andreani, Correo Argentino y OCA. También tenés opción de retiro en sucursal. El envío es gratis en compras mayores a $15.000."
+      } else if (lower.includes("vender") || lower.includes("vendedor") || lower.includes("publicar")) {
+        fallbackResponse = "Para vender en MadsJeez, necesitás registrarte como vendedor. Tenemos planes desde Gratis (10 productos) hasta Enterprise (ilimitado). La comisión es del 10% por venta. ¿Te interesa registrarte?"
+      } else if (lower.includes("pago") || lower.includes("pagar") || lower.includes("mercadopago")) {
+        fallbackResponse = "Aceptamos pagos con MercadoPago (tarjeta de crédito/débito, transferencia, efectivo en puntos de pago). También aceptamos transferencia bancaria directa."
+      } else {
+        fallbackResponse = "¡Hola! Soy el asistente de MadsJeez. ¿En qué puedo ayudarte? Podés buscar productos en /search, ver categorías, o contactarnos por WhatsApp +54 11 2181-6064."
+      }
+      
+      return NextResponse.json({ message: fallbackResponse })
     }
 
     // Get real-time context from the marketplace database
-    const lastMessage = messages[messages.length - 1]
     console.log("Chat request - last message:", lastMessage.content)
     
     let liveContext = ""
