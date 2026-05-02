@@ -92,6 +92,9 @@ export default function PublicarFlow({ onClose, onPublished, editProduct }: Prop
   const [uploadingImages, setUploadingImages] = useState(false)
   const [dragOver, setDragOver] = useState(false)
   const [videoError, setVideoError] = useState("")
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiImageAnalysis, setAiImageAnalysis] = useState<any>(null)
+  const [aiTitleAlts, setAiTitleAlts] = useState<string[]>([])
   const mainRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
@@ -201,6 +204,61 @@ export default function PublicarFlow({ onClose, onPublished, editProduct }: Prop
     const [moved] = imgs.splice(from, 1)
     imgs.splice(to, 0, moved)
     upd({ images: imgs })
+  }
+
+  // ── AI: Generate listing from images ──
+  const aiGenerateListing = async () => {
+    if (data.images.length === 0) return
+    setAiLoading(true)
+    setAiImageAnalysis(null)
+    try {
+      const res = await fetch("/api/ai/enhance-listing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "generate_listing", images: data.images.slice(0, 3) }),
+      })
+      const result = await res.json()
+      if (result.title) {
+        upd({ title: result.title, description: result.description || data.description })
+        setAiImageAnalysis(result)
+        if (result.condition_suggestion) upd({ condition: result.condition_suggestion })
+      }
+    } catch (e) { console.error("AI error:", e) }
+    setAiLoading(false)
+  }
+
+  // ── AI: Improve description ──
+  const aiImproveDescription = async () => {
+    if (!data.description && !data.title) return
+    setAiLoading(true)
+    try {
+      const res = await fetch("/api/ai/enhance-listing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "improve_description", title: data.title, description: data.description, category: data.categoryName }),
+      })
+      const result = await res.json()
+      if (result.description) upd({ description: result.description })
+    } catch (e) { console.error("AI error:", e) }
+    setAiLoading(false)
+  }
+
+  // ── AI: Generate title alternatives ──
+  const aiGenerateTitle = async () => {
+    if (!data.description && data.images.length === 0) return
+    setAiLoading(true)
+    setAiTitleAlts([])
+    try {
+      const res = await fetch("/api/ai/enhance-listing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "generate_title", description: data.description, category: data.categoryName }),
+      })
+      const result = await res.json()
+      if (result.title) upd({ title: result.title })
+      if (result.alternatives) setAiTitleAlts(result.alternatives)
+    } catch (e) { console.error("AI error:", e) }
+    setAiLoading(false)
   }
 
   const publish = async () => {
@@ -477,6 +535,32 @@ export default function PublicarFlow({ onClose, onPublished, editProduct }: Prop
                   <span className="text-[12px] text-slate-400">Sé específico: marca, modelo, color, talle</span>
                   <span className={`text-[12px] ${data.title.length > 55 ? "text-orange-500" : "text-slate-400"}`}>{data.title.length} / 60</span>
                 </div>
+
+                {/* AI Title Generator */}
+                <button
+                  onClick={aiGenerateTitle}
+                  disabled={aiLoading || (!data.description && data.images.length === 0)}
+                  className="mt-4 w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white py-2.5 rounded-lg font-medium text-[13px] hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 transition-all"
+                >
+                  {aiLoading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                  {aiLoading ? "Generando..." : "✨ Generar título con IA"}
+                </button>
+
+                {/* AI Title Alternatives */}
+                {aiTitleAlts.length > 0 && (
+                  <div className="mt-3 space-y-1.5">
+                    <p className="text-[11px] text-purple-600 font-medium">Alternativas sugeridas:</p>
+                    {aiTitleAlts.map((alt, i) => (
+                      <button
+                        key={i}
+                        onClick={() => upd({ title: alt })}
+                        className="w-full text-left text-[13px] text-slate-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-md px-3 py-2 transition-colors"
+                      >
+                        {alt}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end gap-4 p-6 border-t border-slate-100 bg-slate-50/30">
@@ -614,6 +698,84 @@ export default function PublicarFlow({ onClose, onPublished, editProduct }: Prop
                 {data.images.length === 0 && !uploadingImages && (
                   <p className="text-sm text-slate-400 text-center py-2">Todavía no agregaste fotos.</p>
                 )}
+
+                {/* AI Generate from Images */}
+                {data.images.length > 0 && (
+                  <div className="mt-5 border-t border-slate-100 pt-5">
+                    <button
+                      onClick={aiGenerateListing}
+                      disabled={aiLoading}
+                      className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-lg font-medium text-[14px] hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 transition-all shadow-sm"
+                    >
+                      {aiLoading ? (
+                        <Loader2 size={18} className="animate-spin" />
+                      ) : (
+                        <Sparkles size={18} />
+                      )}
+                      {aiLoading ? "Analizando imágenes con IA..." : "✨ Generar publicación con IA desde las fotos"}
+                    </button>
+                    <p className="text-[11px] text-slate-400 text-center mt-2">La IA analizará tus fotos y generará título, descripción y sugerencias automáticamente</p>
+
+                    {/* AI Analysis Results */}
+                    {aiImageAnalysis && (
+                      <div className="mt-4 space-y-3">
+                        {/* Generated Title */}
+                        {aiImageAnalysis.title && (
+                          <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                            <p className="text-[11px] text-purple-600 font-medium mb-1">Título generado:</p>
+                            <p className="text-[14px] text-purple-900 font-medium">{aiImageAnalysis.title}</p>
+                          </div>
+                        )}
+
+                        {/* Category Suggestion */}
+                        {aiImageAnalysis.category_suggestion && (
+                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <p className="text-[11px] text-blue-600 font-medium mb-1">Categoría sugerida:</p>
+                            <p className="text-[14px] text-blue-900">{aiImageAnalysis.category_suggestion}</p>
+                          </div>
+                        )}
+
+                        {/* Price Range */}
+                        {aiImageAnalysis.price_range && (
+                          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                            <p className="text-[11px] text-green-600 font-medium mb-1">Rango de precio estimado:</p>
+                            <p className="text-[14px] text-green-900">
+                              ${aiImageAnalysis.price_range.min?.toLocaleString()} - ${aiImageAnalysis.price_range.max?.toLocaleString()} ARS
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Image Quality */}
+                        {aiImageAnalysis.image_quality && aiImageAnalysis.image_quality.length > 0 && (
+                          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                            <p className="text-[11px] text-amber-600 font-medium mb-2">Análisis de calidad de fotos:</p>
+                            {aiImageAnalysis.image_quality.map((iq: any, idx: number) => (
+                              <div key={idx} className="flex items-center gap-2 text-[12px] mb-1">
+                                <span className={`font-bold ${iq.score >= 70 ? "text-green-600" : iq.score >= 40 ? "text-amber-600" : "text-red-600"}`}>
+                                  Foto {iq.index + 1}: {iq.score}/100
+                                </span>
+                                {iq.issues?.length > 0 && (
+                                  <span className="text-amber-700">— {iq.issues.join(", ")}</span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* SEO Keywords */}
+                        {aiImageAnalysis.seo_keywords && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {aiImageAnalysis.seo_keywords.map((kw: string) => (
+                              <span key={kw} className="bg-slate-100 text-slate-600 text-[11px] px-2 py-0.5 rounded-full">
+                                {kw}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -695,6 +857,17 @@ export default function PublicarFlow({ onClose, onPublished, editProduct }: Prop
                   className="w-full border border-slate-300 rounded-md px-4 py-3 text-[14px] text-slate-800 outline-none focus:border-[#3483fa] resize-none"
                 />
                 <p className="text-[12px] text-slate-400 mt-2">{data.description.length} caracteres</p>
+
+                {/* AI Improve Description */}
+                <button
+                  onClick={aiImproveDescription}
+                  disabled={aiLoading || (!data.description && !data.title)}
+                  className="mt-4 w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white py-2.5 rounded-lg font-medium text-[13px] hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 transition-all"
+                >
+                  {aiLoading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                  {aiLoading ? "Mejorando..." : "✨ Mejorar descripción con IA"}
+                </button>
+                <p className="text-[11px] text-slate-400 text-center mt-1">La IA mejorará tu descripción con detalles técnicos y mejor redacción</p>
               </div>
 
               <div className="flex justify-end gap-4 p-6 border-t border-slate-100 bg-slate-50/30">
