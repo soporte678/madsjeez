@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import Navbar from "@/components/Navbar"
+import AIRecommendations from "@/components/AIRecommendations"
+import AISmartNotifications from "@/components/AISmartNotifications"
 import Link from "next/link"
 import { useSession } from "next-auth/react"
 import { 
@@ -539,6 +541,16 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      {/* AI RECOMMENDATIONS */}
+      <section className="bg-white py-8 border-b border-slate-100">
+        <div className="max-w-7xl mx-auto px-4">
+          <AIRecommendations />
+        </div>
+      </section>
+
+      {/* SMART NOTIFICATIONS */}
+      <AISmartNotifications />
 
       {/* FOOTER */}
       <footer className="bg-[#EBEBEB] pt-20 pb-10 border-t-[10px] border-yellow-400">

@@ -1,0 +1,83 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { Bell, X, ChevronRight, Zap } from "lucide-react"
+import Link from "next/link"
+
+export default function AISmartNotifications() {
+  const [notifications, setNotifications] = useState<any[]>([])
+  const [show, setShow] = useState(false)
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch("/api/ai/notifications", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "generate" }),
+        })
+        const data = await res.json()
+        if (data.notifications && data.notifications.length > 0) {
+          setNotifications(data.notifications)
+          // Show after 5 seconds
+          setTimeout(() => setShow(true), 5000)
+        }
+      } catch (e) { console.error(e) }
+      setLoaded(true)
+    }
+
+    // Only load once per session
+    const sessionLoaded = sessionStorage.getItem("maqjeez_notifs_loaded")
+    if (!sessionLoaded) {
+      load()
+      sessionStorage.setItem("maqjeez_notifs_loaded", "1")
+    }
+  }, [])
+
+  const dismiss = (index: number) => {
+    setNotifications(prev => prev.filter((_, i) => i !== index))
+    if (notifications.length <= 1) setShow(false)
+  }
+
+  if (!show || notifications.length === 0) return null
+
+  const urgencyColors: Record<string, string> = {
+    high: "border-l-red-500 bg-red-50",
+    medium: "border-l-orange-500 bg-orange-50",
+    low: "border-l-blue-500 bg-blue-50",
+  }
+
+  return (
+    <div className="fixed top-20 right-4 z-40 w-80 space-y-2 animate-in slide-in-from-right-4">
+      <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-700">
+          <Zap size={14} className="text-yellow-500" /> Novedades para vos
+        </div>
+        <button onClick={() => setShow(false)} className="text-slate-400 hover:text-slate-600">
+          <X size={16} />
+        </button>
+      </div>
+
+      {notifications.slice(0, 4).map((n, i) => (
+        <div
+          key={i}
+          className={`bg-white rounded-lg shadow-lg border-l-4 p-3 flex items-start gap-3 cursor-pointer hover:shadow-xl transition-all ${urgencyColors[n.urgency] || urgencyColors.low}`}
+          onClick={() => {
+            if (n.product_slug) window.location.href = `/product/${n.product_slug}`
+            dismiss(i)
+          }}
+        >
+          <span className="text-lg shrink-0">{n.emoji || "🔔"}</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold text-slate-800 line-clamp-1">{n.title}</p>
+            <p className="text-[11px] text-slate-500 line-clamp-2">{n.message}</p>
+          </div>
+          <button onClick={e => { e.stopPropagation(); dismiss(i) }} className="text-slate-300 hover:text-slate-500 shrink-0">
+            <X size={12} />
+          </button>
+        </div>
+      ))}
+    </div>
+  )
+}

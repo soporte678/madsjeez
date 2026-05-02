@@ -238,6 +238,7 @@ export default function Navbar() {
                 <Link href="/supermarket" className="nav-link whitespace-nowrap">Supermercado</Link>
                 <Link href="/fashion" className="nav-link whitespace-nowrap">Moda</Link>
                 <Link href="/dashboard/publicaciones" className="nav-link whitespace-nowrap">Vender</Link>
+                <Link href="/blog" className="nav-link whitespace-nowrap">Blog</Link>
                 <Link href="/help" className="nav-link whitespace-nowrap">Ayuda</Link>
               </nav>
             </div>
