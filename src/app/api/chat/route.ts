@@ -19,31 +19,35 @@ async function getMarketplaceContext(userMessage: string): Promise<string> {
   const isProductQuery = productKeywords.some(k => lower.includes(k))
 
   if (isProductQuery) {
-    // Search products by keyword
-    const searchTerms = lower.replace(/[^a-záéíóúñü\s]/g, "").split(/\s+/).filter(w => w.length > 3)
-    
-    let query = supabase
-      .from("products")
-      .select("id, title, price, description, stock, is_active, free_shipping")
-      .eq("is_active", true)
-      .limit(8)
+    try {
+      const searchTerms = lower.replace(/[^a-záéíóúñü\s]/g, "").split(/\s+/).filter(w => w.length > 3)
+      
+      let query = supabase
+        .from("products")
+        .select("id, title, price, stock, free_shipping")
+        .eq("is_active", true)
+        .limit(8)
 
-    if (searchTerms.length > 0) {
-      // Build OR conditions for multiple search terms
-      const orConditions = searchTerms.slice(0, 3).map(term => `title.ilike.%${term}%`).join(",")
-      query = query.or(orConditions)
-    }
+      if (searchTerms.length > 0) {
+        // Use ilike on first search term only for simplicity and reliability
+        query = query.ilike("title", `%${searchTerms[0]}%`)
+      }
 
-    const { data: products, error: queryError } = await query
-    if (queryError) console.error("Supabase product query error:", queryError)
-    
-    if (products && products.length > 0) {
-      contextParts.push("PRODUCTOS ENCONTRADOS EN EL CATÁLOGO:")
-      products.forEach(p => {
-        contextParts.push(`- "${p.title}" | Precio: $${p.price?.toLocaleString()} | Stock: ${p.stock || "Consultar"} | ${p.free_shipping ? "Envío gratis" : ""} | Link: /product/${p.id}`)
-      })
-    } else {
-      contextParts.push("No se encontraron productos que coincidan exactamente. Sugerí al usuario que use el buscador de la plataforma en /search")
+      const { data: products, error: queryError } = await query
+      if (queryError) {
+        console.error("Supabase product query error:", queryError)
+        contextParts.push("No se pudo buscar productos en este momento. Sugerí al usuario que use el buscador en /search")
+      } else if (products && products.length > 0) {
+        contextParts.push("PRODUCTOS ENCONTRADOS EN EL CATÁLOGO:")
+        products.forEach(p => {
+          contextParts.push(`- "${p.title}" | Precio: $${p.price?.toLocaleString()} | Stock: ${p.stock || "Consultar"} | ${p.free_shipping ? "Envío gratis" : ""} | Link: /product/${p.id}`)
+        })
+      } else {
+        contextParts.push("No se encontraron productos que coincidan exactamente. Sugerí al usuario que use el buscador de la plataforma en /search")
+      }
+    } catch (e) {
+      console.error("Product search error:", e)
+      contextParts.push("Búsqueda de productos no disponible en este momento.")
     }
   }
 
@@ -52,14 +56,17 @@ async function getMarketplaceContext(userMessage: string): Promise<string> {
   const isOrderQuery = orderKeywords.some(k => lower.includes(k))
 
   if (isOrderQuery) {
-    // Get general shipping stats
-    const { data: activeShipments, count } = await supabase
-      .from("shipments")
-      .select("*", { count: "exact" })
-      .in("status", ["in_transit", "delayed", "pending"])
+    try {
+      const { count } = await supabase
+        .from("shipments")
+        .select("*", { count: "exact", head: true })
+        .in("status", ["in_transit", "delayed", "pending"])
 
-    contextParts.push(`\nINFO DE ENVÍOS ACTIVOS: ${count || 0} envíos en curso.`)
-    contextParts.push("Para consultar un pedido específico, el usuario debe proporcionar su número de orden o email.")
+      contextParts.push(`\nINFO DE ENVÍOS ACTIVOS: ${count || 0} envíos en curso.`)
+      contextParts.push("Para consultar un pedido específico, el usuario debe proporcionar su número de orden o email.")
+    } catch (e) {
+      console.error("Shipment query error:", e)
+    }
   }
 
   // Detect category intent
@@ -67,16 +74,20 @@ async function getMarketplaceContext(userMessage: string): Promise<string> {
   const isCategoryQuery = categoryKeywords.some(k => lower.includes(k))
 
   if (isCategoryQuery) {
-    const { data: categories } = await supabase
-      .from("categories")
-      .select("name, slug, description")
-      .limit(20)
+    try {
+      const { data: categories } = await supabase
+        .from("categories")
+        .select("name, slug, description")
+        .limit(20)
 
-    if (categories && categories.length > 0) {
-      contextParts.push("CATEGORÍAS DISPONIBLES:")
-      categories.forEach(c => {
-        contextParts.push(`- ${c.name}: ${c.description || ""} (ver en /category/${c.slug})`)
-      })
+      if (categories && categories.length > 0) {
+        contextParts.push("CATEGORÍAS DISPONIBLES:")
+        categories.forEach(c => {
+          contextParts.push(`- ${c.name}: ${c.description || ""} (ver en /category/${c.slug})`)
+        })
+      }
+    } catch (e) {
+      console.error("Category query error:", e)
     }
   }
 
@@ -85,12 +96,16 @@ async function getMarketplaceContext(userMessage: string): Promise<string> {
   const isStatsQuery = statsKeywords.some(k => lower.includes(k))
 
   if (isStatsQuery) {
-    const { count: totalProducts } = await supabase.from("products").select("*", { count: "exact", head: true }).eq("is_active", true)
-    const { count: totalSellers } = await supabase.from("profiles").select("*", { count: "exact", head: true }).eq("is_seller", true)
-    
-    contextParts.push(`\nESTADÍSTICAS DEL MARKETPLACE:`)
-    contextParts.push(`- Productos activos: ${totalProducts || 0}`)
-    contextParts.push(`- Vendedores registrados: ${totalSellers || 0}`)
+    try {
+      const { count: totalProducts } = await supabase.from("products").select("*", { count: "exact", head: true }).eq("is_active", true)
+      const { count: totalSellers } = await supabase.from("profiles").select("*", { count: "exact", head: true }).eq("is_seller", true)
+      
+      contextParts.push(`\nESTADÍSTICAS DEL MARKETPLACE:`)
+      contextParts.push(`- Productos activos: ${totalProducts || 0}`)
+      contextParts.push(`- Vendedores registrados: ${totalSellers || 0}`)
+    } catch (e) {
+      console.error("Stats query error:", e)
+    }
   }
 
   // Seller registration intent
@@ -159,23 +174,27 @@ export async function POST(req: NextRequest) {
     const systemPrompt = BASE_PROMPT + liveContext
 
     const genAI = new GoogleGenerativeAI(apiKey)
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.0-flash",
+      systemInstruction: systemPrompt,
+    })
+
+    // Build history from actual conversation (exclude last message which we send now)
+    // Skip the initial greeting (first assistant message = UI welcome only)
+    const history = messages
+      .slice(0, -1)
+      .filter((msg: any, idx: number) => {
+        // Skip if it's the very first message and it's from the assistant (initial greeting)
+        if (idx === 0 && msg.role === "assistant") return false
+        return msg.role === "user" || msg.role === "assistant"
+      })
+      .map((msg: any) => ({
+        role: msg.role === "assistant" ? "model" : "user",
+        parts: [{ text: msg.content }],
+      }))
 
     const chat = model.startChat({
-      history: [
-        {
-          role: "user",
-          parts: [{ text: "Sistema: " + systemPrompt }],
-        },
-        {
-          role: "model",
-          parts: [{ text: "Entendido. Soy el asistente virtual de MadsJeez con acceso al catálogo en tiempo real. Estoy listo para ayudar." }],
-        },
-        ...messages.slice(0, -1).map((msg: { role: string; content: string }) => ({
-          role: msg.role === "assistant" ? "model" : "user",
-          parts: [{ text: msg.content }],
-        })),
-      ],
+      history: history.length > 0 ? history : undefined,
     })
 
     const result = await chat.sendMessage(lastMessage.content)
@@ -184,9 +203,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: response })
   } catch (error: any) {
     console.error("Chat API error:", error)
-    return NextResponse.json(
-      { error: error?.message || "Error processing chat request" },
-      { status: 500 }
-    )
+    // Return a helpful fallback so the bot doesn't appear broken
+    return NextResponse.json({
+      message: "Disculpá, estoy teniendo dificultades técnicas en este momento. Podés probá de nuevo en unos segundos, o contactarnos por WhatsApp +54 11 2181-6064.",
+    })
   }
 }
