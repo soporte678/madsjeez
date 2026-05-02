@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
         maintenance: "Mantenimiento y cuidados",
       }
 
-      const prompt = `Sos un redactor SEO experto para MaqJeez, marketplace de maquinaria, herramientas y ferretería en Argentina (madsjeez.com.ar).
+      const prompt = `Sos un redactor SEO experto para MadsJeez, marketplace de maquinaria, herramientas y ferretería en Argentina (madsjeez.com.ar).
 
 Escribí un artículo tipo: ${articleTypes[articleType] || articleType || "guía de compra"}
 Tema: ${topic}
@@ -98,7 +98,7 @@ Respondé SOLO con JSON:
         .order("view_count", { ascending: false })
         .limit(15)
 
-      const prompt = `Sos el content strategist de MaqJeez, marketplace de maquinaria y herramientas en Argentina.
+      const prompt = `Sos el content strategist de MadsJeez, marketplace de maquinaria y herramientas en Argentina.
 
 Categorías del marketplace: ${cats?.map(c => c.name).join(", ") || "herramientas, maquinaria, ferretería"}
 Productos más buscados: ${topProducts?.map(p => p.title).join(", ") || "varios"}

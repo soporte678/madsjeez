@@ -142,7 +142,7 @@ export default function EnviosPage() {
   }
 
   const handleContactSeller = (email: string) => {
-    window.open(`mailto:${email}?subject=Demora en envío - MaqJeez`, "_blank")
+    window.open(`mailto:${email}?subject=Demora en envío - MadsJeez`, "_blank")
   }
 
   const filteredShipments = shipments.filter((s) => {

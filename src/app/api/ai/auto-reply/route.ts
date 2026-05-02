@@ -35,7 +35,7 @@ Envío: ${product.shipping_free ? "Gratis" : `$${product.shipping_cost || "a cal
       }
     }
 
-    const prompt = `Sos un vendedor profesional en MaqJeez, marketplace de maquinaria y herramientas en Argentina.
+    const prompt = `Sos un vendedor profesional en MadsJeez, marketplace de maquinaria y herramientas en Argentina.
 
 ${productContext}
 

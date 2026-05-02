@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     const { email, password, firstName, lastName, secretKey } = body
 
     // Verify secret key for security
-    const expectedSecret = process.env.ADMIN_SETUP_SECRET || "maqjeez-setup-2024"
+    const expectedSecret = process.env.ADMIN_SETUP_SECRET || "MadsJeez-setup-2024"
     if (secretKey !== expectedSecret) {
       return NextResponse.json(
         { error: "Invalid secret key" },

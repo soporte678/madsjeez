@@ -16,7 +16,7 @@ interface ProfileViewProps {
 
 export default function ProfileView({ userData }: ProfileViewProps) {
   const user = userData || {
-    name: "Maqjeez II Repuestos Para Maquinas",
+    name: "MadsJeez II Repuestos Para Maquinas",
     email: "amanecer.dannu556@gmail.com",
     avatar: null
   };

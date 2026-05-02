@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 
-const VERIFY_TOKEN = process.env.META_WEBHOOK_VERIFY_TOKEN || "maqjeez-webhook-2024"
+const VERIFY_TOKEN = process.env.META_WEBHOOK_VERIFY_TOKEN || "MadsJeez-webhook-2024"
 
 // GET: Verificación del webhook (Meta lo llama para confirmar)
 export async function GET(request: Request) {

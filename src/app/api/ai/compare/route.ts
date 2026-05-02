@@ -38,7 +38,7 @@ PRODUCTO ${i + 1}: "${p.title}"
 - Descripción: ${p.description?.slice(0, 200) || "Sin descripción"}
 `).join("\n")
 
-    const prompt = `Sos un experto comparador de productos de MaqJeez, marketplace de maquinaria y herramientas en Argentina.
+    const prompt = `Sos un experto comparador de productos de MadsJeez, marketplace de maquinaria y herramientas en Argentina.
 
 Compará estos productos:
 ${productsText}

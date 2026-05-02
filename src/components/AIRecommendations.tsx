@@ -13,8 +13,8 @@ export default function AIRecommendations() {
     const loadRecommendations = async () => {
       try {
         // Get viewed products from localStorage
-        const viewedRaw = localStorage.getItem("maqjeez_viewed") || "[]"
-        const searchRaw = localStorage.getItem("maqjeez_searches") || "[]"
+        const viewedRaw = localStorage.getItem("madsjeez_viewed") || "[]"
+        const searchRaw = localStorage.getItem("madsjeez_searches") || "[]"
         const viewedProducts = JSON.parse(viewedRaw).slice(0, 5)
         const searchHistory = JSON.parse(searchRaw).slice(0, 5)
 

@@ -110,7 +110,7 @@ export default function App() {
   }, []);
 
   const userData = {
-    name: currentUser?.name || "Maqjeez | Repues...",
+    name: currentUser?.name || "MadsJeez | Repues...",
     email: currentUser?.email || "",
     reputation: "VENDEDOR NUEVO",
     billing: "0,00",

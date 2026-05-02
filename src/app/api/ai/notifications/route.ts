@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
         trending: trending?.map(p => ({ title: p.title, views: p.view_count })) || [],
       }
 
-      const prompt = `Sos el sistema de notificaciones inteligentes de MaqJeez, marketplace de maquinaria y herramientas en Argentina.
+      const prompt = `Sos el sistema de notificaciones inteligentes de MadsJeez, marketplace de maquinaria y herramientas en Argentina.
 
 DATOS DEL MARKETPLACE:
 - Productos con descuento: ${JSON.stringify(context.priceDrops.slice(0, 5))}

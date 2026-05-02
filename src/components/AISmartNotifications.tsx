@@ -28,10 +28,10 @@ export default function AISmartNotifications() {
     }
 
     // Only load once per session
-    const sessionLoaded = sessionStorage.getItem("maqjeez_notifs_loaded")
+    const sessionLoaded = sessionStorage.getItem("madsjeez_notifs_loaded")
     if (!sessionLoaded) {
       load()
-      sessionStorage.setItem("maqjeez_notifs_loaded", "1")
+      sessionStorage.setItem("madsjeez_notifs_loaded", "1")
     }
   }, [])
 

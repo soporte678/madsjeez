@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
       `ID:${p.id} | "${p.title}" | $${p.price} | ${p.condition} | ${p.shipping_free ? "Envío gratis" : ""}`
     ).join("\n")
 
-    const prompt = `Sos el motor de recomendación de MaqJeez, marketplace de maquinaria y herramientas en Argentina.
+    const prompt = `Sos el motor de recomendación de MadsJeez, marketplace de maquinaria y herramientas en Argentina.
 
 CONTEXTO DEL USUARIO:
 - Productos vistos: ${viewedContext || "Ninguno aún"}

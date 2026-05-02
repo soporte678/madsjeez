@@ -119,7 +119,7 @@ export default function AdminLoginPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-[#FFF159] rounded-xl mb-4 shadow-lg">
             <span className="text-[#2D3277] font-bold text-2xl">MQ</span>
           </div>
-          <h1 className="text-2xl font-bold text-white">MaqJeez ERP</h1>
+          <h1 className="text-2xl font-bold text-white">MadsJeez ERP</h1>
           <p className="text-slate-400 mt-1">Panel de Administración</p>
         </div>
 
@@ -160,7 +160,7 @@ export default function AdminLoginPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                    placeholder="admin@maqjeez.com"
+                    placeholder="admin@madsjeez.com"
                   />
                 </div>
               </div>

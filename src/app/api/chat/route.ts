@@ -15,7 +15,7 @@ async function getMarketplaceContext(userMessage: string): Promise<string> {
   const contextParts: string[] = []
 
   // Detect product search intent
-  const productKeywords = ["producto", "busco", "tiene", "hay", "precio", "motosierra", "taladro", "amoladora", "soldadora", "compresor", "herramienta", "máquina", "desmalezadora", "cortadora", "sierra", "atornillador", "llave", "ferretería", "tornillo", "pintura", "generador"]
+  const productKeywords = ["producto", "busco", "tiene", "hay", "precio", "necesito", "quiero", "venden", "motosierra", "taladro", "amoladora", "soldadora", "compresor", "herramienta", "máquina", "desmalezadora", "cortadora", "sierra", "atornillador", "llave", "ferretería", "tornillo", "pintura", "generador", "carburador", "bujía", "repuesto", "manguera", "filtro", "bomba", "motor", "disco", "cadena", "aceite", "cinta", "cable", "broca", "mecha"]
   const isProductQuery = productKeywords.some(k => lower.includes(k))
 
   if (isProductQuery) {
@@ -24,21 +24,23 @@ async function getMarketplaceContext(userMessage: string): Promise<string> {
     
     let query = supabase
       .from("products")
-      .select("id, title, price, description, category, stock, is_active")
+      .select("id, title, price, description, stock, is_active, free_shipping")
       .eq("is_active", true)
       .limit(8)
 
     if (searchTerms.length > 0) {
-      const searchStr = searchTerms.join(" | ")
-      query = query.or(`title.ilike.%${searchTerms[0]}%,description.ilike.%${searchTerms[0]}%,category.ilike.%${searchTerms[0]}%`)
+      // Build OR conditions for multiple search terms
+      const orConditions = searchTerms.slice(0, 3).map(term => `title.ilike.%${term}%`).join(",")
+      query = query.or(orConditions)
     }
 
-    const { data: products } = await query
+    const { data: products, error: queryError } = await query
+    if (queryError) console.error("Supabase product query error:", queryError)
     
     if (products && products.length > 0) {
       contextParts.push("PRODUCTOS ENCONTRADOS EN EL CATÁLOGO:")
       products.forEach(p => {
-        contextParts.push(`- "${p.title}" | Precio: $${p.price?.toLocaleString()} | Categoría: ${p.category || "General"} | Stock: ${p.stock || "Consultar"} | Link: /product/${p.id}`)
+        contextParts.push(`- "${p.title}" | Precio: $${p.price?.toLocaleString()} | Stock: ${p.stock || "Consultar"} | ${p.free_shipping ? "Envío gratis" : ""} | Link: /product/${p.id}`)
       })
     } else {
       contextParts.push("No se encontraron productos que coincidan exactamente. Sugerí al usuario que use el buscador de la plataforma en /search")
@@ -79,7 +81,7 @@ async function getMarketplaceContext(userMessage: string): Promise<string> {
   }
 
   // General marketplace stats
-  const statsKeywords = ["cuántos", "cuantos", "estadísticas", "info del marketplace", "sobre maqjeez", "sobre madsjeez"]
+  const statsKeywords = ["cuántos", "cuantos", "estadísticas", "info del marketplace", "sobre madsjeez"]
   const isStatsQuery = statsKeywords.some(k => lower.includes(k))
 
   if (isStatsQuery) {
@@ -107,7 +109,7 @@ async function getMarketplaceContext(userMessage: string): Promise<string> {
   return contextParts.length > 0 ? "\n\n--- DATOS EN TIEMPO REAL DEL MARKETPLACE ---\n" + contextParts.join("\n") : ""
 }
 
-const BASE_PROMPT = `Sos el asistente virtual de MaqJeez, el marketplace de maquinaria, herramientas y ferretería más grande de Argentina.
+const BASE_PROMPT = `Sos el asistente virtual de MadsJeez, el marketplace de maquinaria, herramientas y ferretería más grande de Argentina.
 
 Tu rol es ayudar a los usuarios con:
 - Información sobre productos reales del catálogo (usá los datos que te proveo)
@@ -124,12 +126,12 @@ Reglas:
 - Cuando tengas datos reales del catálogo, mostrá los productos con nombre y precio.
 - Para ver un producto, indicá el link como: "Podés verlo acá: /product/ID"
 - Si no encontrás productos, sugerí usar el buscador en /search
-- Para soporte humano: soporte@maqjeez.com.ar o WhatsApp +54 11 2181-6064
+- Para soporte humano: soporte@madsjeez.com.ar o WhatsApp +54 11 2181-6064
 - Horario de atención humana: Lunes a Viernes 9 a 18hs.
 - Pagos: MercadoPago (tarjeta, transferencia, efectivo).
 - Comisión de venta: 10%.
 - Envío gratis en compras mayores a $15.000.
-- Si preguntan algo fuera del marketplace, indicá amablemente que solo ayudás con temas de MaqJeez.
+- Si preguntan algo fuera del marketplace, indicá amablemente que solo ayudás con temas de MadsJeez.
 - NUNCA inventes productos o precios que no estén en los datos que te doy.`
 
 export async function POST(req: NextRequest) {
@@ -167,7 +169,7 @@ export async function POST(req: NextRequest) {
         },
         {
           role: "model",
-          parts: [{ text: "Entendido. Soy el asistente virtual de MaqJeez con acceso al catálogo en tiempo real. Estoy listo para ayudar." }],
+          parts: [{ text: "Entendido. Soy el asistente virtual de MadsJeez con acceso al catálogo en tiempo real. Estoy listo para ayudar." }],
         },
         ...messages.slice(0, -1).map((msg: { role: string; content: string }) => ({
           role: msg.role === "assistant" ? "model" : "user",

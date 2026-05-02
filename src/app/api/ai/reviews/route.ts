@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
       `[${r.rating}★] "${r.comment || 'Sin comentario'}" (${r.created_at?.slice(0, 10) || 'fecha desconocida'})`
     ).join("\n")
 
-    const prompt = `Sos un analista de opiniones de MaqJeez, marketplace de maquinaria y herramientas en Argentina.
+    const prompt = `Sos un analista de opiniones de MadsJeez, marketplace de maquinaria y herramientas en Argentina.
 
 OPINIONES DEL PRODUCTO:
 ${reviewsText}

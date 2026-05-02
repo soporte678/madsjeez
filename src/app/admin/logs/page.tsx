@@ -78,7 +78,7 @@ export default function LogsPage() {
       setLogs([
         {
           id: "log-001",
-          user_email: "admin@maqjeez.com",
+          user_email: "admin@MadsJeez.com",
           action: "LOGIN",
           entity_type: "admin",
           details: { ip: "192.168.1.1" },

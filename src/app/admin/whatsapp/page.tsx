@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 
 export default function WhatsAppConfigPage() {
   const [phoneNumber, setPhoneNumber] = useState("")
-  const [businessName, setBusinessName] = useState("MaqJeez")
+  const [businessName, setBusinessName] = useState("MadsJeez")
   const [loading, setLoading] = useState(false)
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle")
   const [message, setMessage] = useState("")
@@ -89,7 +89,7 @@ export default function WhatsAppConfigPage() {
               type="text"
               value={businessName}
               onChange={(e) => setBusinessName(e.target.value)}
-              placeholder="MaqJeez"
+              placeholder="MadsJeez"
             />
           </div>
 

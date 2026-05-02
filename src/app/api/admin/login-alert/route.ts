@@ -48,13 +48,13 @@ export async function POST(request: NextRequest) {
         const resend = new Resend(process.env.RESEND_API_KEY)
         
         await resend.emails.send({
-          from: "MaqJeez ERP <security@maqjeez.com.ar>",
+          from: "MadsJeez ERP <security@madsjeez.com.ar>",
           to: "vianferreteria@gmail.com",
-          subject: `🔒 Alerta de Login - MaqJeez ERP`,
+          subject: `🔒 Alerta de Login - MadsJeez ERP`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
               <div style="background: #1e293b; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
-                <h2 style="margin: 0; color: #FFF159;">🔒 MaqJeez ERP - Alerta de Seguridad</h2>
+                <h2 style="margin: 0; color: #FFF159;">🔒 MadsJeez ERP - Alerta de Seguridad</h2>
               </div>
               <div style="background: #f8fafc; padding: 20px; border: 1px solid #e2e8f0; border-radius: 0 0 8px 8px;">
                 <p style="color: #dc2626; font-weight: bold; font-size: 18px;">⚠️ Se detectó un inicio de sesión en el panel de administración</p>
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
                 </div>
                 
                 <p style="margin-top: 30px; color: #64748b; font-size: 12px; text-align: center;">
-                  Este es un mensaje automático de MaqJeez ERP.<br>
+                  Este es un mensaje automático de MadsJeez ERP.<br>
                   ID de sesión: ${adminUserId}
                 </p>
               </div>

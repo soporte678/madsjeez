@@ -1,5 +1,5 @@
 export const metadata = {
-  title: "Login - MaqJeez ERP",
+  title: "Login - MadsJeez ERP",
   description: "Acceso exclusivo para administradores",
 }
 

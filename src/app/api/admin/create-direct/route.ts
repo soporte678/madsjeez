@@ -8,7 +8,7 @@ export async function POST(request: Request) {
     const { secret, email, password, name } = await request.json()
 
     // Verificar secreto
-    if (secret !== "maqjeez-create-admin-2024") {
+    if (secret !== "madsjeez-create-admin-2024") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -98,7 +98,7 @@ export async function POST(request: Request) {
         role_id: superAdminRole!.id,
         email,
         first_name: name || "Admin",
-        last_name: "MaqJeez",
+        last_name: "MadsJeez",
         is_active: true
       })
 

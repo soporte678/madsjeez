@@ -229,7 +229,7 @@ export function AdminLayoutClient({ children, user: propUser, role: propRole, ad
             <div className="w-8 h-8 bg-[#2D3277] rounded text-white flex items-center justify-center text-sm shadow-inner">
               MQ
             </div>
-            <span className="truncate">MaqJeez</span>
+            <span className="truncate">MadsJeez</span>
             <span className="font-light text-xs opacity-80">ERP</span>
           </div>
           <button
@@ -331,7 +331,7 @@ export function AdminLayoutClient({ children, user: propUser, role: propRole, ad
             <div className="h-16 flex items-center justify-between px-4 bg-[#FFF159] border-b border-yellow-400 shrink-0">
               <div className="font-extrabold text-[#2D3277] text-lg tracking-tight flex items-center gap-2">
                 <div className="w-8 h-8 bg-[#2D3277] rounded text-white flex items-center justify-center text-sm shadow-inner">MQ</div>
-                <span>MaqJeez</span>
+                <span>MadsJeez</span>
                 <span className="font-light text-xs opacity-80">ERP</span>
               </div>
               <button onClick={() => setIsMobileMenuOpen(false)} className="text-[#2D3277]">

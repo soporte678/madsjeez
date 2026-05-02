@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     if (action === "social_posts") {
       const { productTitle, productDescription, productPrice, productCategory, platform, tone } = body
 
-      const prompt = `Sos un experto en marketing digital para un marketplace de maquinaria, herramientas y ferretería en Argentina llamado MaqJeez (madsjeez.com.ar).
+      const prompt = `Sos un experto en marketing digital para un marketplace de maquinaria, herramientas y ferretería en Argentina llamado MadsJeez (madsjeez.com.ar).
 
 Generá un post para ${platform || "Instagram"} para promocionar este producto:
 - Título: ${productTitle}
@@ -62,13 +62,13 @@ Responde SOLO con JSON válido:
         inactive: "Email para reactivar un cliente que no compra hace más de 30 días.",
       }
 
-      const prompt = `Sos un copywriter experto en email marketing para MaqJeez, marketplace de maquinaria y herramientas en Argentina.
+      const prompt = `Sos un copywriter experto en email marketing para MadsJeez, marketplace de maquinaria y herramientas en Argentina.
 
 Tipo de email: ${emailTypes[emailType] || emailType}
 Producto: ${productTitle || "N/A"}
 Precio: $${productPrice || "N/A"} ARS
 Cliente: ${customerName || "Cliente"}
-Tienda: ${storeName || "MaqJeez"}
+Tienda: ${storeName || "MadsJeez"}
 
 Generá el email en JSON:
 {
@@ -93,7 +93,7 @@ Generá el email en JSON:
     if (action === "banner_text") {
       const { campaignType, discount, dateRange, targetAudience, products } = body
 
-      const prompt = `Sos un creativo publicitario para MaqJeez, marketplace de maquinaria y herramientas en Argentina.
+      const prompt = `Sos un creativo publicitario para MadsJeez, marketplace de maquinaria y herramientas en Argentina.
 
 Campaña: ${campaignType || "promoción general"}
 Descuento: ${discount || "N/A"}
@@ -173,7 +173,7 @@ Generá textos para la campaña en JSON:
 Producto a analizar: "${productTitle}"
 Precio actual: $${productPrice} ARS
 
-Datos del mercado interno (productos similares en MaqJeez):
+Datos del mercado interno (productos similares en MadsJeez):
 - Precio promedio: $${Math.round(avgPrice).toLocaleString()} ARS
 - Precio mínimo: $${Math.round(minPrice).toLocaleString()} ARS
 - Precio máximo: $${Math.round(maxPrice).toLocaleString()} ARS
@@ -213,7 +213,7 @@ Respondé con JSON:
     if (action === "seo_optimize") {
       const { productTitle, productDescription, productCategory } = body
 
-      const prompt = `Sos un experto SEO para un marketplace de maquinaria y herramientas en Argentina (madsjeez.com.ar / MaqJeez).
+      const prompt = `Sos un experto SEO para un marketplace de maquinaria y herramientas en Argentina (madsjeez.com.ar / MadsJeez).
 
 Producto: "${productTitle}"
 Descripción actual: "${productDescription || "Sin descripción"}"

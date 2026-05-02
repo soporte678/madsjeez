@@ -77,7 +77,7 @@ export default function SetupAdminPage() {
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     required
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                    placeholder="admin@maqjeez.com.ar"
+                    placeholder="admin@madsjeez.com.ar"
                   />
                 </div>
               </div>
@@ -148,7 +148,7 @@ export default function SetupAdminPage() {
                     onChange={(e) => setFormData({ ...formData, secretKey: e.target.value })}
                     required
                     className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                    placeholder="maqjeez-setup-2024"
+                    placeholder="madsjeez-setup-2024"
                   />
                   <button
                     type="button"
@@ -159,7 +159,7 @@ export default function SetupAdminPage() {
                   </button>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  Secret key por defecto: maqjeez-setup-2024
+                  Secret key por defecto: madsjeez-setup-2024
                 </p>
               </div>
 

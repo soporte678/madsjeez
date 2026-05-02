@@ -196,7 +196,7 @@ export default function AdminDashboardPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-800">Centro de Comando Global</h2>
-          <p className="text-sm text-gray-500">Métricas en tiempo real de MaqJeez</p>
+          <p className="text-sm text-gray-500">Métricas en tiempo real de MadsJeez</p>
           <p className="text-xs text-gray-400 mt-1">
             Actualizado: {lastUpdated || "..."}
           </p>

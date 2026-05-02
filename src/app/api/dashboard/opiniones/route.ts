@@ -83,7 +83,7 @@ const mockPending: PendingOpinion[] = [
     productId: 'mock-prod-4',
     productTitle: 'Carburador Desmalezadora 26cc 33cc Niwa-gamma-garden Bull Service Aluminio',
     productImage: 'https://via.placeholder.com/80?text=Carburador',
-    sellerName: 'Repuestos Maqjeez',
+    sellerName: 'Repuestos MadsJeez',
     purchaseDate: 'Comprado el 03 de feb, 2026',
   },
   {

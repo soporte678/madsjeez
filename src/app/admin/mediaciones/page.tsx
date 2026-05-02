@@ -411,7 +411,7 @@ function DisputeDetail({
                 {/* Input */}
                 <div className="mt-4">
                   <textarea
-                    placeholder="Escribir mensaje como Moderador MaqJeez..."
+                    placeholder="Escribir mensaje como Moderador MadsJeez..."
                     className="w-full bg-white border border-gray-300 rounded-lg p-3 text-sm outline-none focus:ring-2 focus:ring-blue-500 resize-none h-20"
                   />
                   <button className="mt-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">

@@ -46,7 +46,7 @@ export default function TerminosPage() {
 
         <section>
           <h2 className="text-xl font-semibold mb-3">5. Propiedad intelectual</h2>
-          <p>AppJeezPro y su contenido son propiedad de MaqJeez. No puedes copiar, modificar, distribuir o crear trabajos derivados sin autorización expresa.</p>
+          <p>AppJeezPro y su contenido son propiedad de MadsJeez. No puedes copiar, modificar, distribuir o crear trabajos derivados sin autorización expresa.</p>
         </section>
 
         <section>

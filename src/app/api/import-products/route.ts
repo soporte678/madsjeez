@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 
-const SKU_PREFIX = "MAQJEEZ"
+const SKU_PREFIX = "MADSJEEZ"
 
 export async function POST(request: Request) {
   try {
@@ -44,11 +44,11 @@ export async function POST(request: Request) {
     })
     const existingTitles = new Set(existingProducts.map(p => p.title.toLowerCase().trim()))
 
-    // Find highest existing MAQJEEZ SKU number
+    // Find highest existing MADSJEEZ SKU number
     let skuCounter = 0
     existingProducts.forEach(p => {
       if (p.sku) {
-        const m = p.sku.match(/MAQJEEZ-(\d+)/)
+        const m = p.sku.match(/MADSJEEZ-(\d+)/)
         if (m) skuCounter = Math.max(skuCounter, parseInt(m[1]))
       }
     })

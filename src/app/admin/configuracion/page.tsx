@@ -31,8 +31,8 @@ export default function ConfiguracionPage() {
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
   const [config, setConfig] = useState<ConfigData>({
-    marketplace_name: "MaqJeez",
-    contact_email: "soporte@maqjeez.com.ar",
+    marketplace_name: "MadsJeez",
+    contact_email: "soporte@madsjeez.com.ar",
     contact_phone: "+54 11 1234-5678",
     timezone: "America/Argentina/Buenos_Aires",
     description: "El marketplace de productos de ferretería más grande de Argentina",
@@ -395,7 +395,7 @@ function EmailSettings({ config, onChange }: SettingsProps) {
       <h3 className="text-lg font-semibold">Templates de Email</h3>
       <div className="space-y-3">
         {[
-          { name: "Bienvenida", subject: "Bienvenido a MaqJeez" },
+          { name: "Bienvenida", subject: "Bienvenido a MadsJeez" },
           { name: "Confirmación de compra", subject: "Tu orden ha sido confirmada" },
           { name: "Envío confirmado", subject: "Tu pedido ha sido enviado" },
           { name: "Entrega completada", subject: "Tu pedido fue entregado" },

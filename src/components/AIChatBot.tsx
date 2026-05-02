@@ -13,7 +13,7 @@ export default function AIChatBot() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content: "¡Hola! Soy el asistente virtual de MaqJeez 🔧 ¿En qué puedo ayudarte hoy?",
+      content: "¡Hola! Soy el asistente virtual de MadsJeez 🔧 ¿En qué puedo ayudarte hoy?",
     },
   ])
   const [input, setInput] = useState("")
@@ -103,7 +103,7 @@ export default function AIChatBot() {
                 <Bot className="w-6 h-6" />
               </div>
               <div>
-                <p className="font-semibold text-sm">Asistente MaqJeez</p>
+                <p className="font-semibold text-sm">Asistente MadsJeez</p>
                 <p className="text-xs text-blue-100 flex items-center gap-1">
                   <span className="w-2 h-2 bg-green-400 rounded-full" />
                   En línea
@@ -221,7 +221,7 @@ export default function AIChatBot() {
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               </button>
             </div>
-            <p className="text-[10px] text-gray-400 text-center mt-1.5">Powered by MaqJeez AI</p>
+            <p className="text-[10px] text-gray-400 text-center mt-1.5">Powered by MadsJeez AI</p>
           </div>
         </div>
       )}
