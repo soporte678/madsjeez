@@ -1,25 +1,58 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { MessageCircle, X, Send, Bot, User, Loader2, Minimize2 } from "lucide-react"
+import { MessageCircle, X, Send, Bot, User, Loader2 } from "lucide-react"
+import { useChat, type ChatMode } from "./ChatContext"
 
 interface Message {
   role: "user" | "assistant"
   content: string
 }
 
+const modeConfig: Record<ChatMode, { welcome: string; title: string; quick: string[] }> = {
+  general: {
+    welcome: "¡Hola! Soy el asistente virtual de MadsJeez 🔧 ¿En qué puedo ayudarte hoy?",
+    title: "Asistente MadsJeez",
+    quick: ["¿Cómo compro?", "¿Hacen envíos?", "¿Cómo vender?", "Devoluciones"],
+  },
+  products: {
+    welcome: "¡Hola! Soy tu experto en productos de MadsJeez 🔧 ¿Qué estás buscando? Te ayudo a comparar, encontrar el mejor precio y elegir el producto ideal.",
+    title: "Experto en Productos",
+    quick: ["¿Qué motosierra recomendás?", "¿Cómo comparar productos?", "¿Hay envío gratis?", "Garantía de productos"],
+  },
+  seller: {
+    welcome: "¡Hola! Soy tu asistente de ventas en MadsJeez 📈 ¿Necesitás ayuda con publicaciones, reputación, precios o estrategias para vender más?",
+    title: "Asistente de Ventas",
+    quick: ["¿Cómo publicar?", "¿Cuál es la comisión?", "¿Cómo mejorar reputación?", "Marketing IA"],
+  },
+  support: {
+    welcome: "¡Hola! Soy tu soporte técnico de MadsJeez 🛠️ ¿Tenés un problema con tu compra, envío, pago o cuenta? Estoy para ayudarte.",
+    title: "Soporte MadsJeez",
+    quick: ["Mi pedido no llegó", "Quiero devolver un producto", "Problema con el pago", "Contactar un vendedor"],
+  },
+  buyer: {
+    welcome: "¡Hola! Soy tu asistente de compras en MadsJeez � ¿Te ayudo a encontrar productos, entender el proceso de compra, pagos o envíos?",
+    title: "Asistente de Compras",
+    quick: ["¿Cómo compro?", "Medios de pago", "Costo de envío", "Seguimiento de pedido"],
+  },
+}
+
 export default function AIChatBot() {
-  const [isOpen, setIsOpen] = useState(false)
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: "assistant",
-      content: "¡Hola! Soy el asistente virtual de MadsJeez 🔧 ¿En qué puedo ayudarte hoy?",
-    },
-  ])
+  const { isOpen, closeChat, mode } = useChat()
+  const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  // Reset messages when mode changes or chat opens
+  useEffect(() => {
+    if (isOpen) {
+      setMessages([
+        { role: "assistant", content: modeConfig[mode].welcome },
+      ])
+    }
+  }, [isOpen, mode])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -42,7 +75,7 @@ export default function AIChatBot() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: newMessages }),
+        body: JSON.stringify({ messages: newMessages, mode }),
       })
 
       const data = await res.json()
@@ -72,19 +105,14 @@ export default function AIChatBot() {
     }
   }
 
-  const quickQuestions = [
-    "¿Cómo compro?",
-    "¿Hacen envíos?",
-    "¿Cómo vender?",
-    "Devoluciones",
-  ]
+  const quickQuestions = modeConfig[mode].quick
 
   return (
     <>
       {/* Chat Button */}
       {!isOpen && (
         <button
-          onClick={() => setIsOpen(true)}
+          onClick={() => {}} // controlled by ChatContext, but button is always visible when closed
           className="fixed bottom-24 left-6 z-[10000] bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-full p-4 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 group"
           aria-label="Abrir chat de ayuda"
         >
@@ -103,7 +131,7 @@ export default function AIChatBot() {
                 <Bot className="w-6 h-6" />
               </div>
               <div>
-                <p className="font-semibold text-sm">Asistente MadsJeez</p>
+                <p className="font-semibold text-sm">{modeConfig[mode].title}</p>
                 <p className="text-xs text-blue-100 flex items-center gap-1">
                   <span className="w-2 h-2 bg-green-400 rounded-full" />
                   En línea
@@ -111,7 +139,7 @@ export default function AIChatBot() {
               </div>
             </div>
             <button
-              onClick={() => setIsOpen(false)}
+              onClick={closeChat}
               className="p-1.5 hover:bg-white/20 rounded-full transition-colors"
             >
               <X className="w-5 h-5" />
@@ -178,7 +206,7 @@ export default function AIChatBot() {
                         fetch("/api/chat", {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ messages: newMsgs }),
+                          body: JSON.stringify({ messages: newMsgs, mode }),
                         })
                           .then((r) => r.json())
                           .then((data) => {

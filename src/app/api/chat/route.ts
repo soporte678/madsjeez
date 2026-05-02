@@ -124,7 +124,10 @@ async function getMarketplaceContext(userMessage: string): Promise<string> {
   return contextParts.length > 0 ? "\n\n--- DATOS EN TIEMPO REAL DEL MARKETPLACE ---\n" + contextParts.join("\n") : ""
 }
 
-const BASE_PROMPT = `Sos el asistente virtual de MadsJeez, el marketplace de maquinaria, herramientas y ferretería más grande de Argentina.
+type ChatMode = "general" | "products" | "seller" | "support" | "buyer"
+
+const BASE_PROMPTS: Record<ChatMode, string> = {
+  general: `Sos el asistente virtual de MadsJeez, el marketplace de maquinaria, herramientas y ferretería más grande de Argentina.
 
 Tu rol es ayudar a los usuarios con:
 - Información sobre productos reales del catálogo (usá los datos que te proveo)
@@ -147,37 +150,100 @@ Reglas:
 - Comisión de venta: 10%.
 - Envío gratis en compras mayores a $15.000.
 - Si preguntan algo fuera del marketplace, indicá amablemente que solo ayudás con temas de MadsJeez.
-- NUNCA inventes productos o precios que no estén en los datos que te doy.`
+- NUNCA inventes productos o precios que no estén en los datos que te doy.`,
+
+  products: `Sos el EXPERTO EN PRODUCTOS de MadsJeez, marketplace de maquinaria, herramientas y ferretería en Argentina. Conocés TODO el catálogo y sabés comparar productos, recomendar según necesidades, y encontrar el mejor precio.
+
+Tu especialidad:
+- Buscar y recomendar productos específicos del catálogo
+- Comparar productos según características, precio y calidad
+- Explicar diferencias técnicas entre modelos
+- Sugerir accesorios compatibles
+- Informar sobre stock, envíos y garantías de productos
+- Encontrar alternativas si un producto no está disponible
+
+Reglas:
+- Respondé siempre en español argentino, técnico pero accesible.
+- Sé específico: mencioná marcas, modelos, precios y características clave.
+- Para ver un producto, indicá el link como: "Podés verlo acá: /product/ID"
+- Si no encontrás el producto exacto, sugerí alternativas similares.
+- Si el usuario no da suficiente info, hacé preguntas técnicas para entender su necesidad.
+- NUNCA inventes productos o precios que no estén en los datos que te doy.
+- Envío gratis en compras mayores a $15.000.`,
+
+  seller: `Sos el EXPERTO EN VENTAS y asesor comercial de MadsJeez, marketplace de maquinaria y herramientas. Ayudás a vendedores a maximizar sus ventas, optimizar publicaciones y gestionar su negocio.
+
+Tu especialidad:
+- Cómo publicar productos: títulos, descripciones, fotos, precios
+- Estrategias de pricing y competencia
+- Cómo mejorar reputación y obtener más ventas
+- Marketing IA: posts para redes, emails, banners, SEO
+- Análisis de precios y competidores
+- Planes de suscripción: Gratis, Básico, Pro, Enterprise
+- Comisión del 10% por venta
+- Publicaciones destacadas y promociones
+- Gestión de stock y envíos
+
+Reglas:
+- Respondé siempre en español argentino, profesional y motivador.
+- Sé específico con estrategias accionables.
+- Si preguntan por Marketing IA, sugerí ir a /dashboard y hacer click en "Marketing IA".
+- Para soporte de vendedores: soporte@madsjeez.com.ar`,
+
+  support: `Sos el SOPORTE TÉCNICO de MadsJeez, marketplace de maquinaria y herramientas. Resolvés problemas de compras, envíos, pagos, cuentas y devoluciones.
+
+Tu especialidad:
+- Problemas con pedidos: dónde está, demoras, cancelaciones
+- Pagos: MercadoPago, transferencias, reembolsos
+- Envíos: Andreani, Correo Argentino, OCA, retiro en sucursal
+- Devoluciones y garantías: proceso paso a paso
+- Problemas con la cuenta: login, datos, verificación
+- Disputas entre compradores y vendedores
+- Mediaciones y protección al comprador
+
+Reglas:
+- Respondé siempre en español argentino, paciente y empático.
+- Si el usuario tiene un problema grave, escuchalo primero antes de dar soluciones.
+- Sé específico con los pasos a seguir.
+- Para casos complejos, ofrecé contactar a soporte humano: soporte@madsjeez.com.ar o WhatsApp +54 11 2181-6064
+- Horario de atención humana: Lunes a Viernes 9 a 18hs.`,
+
+  buyer: `Sos el ASESOR DE COMPRAS de MadsJeez, marketplace de maquinaria y herramientas. Ayudás a compradores a encontrar lo que necesitan, entender el proceso de compra y resolver dudas.
+
+Tu especialidad:
+- Cómo comprar paso a paso en MadsJeez
+- Medios de pago: MercadoPago (tarjeta, transferencia, efectivo)
+- Costos de envío y tiempos de entrega
+- Seguimiento de pedidos
+- Protección al comprador
+- Cómo elegir entre productos similares
+- Beneficios de comprar en MadsJeez vs otras plataformas
+- Envío gratis en compras mayores a $15.000
+
+Reglas:
+- Respondé siempre en español argentino, amigable y claro.
+- Explicá los pasos de forma simple, como si fuera la primera vez que compra online.
+- Sé paciente y ofrecé ayuda adicional.
+- Si tiene dudas de seguridad, explicá que MadsJeez protege todas las compras.`
+}
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages } = await req.json()
+    const body = await req.json()
+    const { messages, mode: requestMode } = body
 
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json({ error: "Messages array required" }, { status: 400 })
     }
 
     const lastMessage = messages[messages.length - 1]
+    const mode = (requestMode as ChatMode) || "general"
     const apiKey = process.env.GEMINI_API_KEY
     if (!apiKey) {
       console.error("GEMINI_API_KEY not configured - using fallback responses")
       // Return a helpful static response based on the user's query
       const lower = lastMessage.content.toLowerCase()
-      let fallbackResponse = ""
-      
-      if (lower.includes("carburador") || lower.includes("bujía") || lower.includes("repuesto")) {
-        fallbackResponse = "Para buscar carburadores, bujías y repuestos, te recomiendo usar el buscador en /search. Tenemos una gran variedad de repuestos para desmalezadoras y motosierras. ¿Podés ser más específico sobre el equipo que tenés?"
-      } else if (lower.includes("necesito") || lower.includes("busco") || lower.includes("comprar")) {
-        fallbackResponse = "¡Claro! Podés buscar productos en /search. Tenemos herramientas, maquinaria, ferretería y más. ¿Qué tipo de producto estás buscando?"
-      } else if (lower.includes("envío") || lower.includes("envios") || lower.includes("entrega")) {
-        fallbackResponse = "Hacemos envíos a todo el país con Andreani, Correo Argentino y OCA. También tenés opción de retiro en sucursal. El envío es gratis en compras mayores a $15.000."
-      } else if (lower.includes("vender") || lower.includes("vendedor") || lower.includes("publicar")) {
-        fallbackResponse = "Para vender en MadsJeez, necesitás registrarte como vendedor. Tenemos planes desde Gratis (10 productos) hasta Enterprise (ilimitado). La comisión es del 10% por venta. ¿Te interesa registrarte?"
-      } else if (lower.includes("pago") || lower.includes("pagar") || lower.includes("mercadopago")) {
-        fallbackResponse = "Aceptamos pagos con MercadoPago (tarjeta de crédito/débito, transferencia, efectivo en puntos de pago). También aceptamos transferencia bancaria directa."
-      } else {
-        fallbackResponse = "¡Hola! Soy el asistente de MadsJeez. ¿En qué puedo ayudarte? Podés buscar productos en /search, ver categorías, o contactarnos por WhatsApp +54 11 2181-6064."
-      }
+      let fallbackResponse = getFallbackResponse(mode, lastMessage.content)
       
       return NextResponse.json({ message: fallbackResponse })
     }
@@ -192,8 +258,7 @@ export async function POST(req: NextRequest) {
     } catch (e) {
       console.error("Error fetching context:", e)
     }
-
-    const systemPrompt = BASE_PROMPT + liveContext
+    const systemPrompt = BASE_PROMPTS[mode] + liveContext
     console.log("System prompt length:", systemPrompt.length)
 
     const genAI = new GoogleGenerativeAI(apiKey)
@@ -236,5 +301,48 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       message: "Disculpá, estoy teniendo dificultades técnicas en este momento. Podés probá de nuevo en unos segundos, o contactarnos por WhatsApp +54 11 2181-6064.",
     }, { status: 200 })
+  }
+}
+
+function getFallbackResponse(mode: ChatMode, userMessage: string): string {
+  const lower = userMessage.toLowerCase()
+
+  switch (mode) {
+    case "products":
+      if (lower.includes("carburador") || lower.includes("bujía") || lower.includes("repuesto") || lower.includes("motosierra")) {
+        return "Para buscar productos específicos, te recomiendo usar el buscador en /search. Tenemos una gran variedad de repuestos y herramientas. ¿Podés ser más específico sobre el modelo o marca que necesitás?"
+      }
+      return "¡Claro! Podés buscar productos en /search. Tenemos herramientas, maquinaria, ferretería y más. ¿Qué tipo de producto estás buscando?"
+    case "seller":
+      if (lower.includes("publicar") || lower.includes("vender")) {
+        return "Para publicar productos, andá a /dashboard/publicaciones y seguí los pasos. Te recomiendo usar buenas fotos, títulos descriptivos y precios competitivos. ¿Necesitás ayuda con algo específico?"
+      }
+      return "¡Hola! Soy tu asistente de ventas. ¿Necesitás ayuda con publicaciones, pricing, marketing o reputación?"
+    case "support":
+      if (lower.includes("pedido") || lower.includes("envío") || lower.includes("llegó")) {
+        return "Para consultar el estado de tu pedido, necesito tu número de orden. ¿Lo tenés a mano? También podés verlo en /orders"
+      }
+      if (lower.includes("devolución") || lower.includes("reembolso")) {
+        return "Las devoluciones tienen 7 días desde la recepción. Para iniciar el proceso, andá a /orders y seleccioná el pedido. ¿Tenés algún problema específico con un producto?"
+      }
+      return "Soy soporte técnico de MadsJeez. ¿Tenés un problema con tu compra, envío, pago o cuenta? Contame qué pasó y te ayudo."
+    case "buyer":
+      if (lower.includes("pago") || lower.includes("mercadopago")) {
+        return "Aceptamos MercadoPago (tarjeta de crédito/débito, transferencia, efectivo en puntos de pago). También transferencia bancaria directa. ¿Tenés alguna duda sobre el proceso de pago?"
+      }
+      return "¡Hola! Soy tu asistente de compras. ¿Te ayudo a encontrar productos, entender el proceso de compra, o resolver dudas sobre pagos y envíos?"
+    default:
+      if (lower.includes("carburador") || lower.includes("bujía") || lower.includes("repuesto")) {
+        return "Para buscar carburadores, bujías y repuestos, te recomiendo usar el buscador en /search. Tenemos una gran variedad de repuestos para desmalezadoras y motosierras. ¿Podés ser más específico sobre el equipo que tenés?"
+      } else if (lower.includes("necesito") || lower.includes("busco") || lower.includes("comprar")) {
+        return "¡Claro! Podés buscar productos en /search. Tenemos herramientas, maquinaria, ferretería y más. ¿Qué tipo de producto estás buscando?"
+      } else if (lower.includes("envío") || lower.includes("envios") || lower.includes("entrega")) {
+        return "Hacemos envíos a todo el país con Andreani, Correo Argentino y OCA. También tenés opción de retiro en sucursal. El envío es gratis en compras mayores a $15.000."
+      } else if (lower.includes("vender") || lower.includes("vendedor") || lower.includes("publicar")) {
+        return "Para vender en MadsJeez, necesitás registrarte como vendedor. Tenemos planes desde Gratis (10 productos) hasta Enterprise (ilimitado). La comisión es del 10% por venta. ¿Te interesa registrarte?"
+      } else if (lower.includes("pago") || lower.includes("pagar") || lower.includes("mercadopago")) {
+        return "Aceptamos pagos con MercadoPago (tarjeta de crédito/débito, transferencia, efectivo en puntos de pago). También aceptamos transferencia bancaria directa."
+      }
+      return "¡Hola! Soy el asistente de MadsJeez. ¿En qué puedo ayudarte? Podés buscar productos en /search, ver categorías, o contactarnos por WhatsApp +54 11 2181-6064."
   }
 }

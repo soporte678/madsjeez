@@ -4,6 +4,7 @@ import "./globals.css"
 import { Providers } from "@/components/providers"
 import { WhatsAppFloatingButton } from "@/components/WhatsAppFloatingButton"
 import AIChatBot from "@/components/AIChatBot"
+import { ChatProvider } from "@/components/ChatContext"
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -88,11 +89,13 @@ export default function RootLayout({
         `}</style>
       </head>
       <body className="min-h-full flex flex-col font-outfit">
-        <Providers>
-          {children}
-          <AIChatBot />
-          <WhatsAppFloatingButton />
-        </Providers>
+        <ChatProvider>
+          <Providers>
+            {children}
+            <AIChatBot />
+            <WhatsAppFloatingButton />
+          </Providers>
+        </ChatProvider>
       </body>
     </html>
   )
