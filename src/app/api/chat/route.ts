@@ -159,19 +159,24 @@ export async function POST(req: NextRequest) {
 
     const apiKey = process.env.GEMINI_API_KEY
     if (!apiKey) {
+      console.error("GEMINI_API_KEY not configured")
       return NextResponse.json({ error: "GEMINI_API_KEY not configured" }, { status: 500 })
     }
 
     // Get real-time context from the marketplace database
     const lastMessage = messages[messages.length - 1]
+    console.log("Chat request - last message:", lastMessage.content)
+    
     let liveContext = ""
     try {
       liveContext = await getMarketplaceContext(lastMessage.content)
+      console.log("Context fetched, length:", liveContext.length)
     } catch (e) {
       console.error("Error fetching context:", e)
     }
 
     const systemPrompt = BASE_PROMPT + liveContext
+    console.log("System prompt length:", systemPrompt.length)
 
     const genAI = new GoogleGenerativeAI(apiKey)
     const model = genAI.getGenerativeModel({
@@ -193,16 +198,21 @@ export async function POST(req: NextRequest) {
         parts: [{ text: msg.content }],
       }))
 
+    console.log("History length:", history.length)
+
     const chat = model.startChat({
       history: history.length > 0 ? history : undefined,
     })
 
+    console.log("Sending message to Gemini...")
     const result = await chat.sendMessage(lastMessage.content)
     const response = result.response.text()
+    console.log("Gemini response received, length:", response.length)
 
     return NextResponse.json({ message: response })
   } catch (error: any) {
     console.error("Chat API error:", error)
+    console.error("Error details:", error?.message, error?.stack)
     // Return a helpful fallback so the bot doesn't appear broken
     return NextResponse.json({
       message: "Disculpá, estoy teniendo dificultades técnicas en este momento. Podés probá de nuevo en unos segundos, o contactarnos por WhatsApp +54 11 2181-6064.",
