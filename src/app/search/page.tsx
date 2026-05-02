@@ -12,6 +12,10 @@ import {
   X,
   Star,
   Package,
+  Camera,
+  Sparkles,
+  Loader2,
+  ImageIcon,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -122,6 +126,16 @@ function SearchContent() {
   const [freeShipping, setFreeShipping] = useState(searchParams.get("free_shipping") === "true");
   const [arrivesTomorrow, setArrivesTomorrow] = useState(false);
 
+  // Smart search & Image search
+  const [smartMode, setSmartMode] = useState(false);
+  const [smartLoading, setSmartLoading] = useState(false);
+  const [smartSuggestion, setSmartSuggestion] = useState("");
+  const [smartKeywords, setSmartKeywords] = useState<string[]>([]);
+  const [imageSearchOpen, setImageSearchOpen] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageLoading, setImageLoading] = useState(false);
+  const [imageResult, setImageResult] = useState<any>(null);
+
   useEffect(() => {
     fetchCategories();
     fetchProducts();
@@ -218,6 +232,71 @@ function SearchContent() {
     setArrivesTomorrow(false);
     const q = searchParams.get("q");
     router.push(q ? `/search?q=${encodeURIComponent(q)}` : "/search");
+  };
+
+  /* ── Smart Search with AI ── */
+  const handleSmartSearch = async () => {
+    if (!query.trim()) return;
+    setSmartLoading(true);
+    setSmartMode(true);
+    setSmartSuggestion("");
+    setSmartKeywords([]);
+
+    try {
+      const res = await fetch("/api/search/smart", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: query.trim() }),
+      });
+      const data = await res.json();
+
+      if (data.products) {
+        setProducts(data.products);
+        setSmartSuggestion(data.suggestion || "");
+        setSmartKeywords(data.keywords || []);
+      }
+    } catch (error) {
+      console.error("Smart search error:", error);
+    } finally {
+      setSmartLoading(false);
+      setLoading(false);
+    }
+  };
+
+  /* ── Image Search ── */
+  const handleImageSearch = async (file: File) => {
+    setImageLoading(true);
+    setImageResult(null);
+
+    const reader = new FileReader();
+    reader.onload = (e) => setImagePreview(e.target?.result as string);
+    reader.readAsDataURL(file);
+
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const res = await fetch("/api/search/image", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+
+      if (data.identified) {
+        setImageResult(data.identified);
+        if (data.products && data.products.length > 0) {
+          setProducts(data.products);
+          setSmartMode(true);
+          setSmartSuggestion(`Encontramos productos similares a: ${data.identified.product_name}`);
+          setSmartKeywords(data.identified.keywords || []);
+        }
+      }
+    } catch (error) {
+      console.error("Image search error:", error);
+    } finally {
+      setImageLoading(false);
+      setImageSearchOpen(false);
+    }
   };
 
   const searchTerm = searchParams.get("q") || "Productos";
@@ -342,6 +421,115 @@ function SearchContent() {
 
         {/* ═══ COLUMNA DERECHA: RESULTADOS ═══ */}
         <div className="flex-1">
+
+          {/* AI Search Bar */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
+            <form onSubmit={handleSearch} className="flex items-center gap-2">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Describí lo que buscás... ej: 'algo para cortar pasto en terreno grande'"
+                  className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleSmartSearch}
+                disabled={smartLoading || !query.trim()}
+                className="flex items-center gap-1.5 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all whitespace-nowrap"
+              >
+                {smartLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                IA
+              </button>
+              <button
+                type="button"
+                onClick={() => setImageSearchOpen(!imageSearchOpen)}
+                className="flex items-center gap-1.5 bg-gray-100 text-gray-700 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors whitespace-nowrap"
+              >
+                <Camera className="w-4 h-4" />
+              </button>
+              <button type="submit" className="bg-blue-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700">
+                <Search className="w-4 h-4" />
+              </button>
+            </form>
+
+            {/* Image Upload Area */}
+            {imageSearchOpen && (
+              <div className="mt-3 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center bg-gray-50">
+                {imagePreview ? (
+                  <div className="flex items-center justify-center gap-4">
+                    <img src={imagePreview} alt="Preview" className="w-24 h-24 object-cover rounded-lg" />
+                    {imageLoading ? (
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+                        Analizando imagen con IA...
+                      </div>
+                    ) : (
+                      <button onClick={() => { setImagePreview(null); setImageSearchOpen(true); }} className="text-sm text-blue-600 hover:underline">
+                        Cambiar imagen
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <label className="cursor-pointer">
+                    <ImageIcon className="w-10 h-10 mx-auto text-gray-400 mb-2" />
+                    <p className="text-sm text-gray-600 font-medium">Subí una foto del producto que buscás</p>
+                    <p className="text-xs text-gray-400 mt-1">La IA lo identificará y buscará productos similares</p>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleImageSearch(file);
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
+            )}
+
+            {/* Smart Search Results Banner */}
+            {smartMode && smartSuggestion && (
+              <div className="mt-3 bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-3 flex items-start gap-3">
+                <Sparkles className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm text-purple-900 font-medium">{smartSuggestion}</p>
+                  {smartKeywords.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {smartKeywords.map((kw) => (
+                        <span key={kw} className="bg-white text-purple-700 text-xs px-2 py-0.5 rounded-full border border-purple-200">
+                          {kw}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <button onClick={() => { setSmartMode(false); fetchProducts(); }} className="text-gray-400 hover:text-gray-600 ml-auto">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            {/* Image Search Result */}
+            {imageResult && imageResult.confidence > 0 && (
+              <div className="mt-3 bg-green-50 border border-green-200 rounded-lg p-3 flex items-start gap-3">
+                <Camera className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm text-green-900 font-medium">
+                    Identificado: {imageResult.product_name} ({Math.round(imageResult.confidence * 100)}% confianza)
+                  </p>
+                  <p className="text-xs text-green-700 mt-0.5">{imageResult.description}</p>
+                </div>
+                <button onClick={() => setImageResult(null)} className="text-gray-400 hover:text-gray-600 ml-auto">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* Sort bar */}
           <div className="flex justify-between items-center mb-6">
