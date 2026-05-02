@@ -22,6 +22,7 @@ import CartView from "@/components/dashboard/CartView";
 import HelpView from "@/components/dashboard/HelpView";
 import NotificationsDropdown from "@/components/dashboard/NotificationsDropdown";
 import PublicacionesView from "@/components/dashboard/PublicacionesView";
+import MarketingIAPage from "@/app/dashboard/marketing/page";
 
 function getInitialMenu() {
   if (typeof window !== 'undefined') {
@@ -169,6 +170,7 @@ export default function App() {
       isOpen: marketingOpen,
       setIsOpen: setMarketingOpen,
       subItems: [
+        { id: 'marketing-ia', label: '✨ Marketing IA' },
         { id: 'central-marketing', label: 'Central de marketing' },
         { id: 'publicidad', label: 'Publicidad' },
         { id: 'promociones', label: 'Promociones' },
@@ -489,6 +491,7 @@ export default function App() {
             {activeMenu === 'carrito' && <CartView />}
             {activeMenu === 'ayuda' && <HelpView userData={currentUser || undefined} onNavigate={(section) => setActiveMenu(section)} />}
             {activeMenu === 'publicaciones' && <div className="-mx-4 lg:-mx-8">{renderPublicaciones()}</div>}
+            {activeMenu === 'marketing-ia' && <MarketingIAPage />}
           </div>
         </section>
       </div>
