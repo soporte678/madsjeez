@@ -106,9 +106,10 @@ export default function VendedoresPage() {
 
       setSellers(formattedSellers)
       setTotalCount(count || 0)
-    } catch (error) {
-      console.error("Error fetching sellers:", error)
-      toast.error("Error al cargar vendedores")
+    } catch (error: any) {
+      console.error("Error fetching sellers:", error?.message || error)
+      setSellers([])
+      setTotalCount(0)
     } finally {
       setLoading(false)
     }

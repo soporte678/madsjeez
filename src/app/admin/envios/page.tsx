@@ -43,85 +43,60 @@ export default function EnviosPage() {
   const [carrierFilter, setCarrierFilter] = useState<string>("all")
   const [searchQuery, setSearchQuery] = useState("")
 
-  // Demo data
-  const demoShipments: Shipment[] = [
-    {
-      id: "ship-001",
-      order_id: "ord-001",
-      tracking_number: "TRK-18847291",
-      carrier: "Andreani",
-      status: "delayed",
-      seller_id: "seller-1",
-      seller_name: "Ferretería Industrial Sur",
-      seller_email: "ventas@ferreteriasur.com",
-      estimated_delivery: new Date(Date.now() + 86400000).toISOString(),
-      created_at: new Date(Date.now() - 86400000 * 3).toISOString(),
-      updated_at: new Date().toISOString(),
-      delay_reason: "Demora en centro de distribución",
-      days_delayed: 2,
-    },
-    {
-      id: "ship-002",
-      order_id: "ord-002",
-      tracking_number: "TRK-28847292",
-      carrier: "Correo Argentino",
-      status: "delayed",
-      seller_id: "seller-2",
-      seller_name: "Maquinaria Norte",
-      seller_email: "contacto@maq-norte.com",
-      estimated_delivery: new Date(Date.now() + 172800000).toISOString(),
-      created_at: new Date(Date.now() - 86400000 * 4).toISOString(),
-      updated_at: new Date().toISOString(),
-      delay_reason: "Paro de transporte",
-      days_delayed: 3,
-    },
-    {
-      id: "ship-003",
-      order_id: "ord-003",
-      tracking_number: "TRK-38847293",
-      carrier: "OCA",
-      status: "in_transit",
-      seller_id: "seller-3",
-      seller_name: "Repuestos Pro",
-      seller_email: "info@repuestospro.com",
-      estimated_delivery: new Date(Date.now() + 43200000).toISOString(),
-      created_at: new Date(Date.now() - 86400000).toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-    {
-      id: "ship-004",
-      order_id: "ord-004",
-      tracking_number: "TRK-48847294",
-      carrier: "Andreani",
-      status: "delayed",
-      seller_id: "seller-4",
-      seller_name: "AgroTools SRL",
-      seller_email: "pedidos@agrotools.com",
-      estimated_delivery: new Date(Date.now() + 259200000).toISOString(),
-      created_at: new Date(Date.now() - 86400000 * 5).toISOString(),
-      updated_at: new Date().toISOString(),
-      days_delayed: 4,
-    },
-    {
-      id: "ship-005",
-      order_id: "ord-005",
-      carrier: "Moto",
-      status: "pending",
-      seller_id: "seller-5",
-      seller_name: "Ferretería Central",
-      seller_email: "ventas@ferrecentral.com",
-      created_at: new Date(Date.now() - 3600000).toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-  ]
-
   useEffect(() => {
+    fetchShipments()
+  }, [filter])
+
+  const fetchShipments = async () => {
+    const supabase = createClient()
     setLoading(true)
-    setTimeout(() => {
-      setShipments(demoShipments)
+
+    try {
+      let query = supabase
+        .from("shipments")
+        .select("*")
+
+      if (filter !== "all") query = query.eq("status", filter)
+
+      const { data, error } = await query.order("created_at", { ascending: false })
+
+      if (error) throw error
+
+      const formatted: Shipment[] = (data || []).map((s: any) => {
+        let daysDelayed = 0
+        if (s.estimated_delivery && s.status !== "delivered") {
+          const est = new Date(s.estimated_delivery).getTime()
+          const now = Date.now()
+          if (now > est) {
+            daysDelayed = Math.floor((now - est) / 86400000)
+          }
+        }
+        return {
+          id: s.id,
+          order_id: s.order_id,
+          tracking_number: s.tracking_number,
+          carrier: s.carrier || "Sin asignar",
+          status: s.status,
+          seller_id: s.seller_id || "",
+          seller_name: s.seller_name || "",
+          seller_email: s.seller_email || "",
+          estimated_delivery: s.estimated_delivery,
+          actual_delivery: s.actual_delivery,
+          delay_reason: s.delay_reason,
+          created_at: s.created_at,
+          updated_at: s.updated_at,
+          days_delayed: daysDelayed,
+        }
+      })
+
+      setShipments(formatted)
+    } catch (error) {
+      console.error("Error fetching shipments:", error)
+      setShipments([])
+    } finally {
       setLoading(false)
-    }, 500)
-  }, [])
+    }
+  }
 
   const getStatusBadge = (status: string) => {
     const styles: Record<string, string> = {
@@ -150,8 +125,20 @@ export default function EnviosPage() {
   }
 
   const handleCancelAndPenalize = async (shipmentId: string) => {
-    toast.success("Envío cancelado y vendedor penalizado")
-    setShipments(prev => prev.filter(s => s.id !== shipmentId))
+    const supabase = createClient()
+    try {
+      const { error } = await supabase
+        .from("shipments")
+        .update({ status: "returned", delay_reason: "Cancelado y penalizado por admin" })
+        .eq("id", shipmentId)
+
+      if (error) throw error
+      toast.success("Envío cancelado y vendedor penalizado")
+      fetchShipments()
+    } catch (error) {
+      console.error("Error:", error)
+      toast.error("Error al cancelar envío")
+    }
   }
 
   const handleContactSeller = (email: string) => {

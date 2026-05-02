@@ -43,7 +43,7 @@ export default function AdminDashboardPage() {
     ingresosMes: 0,
   })
   const [loading, setLoading] = useState(true)
-  const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
+  const [lastUpdated, setLastUpdated] = useState<string>("")
 
   useEffect(() => {
     fetchDashboardData()
@@ -124,7 +124,7 @@ export default function AdminDashboardPage() {
         totalOrdenes: totalOrdenes || 0,
         ingresosMes,
       })
-      setLastUpdated(new Date())
+      setLastUpdated(new Date().toLocaleTimeString("es-AR"))
     } catch (error) {
       console.error("Error fetching dashboard data:", error)
       toast.error("Error al cargar estadísticas")
@@ -198,7 +198,7 @@ export default function AdminDashboardPage() {
           <h2 className="text-2xl font-bold text-gray-800">Centro de Comando Global</h2>
           <p className="text-sm text-gray-500">Métricas en tiempo real de MaqJeez</p>
           <p className="text-xs text-gray-400 mt-1">
-            Actualizado: {lastUpdated.toLocaleTimeString("es-AR")}
+            Actualizado: {lastUpdated || "..."}
           </p>
         </div>
         <div className="flex gap-2">

@@ -3,6 +3,7 @@ import { Outfit, Montserrat } from "next/font/google"
 import "./globals.css"
 import { Providers } from "@/components/providers"
 import { WhatsAppFloatingButton } from "@/components/WhatsAppFloatingButton"
+import AIChatBot from "@/components/AIChatBot"
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -89,6 +90,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col font-outfit">
         <Providers>
           {children}
+          <AIChatBot />
           <WhatsAppFloatingButton />
         </Providers>
       </body>

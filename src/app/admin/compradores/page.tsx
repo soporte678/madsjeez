@@ -100,9 +100,10 @@ export default function CompradoresPage() {
 
       setBuyers(formattedBuyers)
       setTotalCount(count || 0)
-    } catch (error) {
-      console.error("Error fetching buyers:", error)
-      toast.error("Error al cargar compradores")
+    } catch (error: any) {
+      console.error("Error fetching buyers:", error?.message || error)
+      setBuyers([])
+      setTotalCount(0)
     } finally {
       setLoading(false)
     }

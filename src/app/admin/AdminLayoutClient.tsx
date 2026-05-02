@@ -120,7 +120,7 @@ const menuGroups: MenuGroup[] = [
     title: "Sistema",
     items: [
       { id: "errores", label: "Errores (Logs)", icon: Activity, href: "/admin/logs" },
-      { id: "config", label: "Configuración", icon: Settings, href: "/admin/config" },
+      { id: "config", label: "Configuración", icon: Settings, href: "/admin/configuracion" },
     ],
   },
 ]

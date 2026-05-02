@@ -40,69 +40,34 @@ export default function MensajesPage() {
   const [filter, setFilter] = useState<"all" | "pending" | "approved" | "high_severity">("all")
   const [searchQuery, setSearchQuery] = useState("")
 
-  // Datos de ejemplo para demostración
-  const demoMessages: FlaggedMessage[] = [
-    {
-      id: "1",
-      question_id: "q-001",
-      buyer_id: "buyer-1",
-      seller_id: "seller-1",
-      product_id: "prod-1",
-      question_text: "Tenés stock? Puedo ir a buscarlo?",
-      answer_text: "Sí, escribinos al once, cuatro cinco, seis siete, dos dos, nueve nueve. AgroMax.",
-      buyer_name: "Juan Pérez",
-      seller_name: "AgroMax",
-      product_title: "Motosierra Stihl MS 170",
-      infraction_type: "phone",
-      severity: "high",
-      ai_confidence: 0.94,
-      status: "pending",
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: "2",
-      question_id: "q-002",
-      buyer_id: "buyer-2",
-      seller_id: "seller-2",
-      product_id: "prod-2",
-      question_text: "Me hacés precio por fuera?",
-      answer_text: 'Buscame en G o o g l e como "Ferretería Los Hermanos" y te hago un 15% off.',
-      buyer_name: "María Gómez",
-      seller_name: "Ferretería Los Hermanos",
-      product_title: "Desmalezadora 52cc",
-      infraction_type: "external_link",
-      severity: "high",
-      ai_confidence: 0.91,
-      status: "pending",
-      created_at: new Date(Date.now() - 3600000).toISOString(),
-    },
-    {
-      id: "3",
-      question_id: "q-003",
-      buyer_id: "buyer-3",
-      seller_id: "seller-3",
-      product_id: "prod-3",
-      question_text: "Hacen envíos a Mendoza?",
-      answer_text: "Sí, hacemos envíos a todo el país por correo argentino.",
-      buyer_name: "Carlos López",
-      seller_name: "Herramientas Sur",
-      product_title: "Taladro percutor 750W",
-      infraction_type: "other",
-      severity: "low",
-      ai_confidence: 0.23,
-      status: "approved",
-      created_at: new Date(Date.now() - 7200000).toISOString(),
-    },
-  ]
-
   useEffect(() => {
-    // Simular carga de datos - en producción sería una consulta real
+    fetchMessages()
+  }, [filter])
+
+  const fetchMessages = async () => {
+    const supabase = createClient()
     setLoading(true)
-    setTimeout(() => {
-      setMessages(demoMessages)
+
+    try {
+      let query = supabase
+        .from("flagged_messages")
+        .select("*")
+
+      if (filter === "pending") query = query.eq("status", "pending")
+      if (filter === "approved") query = query.eq("status", "approved")
+      if (filter === "high_severity") query = query.eq("severity", "high")
+
+      const { data, error } = await query.order("created_at", { ascending: false })
+
+      if (error) throw error
+      setMessages(data || [])
+    } catch (error) {
+      console.error("Error fetching messages:", error)
+      setMessages([])
+    } finally {
       setLoading(false)
-    }, 500)
-  }, [])
+    }
+  }
 
   const getInfractionLabel = (type: string) => {
     const labels: Record<string, string> = {
@@ -154,20 +119,29 @@ export default function MensajesPage() {
   }
 
   const handleAction = async (messageId: string, action: "approve" | "reject" | "edit") => {
-    // Simulación - en producción sería una llamada real a la API
-    toast.success(
-      action === "approve" 
-        ? "Mensaje aprobado" 
-        : action === "reject" 
-        ? "Mensaje rechazado e infracción aplicada" 
-        : "Mensaje editado y aprobado"
-    )
-    
-    setMessages(prev => prev.map(m => 
-      m.id === messageId 
-        ? { ...m, status: action === "approve" ? "approved" : action === "reject" ? "rejected" : "edited" }
-        : m
-    ))
+    const supabase = createClient()
+    const newStatus = action === "approve" ? "approved" : action === "reject" ? "rejected" : "edited"
+
+    try {
+      const { error } = await supabase
+        .from("flagged_messages")
+        .update({ status: newStatus })
+        .eq("id", messageId)
+
+      if (error) throw error
+
+      toast.success(
+        action === "approve" 
+          ? "Mensaje aprobado" 
+          : action === "reject" 
+          ? "Mensaje rechazado e infracción aplicada" 
+          : "Mensaje editado y aprobado"
+      )
+      fetchMessages()
+    } catch (error) {
+      console.error("Error:", error)
+      toast.error("Error al actualizar mensaje")
+    }
   }
 
   const filteredMessages = messages.filter((m) => {
