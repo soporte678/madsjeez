@@ -78,13 +78,17 @@ export default function PublicacionesView() {
   const handlePublished = () => { setShowFlow(false); setEditingProduct(null); load() }
 
   const toggle = async (id: string, active: boolean) => {
+    const scrollY = window.scrollY
     await fetch("/api/dashboard/products", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, isActive: active }) })
-    load()
+    await load()
+    requestAnimationFrame(() => window.scrollTo(0, scrollY))
   }
   const remove = async (id: string) => {
     if (!confirm("¿Eliminar publicación?")) return
+    const scrollY = window.scrollY
     await fetch(`/api/dashboard/products?id=${id}`, { method: "DELETE" })
-    load()
+    await load()
+    requestAnimationFrame(() => window.scrollTo(0, scrollY))
   }
 
   const toggleSelect = (id: string) => { const s = new Set(selected); s.has(id) ? s.delete(id) : s.add(id); setSelected(s) }
@@ -93,8 +97,10 @@ export default function PublicacionesView() {
   const bulkActivate = async () => { for (const id of selected) await toggle(id, true); setSelected(new Set()) }
   const bulkDelete = async () => {
     if (!confirm(`¿Eliminar ${selected.size} publicaciones?`)) return
+    const scrollY = window.scrollY
     for (const id of selected) await fetch(`/api/dashboard/products?id=${id}`, { method: "DELETE" })
-    setSelected(new Set()); load()
+    setSelected(new Set()); await load()
+    requestAnimationFrame(() => window.scrollTo(0, scrollY))
   }
 
   if (showFlow) {
