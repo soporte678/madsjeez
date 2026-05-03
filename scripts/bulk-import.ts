@@ -52,7 +52,7 @@ Envío a todo el país. Retiro en sucursal disponible. Consultá opciones al fin
 }
 
 async function uploadImages(folderPath: string): Promise<string[]> {
-  const files = fs.readdirSync(folderPath).filter(f => /\.(jpg|jpeg|png|webp)$/i.test(f)).slice(0, 10);
+  const files = fs.readdirSync(folderPath).filter(f => /\.(jpg|jpeg|png|webp)$/i.test(f)).slice(0, 3);
   const urls: string[] = [];
   for (const file of files) {
     const fileName = `bulk-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
@@ -69,31 +69,36 @@ async function uploadImages(folderPath: string): Promise<string[]> {
 }
 
 async function main() {
-  // 1. Get or create seller
-  const { data: existingSeller } = await supabase
-    .from("profiles")
-    .select("id, email")
+  // 1. Get seller from users table (products.seller_id FK references users.id)
+  const { data: existingUser } = await supabase
+    .from("users")
+    .select("id, email, isSeller")
     .eq("email", "vianferreteria@gmail.com")
     .maybeSingle();
 
-  let sellerId = existingSeller?.id;
+  let sellerId = existingUser?.id;
   if (!sellerId) {
     sellerId = randomUUID();
-    const { error: createErr } = await supabase.from("profiles").insert({
+    const { error: createErr } = await supabase.from("users").insert({
       id: sellerId,
       email: "vianferreteria@gmail.com",
       name: "Vian Ferreteria",
-      is_seller: true,
-      seller_name: "Vian Ferreteria",
-      is_active: true,
+      isSeller: true,
+      sellerName: "Vian Ferreteria",
+      subscriptionTier: "FREE",
+      role: "USER",
       created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     });
     if (createErr) {
-      console.error("Failed to create seller:", createErr);
+      console.error("Failed to create user seller:", createErr);
       throw createErr;
     }
-    console.log("Created seller:", sellerId);
+    console.log("Created seller in users:", sellerId);
   } else {
+    if (existingUser && !existingUser.isSeller) {
+      await supabase.from("users").update({ isSeller: true }).eq("id", sellerId);
+    }
     console.log("Using existing seller:", sellerId);
   }
 

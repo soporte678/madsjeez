@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import { usePathname } from "next/navigation"
 import { MessageCircle, X, Send, Bot, User, Loader2 } from "lucide-react"
 import { useChat, type ChatMode } from "./ChatContext"
 
@@ -38,12 +39,18 @@ const modeConfig: Record<ChatMode, { welcome: string; title: string; quick: stri
 }
 
 export default function AIChatBot() {
+  const pathname = usePathname()
   const { isOpen, closeChat, mode } = useChat()
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  // Hide on dashboard and admin pages (they have their own assistants)
+  if (pathname?.startsWith("/dashboard") || pathname?.startsWith("/admin")) {
+    return null
+  }
 
   // Reset messages when mode changes or chat opens
   useEffect(() => {

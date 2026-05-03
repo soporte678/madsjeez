@@ -72,6 +72,7 @@ export default function App() {
   
   // Estado para el widget del Asistente
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [currentUser, setCurrentUser] = useState<{ name: string; email: string; image: string | null } | null>(null);
   const [cartItemCount, setCartItemCount] = useState(0);
 
@@ -436,13 +437,18 @@ export default function App() {
 
       {/* CONTENIDO PRINCIPAL: sidebar pegado al borde izquierdo */}
       <div className="flex-1 flex">
-        {/* SIDEBAR IZQUIERDO: pegado al borde, sin margen */}
-        <aside className="w-56 flex-shrink-0 bg-white border-r border-gray-200">
-          <div className="py-6 px-0">
-            <h2 className="font-bold text-lg mb-4 flex items-center gap-2 px-4">
-              <span className="grid grid-cols-2 gap-0.5"><span className="w-2 h-2 bg-blue-500 rounded-sm"></span><span className="w-2 h-2 bg-blue-500 rounded-sm"></span><span className="w-2 h-2 bg-blue-500 rounded-sm"></span><span className="w-2 h-2 bg-blue-500 rounded-sm"></span></span>
-              MI CUENTA
-            </h2>
+        {/* SIDEBAR IZQUIERDO: colapsable, cerrado por defecto */}
+        <aside className={`flex-shrink-0 bg-white border-r border-gray-200 transition-all duration-300 ease-in-out overflow-hidden ${sidebarCollapsed ? 'w-0 opacity-0' : 'w-56 opacity-100'}`}>
+          <div className="py-6 px-0 w-56">
+            <div className="flex items-center justify-between px-4 mb-4">
+              <h2 className="font-bold text-lg flex items-center gap-2">
+                <span className="grid grid-cols-2 gap-0.5"><span className="w-2 h-2 bg-blue-500 rounded-sm"></span><span className="w-2 h-2 bg-blue-500 rounded-sm"></span><span className="w-2 h-2 bg-blue-500 rounded-sm"></span><span className="w-2 h-2 bg-blue-500 rounded-sm"></span></span>
+                MI CUENTA
+              </h2>
+              <button onClick={() => setSidebarCollapsed(true)} className="p-1 hover:bg-gray-100 rounded-lg transition-colors text-gray-400 hover:text-gray-600" title="Cerrar menú">
+                <X size={18} />
+              </button>
+            </div>
             <nav className="flex flex-col gap-1">
               {menuItems.map((item) => (
                 <div key={item.id}>
@@ -473,6 +479,17 @@ export default function App() {
             </nav>
           </div>
         </aside>
+
+        {/* Toggle sidebar button - visible when collapsed */}
+        {sidebarCollapsed && (
+          <button
+            onClick={() => setSidebarCollapsed(false)}
+            className="fixed left-4 top-24 z-40 bg-white border border-gray-200 shadow-sm hover:shadow-md rounded-lg p-2 transition-all hover:bg-gray-50 text-gray-600"
+            title="Abrir menú"
+          >
+            <span className="grid grid-cols-2 gap-0.5"><span className="w-2 h-2 bg-blue-500 rounded-sm"></span><span className="w-2 h-2 bg-blue-500 rounded-sm"></span><span className="w-2 h-2 bg-blue-500 rounded-sm"></span><span className="w-2 h-2 bg-blue-500 rounded-sm"></span></span>
+          </button>
+        )}
 
         {/* ÁREA CENTRAL DINÁMICA */}
         <section className="flex-1 p-6 lg:p-8">
