@@ -1,5 +1,6 @@
 "use client"
 import React, { useState, useEffect, useRef, ChangeEvent } from "react"
+import { WholesalePriceManager } from "./WholesalePriceManager"
 import {
   ChevronLeft, Search, ChevronRight, X, Info,
   Check, Image as ImageIcon, Upload, ChevronDown, Sparkles,
@@ -993,6 +994,16 @@ export default function PublicarFlow({ onClose, onPublished, editProduct }: Prop
                 )}
               </div>
             </div>
+
+            {/* PRECIOS MAYORISTAS - Solo en edición */}
+            {editProduct && (
+              <div className="mb-4">
+                <WholesalePriceManager 
+                  productId={editProduct.id} 
+                  basePrice={parseFloat(data.price) || editProduct.price} 
+                />
+              </div>
+            )}
 
             {/* FORMA DE ENTREGA */}
             <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden mb-4">
