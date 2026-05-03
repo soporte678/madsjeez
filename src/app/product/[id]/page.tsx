@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { ProductDetailClient } from "@/components/product/ProductDetailClient";
+import { BuyBox } from "@/components/product/BuyBox";
 
 async function getProduct(id: string) {
   const supabase = await createClient();
@@ -473,153 +474,24 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
 
             {/* RIGHT COLUMN - Buy Box */}
             <div className="w-full lg:w-[350px] flex-shrink-0 flex flex-col gap-4 px-4 lg:px-0">
-
-              {/* BUY BOX */}
-              <div className="border border-gray-200 rounded-lg p-5">
-                <div className="flex flex-col gap-1 mb-6">
-                  {product.free_shipping ? (
-                    <>
-                      <span className="text-emerald-500 font-semibold text-[15px] flex items-center gap-1"><Truck size={18}/> Llega gratis mañana</span>
-                      <span className="text-emerald-500 text-[13px] mt-0.5">Llega mañana entre las 10 y 12 hs.</span>
-                      <Link href="#" className="text-blue-500 text-[13px] hover:underline mt-1">Más detalles y formas de entrega</Link>
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-gray-700 font-semibold text-[15px] flex items-center gap-1"><Truck size={18}/> Envío a calcular</span>
-                      <Link href="#" className="text-blue-500 text-[13px] hover:underline mt-1">Ver opciones de envío</Link>
-                    </>
-                  )}
-                </div>
-
-                <div className="mb-6">
-                  <span className="font-semibold text-gray-800 text-[15px] block mb-2">Stock disponible</span>
-                  <div className="flex items-center gap-3">
-                    <span className="text-[14px] text-gray-800">Cantidad: <strong>1 unidad</strong></span>
-                    <ChevronDown size={14} className="text-blue-500" />
-                    <span className="text-[13px] text-gray-400">(+{product.stock} disponibles)</span>
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-2 mb-6">
-                  <Link href={`/checkout?product=${product.id}`} className="w-full bg-[#3483fa] text-white font-semibold py-3.5 rounded-md hover:bg-[#2968c8] transition-colors text-center text-[16px]">
-                    Comprar ahora
-                  </Link>
-                  <button className="w-full bg-[#d7e7ff] text-[#3483fa] font-semibold py-3.5 rounded-md hover:bg-[#c5dcfa] transition-colors text-[16px]">
-                    Agregar al carrito
-                  </button>
-                </div>
-
-                {/* Seller info */}
-                <div className="mb-6 border-b border-gray-200 pb-6">
-                  <p className="text-[13px] text-gray-800 mb-0.5">Vendido por <Link href={`/seller/${product.seller_id}`} className="text-blue-500 font-semibold hover:underline">{sellerName}</Link></p>
-                  <p className="text-[13px] text-gray-800 mb-0.5">{sellerRepLevel} | +{sellerTotalSales} ventas</p>
-                  <p className="text-[12px] text-gray-400">Hace Factura A</p>
-                </div>
-
-                <div className="flex flex-col gap-4 text-[13px] text-gray-500 mb-6">
-                  <div className="flex items-start gap-3">
-                    <Undo size={18} className="text-gray-400 shrink-0 mt-0.5" />
-                    <p><span className="text-blue-500">Devolución gratis.</span> Tenés 30 días desde que lo recibís.</p>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <ShieldCheck size={18} className="text-gray-400 shrink-0 mt-0.5" />
-                    <p><span className="text-blue-500">Compra Protegida.</span> Recibí el producto que esperabas o te devolvemos tu dinero.</p>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <Award size={18} className="text-gray-400 shrink-0 mt-0.5" />
-                    <p>30 días de garantía de fábrica.</p>
-                  </div>
-                </div>
-
-                <button className="w-full py-2 flex items-center justify-center gap-2 text-[#3483fa] font-semibold text-[14px] hover:bg-blue-50 rounded-md transition-colors">
-                  <Heart size={16} /> Agregar a una lista
-                </button>
-              </div>
-
-              {/* SELLER REPUTATION BOX */}
-              <div className="border border-gray-200 rounded-lg p-5">
-                <h3 className="text-[16px] font-semibold text-gray-800 mb-4">Vendido por {sellerName}</h3>
-                <p className="text-[14px] font-semibold text-gray-800 mb-1">+{sellerProductCount} Productos</p>
-                <div className={`flex items-center gap-2 font-bold text-[13px] mb-1 ${isNewSeller ? "text-gray-400" : "text-emerald-500"}`}>
-                  <Award size={16} fill="currentColor" /> {sellerRepLevel}
-                </div>
-                <p className="text-[12px] text-gray-500 mb-4">{isNewSeller ? "Vendedor nuevo en MADSJEEZ" : "¡Uno de los mejores del sitio!"}</p>
-
-                {/* Thermometer */}
-                <div className="flex h-2 rounded-full overflow-hidden gap-1 mb-4">
-                  {isNewSeller ? (
-                    <>
-                      <div className="flex-1 bg-gray-200"></div>
-                      <div className="flex-1 bg-gray-200"></div>
-                      <div className="flex-1 bg-gray-200"></div>
-                      <div className="flex-1 bg-gray-200"></div>
-                      <div className="flex-1 bg-gray-200"></div>
-                    </>
-                  ) : (
-                    <>
-                      <div className={`flex-1 ${sellerRepColor === "ROJO" ? "bg-red-500" : "bg-red-200"}`}></div>
-                      <div className={`flex-1 ${sellerRepColor === "NARANJA" ? "bg-orange-500" : "bg-orange-200"}`}></div>
-                      <div className={`flex-1 ${sellerRepColor === "AMARILLO" ? "bg-yellow-500" : "bg-yellow-200"}`}></div>
-                      <div className={`flex-1 ${sellerRepColor === "VERDE" ? "bg-lime-500" : "bg-lime-200"}`}></div>
-                      <div className={`flex-1 ${sellerRepColor === "VERDE_OSCURO" ? "bg-emerald-500 shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]" : "bg-emerald-200"}`}></div>
-                    </>
-                  )}
-                </div>
-
-                <div className="flex justify-between text-center mb-6">
-                  <div className="flex flex-col items-center flex-1 border-r border-gray-200">
-                    <span className={`text-[18px] font-bold ${isNewSeller ? "text-gray-400" : "text-gray-800"}`}>+{sellerTotalSales}</span>
-                    <span className="text-[10px] text-gray-500 leading-tight">Ventas</span>
-                  </div>
-                  <div className="flex flex-col items-center flex-1 border-r border-gray-200 px-2">
-                    <MessageCircle size={20} className={`mb-1 ${isNewSeller ? "text-gray-300" : "text-emerald-500"}`} />
-                    <span className="text-[10px] text-gray-500 leading-tight">{isNewSeller ? "Calibrando" : "Buena atención"}</span>
-                  </div>
-                  <div className="flex flex-col items-center flex-1">
-                    <Clock size={20} className={`mb-1 ${isNewSeller ? "text-gray-300" : "text-emerald-500"}`} />
-                    <span className="text-[10px] text-gray-500 leading-tight">{isNewSeller ? "Calculando" : "Entrega a tiempo"}</span>
-                  </div>
-                </div>
-
-                <Link href={`/seller/${product.seller_id}`} className="block text-center text-blue-500 font-semibold text-[14px] hover:underline">
-                  Ver más datos de este vendedor
-                </Link>
-              </div>
-
-              {/* PAYMENT METHODS */}
-              <div className="border border-gray-200 rounded-lg p-5">
-                <h3 className="text-[16px] font-semibold text-gray-800 mb-4">Medios de pago</h3>
-
-                <div className="bg-emerald-500 text-white p-3 rounded-lg mb-4 text-[13px] font-bold flex items-center gap-2">
-                  <CreditCard size={18} /> ¡Pagá el mismo precio en hasta 6 cuotas!
-                </div>
-
-                <div className="mb-4">
-                  <p className="text-[13px] font-semibold text-gray-800 mb-2">Cuotas sin Tarjeta</p>
-                  <div className="flex items-center gap-2">
-                    <div className="bg-blue-500 text-white text-[10px] px-1 py-0.5 rounded font-bold italic">Mads Pago</div>
-                  </div>
-                </div>
-
-                <div className="mb-4">
-                  <p className="text-[13px] font-semibold text-gray-800 mb-2">Tarjetas de crédito</p>
-                  <div className="flex items-center gap-2">
-                    <div className="w-10 h-6 bg-blue-900 rounded flex items-center justify-center text-white text-[8px] font-bold italic">VISA</div>
-                    <div className="w-10 h-6 bg-blue-500 rounded flex items-center justify-center text-white text-[8px] font-bold italic">AMEX</div>
-                    <div className="w-10 h-6 bg-orange-500 rounded flex items-center justify-center text-white text-[8px] font-bold italic">MASTER</div>
-                  </div>
-                </div>
-
-                <div className="mb-4">
-                  <p className="text-[13px] font-semibold text-gray-800 mb-2">Efectivo</p>
-                  <div className="flex items-center gap-2">
-                    <div className="w-16 h-6 bg-yellow-400 rounded flex items-center justify-center text-blue-900 text-[10px] font-bold italic">PagoFácil</div>
-                  </div>
-                </div>
-
-                <Link href="#" className="text-blue-500 font-semibold text-[13px] hover:underline">Conocé otros medios de pago</Link>
-              </div>
-
+              <BuyBox
+                productId={product.id}
+                productTitle={product.title}
+                basePrice={product.price}
+                originalPrice={product.original_price}
+                freeShipping={product.free_shipping}
+                shippingCost={product.shipping_cost}
+                stock={product.stock}
+                sellerId={product.seller_id}
+                sellerName={sellerName}
+                sellerRepLevel={sellerRepLevel}
+                sellerRepColor={sellerRepColor}
+                sellerTotalSales={sellerTotalSales}
+                isNewSeller={isNewSeller}
+                salesCount={salesCount}
+                discount={discount}
+                cuotas6={cuotas6}
+              />
             </div>
           </div>
 
