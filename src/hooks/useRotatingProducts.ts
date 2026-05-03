@@ -17,12 +17,14 @@ const CAROUSEL_SIZE = 12 // Show 12 products at a time
 const ROTATION_INTERVAL = 60 * 1000 // 60 seconds
 const FETCH_INTERVAL = 5 * 60 * 1000 // Refetch every 5 minutes
 
-export function useRotatingProducts() {
+export function useRotatingProducts(offset: number = 0) {
   const [allProducts, setAllProducts] = useState<Product[]>([])
   const [visibleProducts, setVisibleProducts] = useState<Product[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [loading, setLoading] = useState(true)
   const [totalCount, setTotalCount] = useState(0)
+
+  const effectiveOffset = offset % (allProducts.length || 1)
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -32,8 +34,10 @@ export function useRotatingProducts() {
       if (data.products) {
         setAllProducts(data.products)
         setTotalCount(data.total || 0)
-        // Initial slice
-        setVisibleProducts(data.products.slice(0, CAROUSEL_SIZE))
+        // Initial slice with offset applied
+        const start = offset % data.products.length
+        const rotated = [...data.products.slice(start), ...data.products.slice(0, start)]
+        setVisibleProducts(rotated.slice(0, CAROUSEL_SIZE))
         setCurrentIndex(0)
       }
     } catch (e) {
@@ -41,7 +45,7 @@ export function useRotatingProducts() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [offset])
 
   // Initial fetch
   useEffect(() => {
@@ -54,7 +58,7 @@ export function useRotatingProducts() {
     return () => clearInterval(interval)
   }, [fetchProducts])
 
-  // Rotation every 60 seconds
+  // Rotation every 60 seconds — each carousel rotates independently
   useEffect(() => {
     if (allProducts.length <= CAROUSEL_SIZE) return
 
@@ -63,13 +67,19 @@ export function useRotatingProducts() {
         const next = prev + CAROUSEL_SIZE
         const maxStart = Math.max(0, allProducts.length - CAROUSEL_SIZE)
         const newIndex = next > maxStart ? 0 : next
-        setVisibleProducts(allProducts.slice(newIndex, newIndex + CAROUSEL_SIZE))
+        // Apply offset so each carousel shows different products
+        const effectiveStart = (newIndex + effectiveOffset) % allProducts.length
+        const rotated = [
+          ...allProducts.slice(effectiveStart),
+          ...allProducts.slice(0, effectiveStart)
+        ]
+        setVisibleProducts(rotated.slice(0, CAROUSEL_SIZE))
         return newIndex
       })
     }, ROTATION_INTERVAL)
 
     return () => clearInterval(interval)
-  }, [allProducts])
+  }, [allProducts, effectiveOffset])
 
   return { products: visibleProducts, allProducts, loading, totalCount }
 }

@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { ChevronLeft, ChevronRight, Truck, Clock } from "lucide-react"
+import { ChevronLeft, ChevronRight, Truck } from "lucide-react"
 import { useRotatingProducts } from "@/hooks/useRotatingProducts"
 
 interface RotatingProductCarouselProps {
@@ -13,25 +13,13 @@ interface RotatingProductCarouselProps {
 }
 
 export function RotatingProductCarousel({ title, subtitle, offset = 0 }: RotatingProductCarouselProps) {
-  const { products, loading, totalCount } = useRotatingProducts()
+  const { products, loading, totalCount } = useRotatingProducts(offset)
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(true)
-  const [nextRotation, setNextRotation] = useState(60)
 
-  // Countdown timer for next rotation
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setNextRotation(prev => prev > 0 ? prev - 1 : 60)
-    }, 1000)
-    return () => clearInterval(interval)
-  }, [])
-
-  // Apply offset for second carousel instance
-  const displayProducts = offset > 0 && products.length > 0
-    ? [...products.slice(offset), ...products.slice(0, Math.min(offset, products.length))].slice(0, 12)
-    : products
+  const displayProducts = products
 
   const checkScroll = () => {
     if (scrollRef.current) {
@@ -103,10 +91,6 @@ export function RotatingProductCarousel({ title, subtitle, offset = 0 }: Rotatin
           <div>
             <h2 className="text-[22px] font-semibold text-[#333]">{title}</h2>
             {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
-          </div>
-          <div className="flex items-center gap-1.5 bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-medium">
-            <Clock size={12} />
-            <span>Cambia en {nextRotation}s</span>
           </div>
           {totalCount > 0 && (
             <span className="text-xs text-gray-400 font-medium">

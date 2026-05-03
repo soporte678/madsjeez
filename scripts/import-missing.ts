@@ -6,13 +6,16 @@ import { randomUUID } from "crypto";
 
 dotenv.config({ path: ".env.local" });
 
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL || "", process.env.SUPABASE_SERVICE_ROLE_KEY || "");
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ""
+);
 
 const BASE_DIR = "C:/Users/Mi Pc/Desktop/MERCADOLIBRE CUENTA NUEVA";
 const SKU_PREFIX = "MADSJEEZ";
 
 function generateDescription(title: string): string {
-  const lower = title.toLowerCase();
+  const lower = title.toLowerCase().replace(/^maqjeez-\d+\s*-\s*/i, "");
   let specs = "";
 
   if (lower.includes("aceite")) {
@@ -69,7 +72,7 @@ async function uploadImages(folderPath: string): Promise<string[]> {
 }
 
 async function main() {
-  // 1. Get seller from users table (products.seller_id FK references users.id)
+  // Get seller
   const { data: existingUser } = await supabase
     .from("users")
     .select("id, email, isSeller")
@@ -78,41 +81,11 @@ async function main() {
 
   let sellerId = existingUser?.id;
   if (!sellerId) {
-    sellerId = randomUUID();
-    const { error: createErr } = await supabase.from("users").insert({
-      id: sellerId,
-      email: "vianferreteria@gmail.com",
-      name: "Vian Ferreteria",
-      isSeller: true,
-      sellerName: "Vian Ferreteria",
-      subscriptionTier: "FREE",
-      role: "USER",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    });
-    if (createErr) {
-      console.error("Failed to create user seller:", createErr);
-      throw createErr;
-    }
-    console.log("Created seller in users:", sellerId);
-  } else {
-    if (existingUser && !existingUser.isSeller) {
-      await supabase.from("users").update({ isSeller: true }).eq("id", sellerId);
-    }
-    console.log("Using existing seller:", sellerId);
+    console.error("Seller not found");
+    return;
   }
 
-  // 2. Ensure bucket exists
-  const { data: buckets } = await supabase.storage.listBuckets();
-  if (!buckets?.some(b => b.name === "product-images")) {
-    await supabase.storage.createBucket("product-images", { public: true, fileSizeLimit: 5242880 });
-    console.log("Created bucket: product-images");
-  }
-
-  // 3. Skip delete — resume mode, keep existing products
-  console.log("Resume mode: keeping existing products.");
-
-  // 4. Get default category
+  // Get category
   const { data: categories } = await supabase.from("categories").select("id, name").limit(1);
   let categoryId = categories?.[0]?.id;
   if (!categoryId) {
@@ -120,7 +93,7 @@ async function main() {
     await supabase.from("categories").insert({ id: categoryId, name: "General", slug: "general", description: "General" });
   }
 
-  // 5. Find last SKU
+  // Get last SKU
   const { data: lastSku } = await supabase
     .from("products")
     .select("sku")
@@ -133,23 +106,39 @@ async function main() {
     const m = lastSku[0].sku.match(/MADSJEEZ-(\d+)/);
     if (m) skuCounter = parseInt(m[1]) + 1;
   }
+  console.log("Starting at SKU:", `${SKU_PREFIX}-${String(skuCounter).padStart(6, "0")}`);
 
-  // 6. Collect folders — skip already processed based on last SKU number
+  // Get all folders with images
   const allFolders = fs.readdirSync(BASE_DIR, { withFileTypes: true })
     .filter(d => d.isDirectory())
-    .map(d => ({ name: d.name, path: path.join(BASE_DIR, d.name) }))
+    .map(d => ({ name: d.name.trim(), path: path.join(BASE_DIR, d.name) }))
     .filter(f => fs.readdirSync(f.path).some(file => /\.(jpg|jpeg|png|webp)$/i.test(file)));
-  const skipCount = skuCounter - 1; // SKU counter is already at next number
-  const folders = allFolders.slice(skipCount);
-  console.log(`Resuming: ${allFolders.length} total, skipping first ${skipCount}, processing ${folders.length} remaining`);
 
-  console.log(`Found ${folders.length} folders with images. Starting at SKU ${SKU_PREFIX}-${String(skuCounter).padStart(6, "0")}`);
+  // Get existing product titles for this seller
+  const { data: existingProducts } = await supabase
+    .from("products")
+    .select("title")
+    .eq("seller_id", sellerId)
+    .ilike("sku", `${SKU_PREFIX}-%`);
 
-  const total = folders.length;
+  const existingTitles = new Set(existingProducts?.map(p => p.title) || []);
+
+  // Find missing folders
+  const missingFolders = allFolders.filter(f => !existingTitles.has(f.name));
+  console.log(`Total folders: ${allFolders.length}`);
+  console.log(`Existing products: ${existingTitles.size}`);
+  console.log(`Missing folders: ${missingFolders.length}`);
+
+  if (missingFolders.length === 0) {
+    console.log("All folders already have products!");
+    return;
+  }
+
+  const total = missingFolders.length;
   let created = 0;
 
-  for (const folder of folders) {
-    const title = folder.name.trim();
+  for (const folder of missingFolders) {
+    const title = folder.name;
     const sku = `${SKU_PREFIX}-${String(skuCounter).padStart(6, "0")}`;
     console.log(`[${created + 1}/${total}] Processing: ${title}`);
 
@@ -159,7 +148,6 @@ async function main() {
     const productId = randomUUID();
     const now = new Date().toISOString();
 
-    // Insert product
     const { error: prodErr } = await supabase.from("products").insert({
       id: productId,
       title,
@@ -181,7 +169,6 @@ async function main() {
       continue;
     }
 
-    // Insert images
     if (imageUrls.length > 0) {
       const imageRows = imageUrls.map((url, i) => ({
         id: randomUUID(),
@@ -192,26 +179,24 @@ async function main() {
       await supabase.from("product_images").insert(imageRows);
     }
 
-    // Insert attributes (skip if table schema differs)
     try {
       await supabase.from("product_attributes").insert([
         { id: randomUUID(), name: "Garantía", value: "60 días de fábrica", product_id: productId },
         { id: randomUUID(), name: "Tipo de factura", value: "Consumidor Final", product_id: productId },
         { id: randomUUID(), name: "Cuotas", value: "Sin cuotas adicionales", product_id: productId },
       ]);
-    } catch (attrErr) {
-      console.error("  Attributes insert failed (non-critical):", attrErr);
+    } catch {
+      // Ignore attributes errors
     }
 
     console.log(`  Created: ${productId} with ${imageUrls.length} images`);
     created++;
     skuCounter++;
 
-    // Small delay to avoid overwhelming Supabase storage API
     await new Promise(r => setTimeout(r, 500));
   }
 
-  console.log(`Done! Created ${created}/${total} products.`);
+  console.log(`Done! Created ${created}/${total} missing products.`);
 }
 
 main().catch(err => {
