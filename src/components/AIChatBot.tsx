@@ -40,7 +40,7 @@ const modeConfig: Record<ChatMode, { welcome: string; title: string; quick: stri
 
 export default function AIChatBot() {
   const pathname = usePathname()
-  const { isOpen, closeChat, mode } = useChat()
+  const { isOpen, openChat, closeChat, mode } = useChat()
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
@@ -119,7 +119,7 @@ export default function AIChatBot() {
       {/* Chat Button */}
       {!isOpen && (
         <button
-          onClick={() => {}} // controlled by ChatContext, but button is always visible when closed
+          onClick={() => openChat()}
           className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[10000] bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-full p-4 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 group"
           aria-label="Abrir chat de ayuda"
         >
