@@ -4,7 +4,15 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { createClient } from "@supabase/supabase-js"
 import Stripe from "stripe"
+
+function getSupabaseClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 function getStripeClient() {
   const key = process.env.STRIPE_SECRET_KEY
@@ -84,6 +92,29 @@ export async function POST(req: Request) {
         }
       }
     })
+
+    // Update sales count in Supabase for purchased products
+    try {
+      const supabase = getSupabaseClient()
+      for (const item of items) {
+        // Get current sales count
+        const { data: product } = await supabase
+          .from("products")
+          .select("sales")
+          .eq("id", item.productId)
+          .maybeSingle()
+
+        if (product) {
+          await supabase
+            .from("products")
+            .update({ sales: (product.sales || 0) + item.quantity })
+            .eq("id", item.productId)
+        }
+      }
+    } catch (e) {
+      console.error("Error updating sales count in Supabase:", e)
+      // Don't fail the order if sales update fails
+    }
 
     // Crear payment intent con Stripe
     const stripe = getStripeClient()
