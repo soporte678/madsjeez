@@ -1,9 +1,11 @@
 -- Migration: Create product_wholesale_prices table
 -- Run this in your Supabase SQL Editor
 
-CREATE TABLE IF NOT EXISTS product_wholesale_prices (
+DROP TABLE IF EXISTS product_wholesale_prices CASCADE;
+
+CREATE TABLE product_wholesale_prices (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    product_id TEXT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     min_quantity INTEGER NOT NULL CHECK (min_quantity > 0),
     price DECIMAL(10,2) NOT NULL CHECK (price > 0),
     label TEXT,
@@ -28,6 +30,6 @@ CREATE POLICY "Allow sellers to manage wholesale prices" ON product_wholesale_pr
         EXISTS (
             SELECT 1 FROM products 
             WHERE products.id = product_wholesale_prices.product_id 
-            AND products.seller_id = auth.uid()
+            AND products.seller_id = auth.uid()::text
         )
     );

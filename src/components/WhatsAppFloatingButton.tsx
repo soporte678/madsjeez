@@ -16,7 +16,7 @@ export function WhatsAppFloatingButton() {
   }
 
   return (
-    <div className="fixed bottom-6 left-6 z-[9999] flex flex-col items-start gap-3">
+    <div className="fixed bottom-6 left-[14.5rem] z-[9999] flex flex-col items-start gap-3">
       {showTooltip && (
         <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 max-w-[280px] animate-in slide-in-from-bottom-2 fade-in duration-300">
           <div className="flex items-start justify-between gap-2 mb-2">
