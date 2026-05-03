@@ -93,8 +93,8 @@ export function RotatingProductCarousel({ title, subtitle, offset = 0 }: Rotatin
             {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
           </div>
           {totalCount > 0 && (
-            <span className="text-xs text-gray-400 font-medium">
-              {totalCount} productos disponibles
+            <span className="text-xs text-[#3483fa] font-semibold bg-blue-50 px-3 py-1 rounded-full">
+              +{Math.max(50, Math.floor(totalCount / 10000) * 10).toLocaleString('es-AR')}.000 PRODUCTOS ESTIMATIVOS EN NUESTRO MARKETPLACE
             </span>
           )}
         </div>

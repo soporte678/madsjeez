@@ -380,7 +380,7 @@ export default function Home() {
       {/* 1. CARRUSEL: Productos rotativos - Cambia cada 1 minuto */}
       <section className="max-w-[1184px] mx-auto px-4">
         <RotatingProductCarousel
-          title="Productos destacados que cambian cada minuto"
+          title="Productos destacados"
           subtitle="Descubrí nuevos productos de nuestro catálogo"
         />
       </section>
