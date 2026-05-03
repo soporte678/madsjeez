@@ -120,7 +120,7 @@ export default function AIChatBot() {
       {!isOpen && (
         <button
           onClick={() => openChat()}
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[10000] bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-full p-4 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 group"
+          className="fixed bottom-6 right-6 z-[10000] bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-full p-4 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 group"
           aria-label="Abrir chat de ayuda"
         >
           <Bot className="w-6 h-6" />
@@ -130,7 +130,7 @@ export default function AIChatBot() {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[10000] w-[380px] max-w-[calc(100vw-2rem)] h-[520px] max-h-[calc(100vh-8rem)] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+        <div className="fixed bottom-24 right-6 z-[10000] w-[380px] max-w-[calc(100vw-2rem)] h-[520px] max-h-[calc(100vh-8rem)] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
           {/* Header */}
           <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 flex items-center justify-between flex-shrink-0">
             <div className="flex items-center gap-3">
