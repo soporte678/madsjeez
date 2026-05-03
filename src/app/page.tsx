@@ -20,6 +20,7 @@ import {
 import { useCartStore } from "@/stores/cartStore"
 import { ProductCarousel } from "@/components/ProductCarousel"
 import { CategoryCarousel } from "@/components/CategoryCarousel"
+import { RotatingProductCarousel } from "@/components/RotatingProductCarousel"
 import { createClient } from "@/lib/supabase/client"
 
 const demoClothing = [
@@ -376,23 +377,31 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 1. CARRUSEL: Relacionado con tus visitas (datos reales) */}
+      {/* 1. CARRUSEL: Productos rotativos - Cambia cada 1 minuto */}
+      <section className="max-w-[1184px] mx-auto px-4">
+        <RotatingProductCarousel
+          title="Productos destacados que cambian cada minuto"
+          subtitle="Descubrí nuevos productos de nuestro catálogo"
+        />
+      </section>
+
+      {/* 2. CARRUSEL: Relacionado con tus visitas (datos reales) */}
       <section className="max-w-[1184px] mx-auto px-4">
         <ProductCarousel
-          title="Relacionado con tus visitas en Hogar, Muebles y Jardín"
+          title="Relacionado con tus visitas"
           products={products}
         />
       </section>
 
-      {/* 2. CARRUSEL: Elegidos para vos (datos reales) */}
+      {/* 3. CARRUSEL: Elegidos para vos (datos reales) */}
       <section className="max-w-[1184px] mx-auto px-4">
         <ProductCarousel
-          title="Elegidos para vos en Accesorios para Vehículos"
+          title="Elegidos para vos"
           products={recentProducts}
         />
       </section>
 
-      {/* 3. CARRUSEL: Pensados para vos en Ropa */}
+      {/* 4. CARRUSEL: Pensados para vos en Ropa */}
       <section className="max-w-[1184px] mx-auto px-4">
         <ProductCarousel
           title="Pensados para vos en Ropa y Accesorios"
@@ -400,11 +409,20 @@ export default function Home() {
         />
       </section>
 
-      {/* 4. CARRUSEL: Vuelven a comprar */}
+      {/* 5. CARRUSEL: Vuelven a comprar */}
       <section className="max-w-[1184px] mx-auto px-4">
         <ProductCarousel
           title="Productos que otras personas vuelven a comprar"
           products={demoRepurchase}
+        />
+      </section>
+
+      {/* 6. CARRUSEL: Más productos rotativos */}
+      <section className="max-w-[1184px] mx-auto px-4">
+        <RotatingProductCarousel
+          title="Más productos para vos"
+          subtitle="Nuestra selección se renueva automáticamente"
+          offset={12}
         />
       </section>
 
@@ -462,15 +480,40 @@ export default function Home() {
           {[
             {
               name: "PLATA", price: "9.999", comm: "12%", icon: Box, featured: false,
-              benefits: ['Exposición estándar en búsquedas', 'Hasta 100 publicaciones activas', 'Soporte vía correo electrónico', 'Panel de métricas básicas', 'Acceso a MadsEnvíos']
+              benefits: [
+                'Exposición estándar en búsquedas',
+                'Hasta 100 publicaciones activas',
+                'Marketing IA: 10 posts/mes (Instagram + Facebook)',
+                'WhatsApp Business API: 500 mensajes/mes',
+                'Panel de métricas básicas',
+                'Acceso a MadsEnvíos'
+              ]
             },
             {
               name: "GOLD", price: "19.999", comm: "8%", icon: Zap, featured: true,
-              benefits: ['Exposición alta en resultados', 'Publicaciones ilimitadas', 'Soporte prioritario por WhatsApp', 'Panel de métricas avanzado', 'Descuentos en costos de envío']
+              benefits: [
+                'Exposición alta en resultados',
+                'Publicaciones ilimitadas',
+                'Marketing IA ilimitado: posts, emails, banners, SEO',
+                'Meta API completa: Instagram + Facebook + WhatsApp',
+                'TikTok Shop integrado + posts automatizados',
+                'Soporte prioritario por WhatsApp',
+                'Panel de métricas avanzado',
+                'Descuentos en costos de envío'
+              ]
             },
             {
               name: "PLATINUM", price: "49.999", comm: "5%", icon: Sparkles, featured: false,
-              benefits: ['Exposición máxima (Top Resultados)', 'Publicidad en Banners (Home y Categorías)', 'Ejecutivo de cuenta dedicado', 'Comisión más baja garantizada', 'Retiro de dinero inmediato']
+              benefits: [
+                'Exposición máxima (Top Resultados)',
+                'Publicidad en Banners (Home y Categorías)',
+                'IA Premium: generación de video, voz, chatbot personalizado',
+                'Meta API Enterprise: Instagram, Facebook, WhatsApp + Ads Manager',
+                'TikTok Ads + TikTok Shop + viralizador IA',
+                'Ejecutivo de cuenta dedicado',
+                'Comisión más baja garantizada',
+                'Retiro de dinero inmediato'
+              ]
             }
           ].map((plan) => (
             <div
