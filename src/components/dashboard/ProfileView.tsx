@@ -15,6 +15,7 @@ import ProfileCollaboratorsView from './profile/ProfileCollaboratorsView';
 import ProfileCardsView from './profile/ProfileCardsView';
 import ProfileAddressesView from './profile/ProfileAddressesView';
 import ProfilePrivacyView from './profile/ProfilePrivacyView';
+import ProfileCommunicationsView from './profile/ProfileCommunicationsView';
 
 interface ProfileViewProps {
   userData?: {
@@ -376,7 +377,8 @@ export default function ProfileView({ userData }: ProfileViewProps) {
       title: "Comunicaciones",
       description: "Elegí qué tipo de información querés recibir.",
       icon: <MessageSquare className="text-gray-400" size={24} />,
-      status: null
+      status: null,
+      onClick: () => setActiveSubSection('comunicaciones'),
     },
     {
       id: 'cobros',
@@ -440,6 +442,14 @@ export default function ProfileView({ userData }: ProfileViewProps) {
   if (activeSubSection === 'privacidad') {
     return (
       <ProfilePrivacyView 
+        onBack={() => setActiveSubSection(null)} 
+      />
+    );
+  }
+
+  if (activeSubSection === 'comunicaciones') {
+    return (
+      <ProfileCommunicationsView 
         onBack={() => setActiveSubSection(null)} 
       />
     );
