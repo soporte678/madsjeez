@@ -14,6 +14,7 @@ import ProfileSecurityView from './profile/ProfileSecurityView';
 import ProfileCollaboratorsView from './profile/ProfileCollaboratorsView';
 import ProfileCardsView from './profile/ProfileCardsView';
 import ProfileAddressesView from './profile/ProfileAddressesView';
+import ProfilePrivacyView from './profile/ProfilePrivacyView';
 
 interface ProfileViewProps {
   userData?: {
@@ -367,7 +368,8 @@ export default function ProfileView({ userData }: ProfileViewProps) {
       title: "Privacidad",
       description: "Preferencias y control sobre el uso de tus datos.",
       icon: <Lock className="text-gray-400" size={24} />,
-      status: null
+      status: null,
+      onClick: () => setActiveSubSection('privacidad'),
     },
     {
       id: 'comunicaciones',
@@ -430,6 +432,14 @@ export default function ProfileView({ userData }: ProfileViewProps) {
   if (activeSubSection === 'direcciones') {
     return (
       <ProfileAddressesView 
+        onBack={() => setActiveSubSection(null)} 
+      />
+    );
+  }
+
+  if (activeSubSection === 'privacidad') {
+    return (
+      <ProfilePrivacyView 
         onBack={() => setActiveSubSection(null)} 
       />
     );
