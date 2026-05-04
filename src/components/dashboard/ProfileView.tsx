@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import ProfileInfoView from './profile/ProfileInfoView';
+import ProfileSecurityView from './profile/ProfileSecurityView';
 
 interface ProfileViewProps {
   userData?: {
@@ -324,7 +325,8 @@ export default function ProfileView({ userData }: ProfileViewProps) {
       title: "Seguridad",
       description: "Tenés configuraciones pendientes.",
       icon: <ShieldCheck className="text-gray-400" size={24} />,
-      status: 'warning'
+      status: 'warning',
+      onClick: () => setActiveSubSection('security'),
     },
     {
       id: 'colaboradores',
@@ -389,6 +391,15 @@ export default function ProfileView({ userData }: ProfileViewProps) {
     return (
       <ProfileInfoView 
         userData={userData} 
+        onBack={() => setActiveSubSection(null)} 
+      />
+    );
+  }
+
+  if (activeSubSection === 'security') {
+    return (
+      <ProfileSecurityView 
+        hasAccessKey={accessKeyState.hasKey}
         onBack={() => setActiveSubSection(null)} 
       />
     );
