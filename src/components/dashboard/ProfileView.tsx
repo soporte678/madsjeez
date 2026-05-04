@@ -11,6 +11,7 @@ import {
 import { toast } from 'sonner';
 import ProfileInfoView from './profile/ProfileInfoView';
 import ProfileSecurityView from './profile/ProfileSecurityView';
+import ProfileCollaboratorsView from './profile/ProfileCollaboratorsView';
 
 interface ProfileViewProps {
   userData?: {
@@ -333,7 +334,8 @@ export default function ProfileView({ userData }: ProfileViewProps) {
       title: "Colaboradores",
       description: "Personas que operan con tu cuenta.",
       icon: <Users className="text-gray-400" size={24} />,
-      status: null
+      status: null,
+      onClick: () => setActiveSubSection('colaboradores'),
     },
     {
       id: 'mads-plus',
@@ -400,6 +402,14 @@ export default function ProfileView({ userData }: ProfileViewProps) {
     return (
       <ProfileSecurityView 
         hasAccessKey={accessKeyState.hasKey}
+        onBack={() => setActiveSubSection(null)} 
+      />
+    );
+  }
+
+  if (activeSubSection === 'colaboradores') {
+    return (
+      <ProfileCollaboratorsView 
         onBack={() => setActiveSubSection(null)} 
       />
     );
