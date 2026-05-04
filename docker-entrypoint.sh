@@ -15,10 +15,12 @@ fi
 if [ -n "$DATABASE_URL" ]; then
     echo "=== DATABASE_URL configurada ==="
     echo "=== Ejecutando migraciones de Prisma ==="
-    npx prisma migrate deploy 2>&1 || {
-        echo "WARNING: Migraciones fallaron o ya estaban aplicadas, continuando..."
-    }
-    echo "=== Migraciones completadas ==="
+    if npx prisma migrate deploy 2>&1; then
+        echo "=== Migraciones completadas ==="
+    else
+        echo "ERROR: Las migraciones fallaron. El deploy se detendra."
+        exit 1
+    fi
 else
     echo "WARNING: DATABASE_URL no configurada, saltando migraciones"
 fi

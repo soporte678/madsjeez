@@ -6,11 +6,23 @@ import bcrypt from "bcryptjs";
 
 export const dynamic = "force-dynamic";
 
+// Fallback: si la migracion no corrio, crear la columna manualmente
+async function ensureAccessKeyColumn() {
+  try {
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "access_key" VARCHAR(191);
+    `);
+  } catch (e) {
+    // La columna ya existe o no tenemos permisos, ignorar
+  }
+}
+
 /**
  * GET /api/user/access-key/status
  * Devuelve si el usuario tiene una clave de acceso configurada
  */
 export async function GET() {
+  await ensureAccessKeyColumn();
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -36,6 +48,7 @@ export async function GET() {
  * Crea o actualiza la clave de acceso del usuario
  */
 export async function POST(req: Request) {
+  await ensureAccessKeyColumn();
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -84,6 +97,7 @@ export async function POST(req: Request) {
  * Elimina la clave de acceso del usuario (requiere verificación)
  */
 export async function DELETE(req: Request) {
+  await ensureAccessKeyColumn();
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
