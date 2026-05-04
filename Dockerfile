@@ -46,10 +46,15 @@ RUN echo "=== Iniciando build de Next.js ===" && \
     NODE_OPTIONS="--max-old-space-size=4096" npx next build && \
     echo "=== Build completado ==="
 
+# Copiar entrypoint script
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
+
 # Exponer puerto
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Comando de inicio - usar npm run start para que encuentre next en node_modules
+# Usar entrypoint para ejecutar migraciones antes de iniciar
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["npm", "run", "start"]
