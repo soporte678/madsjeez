@@ -28,16 +28,16 @@ export async function GET(request: Request) {
     const state = url.searchParams.get("state");
     const error = url.searchParams.get("error");
 
-    // Redirigir al dashboard con error si el usuario canceló
+    // Redirigir al perfil del dashboard con error si el usuario canceló
     if (error) {
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL || "https://www.madsjeez.com.ar"}/dashboard?mp_error=${encodeURIComponent(error)}`
+        `${process.env.NEXT_PUBLIC_APP_URL || "https://www.madsjeez.com.ar"}/dashboard?mp_error=${encodeURIComponent(error)}#perfil`
       );
     }
 
     if (!code || !state) {
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL || "https://www.madsjeez.com.ar"}/dashboard?mp_error=missing_params`
+        `${process.env.NEXT_PUBLIC_APP_URL || "https://www.madsjeez.com.ar"}/dashboard?mp_error=missing_params#perfil`
       );
     }
 
@@ -51,7 +51,7 @@ export async function GET(request: Request) {
     if (!clientId || !clientSecret || !redirectUri) {
       console.error("Variables de MercadoPago no configuradas");
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL || "https://www.madsjeez.com.ar"}/dashboard?mp_error=config_error`
+        `${process.env.NEXT_PUBLIC_APP_URL || "https://www.madsjeez.com.ar"}/dashboard?mp_error=config_error#perfil`
       );
     }
 
@@ -75,7 +75,7 @@ export async function GET(request: Request) {
       const errorData = await tokenResponse.json();
       console.error("Error obteniendo tokens de MercadoPago:", errorData);
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL || "https://www.madsjeez.com.ar"}/dashboard?mp_error=token_error`
+        `${process.env.NEXT_PUBLIC_APP_URL || "https://www.madsjeez.com.ar"}/dashboard?mp_error=token_error#perfil`
       );
     }
 
@@ -118,19 +118,19 @@ export async function GET(request: Request) {
     if (dbError) {
       console.error("Error guardando credenciales:", dbError);
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL || "https://www.madsjeez.com.ar"}/dashboard?mp_error=db_error`
+        `${process.env.NEXT_PUBLIC_APP_URL || "https://www.madsjeez.com.ar"}/dashboard?mp_error=db_error#perfil`
       );
     }
 
-    // Redirigir al dashboard con éxito
+    // Redirigir al dashboard (perfil) con éxito
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL || "https://www.madsjeez.com.ar"}/dashboard?mp_success=connected`
+      `${process.env.NEXT_PUBLIC_APP_URL || "https://www.madsjeez.com.ar"}/dashboard?mp_success=connected#perfil`
     );
 
   } catch (error) {
     console.error("Error en callback de MercadoPago:", error);
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL || "https://www.madsjeez.com.ar"}/dashboard?mp_error=server_error`
+      `${process.env.NEXT_PUBLIC_APP_URL || "https://www.madsjeez.com.ar"}/dashboard?mp_error=server_error#perfil`
     );
   }
 }
