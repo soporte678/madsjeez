@@ -9,6 +9,7 @@ import {
   Shield, Trash2, Eye, EyeOff
 } from 'lucide-react';
 import { toast } from 'sonner';
+import ProfileInfoView from './profile/ProfileInfoView';
 
 interface ProfileViewProps {
   userData?: {
@@ -68,6 +69,9 @@ export default function ProfileView({ userData }: ProfileViewProps) {
   });
 
   const [savingKey, setSavingKey] = useState(false);
+
+  // Estado para navegación de sub-secciones del perfil
+  const [activeSubSection, setActiveSubSection] = useState<string | null>(null);
 
   // Cargar estado de MercadoPago
   useEffect(() => {
@@ -312,7 +316,8 @@ export default function ProfileView({ userData }: ProfileViewProps) {
       title: "Información de tu perfil",
       description: "Datos personales, de la cuenta y fiscales.",
       icon: <User className="text-gray-400" size={24} />,
-      status: null
+      status: null,
+      onClick: () => setActiveSubSection('info'),
     },
     {
       id: 'security',
@@ -378,6 +383,16 @@ export default function ProfileView({ userData }: ProfileViewProps) {
       isMercadoPago: true
     }
   ];
+
+  // Renderizar sub-sección si está activa
+  if (activeSubSection === 'info') {
+    return (
+      <ProfileInfoView 
+        userData={userData} 
+        onBack={() => setActiveSubSection(null)} 
+      />
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-5xl mx-auto pb-20">
@@ -474,7 +489,7 @@ export default function ProfileView({ userData }: ProfileViewProps) {
             className={`bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all flex flex-col h-full relative ${
               card.isMercadoPago ? '' : 'cursor-pointer group'
             }`}
-            onClick={card.isMercadoPago ? undefined : undefined}
+            onClick={card.isMercadoPago ? undefined : card.onClick || undefined}
           >
             {card.status === 'warning' && (
               <div className="absolute top-4 right-4">
