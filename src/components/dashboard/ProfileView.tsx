@@ -13,6 +13,7 @@ import ProfileInfoView from './profile/ProfileInfoView';
 import ProfileSecurityView from './profile/ProfileSecurityView';
 import ProfileCollaboratorsView from './profile/ProfileCollaboratorsView';
 import ProfileCardsView from './profile/ProfileCardsView';
+import ProfileAddressesView from './profile/ProfileAddressesView';
 
 interface ProfileViewProps {
   userData?: {
@@ -358,7 +359,8 @@ export default function ProfileView({ userData }: ProfileViewProps) {
       title: "Direcciones",
       description: "Direcciones guardadas en tu cuenta.",
       icon: <MapPin className="text-gray-400" size={24} />,
-      status: null
+      status: null,
+      onClick: () => setActiveSubSection('direcciones'),
     },
     {
       id: 'privacidad',
@@ -420,6 +422,14 @@ export default function ProfileView({ userData }: ProfileViewProps) {
   if (activeSubSection === 'tarjetas') {
     return (
       <ProfileCardsView 
+        onBack={() => setActiveSubSection(null)} 
+      />
+    );
+  }
+
+  if (activeSubSection === 'direcciones') {
+    return (
+      <ProfileAddressesView 
         onBack={() => setActiveSubSection(null)} 
       />
     );
