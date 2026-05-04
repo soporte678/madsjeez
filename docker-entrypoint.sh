@@ -15,7 +15,7 @@ fi
 if [ -n "$DATABASE_URL" ]; then
     echo "=== DATABASE_URL configurada ==="
     echo "=== Ejecutando migraciones de Prisma ==="
-    if npx prisma migrate deploy 2>&1; then
+    if npx prisma migrate deploy --datasource-url="$DATABASE_URL" 2>&1; then
         echo "=== Migraciones completadas ==="
     else
         echo "ERROR: Las migraciones fallaron. El deploy se detendra."
