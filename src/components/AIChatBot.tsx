@@ -93,7 +93,11 @@ export default function AIChatBot() {
           { role: "assistant", content: "Disculpá, tuve un problema técnico. Intentá de nuevo en unos segundos." },
         ])
       } else {
-        setMessages((prev) => [...prev, { role: "assistant", content: data.message }])
+        const isFallback = data._meta?.fallback
+        const messageContent = isFallback 
+          ? data.message + "\n\n— ⚠️ Modo respuestas predefinidas: la IA avanzada no está configurada."
+          : data.message
+        setMessages((prev) => [...prev, { role: "assistant", content: messageContent }])
       }
     } catch (error) {
       setMessages((prev) => [
@@ -217,7 +221,11 @@ export default function AIChatBot() {
                         })
                           .then((r) => r.json())
                           .then((data) => {
-                            setMessages((prev) => [...prev, { role: "assistant", content: data.message || "Error" }])
+                            const isFallback = data._meta?.fallback
+                            const msg = isFallback 
+                              ? (data.message || "Error") + "\n\n— ⚠️ Modo respuestas predefinidas: la IA avanzada no está configurada."
+                              : (data.message || "Error")
+                            setMessages((prev) => [...prev, { role: "assistant", content: msg }])
                           })
                           .catch(() => {
                             setMessages((prev) => [...prev, { role: "assistant", content: "Error de conexión." }])

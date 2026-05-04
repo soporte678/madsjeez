@@ -239,13 +239,16 @@ export async function POST(req: NextRequest) {
     const lastMessage = messages[messages.length - 1]
     const mode = (requestMode as ChatMode) || "general"
     const apiKey = process.env.GEMINI_API_KEY
-    if (!apiKey) {
-      console.error("GEMINI_API_KEY not configured - using fallback responses")
+    if (!apiKey || apiKey === "your-gemini-api-key" || apiKey.length < 10) {
+      console.error("GEMINI_API_KEY not configured or invalid - using fallback responses")
       // Return a helpful static response based on the user's query
       const lower = lastMessage.content.toLowerCase()
       let fallbackResponse = getFallbackResponse(mode, lastMessage.content)
       
-      return NextResponse.json({ message: fallbackResponse })
+      return NextResponse.json({ 
+        message: fallbackResponse,
+        _meta: { fallback: true, reason: "API key not configured" }
+      })
     }
 
     // Get real-time context from the marketplace database
