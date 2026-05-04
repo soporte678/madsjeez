@@ -17,6 +17,7 @@ export async function GET() {
       name: session.user.name || 'Usuario',
       email: session.user.email || '',
       image: session.user.image || null,
+      hasAccessKey: session.user.hasAccessKey || false,
     });
   } catch (error) {
     console.error('Error fetching user:', error);

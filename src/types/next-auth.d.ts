@@ -11,6 +11,7 @@ declare module "next-auth" {
       isSeller: boolean
       subscriptionTier: string
       reputationColor: string
+      hasAccessKey?: boolean
     } & DefaultSession["user"]
   }
 
@@ -20,6 +21,7 @@ declare module "next-auth" {
     isSeller: boolean
     subscriptionTier: string
     reputationColor: string
+    hasAccessKey?: boolean
   }
 }
 
@@ -30,5 +32,6 @@ declare module "next-auth/jwt" {
     isSeller: boolean
     subscriptionTier: string
     reputationColor: string
+    hasAccessKey?: boolean
   }
 }

@@ -128,6 +128,7 @@ export const authOptions: NextAuthOptions = {
             token.reputationColor = dbUser.reputationColor
             token.name = dbUser.name
             token.image = dbUser.image
+            token.hasAccessKey = !!dbUser.accessKey
           }
         }
       }
@@ -140,6 +141,7 @@ export const authOptions: NextAuthOptions = {
         session.user.isSeller = token.isSeller as boolean
         session.user.subscriptionTier = token.subscriptionTier as string
         session.user.reputationColor = token.reputationColor as string
+        session.user.hasAccessKey = token.hasAccessKey as boolean
       }
       return session
     }

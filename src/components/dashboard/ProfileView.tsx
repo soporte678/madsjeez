@@ -5,7 +5,8 @@ import {
   User, ShieldCheck, Users, CreditCard, 
   MapPin, Lock, MessageSquare, Star, 
   AlertCircle, ChevronRight, X, Key,
-  Wallet, Link2, Unlink, CheckCircle
+  Wallet, Link2, Unlink, CheckCircle,
+  Shield, Trash2, Eye, EyeOff
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -43,6 +44,31 @@ export default function ProfileView({ userData }: ProfileViewProps) {
     loading: true,
   });
 
+  // Estado para Clave de Acceso
+  const [accessKeyState, setAccessKeyState] = useState<{
+    hasKey: boolean;
+    loading: boolean;
+    showBanner: boolean;
+    modalOpen: boolean;
+    modalMode: 'create' | 'delete';
+  }>({
+    hasKey: false,
+    loading: true,
+    showBanner: true,
+    modalOpen: false,
+    modalMode: 'create',
+  });
+
+  const [accessKeyForm, setAccessKeyForm] = useState({
+    key: '',
+    confirm: '',
+    deleteConfirm: '',
+    showKey: false,
+    showConfirm: false,
+  });
+
+  const [savingKey, setSavingKey] = useState(false);
+
   // Cargar estado de MercadoPago
   useEffect(() => {
     const loadMpStatus = async () => {
@@ -67,6 +93,31 @@ export default function ProfileView({ userData }: ProfileViewProps) {
     };
 
     loadMpStatus();
+  }, []);
+
+  // Cargar estado de Clave de Acceso
+  useEffect(() => {
+    const loadAccessKeyStatus = async () => {
+      try {
+        const response = await fetch('/api/user/access-key');
+        if (response.ok) {
+          const data = await response.json();
+          setAccessKeyState(prev => ({
+            ...prev,
+            hasKey: data.hasAccessKey,
+            showBanner: !data.hasAccessKey,
+            loading: false,
+          }));
+        } else {
+          setAccessKeyState(prev => ({ ...prev, loading: false }));
+        }
+      } catch (error) {
+        console.error('Error cargando estado de clave de acceso:', error);
+        setAccessKeyState(prev => ({ ...prev, loading: false }));
+      }
+    };
+
+    loadAccessKeyStatus();
   }, []);
 
   // Manejar callback de OAuth (mp_success o mp_error en URL)
@@ -169,6 +220,89 @@ export default function ProfileView({ userData }: ProfileViewProps) {
       console.error('Error desconectando:', error);
       toast.error('Error al desconectar la cuenta');
       setMpStatus(prev => ({ ...prev, loading: false }));
+    }
+  };
+
+  // --- Clave de Acceso handlers ---
+  const openAccessKeyModal = (mode: 'create' | 'delete') => {
+    setAccessKeyForm({ key: '', confirm: '', deleteConfirm: '', showKey: false, showConfirm: false });
+    setAccessKeyState(prev => ({ ...prev, modalOpen: true, modalMode: mode }));
+  };
+
+  const closeAccessKeyModal = () => {
+    setAccessKeyState(prev => ({ ...prev, modalOpen: false }));
+  };
+
+  const handleSaveAccessKey = async () => {
+    if (accessKeyForm.key !== accessKeyForm.confirm) {
+      toast.error('Las claves no coinciden');
+      return;
+    }
+    if (accessKeyForm.key.length < 4 || accessKeyForm.key.length > 6) {
+      toast.error('La clave debe tener entre 4 y 6 caracteres');
+      return;
+    }
+
+    setSavingKey(true);
+    try {
+      const response = await fetch('/api/user/access-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          accessKey: accessKeyForm.key,
+          confirmAccessKey: accessKeyForm.confirm,
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('Clave de acceso guardada correctamente');
+        setAccessKeyState(prev => ({
+          ...prev,
+          hasKey: true,
+          showBanner: false,
+          modalOpen: false,
+        }));
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Error al guardar la clave');
+      }
+    } catch (error) {
+      toast.error('Error al guardar la clave de acceso');
+    } finally {
+      setSavingKey(false);
+    }
+  };
+
+  const handleDeleteAccessKey = async () => {
+    if (!accessKeyForm.deleteConfirm) {
+      toast.error('Ingresá tu clave de acceso actual');
+      return;
+    }
+
+    setSavingKey(true);
+    try {
+      const response = await fetch('/api/user/access-key', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accessKey: accessKeyForm.deleteConfirm }),
+      });
+
+      if (response.ok) {
+        toast.success('Clave de acceso eliminada');
+        setAccessKeyState(prev => ({
+          ...prev,
+          hasKey: false,
+          showBanner: true,
+          modalOpen: false,
+        }));
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Error al eliminar la clave');
+      }
+    } catch (error) {
+      toast.error('Error al eliminar la clave de acceso');
+    } finally {
+      setSavingKey(false);
     }
   };
 
@@ -275,24 +409,62 @@ export default function ProfileView({ userData }: ProfileViewProps) {
       </div>
 
       {/* --- BANNER DE ALERTA: LLAVE DE ACCESO --- */}
-      <div className="bg-white border-l-4 border-l-orange-400 rounded-lg shadow-sm p-4 flex items-center justify-between border border-gray-100">
-        <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-orange-50 rounded-full flex items-center justify-center text-orange-500">
-            <Key size={20} />
+      {!accessKeyState.loading && accessKeyState.showBanner && (
+        <div className="bg-white border-l-4 border-l-orange-400 rounded-lg shadow-sm p-4 flex items-center justify-between border border-gray-100">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-orange-50 rounded-full flex items-center justify-center text-orange-500">
+              <Key size={20} />
+            </div>
+            <span className="text-[15px] text-gray-700 font-medium">
+              Creá tu llave de acceso para mantener tu cuenta segura
+            </span>
           </div>
-          <span className="text-[15px] text-gray-700 font-medium">
-            Creá tu llave de acceso para mantener tu cuenta segura
-          </span>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => openAccessKeyModal('create')}
+              className="bg-blue-600 text-white px-6 py-2 rounded-md font-bold text-sm hover:bg-blue-700 transition-colors"
+            >
+              Crear
+            </button>
+            <button
+              onClick={() => setAccessKeyState(prev => ({ ...prev, showBanner: false }))}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              <X size={20} />
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-4">
-          <button className="bg-blue-600 text-white px-6 py-2 rounded-md font-bold text-sm hover:bg-blue-700 transition-colors">
-            Crear
-          </button>
-          <button className="text-gray-400 hover:text-gray-600">
-            <X size={20} />
-          </button>
+      )}
+
+      {/* --- ACCESO RÁPIDO: CLAVE DE ACCESO (si ya tiene) --- */}
+      {accessKeyState.hasKey && (
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center text-green-500">
+              <Shield size={20} />
+            </div>
+            <div>
+              <p className="text-[15px] text-gray-700 font-medium">Clave de acceso activa</p>
+              <p className="text-xs text-gray-500">Tu cuenta tiene una capa extra de seguridad</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => openAccessKeyModal('create')}
+              className="text-blue-600 text-sm font-medium hover:underline px-3 py-1"
+            >
+              Cambiar
+            </button>
+            <button
+              onClick={() => openAccessKeyModal('delete')}
+              className="text-red-500 text-sm font-medium hover:underline px-3 py-1"
+            >
+              <Trash2 size={16} className="inline mr-1" />
+              Eliminar
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* --- GRID DE OPCIONES --- */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
@@ -361,6 +533,127 @@ export default function ProfileView({ userData }: ProfileViewProps) {
           </div>
         ))}
       </div>
+
+      {/* --- MODAL: CLAVE DE ACCESO --- */}
+      {accessKeyState.modalOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-800">
+                {accessKeyState.modalMode === 'create'
+                  ? accessKeyState.hasKey
+                    ? 'Cambiar clave de acceso'
+                    : 'Crear clave de acceso'
+                  : 'Eliminar clave de acceso'}
+              </h3>
+              <button onClick={closeAccessKeyModal} className="text-gray-400 hover:text-gray-600">
+                <X size={20} />
+              </button>
+            </div>
+
+            {accessKeyState.modalMode === 'create' ? (
+              <div className="space-y-4">
+                <p className="text-sm text-gray-500">
+                  Esta clave te pediremos para confirmar acciones sensibles en tu cuenta.
+                </p>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nueva clave (4-6 caracteres)
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={accessKeyForm.showKey ? 'text' : 'password'}
+                      value={accessKeyForm.key}
+                      onChange={(e) => setAccessKeyForm(prev => ({ ...prev, key: e.target.value }))}
+                      maxLength={6}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 pr-10 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Ej: 1234"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setAccessKeyForm(prev => ({ ...prev, showKey: !prev.showKey }))}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {accessKeyForm.showKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Confirmar clave
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={accessKeyForm.showConfirm ? 'text' : 'password'}
+                      value={accessKeyForm.confirm}
+                      onChange={(e) => setAccessKeyForm(prev => ({ ...prev, confirm: e.target.value }))}
+                      maxLength={6}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 pr-10 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Repetí la clave"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setAccessKeyForm(prev => ({ ...prev, showConfirm: !prev.showConfirm }))}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {accessKeyForm.showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={closeAccessKeyModal}
+                    className="flex-1 py-2 px-4 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleSaveAccessKey}
+                    disabled={savingKey}
+                    className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {savingKey ? 'Guardando...' : 'Guardar'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm text-gray-500">
+                  Para eliminar tu clave de acceso, ingresala a continuación.
+                </p>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Clave de acceso actual
+                  </label>
+                  <input
+                    type="password"
+                    value={accessKeyForm.deleteConfirm}
+                    onChange={(e) => setAccessKeyForm(prev => ({ ...prev, deleteConfirm: e.target.value }))}
+                    maxLength={6}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    placeholder="Tu clave actual"
+                  />
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={closeAccessKeyModal}
+                    className="flex-1 py-2 px-4 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleDeleteAccessKey}
+                    disabled={savingKey}
+                    className="flex-1 py-2 px-4 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50"
+                  >
+                    {savingKey ? 'Eliminando...' : 'Eliminar'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* --- FOOTER --- */}
       <div className="mt-8 text-center">

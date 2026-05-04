@@ -113,7 +113,10 @@ model User {
   monthlyRevenue     Float?   @map("monthly_revenue")
   monthlyViews       Int?     @map("monthly_views")
   conversionRate     Float?   @map("conversion_rate")
-  
+
+  // Clave de acceso adicional (PIN) para acciones sensibles
+  accessKey     String? @map("access_key")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
