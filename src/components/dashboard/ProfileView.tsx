@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import ProfileInfoView from './profile/ProfileInfoView';
 import ProfileSecurityView from './profile/ProfileSecurityView';
 import ProfileCollaboratorsView from './profile/ProfileCollaboratorsView';
+import ProfileCardsView from './profile/ProfileCardsView';
 
 interface ProfileViewProps {
   userData?: {
@@ -349,7 +350,8 @@ export default function ProfileView({ userData }: ProfileViewProps) {
       title: "Tarjetas",
       description: "Tarjetas guardadas en tu cuenta.",
       icon: <CreditCard className="text-gray-400" size={24} />,
-      status: null
+      status: null,
+      onClick: () => setActiveSubSection('tarjetas'),
     },
     {
       id: 'direcciones',
@@ -410,6 +412,14 @@ export default function ProfileView({ userData }: ProfileViewProps) {
   if (activeSubSection === 'colaboradores') {
     return (
       <ProfileCollaboratorsView 
+        onBack={() => setActiveSubSection(null)} 
+      />
+    );
+  }
+
+  if (activeSubSection === 'tarjetas') {
+    return (
+      <ProfileCardsView 
         onBack={() => setActiveSubSection(null)} 
       />
     );
