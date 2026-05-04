@@ -1,9 +1,13 @@
-import React from 'react';
+"use client";
+
+import React, { useState, useEffect } from 'react';
 import { 
   User, ShieldCheck, Users, CreditCard, 
   MapPin, Lock, MessageSquare, Star, 
-  AlertCircle, ChevronRight, X, Key
+  AlertCircle, ChevronRight, X, Key,
+  Wallet, Link2, Unlink, CheckCircle
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface ProfileViewProps {
   userData?: {
@@ -23,6 +27,150 @@ export default function ProfileView({ userData }: ProfileViewProps) {
 
   // Use image if avatar is not provided (from Google auth session)
   const profileImage = user.avatar || user.image || null;
+
+  // Estado para MercadoPago
+  const [mpStatus, setMpStatus] = useState<{
+    connected: boolean;
+    active: boolean;
+    email: string | null;
+    nickname: string | null;
+    loading: boolean;
+  }>({
+    connected: false,
+    active: false,
+    email: null,
+    nickname: null,
+    loading: true,
+  });
+
+  // Cargar estado de MercadoPago
+  useEffect(() => {
+    const loadMpStatus = async () => {
+      try {
+        const response = await fetch('/api/seller/payment-gateway/mercadopago/status');
+        if (response.ok) {
+          const data = await response.json();
+          setMpStatus({
+            connected: data.connected,
+            active: data.active,
+            email: data.email,
+            nickname: data.nickname,
+            loading: false,
+          });
+        } else {
+          setMpStatus(prev => ({ ...prev, loading: false }));
+        }
+      } catch (error) {
+        console.error('Error cargando estado de MercadoPago:', error);
+        setMpStatus(prev => ({ ...prev, loading: false }));
+      }
+    };
+
+    loadMpStatus();
+  }, []);
+
+  // Manejar callback de OAuth (mp_success o mp_error en URL)
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const mpSuccess = url.searchParams.get('mp_success');
+    const mpError = url.searchParams.get('mp_error');
+
+    if (mpSuccess === 'connected') {
+      toast.success('Cuenta de MercadoPago conectada correctamente');
+      // Limpiar URL
+      window.history.replaceState({}, '', window.location.pathname);
+      // Recargar estado
+      loadMpStatus();
+    } else if (mpError) {
+      let errorMsg = 'Error al conectar con MercadoPago';
+      switch (mpError) {
+        case 'access_denied':
+          errorMsg = 'Acceso denegado. No autorizaste la conexión.';
+          break;
+        case 'token_error':
+          errorMsg = 'Error al obtener credenciales. Intentá de nuevo.';
+          break;
+        case 'db_error':
+          errorMsg = 'Error guardando la configuración.';
+          break;
+        case 'config_error':
+          errorMsg = 'Error de configuración del servidor.';
+          break;
+      }
+      toast.error(errorMsg);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
+  // Función para recargar estado (usada después del callback)
+  const loadMpStatus = async () => {
+    try {
+      const response = await fetch('/api/seller/payment-gateway/mercadopago/status');
+      if (response.ok) {
+        const data = await response.json();
+        setMpStatus({
+          connected: data.connected,
+          active: data.active,
+          email: data.email,
+          nickname: data.nickname,
+          loading: false,
+        });
+      }
+    } catch (error) {
+      console.error('Error recargando estado:', error);
+    }
+  };
+
+  // Iniciar OAuth de MercadoPago
+  const handleConnectMercadoPago = async () => {
+    try {
+      setMpStatus(prev => ({ ...prev, loading: true }));
+      const response = await fetch('/api/seller/payment-gateway/mercadopago/auth');
+      
+      if (response.ok) {
+        const data = await response.json();
+        // Redirigir a MercadoPago
+        window.location.href = data.authUrl;
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Error iniciando conexión con MercadoPago');
+        setMpStatus(prev => ({ ...prev, loading: false }));
+      }
+    } catch (error) {
+      console.error('Error conectando MercadoPago:', error);
+      toast.error('Error al iniciar la conexión');
+      setMpStatus(prev => ({ ...prev, loading: false }));
+    }
+  };
+
+  // Desconectar MercadoPago
+  const handleDisconnectMercadoPago = async () => {
+    try {
+      setMpStatus(prev => ({ ...prev, loading: true }));
+      const response = await fetch('/api/seller/payment-gateway/mercadopago/disconnect', {
+        method: 'POST',
+      });
+      
+      if (response.ok) {
+        toast.success('Cuenta de MercadoPago desconectada');
+        setMpStatus({
+          connected: false,
+          active: false,
+          email: null,
+          nickname: null,
+          loading: false,
+        });
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Error al desconectar');
+        setMpStatus(prev => ({ ...prev, loading: false }));
+      }
+    } catch (error) {
+      console.error('Error desconectando:', error);
+      toast.error('Error al desconectar la cuenta');
+      setMpStatus(prev => ({ ...prev, loading: false }));
+    }
+  };
 
   const profileCards = [
     {
@@ -80,6 +228,20 @@ export default function ProfileView({ userData }: ProfileViewProps) {
       description: "Elegí qué tipo de información querés recibir.",
       icon: <MessageSquare className="text-gray-400" size={24} />,
       status: null
+    },
+    {
+      id: 'cobros',
+      title: "Cobros",
+      description: mpStatus.loading 
+        ? "Cargando..." 
+        : mpStatus.connected 
+          ? `Conectado: ${mpStatus.email || mpStatus.nickname || 'Cuenta de MercadoPago'}`
+          : "Conectá tu cuenta de MercadoPago para recibir pagos.",
+      icon: mpStatus.connected 
+        ? <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-[10px] font-black">MP</div>
+        : <Wallet className="text-gray-400" size={24} />,
+      status: mpStatus.connected ? null : 'warning',
+      isMercadoPago: true
     }
   ];
 
@@ -134,10 +296,13 @@ export default function ProfileView({ userData }: ProfileViewProps) {
 
       {/* --- GRID DE OPCIONES --- */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
-        {profileCards.map((card) => (
+        {profileCards.map((card: any) => (
           <div 
             key={card.id}
-            className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all cursor-pointer group flex flex-col h-full relative"
+            className={`bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all flex flex-col h-full relative ${
+              card.isMercadoPago ? '' : 'cursor-pointer group'
+            }`}
+            onClick={card.isMercadoPago ? undefined : undefined}
           >
             {card.status === 'warning' && (
               <div className="absolute top-4 right-4">
@@ -145,16 +310,54 @@ export default function ProfileView({ userData }: ProfileViewProps) {
               </div>
             )}
 
+            {card.status === 'connected' && (
+              <div className="absolute top-4 right-4">
+                <CheckCircle className="text-green-500" size={18} />
+              </div>
+            )}
+
             <div className="mb-4">
               {card.icon}
             </div>
             
-            <h3 className="text-[16px] font-bold text-gray-800 mb-2 group-hover:text-blue-600 transition-colors">
+            <h3 className={`text-[16px] font-bold text-gray-800 mb-2 transition-colors ${
+              card.isMercadoPago ? '' : 'group-hover:text-blue-600'
+            }`}>
               {card.title}
             </h3>
-            <p className="text-[13px] text-gray-500 leading-relaxed font-medium">
+            <p className="text-[13px] text-gray-500 leading-relaxed font-medium mb-3">
               {card.description}
             </p>
+
+            {/* Botón especial para MercadoPago */}
+            {card.isMercadoPago && (
+              <div className="mt-auto pt-2">
+                {mpStatus.loading ? (
+                  <button 
+                    disabled
+                    className="w-full py-2 px-4 bg-gray-100 text-gray-400 rounded-lg text-sm font-medium cursor-not-allowed"
+                  >
+                    Cargando...
+                  </button>
+                ) : mpStatus.connected ? (
+                  <button
+                    onClick={handleDisconnectMercadoPago}
+                    className="w-full py-2 px-4 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Unlink size={16} />
+                    Desconectar
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleConnectMercadoPago}
+                    className="w-full py-2 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Link2 size={16} />
+                    Conectar MercadoPago
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         ))}
       </div>
