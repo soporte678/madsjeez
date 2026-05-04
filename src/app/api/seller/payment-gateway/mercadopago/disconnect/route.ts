@@ -1,19 +1,18 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { supabaseService } from "@/lib/supabase/service";
 
 /**
  * POST /api/seller/payment-gateway/mercadopago/disconnect
- * 
+ *
  * Desconecta la cuenta de MercadoPago del vendedor
  */
 export async function POST() {
   try {
-    const supabase = await createClient();
-    
-    // Verificar que el usuario esté autenticado
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (authError || !user) {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user) {
       return NextResponse.json(
         { error: "No autorizado" },
         { status: 401 }
@@ -21,10 +20,10 @@ export async function POST() {
     }
 
     // Eliminar la conexión de la base de datos
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await supabaseService
       .from("seller_mercadopago")
       .delete()
-      .eq("seller_id", user.id);
+      .eq("seller_id", session.user.id);
 
     if (deleteError) {
       console.error("Error desconectando MercadoPago:", deleteError);

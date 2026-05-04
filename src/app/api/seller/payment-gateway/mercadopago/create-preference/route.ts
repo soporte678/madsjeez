@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { supabaseService } from "@/lib/supabase/service";
 
 interface CreatePreferenceRequest {
   items: Array<{
@@ -81,17 +83,15 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabase = await createClient();
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
     const sellerId = items[0].seller_id;
 
     // Verificar que el vendedor tenga MercadoPago conectado vía OAuth
-    const { data: mpConnection, error: mpError } = await supabase
+    const { data: mpConnection, error: mpError } = await supabaseService
       .from("seller_mercadopago")
       .select("mp_access_token, is_active")
       .eq("seller_id", sellerId)
@@ -151,7 +151,7 @@ export async function POST(request: Request) {
       items: mpItems,
       marketplace_fee: marketplaceFee,
       payer: {
-        email: buyer_email || user.email || "",
+        email: buyer_email || session.user.email || "",
       },
       external_reference: order_id,
       notification_url: `${appUrl}/api/webhooks/mercadopago`,
@@ -185,7 +185,7 @@ export async function POST(request: Request) {
     const mpData = await mpResponse.json();
 
     // Registrar el pago en nuestra BD (referencia y desglose)
-    const { error: paymentError } = await supabase.from("payments").insert({
+    const { error: paymentError } = await supabaseService.from("payments").insert({
       order_id,
       mp_preference_id: mpData.id,
       mp_init_point: mpData.init_point,
@@ -199,7 +199,7 @@ export async function POST(request: Request) {
       shipping_buyer_share: totalShipping - sellerShippingShare,
       status: "pending",
       seller_id: sellerId,
-      buyer_id: user.id,
+      buyer_id: session.user.id,
       created_at: new Date().toISOString(),
     });
 
@@ -207,7 +207,7 @@ export async function POST(request: Request) {
       console.error("Error guardando información de pago:", paymentError);
     }
 
-    await supabase
+    await supabaseService
       .from("seller_mercadopago")
       .update({ last_used_at: new Date().toISOString() })
       .eq("seller_id", sellerId);

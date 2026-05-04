@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 /**
  * GET /api/seller/payment-gateway/mercadopago/auth
@@ -8,26 +9,16 @@ import { createClient } from "@/lib/supabase/server";
  */
 export async function GET() {
   try {
-    const supabase = await createClient();
+    const session = await getServerSession(authOptions);
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      console.error("Auth error:", authError);
+    if (!session?.user) {
       return NextResponse.json(
         { error: "No autorizado. Por favor, iniciá sesión nuevamente." },
         { status: 401 }
       );
     }
 
-    // Verificar que sea vendedor (tabla profiles, columna is_seller)
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("is_seller")
-      .eq("id", user.id)
-      .single();
-
-    if (profileError || !profile?.is_seller) {
+    if (!session.user.isSeller) {
       return NextResponse.json(
         { error: "Solo los vendedores pueden conectar MercadoPago" },
         { status: 403 }
@@ -51,7 +42,7 @@ export async function GET() {
     authUrl.searchParams.append("platform_id", "mp");
     authUrl.searchParams.append("redirect_uri", redirectUri);
 
-    const state = Buffer.from(user.id).toString("base64");
+    const state = Buffer.from(session.user.id).toString("base64");
     authUrl.searchParams.append("state", state);
 
     return NextResponse.json({ authUrl: authUrl.toString() });

@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { supabaseService } from "@/lib/supabase/service";
 import crypto from "crypto";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 /**
  * POST /api/webhooks/mercadopago
@@ -79,7 +74,7 @@ export async function POST(req: NextRequest) {
       const orderStatus = statusMap[status] || "pending";
 
       // Update order status
-      const { error: orderError } = await supabase
+      const { error: orderError } = await supabaseService
         .from("orders")
         .update({ status: orderStatus, updated_at: new Date().toISOString() })
         .eq("id", orderId);
@@ -89,7 +84,7 @@ export async function POST(req: NextRequest) {
       }
 
       // Update payment record
-      const { error: paymentError } = await supabase
+      const { error: paymentError } = await supabaseService
         .from("payments")
         .update({
           status: orderStatus,

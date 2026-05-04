@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { supabaseService } from "@/lib/supabase/service";
 
 interface MercadoPagoTokenResponse {
   access_token: string;
@@ -93,15 +93,12 @@ export async function GET(request: Request) {
       userInfo = await userInfoResponse.json();
     }
 
-    // Guardar en la base de datos
-    const supabase = await createClient();
-
     // Calcular fecha de expiración
-    const expiresAt = tokenData.expires_in 
+    const expiresAt = tokenData.expires_in
       ? new Date(Date.now() + tokenData.expires_in * 1000).toISOString()
       : null;
 
-    const { error: dbError } = await supabase
+    const { error: dbError } = await supabaseService
       .from("seller_mercadopago")
       .upsert({
         seller_id: sellerId,
