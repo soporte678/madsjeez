@@ -129,7 +129,9 @@ function CheckoutContent() {
         return acc;
       }, {} as Record<string, CartItem[]>);
 
-      // Create orders for each seller
+      // Create orders for each seller and collect order IDs
+      const createdOrders: { orderId: string; sellerId: string; items: CartItem[]; orderShipping: number }[] = [];
+
       for (const [sellerId, items] of Object.entries(itemsBySeller)) {
         const orderTotal = items.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
         const orderShipping = items.some((item) => !item.product.shipping_free) ? 2500 : 0;
@@ -143,7 +145,7 @@ function CheckoutContent() {
             total_amount: orderTotal,
             shipping_cost: orderShipping,
             discount_amount: 0,
-            commission_amount: orderTotal * 0.1, // 10% default commission
+            commission_amount: orderTotal * 0.1,
             shipping_address: shippingAddress,
             notes: null,
           })
@@ -164,9 +166,50 @@ function CheckoutContent() {
             commission_amount: item.product.price * item.quantity * 0.1,
           });
         }
+
+        createdOrders.push({ orderId: order.id, sellerId, items, orderShipping });
       }
 
-      // Clear cart
+      // MercadoPago: create preference and redirect
+      if (paymentMethod === "mercadopago") {
+        // Use the first order (single seller flow for now)
+        const { orderId, sellerId, items: orderItems, orderShipping } = createdOrders[0];
+
+        const mpItems = orderItems.map((item) => ({
+          id: item.product.id,
+          title: item.product.title,
+          quantity: item.quantity,
+          unit_price: item.product.price,
+          seller_id: sellerId,
+        }));
+
+        const prefResponse = await fetch("/api/seller/payment-gateway/mercadopago/create-preference", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            items: mpItems,
+            shipping_cost: orderShipping,
+            buyer_email: user.email,
+            order_id: orderId,
+          }),
+        });
+
+        if (!prefResponse.ok) {
+          const err = await prefResponse.json();
+          throw new Error(err.error || "Error al crear preferencia de pago");
+        }
+
+        const prefData = await prefResponse.json();
+
+        // Clear cart before redirecting
+        await supabase.from("cart_items").delete().eq("user_id", user.id);
+
+        // Redirect to MercadoPago checkout
+        window.location.href = prefData.init_point;
+        return;
+      }
+
+      // Other payment methods: clear cart and redirect
       await supabase.from("cart_items").delete().eq("user_id", user.id);
 
       toast.success("¡Pedido realizado con éxito!");

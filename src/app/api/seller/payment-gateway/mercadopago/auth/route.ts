@@ -1,21 +1,46 @@
-import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { NextResponse, type NextRequest } from "next/server";
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
+
+// URL y key hardcodeados (mismo valor que en server.ts)
+const supabaseUrl = "https://doweovsukuskflgnxhhn.supabase.co";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvd2VvdnN1a3Vza2ZsZ254aGhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyMTkyNzEsImV4cCI6MjA5Mjc5NTI3MX0.a0H7VrFwHWZavy8L0DjUyoAecQAdEf22UsA-a0p0u4Y";
 
 /**
  * GET /api/seller/payment-gateway/mercadopago/auth
  * 
  * Inicia el flujo OAuth de MercadoPago para conectar la cuenta del vendedor
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
+    // Crear response para manejar cookies
+    const response = NextResponse.next();
+    
+    // Crear cliente de Supabase con cookies de la request
+    const supabase = createServerClient(
+      supabaseUrl,
+      supabaseKey,
+      {
+        cookies: {
+          get(name: string) {
+            return request.cookies.get(name)?.value;
+          },
+          set(name: string, value: string, options: CookieOptions) {
+            response.cookies.set({ name, value, ...options });
+          },
+          remove(name: string, options: CookieOptions) {
+            response.cookies.set({ name, value: "", ...options });
+          },
+        },
+      }
+    );
     
     // Verificar que el usuario esté autenticado
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
     if (authError || !user) {
+      console.error("Auth error:", authError);
       return NextResponse.json(
-        { error: "No autorizado" },
+        { error: "No autorizado. Por favor, iniciá sesión nuevamente." },
         { status: 401 }
       );
     }
