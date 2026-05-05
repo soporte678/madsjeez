@@ -2,12 +2,15 @@
 
 import { useState, useRef, useEffect } from "react"
 import { usePathname } from "next/navigation"
-import { MessageCircle, X, Send, Bot, User, Loader2 } from "lucide-react"
+import { MessageCircle, X, Send, Bot, User, Loader2, Edit3, Clock, Maximize2, Plus, Camera, Mic, HelpCircle } from "lucide-react"
 import { useChat, type ChatMode } from "./ChatContext"
 
 interface Message {
   role: "user" | "assistant"
   content: string
+  isRecommendation?: boolean
+  productName?: string
+  productLink?: string
 }
 
 const modeConfig: Record<ChatMode, { welcome: string; title: string; quick: string[] }> = {
@@ -28,74 +31,69 @@ const modeConfig: Record<ChatMode, { welcome: string; title: string; quick: stri
   },
   support: {
     welcome: "¡Hola! Soy Laura, especialista en atención al cliente de MadsJeez 🛠️ ¿Tenés un problema con tu compra, envío, pago o cuenta? Voy a resolverlo.",
-    title: "Laura - Soporte Técnico",
-    quick: ["Mi pedido no llegó", "Quiero devolver un producto", "Problema con el pago", "Contactar un vendedor"],
+    title: "Laura - Soporte",
+    quick: ["Problema con envío", "Cuenta suspendida", "Cambiar datos", "Contactar soporte"],
   },
   buyer: {
-    welcome: "¡Hola! Soy Carlos, tu asesor de compras en MadsJeez 🛒 ¿Te ayudo a encontrar productos, comparar precios, entender pagos o tracking de envíos?",
-    title: "Carlos - Asesor de Compras",
-    quick: ["¿Cómo compro?", "Medios de pago", "Costo de envío", "Seguimiento de pedido"],
+    welcome: "¡Hola! Soy tu asistente de compras. ¿Buscás algún producto específico?",
+    title: "Asistente de Compras",
+    quick: ["Ofertas del día", "Productos recomendados", "Estado de mi pedido", "Devoluciones"],
   },
 }
 
 export default function AIChatBot() {
   const pathname = usePathname()
-  const { isOpen, openChat, closeChat, mode } = useChat()
-  const [messages, setMessages] = useState<Message[]>([])
+  const [isOpen, setIsOpen] = useState(false)
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      role: "assistant",
+      content: "¡Hola! Un clip puede ayudarte a mejorar la exposición de tu publicación y llamar más la atención en los resultados. \n\nTenés 1 publicación con oportunidad de video:",
+      isRecommendation: true,
+      productName: "Cuchilla Para Desmalezadora 3 Puntas Lusqtoff Niwa Gamma.",
+      productLink: "#"
+    }
+  ])
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
-  const [backendReady, setBackendReady] = useState<boolean | null>(null)
+  const [mode, setMode] = useState<ChatMode>("general")
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Hide on dashboard and admin pages (they have their own assistants)
-  if (pathname?.startsWith("/dashboard") || pathname?.startsWith("/admin")) {
+  // Hide on dashboard pages
+  if (pathname?.startsWith("/dashboard")) {
     return null
   }
 
-  // Reset messages when mode changes or chat opens
-  useEffect(() => {
-    if (isOpen) {
-      setMessages([
-        { role: "assistant", content: modeConfig[mode].welcome },
-      ])
-    }
-  }, [isOpen, mode])
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+    scrollToBottom()
   }, [messages])
 
   useEffect(() => {
-    if (isOpen) inputRef.current?.focus()
+    if (isOpen) {
+      setTimeout(() => inputRef.current?.focus(), 100)
+    }
   }, [isOpen])
 
-  // Healthcheck backend on first open
-  useEffect(() => {
-    if (isOpen && backendReady === null) {
-      fetch("/api/chat", { method: "HEAD" })
-        .then(() => setBackendReady(true))
-        .catch(() => setBackendReady(false))
-    }
-  }, [isOpen, backendReady])
-
-  const fetchWithTimeout = (url: string, options: RequestInit, timeout = 15000) => {
-    return Promise.race([
-      fetch(url, options),
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("Timeout: el servidor tardó demasiado en responder")), timeout)
-      ),
-    ])
+  const openChat = () => {
+    setIsOpen(true)
   }
 
-  const sendChatRequest = async (msgs: Message[]) => {
+  const closeChat = () => {
+    setIsOpen(false)
+  }
+
+  const sendChatRequest = async (currentMessages: Message[]) => {
     setLoading(true)
     try {
-      const res = await fetchWithTimeout("/api/chat", {
+      const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: msgs, mode }),
-      }, 15000)
+        body: JSON.stringify({ messages: currentMessages, mode }),
+      })
 
       if (!res.ok) {
         const status = res.status
@@ -169,31 +167,40 @@ export default function AIChatBot() {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-[10000] w-[380px] max-w-[calc(100vw-2rem)] h-[520px] max-h-[calc(100vh-8rem)] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 flex items-center justify-between flex-shrink-0">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                <Bot className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="font-semibold text-sm">{modeConfig[mode].title}</p>
-                <p className="text-xs text-blue-100 flex items-center gap-1">
-                  <span className="w-2 h-2 bg-green-400 rounded-full" />
-                  En línea
-                </p>
-              </div>
+        <div className="fixed bottom-24 right-6 z-[10000] w-[380px] max-w-[calc(100vw-2rem)] h-[600px] max-h-[calc(100vh-8rem)] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+          {/* Header — Mercado Libre style */}
+          <div className="bg-white border-b border-gray-100 p-3 flex items-center justify-between flex-shrink-0">
+            <div className="flex items-center gap-2">
+              <button className="p-1.5 hover:bg-gray-100 rounded-full transition-colors text-gray-500">
+                <Edit3 className="w-4 h-4" />
+              </button>
+              <button className="p-1.5 hover:bg-gray-100 rounded-full transition-colors text-gray-500">
+                <Clock className="w-4 h-4" />
+              </button>
             </div>
-            <button
-              onClick={closeChat}
-              className="p-1.5 hover:bg-white/20 rounded-full transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <p className="font-semibold text-sm text-gray-800 absolute left-1/2 -translate-x-1/2">Asistente</p>
+            <div className="flex items-center gap-1">
+              <button className="p-1.5 hover:bg-gray-100 rounded-full transition-colors text-gray-500">
+                <Maximize2 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={closeChat}
+                className="p-1.5 hover:bg-gray-100 rounded-full transition-colors text-gray-500"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Nuevo label */}
+          <div className="px-4 pt-3 pb-1 flex items-center gap-2 flex-shrink-0">
+            <div className="flex-1 h-px bg-gray-200" style={{ backgroundImage: 'repeating-linear-gradient(90deg, #e5e7eb 0px, #e5e7eb 4px, transparent 4px, transparent 8px)' }} />
+            <span className="text-xs text-blue-500 font-medium">Nuevo</span>
+            <div className="flex-1 h-px bg-gray-200" style={{ backgroundImage: 'repeating-linear-gradient(90deg, #e5e7eb 0px, #e5e7eb 4px, transparent 4px, transparent 8px)' }} />
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white">
             {messages.map((msg, i) => (
               <div key={i} className={`flex gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                 {msg.role === "assistant" && (
@@ -202,13 +209,38 @@ export default function AIChatBot() {
                   </div>
                 )}
                 <div
-                  className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
+                  className={`max-w-[85%] text-sm leading-relaxed ${
                     msg.role === "user"
-                      ? "bg-blue-600 text-white rounded-br-md"
-                      : "bg-white text-gray-800 border border-gray-200 rounded-bl-md shadow-sm"
+                      ? "bg-blue-600 text-white px-4 py-2.5 rounded-2xl rounded-br-md"
+                      : "bg-white text-gray-800"
                   }`}
                 >
-                  {msg.content}
+                  {msg.isRecommendation ? (
+                    <div className="space-y-3">
+                      <p className="text-sm text-gray-700 leading-relaxed">{msg.content}</p>
+                      {msg.productName && (
+                        <p className="text-sm text-gray-700">
+                          <span className="font-semibold">{msg.productName}</span> ⭐
+                        </p>
+                      )}
+                      {msg.productLink && (
+                        <a
+                          href={msg.productLink}
+                          className="inline-block text-blue-600 text-sm font-medium hover:underline"
+                        >
+                          Ir a crear clip
+                        </a>
+                      )}
+                    </div>
+                  ) : (
+                    <div
+                      className={`px-4 py-2.5 rounded-2xl border ${
+                        msg.role === "assistant" ? "bg-white border-gray-200 shadow-sm rounded-bl-md" : ""
+                      }`}
+                    >
+                      {msg.content}
+                    </div>
+                  )}
                 </div>
                 {msg.role === "user" && (
                   <div className="w-7 h-7 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
@@ -217,26 +249,27 @@ export default function AIChatBot() {
                 )}
               </div>
             ))}
-            {loading && (
-              <div className="flex gap-2 justify-start">
-                <div className="w-7 h-7 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                  <Bot className="w-4 h-4 text-blue-600" />
-                </div>
-                <div className="bg-white text-gray-500 border border-gray-200 px-4 py-3 rounded-2xl rounded-bl-md shadow-sm">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
-                  </div>
-                </div>
-              </div>
-            )}
             <div ref={messagesEndRef} />
           </div>
 
+          {/* Action Buttons */}
+          {messages.length <= 1 && (
+            <div className="px-4 py-3 bg-white flex-shrink-0 space-y-2">
+              <button className="w-full text-sm text-gray-700 border border-gray-300 rounded-full px-4 py-2.5 hover:bg-gray-50 transition-colors">
+                Quiero otra recomendación
+              </button>
+              <button className="w-full text-sm text-gray-700 border border-gray-300 rounded-full px-4 py-2.5 hover:bg-gray-50 transition-colors">
+                Conocer tareas pendientes
+              </button>
+              <button className="w-full text-sm text-gray-700 border border-gray-300 rounded-full px-4 py-2.5 hover:bg-gray-50 transition-colors">
+                Consultar por otro tema
+              </button>
+            </div>
+          )}
+
           {/* Quick Questions (only show at start) */}
           {messages.length <= 1 && (
-            <div className="px-4 py-2 bg-gray-50 border-t border-gray-100 flex-shrink-0">
+            <div className="px-4 py-2 bg-white border-t border-gray-100 flex-shrink-0">
               <p className="text-xs text-gray-500 mb-2">Preguntas frecuentes:</p>
               <div className="flex flex-wrap gap-1.5">
                 {quickQuestions.map((q) => (
@@ -258,28 +291,30 @@ export default function AIChatBot() {
             </div>
           )}
 
-          {/* Input */}
+          {/* Input — Mercado Libre style */}
           <div className="p-3 bg-white border-t border-gray-200 flex-shrink-0">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 bg-gray-100 rounded-full px-3 py-2">
+              <button className="p-1 text-gray-500 hover:text-gray-700 transition-colors">
+                <Plus className="w-5 h-5" />
+              </button>
               <input
                 ref={inputRef}
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Escribí tu consulta..."
+                placeholder="Preguntale al asistente..."
                 disabled={loading}
-                className="flex-1 px-4 py-2.5 bg-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white border border-transparent focus:border-blue-300 disabled:opacity-50 transition-all"
+                className="flex-1 bg-transparent text-sm focus:outline-none disabled:opacity-50"
               />
-              <button
-                onClick={sendMessage}
-                disabled={!input.trim() || loading}
-                className="p-2.5 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0"
-              >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              <button className="p-1 text-gray-500 hover:text-gray-700 transition-colors">
+                <Camera className="w-5 h-5" />
+              </button>
+              <button className="p-1 text-gray-500 hover:text-gray-700 transition-colors">
+                <Mic className="w-5 h-5" />
               </button>
             </div>
-            <p className="text-[10px] text-gray-400 text-center mt-1.5">Powered by MadsJeez AI</p>
+            <p className="text-[10px] text-gray-400 text-center mt-2">Este asistente usa inteligencia artificial para responderte.</p>
           </div>
         </div>
       )}
