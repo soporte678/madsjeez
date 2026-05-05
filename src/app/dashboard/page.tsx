@@ -30,7 +30,10 @@ import MarketingIAPage from "@/app/dashboard/marketing/page";
 import MetricasView from "@/components/dashboard/MetricasView";
 import ClipsView from "@/components/dashboard/ClipsView";
 import VentasView from "@/components/dashboard/VentasView";
+import CampaignDetailView from "@/components/dashboard/CampaignDetailView";
+import CouponCreateView from "@/components/dashboard/CouponCreateView";
 import MarketingCentralView from "@/components/dashboard/MarketingCentralView";
+import AdvertisingView from "@/components/dashboard/AdvertisingView";
 
 function getInitialMenu() {
   if (typeof window !== 'undefined') {
@@ -613,8 +616,11 @@ export default function App() {
             {activeMenu === 'publicaciones' && <div className="-mx-4 lg:-mx-8">{renderPublicaciones()}</div>}
             {activeMenu === 'marketing-ia' && <MarketingIAPage />}
             {activeMenu === 'central-marketing' && <MarketingCentralView />}
+            {activeMenu === 'publicidad' && <AdvertisingView />}
             {activeMenu === 'clips' && <ClipsView />}
             {activeMenu === 'ventas-lista' && <VentasView />}
+            {activeMenu === 'campania-detalle' && <CampaignDetailView />}
+            {activeMenu === 'crear-cupon' && <CouponCreateView />}
           </div>
         </section>
       </div>
