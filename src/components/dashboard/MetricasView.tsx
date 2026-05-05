@@ -103,6 +103,7 @@ export default function MetricasView() {
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [activeAtencionSubTab, setActiveAtencionSubTab] = useState('reclamos');
+  const [activeEnvioSubTab, setActiveEnvioSubTab] = useState('turbo');
 
   const tabs = [
     { id: 'negocio', label: 'Negocio' },
@@ -1231,8 +1232,130 @@ export default function MetricasView() {
         </>
       )}
 
+      {/* === DESEMPEÑO EN ENVÍOS === */}
+      {activeTab === 'envios' && (
+        <>
+          {/* Sub-tabs */}
+          <div className="flex gap-4 border-b border-gray-200">
+            <button
+              onClick={() => setActiveEnvioSubTab('turbo')}
+              className={`pb-2 text-sm transition-colors ${activeEnvioSubTab === 'turbo' ? 'font-semibold text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              Envío Turbo
+            </button>
+            <button
+              onClick={() => setActiveEnvioSubTab('flex')}
+              className={`pb-2 text-sm transition-colors ${activeEnvioSubTab === 'flex' ? 'font-semibold text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              Envíos Flex
+            </button>
+          </div>
+
+          {/* Action links */}
+          <div className="flex items-center justify-end gap-4">
+            <button className="text-blue-600 text-sm font-medium hover:underline">Descargar reporte de envíos</button>
+            <button className="text-blue-600 text-sm font-medium hover:underline">Necesito ayuda</button>
+          </div>
+
+          {/* Coverage cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Radio de cobertura actual */}
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <div className="flex items-center gap-1 text-sm font-semibold text-gray-800 mb-4">
+                Radio de cobertura actual <Info size={14} className="text-gray-400" />
+              </div>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center">
+                  <Check size={12} className="text-white" />
+                </div>
+                <span className="text-lg font-bold text-gray-800">Ajustable</span>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                  <span className="text-xs text-gray-600">Ofrezco. Llego en 24 hs</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                  <span className="text-xs text-gray-600">Podés modificar el radio de cobertura</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Radio de cobertura previsto */}
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <div className="flex items-center gap-1 text-sm font-semibold text-gray-800 mb-4">
+                Radio de cobertura previsto para la próxima semana <Info size={14} className="text-gray-400" />
+              </div>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-4 h-4 rounded-full bg-gray-400 flex items-center justify-center">
+                  <Minus size={12} className="text-white" />
+                </div>
+                <span className="text-lg font-bold text-gray-800">Sin calcular</span>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">Entregas a tiempo</div>
+                  <div className="text-xs text-gray-800 font-medium">Esta semana</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">Entregas a tiempo</div>
+                  <div className="text-xs text-gray-400">— %</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Historial chart */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center gap-1 text-sm font-semibold text-gray-800 mb-6">
+              Historial de tus envíos en las últimas semanas <Info size={14} className="text-gray-400" />
+            </div>
+            <ResponsiveContainer width="100%" height={250}>
+              <LineChart data={[
+                { week: '15 abr - 18 abr', turbo: 95, flex: 88, demoraSafe: 2, demoraBad: 3 },
+                { week: '20 abr - 24 abr', turbo: 92, flex: 85, demoraSafe: 3, demoraBad: 2 },
+                { week: '27 abr - 1 may', turbo: 94, flex: 90, demoraSafe: 1, demoraBad: 2 },
+              ]}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                <XAxis dataKey="week" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9CA3AF' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9CA3AF' }} domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
+                <Tooltip formatter={(value: any, name: any) => [`${value}%`, name]} />
+                <Line type="monotone" dataKey="turbo" stroke="#10B981" strokeWidth={3} dot={{ r: 4, fill: '#10B981' }} name="Envíos Turbo" />
+                <Line type="monotone" dataKey="flex" stroke="#3B82F6" strokeWidth={3} dot={{ r: 4, fill: '#3B82F6' }} name="Envíos Flex" />
+              </LineChart>
+            </ResponsiveContainer>
+
+            {/* Legend */}
+            <div className="flex items-center gap-6 mt-4 pt-4 border-t border-gray-100">
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-1.5 rounded-full bg-green-500"></span>
+                <span className="text-xs text-gray-600">A tiempo (0%)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-1.5 rounded-full bg-yellow-400"></span>
+                <span className="text-xs text-gray-600">Anticipados (0,0%)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-1.5 rounded-full bg-gray-400"></span>
+                <span className="text-xs text-gray-600">Demorados que no afectan tu reputación (0,0%)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-1.5 rounded-full bg-red-500"></span>
+                <span className="text-xs text-gray-600">Demorados que afectan tu reputación (0,0%)</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="text-xs text-gray-400">
+            Última actualización: lunes 4 de mayo a las 22 hs
+          </div>
+        </>
+      )}
+
       {/* Other tabs placeholder */}
-      {activeTab !== 'negocio' && activeTab !== 'promociones' && activeTab !== 'costos' && activeTab !== 'atencion' && (
+      {activeTab !== 'negocio' && activeTab !== 'promociones' && activeTab !== 'costos' && activeTab !== 'atencion' && activeTab !== 'envios' && (
         <div className="bg-white rounded-xl border border-gray-200 p-20 text-center text-gray-400 italic">
           Panel de {tabs.find(t => t.id === activeTab)?.label} en preparación...
         </div>
