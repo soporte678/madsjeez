@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { useSession } from "next-auth/react"
 import { useQuestions } from "@/hooks/useQuestions"
 import { Button } from "@/components/ui/button"
@@ -12,7 +12,11 @@ import {
   Trash2, 
   CheckCircle2,
   HelpCircle,
-  Loader2
+  Loader2,
+  ImagePlus,
+  X,
+  Download,
+  Paperclip
 } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
@@ -41,16 +45,99 @@ export function ProductQuestions({ productId, sellerId }: ProductQuestionsProps)
   const [answerText, setAnswerText] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showAnswerInput, setShowAnswerInput] = useState<string | null>(null)
+  
+  // Estados para manejo de imágenes
+  const [selectedImages, setSelectedImages] = useState<File[]>([])
+  const [imagePreviews, setImagePreviews] = useState<string[]>([])
+  const [uploadingImages, setUploadingImages] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const isSeller = session?.user?.id === sellerId
+
+  // Función para manejar selección de imágenes
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files) return
+
+    const newFiles = Array.from(files)
+    const totalImages = selectedImages.length + newFiles.length
+
+    if (totalImages > 2) {
+      alert("Máximo 2 imágenes permitidas")
+      return
+    }
+
+    // Validar tamaño (5MB máximo)
+    for (const file of newFiles) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert("El archivo excede el tamaño máximo de 5MB")
+        return
+      }
+    }
+
+    setSelectedImages(prev => [...prev, ...newFiles])
+    
+    // Crear previews
+    newFiles.forEach(file => {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setImagePreviews(prev => [...prev, reader.result as string])
+      }
+      reader.readAsDataURL(file)
+    })
+  }
+
+  // Función para remover imagen
+  const removeImage = (index: number) => {
+    setSelectedImages(prev => prev.filter((_, i) => i !== index))
+    setImagePreviews(prev => prev.filter((_, i) => i !== index))
+  }
+
+  // Función para subir imágenes
+  const uploadImages = async (): Promise<string[]> => {
+    if (selectedImages.length === 0) return []
+
+    setUploadingImages(true)
+    const formData = new FormData()
+    selectedImages.forEach(file => {
+      formData.append("images", file)
+    })
+
+    try {
+      const res = await fetch("/api/questions/upload", {
+        method: "POST",
+        body: formData
+      })
+
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || "Error al subir imágenes")
+      }
+
+      const data = await res.json()
+      return data.urls || []
+    } catch (error: any) {
+      throw new Error(error.message || "Error al subir imágenes")
+    } finally {
+      setUploadingImages(false)
+    }
+  }
 
   const handleAskQuestion = async () => {
     if (!newQuestion.trim()) return
     
     setIsSubmitting(true)
     try {
-      await askQuestion(productId, newQuestion)
+      // Subir imágenes primero si hay seleccionadas
+      let imageUrls: string[] = []
+      if (selectedImages.length > 0) {
+        imageUrls = await uploadImages()
+      }
+      
+      await askQuestion(productId, newQuestion, imageUrls)
       setNewQuestion("")
+      setSelectedImages([])
+      setImagePreviews([])
     } catch (error: any) {
       alert(error.message)
     } finally {
@@ -110,16 +197,71 @@ export function ProductQuestions({ productId, sellerId }: ProductQuestionsProps)
                 className="min-h-[80px] resize-none"
                 maxLength={1000}
               />
+              
+              {/* Preview de imágenes seleccionadas */}
+              {imagePreviews.length > 0 && (
+                <div className="flex gap-2 mt-2">
+                  {imagePreviews.map((preview, index) => (
+                    <div key={index} className="relative">
+                      <img 
+                        src={preview} 
+                        alt={`Preview ${index + 1}`}
+                        className="w-16 h-16 object-cover rounded-lg border border-gray-200"
+                      />
+                      <button
+                        onClick={() => removeImage(index)}
+                        className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
+                        type="button"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
               <div className="flex justify-between items-center mt-2">
-                <span className="text-xs text-gray-400">
-                  {newQuestion.length}/1000 caracteres
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-400">
+                    {newQuestion.length}/1000 caracteres
+                  </span>
+                  
+                  {/* Botón para adjuntar imágenes */}
+                  {imagePreviews.length < 2 && (
+                    <>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        ref={fileInputRef}
+                        onChange={handleImageSelect}
+                        className="hidden"
+                      />
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        type="button"
+                        className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700"
+                      >
+                        <ImagePlus className="w-4 h-4" />
+                        Adjuntar foto
+                      </button>
+                    </>
+                  )}
+                  
+                  {uploadingImages && (
+                    <span className="text-xs text-gray-500 flex items-center gap-1">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      Subiendo...
+                    </span>
+                  )}
+                </div>
+                
                 <Button
                   onClick={handleAskQuestion}
-                  disabled={!newQuestion.trim() || isSubmitting}
+                  disabled={!newQuestion.trim() || isSubmitting || uploadingImages}
                   size="sm"
                 >
-                  {isSubmitting ? (
+                  {isSubmitting || uploadingImages ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
                     <>
@@ -129,6 +271,10 @@ export function ProductQuestions({ productId, sellerId }: ProductQuestionsProps)
                   )}
                 </Button>
               </div>
+              
+              <p className="text-xs text-gray-400 mt-1">
+                Máximo 2 imágenes (5MB cada una). Solo visibles para el vendedor.
+              </p>
             </div>
           </div>
         </div>
@@ -158,6 +304,39 @@ export function ProductQuestions({ productId, sellerId }: ProductQuestionsProps)
                 <div className="flex-1">
                   <div className="bg-gray-50 rounded-lg p-3">
                     <p className="text-gray-800">{q.question}</p>
+                    
+                    {/* Indicador de imágenes adjuntas - SOLO para vendedor */}
+                    {isSeller && q.images && q.images.length > 0 && (
+                      <div className="mt-3 p-2 bg-orange-50 border border-orange-200 rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Paperclip className="w-4 h-4 text-orange-500" />
+                          <span className="text-sm font-medium text-orange-700">
+                            {q.images.length} imagen{q.images.length > 1 ? 'es' : ''} adjunta{q.images.length > 1 ? 's' : ''}
+                          </span>
+                          <span className="text-xs text-orange-500">(Solo visible para vos)</span>
+                        </div>
+                        <div className="flex gap-2 flex-wrap">
+                          {q.images.map((imgUrl: string, idx: number) => (
+                            <div key={idx} className="relative group">
+                              <img
+                                src={imgUrl}
+                                alt={`Adjunto ${idx + 1}`}
+                                className="w-20 h-20 object-cover rounded border border-orange-200"
+                              />
+                              <a
+                                href={imgUrl}
+                                download={`pregunta_${q.id}_imagen_${idx + 1}`}
+                                className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded"
+                                title="Descargar imagen"
+                              >
+                                <Download className="w-5 h-5 text-white" />
+                              </a>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
                     <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
                       <span>{q.buyer.name || "Usuario"}</span>
                       <span>•</span>

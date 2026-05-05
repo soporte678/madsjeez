@@ -88,11 +88,20 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const { productId, question } = body
+    const { productId, question, images } = body
 
     if (!productId || !question?.trim()) {
       return NextResponse.json(
         { error: "Producto y pregunta son requeridos" },
+        { status: 400 }
+      )
+    }
+
+    // Validar imágenes (máximo 2)
+    const questionImages = images || []
+    if (questionImages.length > 2) {
+      return NextResponse.json(
+        { error: "Máximo 2 imágenes permitidas por pregunta" },
         { status: 400 }
       )
     }
@@ -123,6 +132,7 @@ export async function POST(request: Request) {
         productId,
         buyerId: session.user.id,
         question: question.trim(),
+        images: questionImages,
         status: "pending"
       },
       include: {

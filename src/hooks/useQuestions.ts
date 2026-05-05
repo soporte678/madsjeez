@@ -10,6 +10,7 @@ interface Question {
   question: string
   answer: string | null
   answeredAt: string | null
+  images: string[] // URLs de imágenes adjuntas
   status: "pending" | "answered"
   isPublic: boolean
   createdAt: string
@@ -92,7 +93,7 @@ export function useQuestions(options: UseQuestionsOptions = {}): UseQuestionsRet
     fetchQuestions()
   }, [fetchQuestions])
 
-  const askQuestion = async (productId: string, question: string) => {
+  const askQuestion = async (productId: string, question: string, images: string[] = []) => {
     if (!session?.user) {
       throw new Error("Debes iniciar sesión")
     }
@@ -100,7 +101,7 @@ export function useQuestions(options: UseQuestionsOptions = {}): UseQuestionsRet
     const res = await fetch("/api/questions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ productId, question })
+      body: JSON.stringify({ productId, question, images })
     })
 
     if (!res.ok) {

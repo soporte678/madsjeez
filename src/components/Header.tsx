@@ -8,36 +8,41 @@ export function Header() {
   const { data: session } = useSession()
 
   return (
-    <header className="bg-[#FEE500]">
+    <header className="bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#0f172a]">
       <div className="container mx-auto px-4">
         {/* Top bar */}
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-4">
-            <Link href="/" className="text-xl font-bold text-gray-800">
-              MADSJEEZ
+            <Link href="/" className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-[#FF6B4A] to-[#00D4FF] rounded-xl flex items-center justify-center shadow-lg shadow-[#FF6B4A]/20">
+                <span className="text-white font-black text-xl">M</span>
+              </div>
+              <span className="text-2xl font-black bg-gradient-to-r from-[#FF6B4A] via-[#FFC107] to-[#00D4FF] bg-clip-text text-transparent">
+                MADSJEEZ
+              </span>
             </Link>
           </div>
 
           <nav className="hidden md:flex items-center gap-6">
-            <Link href="/categories" className="text-sm font-medium hover:opacity-70">
+            <Link href="/categories" className="text-sm font-medium text-white/80 hover:text-white transition-colors">
               Categorías
             </Link>
-            <Link href="/deals" className="text-sm font-medium hover:opacity-70">
+            <Link href="/deals" className="text-sm font-medium text-white/80 hover:text-[#FF6B4A] transition-colors">
               Ofertas
             </Link>
-            <Link href="/history" className="text-sm font-medium hover:opacity-70">
+            <Link href="/history" className="text-sm font-medium text-white/80 hover:text-white transition-colors">
               Historial
             </Link>
-            <Link href="/supermarket" className="text-sm font-medium hover:opacity-70">
+            <Link href="/supermarket" className="text-sm font-medium text-white/80 hover:text-white transition-colors">
               Supermercado
             </Link>
-            <Link href="/fashion" className="text-sm font-medium hover:opacity-70">
+            <Link href="/fashion" className="text-sm font-medium text-white/80 hover:text-white transition-colors">
               Moda
             </Link>
-            <Link href="/sell" className="text-sm font-medium hover:opacity-70">
+            <Link href="/sell" className="text-sm font-medium text-white/80 hover:text-white transition-colors">
               Vender
             </Link>
-            <Link href="/help" className="text-sm font-medium hover:opacity-70">
+            <Link href="/help" className="text-sm font-medium text-white/80 hover:text-white transition-colors">
               Ayuda
             </Link>
           </nav>
@@ -45,25 +50,25 @@ export function Header() {
           <div className="flex items-center gap-4">
             {session?.user ? (
               <>
-                <Link href="/account" className="text-sm font-medium hover:opacity-70">
+                <Link href="/account" className="text-sm font-medium text-white/80 hover:text-white transition-colors">
                   Mi Cuenta
                 </Link>
                 <Link href="/cart">
-                  <Button variant="ghost" size="icon">
+                  <Button variant="ghost" size="icon" className="text-white/80 hover:text-white hover:bg-white/10">
                     🛒
                   </Button>
                 </Link>
               </>
             ) : (
               <>
-                <Link href="/auth/register" className="text-sm font-medium hover:opacity-70">
+                <Link href="/auth/register" className="text-sm font-medium text-white/80 hover:text-white transition-colors">
                   Creá tu cuenta
                 </Link>
-                <Link href="/auth/login" className="text-sm font-medium hover:opacity-70">
+                <Link href="/auth/login" className="text-sm font-medium text-white/80 hover:text-white transition-colors">
                   Ingresá
                 </Link>
                 <Link href="/cart">
-                  <Button variant="ghost" size="icon">
+                  <Button variant="ghost" size="icon" className="text-white/80 hover:text-white hover:bg-white/10">
                     🛒
                   </Button>
                 </Link>

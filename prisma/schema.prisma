@@ -395,7 +395,12 @@ model Subscription {
   id              String           @id @default(cuid())
   tier            SubscriptionTier
   status          String           @default("active") // active, cancelled, expired
-  price           Float
+  price           Float            // Precio base mensual
+  
+  // Ciclo de facturación (1, 6 o 12 meses)
+  billingCycle    Int              @default(1) @map("billing_cycle")
+  totalAmount     Float            @map("total_amount") // Monto total con descuento aplicado
+  discountPercent Float            @default(0) @map("discount_percent") // Porcentaje de descuento aplicado (0, 20, 30)
   
   // Período
   startDate       DateTime         @map("start_date")
@@ -404,6 +409,11 @@ model Subscription {
   // Stripe
   stripeId        String?          @map("stripe_id")
   stripePriceId   String?          @map("stripe_price_id")
+  
+  // MercadoPago
+  mpPreferenceId  String?          @map("mp_preference_id")
+  mpPaymentId     String?          @map("mp_payment_id")
+  mpStatus        String?          @map("mp_status")
   
   userId          String           @map("user_id")
   user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -477,6 +487,9 @@ model Question {
   answer      String?   @db.Text
   answeredAt  DateTime? @map("answered_at")
   answeredBy  String?   @map("answered_by") // seller_id who answered
+  
+  // Imágenes adjuntas (máximo 2) - solo visibles para el vendedor
+  images      String[]  @default([]) // URLs de imágenes en Supabase Storage
   
   status      String    @default("pending") // pending, answered
   isPublic    Boolean   @default(true) @map("is_public")
