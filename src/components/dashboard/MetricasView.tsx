@@ -7,7 +7,8 @@ import {
 } from 'recharts';
 import {
   Info, Download, Filter, ChevronDown, ChevronRight, ChevronLeft,
-  Eye, TrendingUp, TrendingDown, Minus, Search, FileText, MoreVertical
+  Eye, TrendingUp, TrendingDown, Minus, Search, FileText, MoreVertical,
+  Calendar, X
 } from 'lucide-react';
 
 // --- DATA DEMO ---
@@ -101,6 +102,7 @@ export default function MetricasView() {
   const [compareWith, setCompareWith] = useState('Período anterior');
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [activeAtencionSubTab, setActiveAtencionSubTab] = useState('reclamos');
 
   const tabs = [
     { id: 'negocio', label: 'Negocio' },
@@ -801,156 +803,275 @@ export default function MetricasView() {
         <>
           {/* Sub-tabs */}
           <div className="flex gap-4 border-b border-gray-200">
-            <button className="pb-2 text-sm font-semibold text-blue-600 border-b-2 border-blue-600">Reclamos, cancelaciones y devoluciones</button>
-            <button className="pb-2 text-sm text-gray-500 hover:text-gray-700">Detalle de envíos incorrectos</button>
+            <button
+              onClick={() => setActiveAtencionSubTab('reclamos')}
+              className={`pb-2 text-sm transition-colors ${activeAtencionSubTab === 'reclamos' ? 'font-semibold text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              Reclamos, cancelaciones y devoluciones
+            </button>
+            <button
+              onClick={() => setActiveAtencionSubTab('envios')}
+              className={`pb-2 text-sm transition-colors ${activeAtencionSubTab === 'envios' ? 'font-semibold text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              Detalle de envíos incorrectos
+            </button>
           </div>
 
-          {/* Filters */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">
-                  Últimos 60 días
-                  <ChevronDown size={16} />
+          {/* === RECLAMOS, CANCELACIONES Y DEVOLUCIONES === */}
+          {activeAtencionSubTab === 'reclamos' && (
+            <>
+              {/* Filters */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">
+                      Últimos 60 días
+                      <ChevronDown size={16} />
+                    </button>
+                  </div>
+                  <button className="flex items-center gap-2 px-4 py-2 text-blue-600 text-sm font-medium hover:bg-blue-50 rounded-lg">
+                    <Filter size={16} />
+                    Filtrar
+                  </button>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-10 h-6 bg-blue-600 rounded-full relative cursor-pointer">
+                      <div className="w-4 h-4 bg-white rounded-full absolute right-1 top-1 shadow"></div>
+                    </div>
+                    <span className="text-sm text-gray-700 font-medium">Afecta mi reputación</span>
+                  </div>
+                  <span className="text-xs text-gray-500">386 ventas</span>
+                </div>
+              </div>
+
+              {/* Problemas en tus ventas */}
+              <div className="bg-white rounded-xl border border-gray-200 p-6">
+                <h3 className="text-sm font-semibold text-gray-800 mb-4">Problemas en tus ventas</h3>
+                <div className="flex items-start gap-8">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-1 text-xs text-gray-500 mb-4">
+                      Principales tipos de problemas <Info size={12} className="text-gray-400" />
+                    </div>
+                    <div className="space-y-3">
+                      {[
+                        { label: 'Con el producto entregado', value: 2, color: 'bg-indigo-500', max: 5 },
+                        { label: 'Al gestionar o preparar la venta', value: 1, color: 'bg-pink-400', max: 5 },
+                        { label: 'Por otros motivos', value: 0, color: 'bg-gray-300', max: 5 },
+                        { label: 'Porque el comprador se arrepintió', value: 0, color: 'bg-gray-300', max: 5 },
+                        { label: 'Al despachar o entregar el producto', value: 0, color: 'bg-gray-300', max: 5 },
+                      ].map((item, i) => (
+                        <div key={i} className="flex items-center gap-3">
+                          <div className="w-48 text-xs text-gray-600 text-right truncate">{item.label}</div>
+                          <div className="flex-1 h-5 bg-gray-100 rounded overflow-hidden">
+                            <div className={`h-full ${item.color} rounded`} style={{ width: `${(item.value / item.max) * 100}%`, minWidth: item.value > 0 ? '8px' : '0' }}></div>
+                          </div>
+                          <div className="w-6 text-xs font-semibold text-gray-700 text-right">{item.value}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="w-px h-40 bg-gray-100 mx-4"></div>
+                  <div className="flex flex-col gap-4">
+                    <div className="text-center">
+                      <div className="text-sm font-semibold text-gray-800">3</div>
+                      <div className="text-xs text-gray-500">problemas</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-sm font-semibold text-gray-800">3</div>
+                      <div className="text-xs text-gray-500">ventas afectadas</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-6 flex items-center justify-between">
+                  <button className="text-blue-600 text-sm font-medium hover:underline">Revisar todos</button>
+                  <ChevronRight size={18} className="text-blue-600" />
+                </div>
+              </div>
+
+              {/* Métricas de reclamos, cancelaciones y devoluciones */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-800 mb-4">Métricas de reclamos, cancelaciones y devoluciones</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Reclamos */}
+                  <div className="bg-white rounded-xl border border-gray-200 p-5">
+                    <div className="flex items-center gap-1 text-xs font-semibold text-gray-500 mb-2">
+                      Reclamos <Info size={12} className="text-gray-400" />
+                    </div>
+                    <div className="text-2xl font-black text-gray-800">0,77% <span className="text-xs font-semibold text-green-600">+ 0,43 puntos</span></div>
+                    <div className="text-xs text-gray-400 mt-1">3 ventas</div>
+                    <div className="mt-4 flex items-center justify-center">
+                      <svg viewBox="0 0 100 100" className="w-16 h-16 -rotate-90">
+                        <circle cx="50" cy="50" r="40" fill="none" stroke="#E5E7EB" strokeWidth="10" />
+                        <circle cx="50" cy="50" r="40" fill="none" stroke="#3B82F6" strokeWidth="10" strokeDasharray="150 101" strokeLinecap="round" />
+                      </svg>
+                      <div className="absolute ml-20 mt-0 space-y-1">
+                        <div className="flex items-center gap-1 text-[10px] text-gray-500"><span className="w-2 h-2 rounded-full bg-blue-500"></span> En ventas concretadas</div>
+                        <div className="flex items-center gap-1 text-[10px] text-gray-500"><span className="w-2 h-2 rounded-full bg-blue-400"></span> Con devolución</div>
+                        <div className="flex items-center gap-1 text-[10px] text-gray-500"><span className="w-2 h-2 rounded-full bg-blue-300"></span> Con cancelación</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Cancelaciones */}
+                  <div className="bg-white rounded-xl border border-gray-200 p-5">
+                    <div className="flex items-center gap-1 text-xs font-semibold text-gray-500 mb-2">
+                      Cancelaciones <Info size={12} className="text-gray-400" />
+                    </div>
+                    <div className="text-2xl font-black text-gray-800">0% <span className="text-xs font-semibold text-gray-400">0 puntos</span></div>
+                    <div className="text-xs text-gray-400 mt-1">0 ventas</div>
+                    <div className="mt-4 flex items-center justify-center">
+                      <svg viewBox="0 0 100 100" className="w-16 h-16 -rotate-90">
+                        <circle cx="50" cy="50" r="40" fill="none" stroke="#E5E7EB" strokeWidth="10" />
+                      </svg>
+                      <div className="absolute ml-20 mt-0">
+                        <div className="flex items-center gap-1 text-[10px] text-gray-500"><span className="w-2 h-2 rounded-full bg-gray-300"></span> Por vos</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Mediaciones */}
+                  <div className="bg-white rounded-xl border border-gray-200 p-5">
+                    <div className="flex items-center gap-1 text-xs font-semibold text-gray-500 mb-2">
+                      Mediaciones <Info size={12} className="text-gray-400" />
+                    </div>
+                    <div className="text-2xl font-black text-gray-800">0% <span className="text-xs font-semibold text-green-600">+ 0,06 puntos</span></div>
+                    <div className="text-xs text-gray-400 mt-1">0 ventas</div>
+                  </div>
+
+                  {/* Devoluciones + Cambios */}
+                  <div className="space-y-4">
+                    <div className="bg-white rounded-xl border border-gray-200 p-5">
+                      <div className="flex items-center gap-1 text-xs font-semibold text-gray-500 mb-2">
+                        Devoluciones <Info size={12} className="text-gray-400" />
+                      </div>
+                      <p className="text-xs text-gray-500 leading-relaxed">
+                        Para el cálculo de reputación esta métrica está incluida en <strong className="text-blue-600">Reclamos</strong>.
+                      </p>
+                    </div>
+                    <div className="bg-white rounded-xl border border-gray-200 p-5">
+                      <div className="flex items-center gap-1 text-xs font-semibold text-gray-500 mb-2">
+                        Cambios <Info size={12} className="text-gray-400" />
+                      </div>
+                      <p className="text-xs text-gray-500 leading-relaxed">
+                        Ocultamos esta métrica porque no está afectando tu color actual de reputación.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer note */}
+              <div className="text-xs text-gray-400 space-y-1">
+                <p>Métricas comparadas con el período anterior: 5 de marzo a 4 de mayo de 2026.</p>
+                <p>Puedes encontrar algunos valores distintos a Reputación debido a una diferencia en el tiempo de actualización de los datos.</p>
+              </div>
+            </>
+          )}
+
+          {/* === DETALLE DE ENVÍOS INCORRECTOS === */}
+          {activeAtencionSubTab === 'envios' && (
+            <>
+              {/* Header */}
+              <div>
+                <h2 className="text-lg font-semibold text-gray-800 mb-1">Detalle de envíos incorrectos</h2>
+                <p className="text-xs text-gray-500 mb-4">Última actualización: lunes 4 de mayo a las 22 hs</p>
+              </div>
+
+              {/* Filters + Banner */}
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">
+                    <Calendar size={16} />
+                    Del 6/mes al 5/mes
+                    <ChevronDown size={16} />
+                  </button>
+                  <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">
+                    Por fecha de venta
+                    <ChevronDown size={16} />
+                  </button>
+                  <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">
+                    2 formas de envío seleccionadas
+                    <ChevronDown size={16} />
+                  </button>
+                </div>
+                <div className="bg-blue-500 text-white rounded-lg p-4 w-72 flex-shrink-0 shadow-lg">
+                  <div className="flex items-start justify-between mb-2">
+                    <h4 className="text-sm font-semibold">Descargá un Excel con el detalle de tus envíos incorrectos</h4>
+                    <button className="text-blue-200 hover:text-white"><X size={16} /></button>
+                  </div>
+                  <p className="text-xs text-blue-100 mb-3">Analizá la información de cada producto afectado sin tener que conectarte.</p>
+                  <button className="px-4 py-1.5 bg-white text-blue-600 text-xs font-semibold rounded-md hover:bg-blue-50">Entendido</button>
+                </div>
+              </div>
+
+              {/* Sub-tabs: Por venta | Por producto */}
+              <div className="flex gap-4 border-b border-gray-200">
+                <button className="pb-2 text-sm font-semibold text-blue-600 border-b-2 border-blue-600">Por venta</button>
+                <button className="pb-2 text-sm text-gray-500 hover:text-gray-700">Por producto</button>
+              </div>
+
+              {/* Descargar */}
+              <div className="flex justify-end">
+                <button className="flex items-center gap-2 px-4 py-2 text-blue-600 text-sm font-medium hover:bg-blue-50 rounded-lg border border-blue-200">
+                  <Download size={16} />
+                  Descargar reporte
                 </button>
               </div>
-              <button className="flex items-center gap-2 px-4 py-2 text-blue-600 text-sm font-medium hover:bg-blue-50 rounded-lg">
-                <Filter size={16} />
-                Filtrar
-              </button>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-6 bg-blue-600 rounded-full relative cursor-pointer">
-                  <div className="w-4 h-4 bg-white rounded-full absolute right-1 top-1 shadow"></div>
-                </div>
-                <span className="text-sm text-gray-700 font-medium">Afecta mi reputación</span>
-              </div>
-              <span className="text-xs text-gray-500">386 ventas</span>
-            </div>
-          </div>
 
-          {/* Problemas en tus ventas */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-sm font-semibold text-gray-800 mb-4">Problemas en tus ventas</h3>
-            <div className="flex items-start gap-8">
-              <div className="flex-1">
-                <div className="flex items-center gap-1 text-xs text-gray-500 mb-4">
-                  Principales tipos de problemas <Info size={12} className="text-gray-400" />
-                </div>
-                <div className="space-y-3">
-                  {[
-                    { label: 'Con el producto entregado', value: 2, color: 'bg-indigo-500', max: 5 },
-                    { label: 'Al gestionar o preparar la venta', value: 1, color: 'bg-pink-400', max: 5 },
-                    { label: 'Por otros motivos', value: 0, color: 'bg-gray-300', max: 5 },
-                    { label: 'Porque el comprador se arrepintió', value: 0, color: 'bg-gray-300', max: 5 },
-                    { label: 'Al despachar o entregar el producto', value: 0, color: 'bg-gray-300', max: 5 },
-                  ].map((item, i) => (
-                    <div key={i} className="flex items-center gap-3">
-                      <div className="w-48 text-xs text-gray-600 text-right truncate">{item.label}</div>
-                      <div className="flex-1 h-5 bg-gray-100 rounded overflow-hidden">
-                        <div className={`h-full ${item.color} rounded`} style={{ width: `${(item.value / item.max) * 100}%`, minWidth: item.value > 0 ? '8px' : '0' }}></div>
-                      </div>
-                      <div className="w-6 text-xs font-semibold text-gray-700 text-right">{item.value}</div>
-                    </div>
-                  ))}
-                </div>
+              {/* Table */}
+              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200">
+                      <th className="text-left p-3 text-xs font-semibold text-gray-500 uppercase">Venta</th>
+                      <th className="text-left p-3 text-xs font-semibold text-gray-500 uppercase">
+                        Producto <ChevronDown size={12} className="inline ml-1" />
+                      </th>
+                      <th className="text-left p-3 text-xs font-semibold text-gray-500 uppercase">Servicio de envío</th>
+                      <th className="text-left p-3 text-xs font-semibold text-gray-500 uppercase">
+                        Fecha y hora máxima para despachar <ChevronDown size={12} className="inline ml-1" />
+                      </th>
+                      <th className="text-left p-3 text-xs font-semibold text-gray-500 uppercase">
+                        Fecha y hora en la que despachaste <ChevronDown size={12} className="inline ml-1" />
+                      </th>
+                      <th className="text-left p-3 text-xs font-semibold text-gray-500 uppercase">Reputación</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { id: '#200016031484498', date: 'vie, 17/abr/2026 15:40 hs', product: 'Tope Guia Cadena Y Reso...', service: 'Correos', maxDate: 'lun. 20/abr/2026 23:59 hs', shipDate: 'jue. 23/abr/2026 11:37 hs', rep: 'Afectada' },
+                      { id: '#200016031488112', date: 'vie, 17/abr/2026 15:40 hs', product: 'Aceite Lubricante Para Ca...', service: 'Correos', maxDate: 'lun. 20/abr/2026 23:59 hs', shipDate: 'jue. 23/abr/2026 11:37 hs', rep: 'Afectada' },
+                      { id: '#200015962501570', date: 'lun, 13/abr/2026 11:55 hs', product: 'Caretel Autocut Stihl Neg...', service: 'Envíos Flex', maxDate: 'mar. 14/abr/2026 21 hs', shipDate: 'No lo despachaste', rep: 'Afectada' },
+                      { id: '#200015934617476', date: 'sáb. 11/abr/2026 09:26 hs', product: 'Caja Reductora Engranaje...', service: 'Correos', maxDate: 'lun. 20/abr/2026 23:59 hs', shipDate: 'mar. 21/abr/2026 10:12 hs', rep: 'Afectada' },
+                      { id: '#200015846361104', date: 'dom, 05/abr/2026 14:19 hs', product: 'Tanza Bordeadora Desmal...', service: 'Correos', maxDate: 'lun. 06/abr/2026 23:59 hs', shipDate: 'mar. 07/abr/2026 07:54 hs', rep: 'Afectada' },
+                      { id: '#200015846357612', date: 'dom, 05/abr/2026 14:19 hs', product: 'Tope Guia Cadena Y Reso...', service: 'Correos', maxDate: 'lun. 06/abr/2026 23:59 hs', shipDate: 'mar. 07/abr/2026 07:54 hs', rep: 'Afectada' },
+                      { id: '#200015846357614', date: 'dom, 05/abr/2026 14:19 hs', product: 'Cubrevalienta Motosierra...', service: 'Correos', maxDate: 'lun. 06/abr/2026 23:59 hs', shipDate: 'mar. 07/abr/2026 07:54 hs', rep: 'Afectada' },
+                      { id: '#200015846368340', date: 'dom, 05/abr/2026 14:19 hs', product: 'Ojal De Bronce Universal...', service: 'Correos', maxDate: 'lun. 06/abr/2026 23:59 hs', shipDate: 'mar. 07/abr/2026 07:54 hs', rep: 'Afectada' },
+                      { id: '#200015838736530', date: 'sáb. 04/abr/2026 18:48 hs', product: 'Tapón Cebador Para Term...', service: 'Correos', maxDate: 'lun. 06/abr/2026 23:59 hs', shipDate: 'mar. 07/abr/2026 07:53 hs', rep: 'Afectada' },
+                    ].map((row, i) => (
+                      <tr key={i} className="border-b border-gray-100 hover:bg-gray-50">
+                        <td className="p-3">
+                          <div className="text-xs text-blue-600 font-medium">{row.id}</div>
+                          <div className="text-xs text-gray-400">{row.date}</div>
+                        </td>
+                        <td className="p-3 text-xs text-gray-700 truncate max-w-[180px]">{row.product}</td>
+                        <td className="p-3 text-xs text-gray-700">{row.service}</td>
+                        <td className="p-3 text-xs text-gray-700">{row.maxDate}</td>
+                        <td className="p-3 text-xs text-gray-700">{row.shipDate}</td>
+                        <td className="p-3">
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                            <span className="text-xs text-gray-700 font-medium">{row.rep}</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-              <div className="w-px h-40 bg-gray-100 mx-4"></div>
-              <div className="flex flex-col gap-4">
-                <div className="text-center">
-                  <div className="text-sm font-semibold text-gray-800">3</div>
-                  <div className="text-xs text-gray-500">problemas</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-sm font-semibold text-gray-800">3</div>
-                  <div className="text-xs text-gray-500">ventas afectadas</div>
-                </div>
-              </div>
-            </div>
-            <div className="mt-6 flex items-center justify-between">
-              <button className="text-blue-600 text-sm font-medium hover:underline">Revisar todos</button>
-              <ChevronRight size={18} className="text-blue-600" />
-            </div>
-          </div>
-
-          {/* Métricas de reclamos, cancelaciones y devoluciones */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-800 mb-4">Métricas de reclamos, cancelaciones y devoluciones</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Reclamos */}
-              <div className="bg-white rounded-xl border border-gray-200 p-5">
-                <div className="flex items-center gap-1 text-xs font-semibold text-gray-500 mb-2">
-                  Reclamos <Info size={12} className="text-gray-400" />
-                </div>
-                <div className="text-2xl font-black text-gray-800">0,77% <span className="text-xs font-semibold text-green-600">+ 0,43 puntos</span></div>
-                <div className="text-xs text-gray-400 mt-1">3 ventas</div>
-                <div className="mt-4 flex items-center justify-center">
-                  <svg viewBox="0 0 100 100" className="w-16 h-16 -rotate-90">
-                    <circle cx="50" cy="50" r="40" fill="none" stroke="#E5E7EB" strokeWidth="10" />
-                    <circle cx="50" cy="50" r="40" fill="none" stroke="#3B82F6" strokeWidth="10" strokeDasharray="150 101" strokeLinecap="round" />
-                  </svg>
-                  <div className="absolute ml-20 mt-0 space-y-1">
-                    <div className="flex items-center gap-1 text-[10px] text-gray-500"><span className="w-2 h-2 rounded-full bg-blue-500"></span> En ventas concretadas</div>
-                    <div className="flex items-center gap-1 text-[10px] text-gray-500"><span className="w-2 h-2 rounded-full bg-blue-400"></span> Con devolución</div>
-                    <div className="flex items-center gap-1 text-[10px] text-gray-500"><span className="w-2 h-2 rounded-full bg-blue-300"></span> Con cancelación</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Cancelaciones */}
-              <div className="bg-white rounded-xl border border-gray-200 p-5">
-                <div className="flex items-center gap-1 text-xs font-semibold text-gray-500 mb-2">
-                  Cancelaciones <Info size={12} className="text-gray-400" />
-                </div>
-                <div className="text-2xl font-black text-gray-800">0% <span className="text-xs font-semibold text-gray-400">0 puntos</span></div>
-                <div className="text-xs text-gray-400 mt-1">0 ventas</div>
-                <div className="mt-4 flex items-center justify-center">
-                  <svg viewBox="0 0 100 100" className="w-16 h-16 -rotate-90">
-                    <circle cx="50" cy="50" r="40" fill="none" stroke="#E5E7EB" strokeWidth="10" />
-                  </svg>
-                  <div className="absolute ml-20 mt-0">
-                    <div className="flex items-center gap-1 text-[10px] text-gray-500"><span className="w-2 h-2 rounded-full bg-gray-300"></span> Por vos</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Mediaciones */}
-              <div className="bg-white rounded-xl border border-gray-200 p-5">
-                <div className="flex items-center gap-1 text-xs font-semibold text-gray-500 mb-2">
-                  Mediaciones <Info size={12} className="text-gray-400" />
-                </div>
-                <div className="text-2xl font-black text-gray-800">0% <span className="text-xs font-semibold text-green-600">+ 0,06 puntos</span></div>
-                <div className="text-xs text-gray-400 mt-1">0 ventas</div>
-              </div>
-
-              {/* Devoluciones + Cambios */}
-              <div className="space-y-4">
-                <div className="bg-white rounded-xl border border-gray-200 p-5">
-                  <div className="flex items-center gap-1 text-xs font-semibold text-gray-500 mb-2">
-                    Devoluciones <Info size={12} className="text-gray-400" />
-                  </div>
-                  <p className="text-xs text-gray-500 leading-relaxed">
-                    Para el cálculo de reputación esta métrica está incluida en <strong className="text-blue-600">Reclamos</strong>.
-                  </p>
-                </div>
-                <div className="bg-white rounded-xl border border-gray-200 p-5">
-                  <div className="flex items-center gap-1 text-xs font-semibold text-gray-500 mb-2">
-                    Cambios <Info size={12} className="text-gray-400" />
-                  </div>
-                  <p className="text-xs text-gray-500 leading-relaxed">
-                    Ocultamos esta métrica porque no está afectando tu color actual de reputación.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Footer note */}
-          <div className="text-xs text-gray-400 space-y-1">
-            <p>Métricas comparadas con el período anterior: 5 de marzo a 4 de mayo de 2026.</p>
-            <p>Puedes encontrar algunos valores distintos a Reputación debido a una diferencia en el tiempo de actualización de los datos.</p>
-          </div>
+            </>
+          )}
         </>
       )}
 
