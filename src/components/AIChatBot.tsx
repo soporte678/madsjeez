@@ -12,28 +12,28 @@ interface Message {
 
 const modeConfig: Record<ChatMode, { welcome: string; title: string; quick: string[] }> = {
   general: {
-    welcome: "¡Hola! Soy el asistente virtual de MadsJeez 🔧 ¿En qué puedo ayudarte hoy?",
-    title: "Asistente MadsJeez",
+    welcome: "¡Hola! Soy Mauro, tu asistente en MadsJeez 🔧 Conozco todo sobre el marketplace: productos, envíos, pagos, ventas y más. ¿En qué te ayudo?",
+    title: "Mauro - Asistente MadsJeez",
     quick: ["¿Cómo compro?", "¿Hacen envíos?", "¿Cómo vender?", "Devoluciones"],
   },
   products: {
-    welcome: "¡Hola! Soy tu experto en productos de MadsJeez 🔧 ¿Qué estás buscando? Te ayudo a comparar, encontrar el mejor precio y elegir el producto ideal.",
-    title: "Experto en Productos",
+    welcome: "¡Hola! Soy Diego, el especialista técnico de MadsJeez � ¿Buscás herramientas, maquinaria o repuestos? Te ayudo a comparar especificaciones y encontrar el mejor producto para tu trabajo.",
+    title: "Diego - Experto en Productos",
     quick: ["¿Qué motosierra recomendás?", "¿Cómo comparar productos?", "¿Hay envío gratis?", "Garantía de productos"],
   },
   seller: {
-    welcome: "¡Hola! Soy tu asistente de ventas en MadsJeez 📈 ¿Necesitás ayuda con publicaciones, reputación, precios o estrategias para vender más?",
-    title: "Asistente de Ventas",
+    welcome: "¡Hola! Soy Mariana, tu consultora de e-commerce en MadsJeez 📈 ¿Querés vender más? Te ayudo con publicaciones, pricing, marketing y estrategias de conversión.",
+    title: "Mariana - Asesora de Ventas",
     quick: ["¿Cómo publicar?", "¿Cuál es la comisión?", "¿Cómo mejorar reputación?", "Marketing IA"],
   },
   support: {
-    welcome: "¡Hola! Soy tu soporte técnico de MadsJeez 🛠️ ¿Tenés un problema con tu compra, envío, pago o cuenta? Estoy para ayudarte.",
-    title: "Soporte MadsJeez",
+    welcome: "¡Hola! Soy Laura, especialista en atención al cliente de MadsJeez 🛠️ ¿Tenés un problema con tu compra, envío, pago o cuenta? Voy a resolverlo.",
+    title: "Laura - Soporte Técnico",
     quick: ["Mi pedido no llegó", "Quiero devolver un producto", "Problema con el pago", "Contactar un vendedor"],
   },
   buyer: {
-    welcome: "¡Hola! Soy tu asistente de compras en MadsJeez � ¿Te ayudo a encontrar productos, entender el proceso de compra, pagos o envíos?",
-    title: "Asistente de Compras",
+    welcome: "¡Hola! Soy Carlos, tu asesor de compras en MadsJeez 🛒 ¿Te ayudo a encontrar productos, comparar precios, entender pagos o tracking de envíos?",
+    title: "Carlos - Asesor de Compras",
     quick: ["¿Cómo compro?", "Medios de pago", "Costo de envío", "Seguimiento de pedido"],
   },
 }
