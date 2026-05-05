@@ -157,46 +157,47 @@ export default function AIChatBot() {
       {!isOpen && (
         <button
           onClick={() => openChat()}
-          className="fixed bottom-6 right-6 z-[10000] bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-full p-4 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 group"
+          className="fixed bottom-6 right-6 z-[10000] bg-gradient-to-r from-[#FF6B4A] to-[#FF8C42] text-white rounded-full p-4 shadow-xl shadow-orange-500/40 hover:shadow-2xl hover:shadow-orange-500/60 hover:scale-110 transition-all duration-300 group animate-pulse-glow"
           aria-label="Abrir chat de ayuda"
         >
-          <Bot className="w-6 h-6" />
-          <span className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white animate-pulse" />
+          <Bot className="w-6 h-6 group-hover:rotate-12 transition-transform" />
+          <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#7CFC00] rounded-full border-2 border-white animate-bounce" />
         </button>
       )}
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-[10000] w-[380px] max-w-[calc(100vw-2rem)] h-[600px] max-h-[calc(100vh-8rem)] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
-          {/* Header — Mercado Libre style */}
-          <div className="bg-white border-b border-gray-100 p-3 flex items-center justify-between flex-shrink-0">
+        <div className="fixed bottom-24 right-6 z-[10000] w-[380px] max-w-[calc(100vw-2rem)] h-[600px] max-h-[calc(100vh-8rem)] bg-white rounded-2xl shadow-2xl shadow-orange-500/20 border-2 border-[#FF6B4A]/20 flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+          {/* Header — MadsJeez Style */}
+          <div className="bg-gradient-to-r from-[#FF6B4A] to-[#FF8C42] p-3 flex items-center justify-between flex-shrink-0">
             <div className="flex items-center gap-2">
-              <button className="p-1.5 hover:bg-gray-100 rounded-full transition-colors text-gray-500">
+              <button className="p-1.5 hover:bg-white/20 rounded-full transition-colors text-white/80 hover:text-white">
                 <Edit3 className="w-4 h-4" />
               </button>
-              <button className="p-1.5 hover:bg-gray-100 rounded-full transition-colors text-gray-500">
+              <button className="p-1.5 hover:bg-white/20 rounded-full transition-colors text-white/80 hover:text-white">
                 <Clock className="w-4 h-4" />
               </button>
             </div>
-            <p className="font-semibold text-sm text-gray-800 absolute left-1/2 -translate-x-1/2">Asistente</p>
+            <p className="font-bold text-sm text-white absolute left-1/2 -translate-x-1/2">Asistente</p>
             <div className="flex items-center gap-1">
-              <button className="p-1.5 hover:bg-gray-100 rounded-full transition-colors text-gray-500">
+              <button className="p-1.5 hover:bg-white/20 rounded-full transition-colors text-white/80 hover:text-white">
                 <Maximize2 className="w-4 h-4" />
               </button>
               <button
-                onClick={closeChat}
-                className="p-1.5 hover:bg-gray-100 rounded-full transition-colors text-gray-500"
+                disabled={loading || !input.trim()}
+                onClick={sendMessage}
+                className="p-2 bg-gradient-to-r from-[#FF6B4A] to-[#FF8C42] text-white rounded-full hover:from-[#FF8C42] hover:to-[#FFC107] transition-all duration-300 disabled:opacity-50 shadow-md shadow-orange-500/30 hover:shadow-lg hover:shadow-orange-500/40 hover:scale-105"
               >
-                <X className="w-5 h-5" />
+                <Send className="w-4 h-4" />
               </button>
             </div>
           </div>
 
           {/* Nuevo label */}
           <div className="px-4 pt-3 pb-1 flex items-center gap-2 flex-shrink-0">
-            <div className="flex-1 h-px bg-gray-200" style={{ backgroundImage: 'repeating-linear-gradient(90deg, #e5e7eb 0px, #e5e7eb 4px, transparent 4px, transparent 8px)' }} />
-            <span className="text-xs text-blue-500 font-medium">Nuevo</span>
-            <div className="flex-1 h-px bg-gray-200" style={{ backgroundImage: 'repeating-linear-gradient(90deg, #e5e7eb 0px, #e5e7eb 4px, transparent 4px, transparent 8px)' }} />
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#FF6B4A]/30 to-transparent" />
+            <span className="text-xs bg-gradient-to-r from-[#FF6B4A] to-[#FF8C42] text-white px-2 py-0.5 rounded-full font-bold">Nuevo</span>
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#FF6B4A]/30 to-transparent" />
           </div>
 
           {/* Messages */}
@@ -204,15 +205,15 @@ export default function AIChatBot() {
             {messages.map((msg, i) => (
               <div key={i} className={`flex gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                 {msg.role === "assistant" && (
-                  <div className="w-7 h-7 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                    <Bot className="w-4 h-4 text-blue-600" />
+                  <div className="w-7 h-7 bg-gradient-to-br from-[#FF6B4A] to-[#FF8C42] rounded-full flex items-center justify-center flex-shrink-0 mt-1 shadow-md shadow-orange-500/30">
+                    <Bot className="w-4 h-4 text-white" />
                   </div>
                 )}
                 <div
                   className={`max-w-[85%] text-sm leading-relaxed ${
                     msg.role === "user"
-                      ? "bg-blue-600 text-white px-4 py-2.5 rounded-2xl rounded-br-md"
-                      : "bg-white text-gray-800"
+                      ? "bg-gradient-to-r from-[#FF6B4A] to-[#FF8C42] text-white px-4 py-2.5 rounded-2xl rounded-br-md shadow-md shadow-orange-500/30"
+                      : "bg-gray-50 text-gray-800"
                   }`}
                 >
                   {msg.isRecommendation ? (
@@ -243,8 +244,8 @@ export default function AIChatBot() {
                   )}
                 </div>
                 {msg.role === "user" && (
-                  <div className="w-7 h-7 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                    <User className="w-4 h-4 text-gray-600" />
+                  <div className="w-7 h-7 bg-gradient-to-br from-[#00D4FF] to-[#00B4E6] rounded-full flex items-center justify-center flex-shrink-0 mt-1 shadow-md shadow-cyan-500/30">
+                    <User className="w-4 h-4 text-white" />
                   </div>
                 )}
               </div>
@@ -255,13 +256,13 @@ export default function AIChatBot() {
           {/* Action Buttons */}
           {messages.length <= 1 && (
             <div className="px-4 py-3 bg-white flex-shrink-0 space-y-2">
-              <button className="w-full text-sm text-gray-700 border border-gray-300 rounded-full px-4 py-2.5 hover:bg-gray-50 transition-colors">
+              <button className="w-full text-sm text-gray-700 border border-gray-200 rounded-full px-4 py-2.5 hover:bg-gradient-to-r hover:from-[#FF6B4A]/10 hover:to-[#FF8C42]/10 hover:border-[#FF6B4A]/30 transition-all duration-300">
                 Quiero otra recomendación
               </button>
-              <button className="w-full text-sm text-gray-700 border border-gray-300 rounded-full px-4 py-2.5 hover:bg-gray-50 transition-colors">
+              <button className="w-full text-sm text-gray-700 border border-gray-200 rounded-full px-4 py-2.5 hover:bg-gradient-to-r hover:from-[#00D4FF]/10 hover:to-[#00B4E6]/10 hover:border-[#00D4FF]/30 transition-all duration-300">
                 Conocer tareas pendientes
               </button>
-              <button className="w-full text-sm text-gray-700 border border-gray-300 rounded-full px-4 py-2.5 hover:bg-gray-50 transition-colors">
+              <button className="w-full text-sm text-gray-700 border border-gray-200 rounded-full px-4 py-2.5 hover:bg-gradient-to-r hover:from-[#FF2E8C]/10 hover:to-[#FF6B9D]/10 hover:border-[#FF2E8C]/30 transition-all duration-300">
                 Consultar por otro tema
               </button>
             </div>
@@ -282,7 +283,7 @@ export default function AIChatBot() {
                       setInput("")
                       sendChatRequest(newMsgs)
                     }}
-                    className="text-xs bg-white border border-gray-200 text-gray-700 px-3 py-1.5 rounded-full hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-colors"
+                    className="text-xs bg-white border border-gray-200 text-gray-700 px-3 py-1.5 rounded-full hover:bg-gradient-to-r hover:from-[#FF6B4A]/10 hover:to-[#FF8C42]/10 hover:border-[#FF6B4A]/30 hover:text-[#FF6B4A] transition-all duration-300"
                   >
                     {q}
                   </button>
@@ -291,9 +292,9 @@ export default function AIChatBot() {
             </div>
           )}
 
-          {/* Input — Mercado Libre style */}
+          {/* Input — MadsJeez Style */}
           <div className="p-3 bg-white border-t border-gray-200 flex-shrink-0">
-            <div className="flex items-center gap-2 bg-gray-100 rounded-full px-3 py-2">
+            <div className="flex items-center gap-2 bg-gradient-to-r from-gray-50 to-gray-100 rounded-full px-3 py-2 border border-gray-200 focus-within:border-[#FF6B4A]/50 focus-within:shadow-md focus-within:shadow-orange-500/10 transition-all duration-300">
               <button className="p-1 text-gray-500 hover:text-gray-700 transition-colors">
                 <Plus className="w-5 h-5" />
               </button>
@@ -307,11 +308,11 @@ export default function AIChatBot() {
                 disabled={loading}
                 className="flex-1 bg-transparent text-sm focus:outline-none disabled:opacity-50"
               />
-              <button className="p-1 text-gray-500 hover:text-gray-700 transition-colors">
+              <button className="p-1 text-gray-500 hover:text-[#FF6B4A] transition-colors">
                 <Camera className="w-5 h-5" />
               </button>
-              <button className="p-1 text-gray-500 hover:text-gray-700 transition-colors">
-                <Mic className="w-5 h-5" />
+              <button className="p-2 bg-gradient-to-r from-[#FF6B4A] to-[#FF8C42] text-white rounded-full hover:from-[#FF8C42] hover:to-[#FFC107] transition-all duration-300 shadow-md shadow-orange-500/30 hover:shadow-lg hover:shadow-orange-500/40 hover:scale-105">
+                <Send className="w-4 h-4" />
               </button>
             </div>
             <p className="text-[10px] text-gray-400 text-center mt-2">Este asistente usa inteligencia artificial para responderte.</p>
