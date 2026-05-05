@@ -221,6 +221,17 @@ ESTILO:
 - Si tiene dudas de seguridad, explicá que MadsJeez protege todas las compras con encriptación SSL y protección al comprador`
 }
 
+export async function GET(req: NextRequest) {
+  // Healthcheck endpoint
+  const apiKey = process.env.GEMINI_API_KEY
+  const isConfigured = !!apiKey && apiKey.length > 10 && apiKey !== "your-gemini-api-key"
+  return NextResponse.json({
+    status: "ok",
+    geminiConfigured: isConfigured,
+    timestamp: new Date().toISOString(),
+  })
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
@@ -259,35 +270,48 @@ export async function POST(req: NextRequest) {
     console.log("System prompt length:", systemPrompt.length)
 
     const genAI = new GoogleGenerativeAI(apiKey)
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash",
-      systemInstruction: systemPrompt,
-    })
-
-    // Build history from actual conversation (exclude last message which we send now)
-    // Skip the initial greeting (first assistant message = UI welcome only)
-    const history = messages
-      .slice(0, -1)
-      .filter((msg: any, idx: number) => {
-        // Skip if it's the very first message and it's from the assistant (initial greeting)
-        if (idx === 0 && msg.role === "assistant") return false
-        return msg.role === "user" || msg.role === "assistant"
+    
+    async function tryGeminiModel(modelName: string) {
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        systemInstruction: systemPrompt,
       })
-      .map((msg: any) => ({
-        role: msg.role === "assistant" ? "model" : "user",
-        parts: [{ text: msg.content }],
-      }))
-
-    console.log("History length:", history.length)
-
-    const chat = model.startChat({
-      history: history.length > 0 ? history : undefined,
-    })
-
-    console.log("Sending message to Gemini...")
-    const result = await chat.sendMessage(lastMessage.content)
-    const response = result.response.text()
-    console.log("Gemini response received, length:", response.length)
+      
+      const history = messages
+        .slice(0, -1)
+        .filter((msg: any, idx: number) => {
+          if (idx === 0 && msg.role === "assistant") return false
+          return msg.role === "user" || msg.role === "assistant"
+        })
+        .map((msg: any) => ({
+          role: msg.role === "assistant" ? "model" : "user",
+          parts: [{ text: msg.content }],
+        }))
+      
+      const chat = model.startChat({
+        history: history.length > 0 ? history : undefined,
+      })
+      
+      console.log(`Sending message to ${modelName}...`)
+      const result = await chat.sendMessage(lastMessage.content)
+      const response = result.response.text()
+      console.log(`${modelName} response received, length:`, response.length)
+      return response
+    }
+    
+    let response: string
+    try {
+      response = await tryGeminiModel("gemini-2.0-flash")
+    } catch (modelError: any) {
+      console.error("gemini-2.0-flash failed:", modelError?.message)
+      console.log("Falling back to gemini-1.5-flash...")
+      try {
+        response = await tryGeminiModel("gemini-1.5-flash")
+      } catch (fallbackError: any) {
+        console.error("gemini-1.5-flash also failed:", fallbackError?.message)
+        throw fallbackError
+      }
+    }
 
     return NextResponse.json({ message: response })
   } catch (error: any) {
