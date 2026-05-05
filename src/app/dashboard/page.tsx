@@ -23,6 +23,7 @@ import HelpView from "@/components/dashboard/HelpView";
 import NotificationsDropdown from "@/components/dashboard/NotificationsDropdown";
 import PublicacionesView from "@/components/dashboard/PublicacionesView";
 import MarketingIAPage from "@/app/dashboard/marketing/page";
+import MetricasView from "@/components/dashboard/MetricasView";
 
 function getInitialMenu() {
   if (typeof window !== 'undefined') {
@@ -351,12 +352,6 @@ export default function App() {
     </div>
   );
 
-  const renderMetricas = () => (
-    <div className="flex-1 flex flex-col gap-6 w-full max-w-6xl">
-      <div className="flex justify-between items-center"><h1 className="text-[28px] font-medium text-gray-800">Métricas</h1><button onClick={() => setShowLiveMonitor(true)} className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-full text-sm font-semibold shadow-sm hover:bg-gray-50"><span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span> Monitor de ventas en vivo</button></div>
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-20 text-center text-gray-400 italic">Panel de métricas en preparación...</div>
-    </div>
-  );
 
   const renderLiveMonitor = () => (
     <div className="fixed inset-0 bg-gray-100 z-50 overflow-y-auto">
@@ -479,7 +474,7 @@ export default function App() {
           <div className="max-w-[1200px] mx-auto">
             {activeMenu === 'resumen' && <ResumenView />}
             {activeMenu === 'reputacion' && <ReputacionView />}
-            {activeMenu === 'metricas' && renderMetricas()}
+            {activeMenu === 'metricas' && <MetricasView />}
             {activeMenu === 'ventas-novedades' && renderNovedades()}
             {activeMenu === 'posventa' && renderPosventa()}
             {activeMenu === 'preferencias-venta' && renderPreferenciasVenta()}
