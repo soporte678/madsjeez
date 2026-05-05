@@ -14,10 +14,10 @@ export function Header() {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-4">
             <Link href="/" className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-[#FF6B4A] to-[#00D4FF] rounded-xl flex items-center justify-center shadow-lg shadow-[#FF6B4A]/20">
+              <div className="w-10 h-10 bg-gradient-to-br from-[#ff4d2e] to-[#00b4d8] rounded-xl flex items-center justify-center shadow-lg shadow-[#ff4d2e]/20">
                 <span className="text-white font-black text-xl">M</span>
               </div>
-              <span className="text-2xl font-black bg-gradient-to-r from-[#FF6B4A] via-[#FFC107] to-[#00D4FF] bg-clip-text text-transparent">
+              <span className="text-2xl font-black bg-gradient-to-r from-[#ff4d2e] via-[#ffb703] to-[#00b4d8] bg-clip-text text-transparent">
                 MADSJEEZ
               </span>
             </Link>
@@ -27,7 +27,7 @@ export function Header() {
             <Link href="/categories" className="text-sm font-medium text-white/80 hover:text-white transition-colors">
               Categorías
             </Link>
-            <Link href="/deals" className="text-sm font-medium text-white/80 hover:text-[#FF6B4A] transition-colors">
+            <Link href="/deals" className="text-sm font-medium text-white/80 hover:text-[#ff4d2e] transition-colors">
               Ofertas
             </Link>
             <Link href="/history" className="text-sm font-medium text-white/80 hover:text-white transition-colors">

@@ -187,9 +187,9 @@ export default function WhatsAppTestPage() {
           Agrega estas variables en tu archivo <code>.env.local</code>:
         </p>
         <code className="block bg-gray-900 text-green-400 p-4 rounded text-sm">
-          META_APP_ID=1719795722352723
+          META_APP_ID=tu_meta_app_id
           <br />
-          META_APP_SECRET=138966aaf7a4aab419b3b21d3fe91748
+          META_APP_SECRET=tu_meta_app_secret
           <br />
           META_ACCESS_TOKEN=tu_token_temporal_aqui
           <br />

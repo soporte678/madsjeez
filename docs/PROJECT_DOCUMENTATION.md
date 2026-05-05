@@ -56,9 +56,9 @@ madsjeez-marketplace/
 ## 4. CONFIGURACIÓN DE SUPABASE
 
 ### 4.1 Datos del Proyecto
-- **URL:** https://svbzmvmmzaqkepeysjyk.supabase.co
-- **Publishable Key:** sb_publishable_3tpcnJT3gHBNC4bfJ79yAg_rcq3FBtK
-- **Service Role Key:** sb_secret_YxHnAybA9OqjkqQKsOMwHg_BQ93QcPI
+- **URL:** (configurar en `.env.local` / hosting; no versionar claves reales)
+- **Publishable Key:** (anon / publishable desde el dashboard de Supabase)
+- **Service Role Key:** (solo servidor; nunca en el cliente ni en el repo)
 
 ### 4.2 Migraciones Ejecutadas
 
@@ -161,9 +161,9 @@ madsjeez-marketplace/
 Archivo: `apps/web/.env.local`
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=https://svbzmvmmzaqkepeysjyk.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_3tpcnJT3gHBNC4bfJ79yAg_rcq3FBtK
-SUPABASE_SERVICE_ROLE_KEY=sb_secret_YxHnAybA9OqjkqQKsOMwHg_BQ93QcPI
+NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_ENABLE_PAYMENTS=false
 NEXT_PUBLIC_ENABLE_CHAT=true

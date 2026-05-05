@@ -1,9 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+import { getSupabaseService } from "@/lib/supabase/service"
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,19 +13,19 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // Check Supabase credentials
-    if (!supabaseUrl || !supabaseKey || supabaseUrl === 'your-supabase-url') {
+    let supabase
+    try {
+      supabase = getSupabaseService()
+    } catch {
       return NextResponse.json({
         section_title: "Productos populares",
         products: [],
-        _meta: { fallback: true, reason: "Supabase not configured" }
+        _meta: { fallback: true, reason: "Supabase service role not configured" },
       })
     }
 
     const body = await req.json()
     const { userId, viewedProducts, searchHistory, currentProductId } = body
-
-    const supabase = createClient(supabaseUrl, supabaseKey)
     const genAI = new GoogleGenerativeAI(apiKey)
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
 

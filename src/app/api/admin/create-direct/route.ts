@@ -1,14 +1,19 @@
 import { NextResponse } from "next/server"
 import { createClient as createSupabaseClient } from "@supabase/supabase-js"
+import { assertAdminBootstrapAllowed } from "@/lib/admin-bootstrap"
 
-// Este endpoint crea un admin directamente usando la Admin API de Supabase
-// Requiere SUPABASE_SERVICE_ROLE_KEY en variables de entorno
+/**
+ * Crea un admin vía Supabase Admin API. Solo con secreto fuerte y entorno permitido.
+ */
 export async function POST(request: Request) {
+  const gate = assertAdminBootstrapAllowed()
+  if (gate) return gate
+
   try {
     const { secret, email, password, name } = await request.json()
 
-    // Verificar secreto
-    if (secret !== "madsjeez-create-admin-2024") {
+    const expected = process.env.ADMIN_CREATE_DIRECT_SECRET
+    if (!expected || secret !== expected) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -16,43 +21,42 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Email y password son requeridos" }, { status: 400 })
     }
 
-    const supabaseUrl = "https://doweovsukuskflgnxhhn.supabase.co"
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-    if (!serviceRoleKey) {
-      return NextResponse.json({ 
-        error: "SUPABASE_SERVICE_ROLE_KEY no configurada. Agrega esta variable de entorno." 
-      }, { status: 500 })
+    if (!supabaseUrl || !serviceRoleKey) {
+      return NextResponse.json(
+        {
+          error:
+            "NEXT_PUBLIC_SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY no configuradas.",
+        },
+        { status: 500 }
+      )
     }
 
-    // Crear cliente admin con service_role key
     const supabaseAdmin = createSupabaseClient(supabaseUrl, serviceRoleKey, {
       auth: {
         autoRefreshToken: false,
-        persistSession: false
-      }
+        persistSession: false,
+      },
     })
 
-    // Primero borrar usuario existente si hay uno con ese email
     const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers()
-    const existingUser = existingUsers?.users?.find(u => u.email === email)
-    
+    const existingUser = existingUsers?.users?.find((u) => u.email === email)
+
     if (existingUser) {
-      // Borrar admin_users asociado primero
       await supabaseAdmin.from("admin_users").delete().eq("user_id", existingUser.id)
-      // Borrar el usuario de auth
       await supabaseAdmin.auth.admin.deleteUser(existingUser.id)
     }
 
-    // Crear usuario con Admin API (ya viene confirmado)
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
       user_metadata: {
         full_name: name || "Administrador",
-        role: "admin"
-      }
+        role: "admin",
+      },
     })
 
     if (authError) {
@@ -65,7 +69,6 @@ export async function POST(request: Request) {
 
     const userId = authData.user.id
 
-    // Obtener o crear rol SuperAdmin
     let { data: superAdminRole } = await supabaseAdmin
       .from("admin_roles")
       .select("id")
@@ -79,7 +82,7 @@ export async function POST(request: Request) {
           name: "SuperAdmin",
           level: 5,
           permissions: ["*"],
-          description: "Control total del sistema"
+          description: "Control total del sistema",
         })
         .select("id")
         .single()
@@ -90,31 +93,28 @@ export async function POST(request: Request) {
       superAdminRole = newRole
     }
 
-    // Insertar en admin_users
-    const { error: adminError } = await supabaseAdmin
-      .from("admin_users")
-      .insert({
-        user_id: userId,
-        role_id: superAdminRole!.id,
-        email,
-        first_name: name || "Admin",
-        last_name: "MadsJeez",
-        is_active: true
-      })
+    const { error: adminError } = await supabaseAdmin.from("admin_users").insert({
+      user_id: userId,
+      role_id: superAdminRole!.id,
+      email,
+      first_name: name || "Admin",
+      last_name: "MadsJeez",
+      is_active: true,
+    })
 
     if (adminError) {
       return NextResponse.json({ error: `Admin insert error: ${adminError.message}` }, { status: 500 })
     }
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       message: "Admin creado exitosamente con email confirmado",
       email,
-      userId
+      userId,
     })
-
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error"
     console.error("Error creating admin:", error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

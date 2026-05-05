@@ -124,16 +124,26 @@ export class WhatsAppClient {
 
 // Factory para crear cliente con variables de entorno
 export function createWhatsAppClient(): WhatsAppClient {
-  const config: WhatsAppConfig = {
-    appId: process.env.META_APP_ID || "1719795722352723",
-    appSecret: process.env.META_APP_SECRET || "",
-    accessToken: process.env.META_ACCESS_TOKEN || "",
-    phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID || "",
-    wabaId: process.env.WHATSAPP_WABA_ID || ""
+  const appId = process.env.META_APP_ID?.trim()
+  const appSecret = process.env.META_APP_SECRET?.trim()
+  const accessToken = process.env.META_ACCESS_TOKEN?.trim()
+
+  if (!appId) {
+    throw new Error("META_APP_ID no está configurado")
+  }
+  if (!appSecret) {
+    throw new Error("META_APP_SECRET no está configurado")
+  }
+  if (!accessToken) {
+    throw new Error("META_ACCESS_TOKEN no está configurado")
   }
 
-  if (!config.accessToken) {
-    throw new Error("META_ACCESS_TOKEN no está configurado")
+  const config: WhatsAppConfig = {
+    appId,
+    appSecret,
+    accessToken,
+    phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID || "",
+    wabaId: process.env.WHATSAPP_WABA_ID || ""
   }
 
   return new WhatsAppClient(config)

@@ -131,14 +131,14 @@ export default function OffersPage() {
   return (
     <div className="min-h-screen bg-[#EBEBEB]">
       {/* Header con gradiente amarillo */}
-      <header className="bg-gradient-to-r from-[#FFC107] via-[#FFD700] to-[#FFC107] border-b border-[#FF6B4A]/20">
+      <header className="bg-gradient-to-r from-[#ffb703] via-[#ffa60a] to-[#ffb703] border-b border-[#ff4d2e]/20">
         <div className="max-w-[1200px] mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
             <Link href="/" className="flex items-center gap-2">
               <div className="w-9 h-9 bg-gradient-to-br from-[#1a1a2e] to-[#16213e] rounded-lg flex items-center justify-center shadow-lg">
                 <svg viewBox="0 0 100 100" className="w-6 h-6">
-                  <path d="M 15 80 L 35 30 L 55 55" stroke="#FF6B4A" fill="none" strokeWidth="15" strokeLinecap="round"/>
-                  <path d="M 85 80 L 65 30 L 45 65" stroke="#00D4FF" fill="none" strokeWidth="15" strokeLinecap="round"/>
+                  <path d="M 15 80 L 35 30 L 55 55" stroke="#ff4d2e" fill="none" strokeWidth="15" strokeLinecap="round"/>
+                  <path d="M 85 80 L 65 30 L 45 65" stroke="#00b4d8" fill="none" strokeWidth="15" strokeLinecap="round"/>
                 </svg>
               </div>
               <span className="font-black text-xl tracking-tighter text-[#2d3277]">MADSJEEZ</span>
@@ -158,7 +158,7 @@ export default function OffersPage() {
                 <input
                   type="text"
                   placeholder="Buscar en OFERTAS..."
-                  className="w-full px-4 py-2 pl-10 bg-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6B4A]/50"
+                  className="w-full px-4 py-2 pl-10 bg-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff4d2e]/50"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -166,7 +166,7 @@ export default function OffersPage() {
               </div>
               <button
                 type="submit"
-                className="bg-gradient-to-r from-[#FF6B4A] to-[#FF8C42] text-white px-4 py-2 rounded-lg font-medium hover:from-[#FF8C42] hover:to-[#FFC107] transition-all"
+                className="bg-gradient-to-r from-[#ff4d2e] to-[#ff9100] text-white px-4 py-2 rounded-lg font-medium hover:from-[#ff9100] hover:to-[#ffb703] transition-all"
               >
                 Buscar
               </button>
@@ -179,7 +179,7 @@ export default function OffersPage() {
               </button>
             </form>
             <p className="text-xs text-slate-500 mt-2 flex items-center gap-1">
-              <Sparkles className="w-3 h-3 text-[#FF6B4A]" />
+              <Sparkles className="w-3 h-3 text-[#ff4d2e]" />
               Buscando solo en la sección de Ofertas ({offers.length} productos con descuento)
             </p>
           </div>
@@ -199,7 +199,7 @@ export default function OffersPage() {
               onClick={() => setShowSearchBar(!showSearchBar)}
               className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-shadow"
             >
-              <Search className="w-4 h-4 text-[#FF6B4A]" />
+              <Search className="w-4 h-4 text-[#ff4d2e]" />
               <span className="text-sm font-medium text-slate-700">Buscar en Ofertas</span>
             </button>
           </div>
@@ -215,7 +215,7 @@ export default function OffersPage() {
                 className={cn(
                   "flex flex-col items-center gap-2 px-6 py-4 min-w-[120px] transition-colors border-b-2 whitespace-nowrap",
                   activeCategory === cat.slug 
-                    ? "border-[#FF6B4A] text-[#FF6B4A] bg-[#FF6B4A]/5" 
+                    ? "border-[#ff4d2e] text-[#ff4d2e] bg-[#ff4d2e]/5" 
                     : "border-transparent text-slate-600 hover:bg-slate-50"
                 )}
               >
@@ -242,7 +242,7 @@ export default function OffersPage() {
                   <span className="font-bold text-slate-800">{offers.length}</span> resultados
                 </p>
                 <p className="text-xs text-slate-400 mt-1">
-                  Descuento promedio: <span className="text-[#FF6B4A] font-bold">{avgDiscount}%</span>
+                  Descuento promedio: <span className="text-[#ff4d2e] font-bold">{avgDiscount}%</span>
                 </p>
               </div>
 
@@ -260,7 +260,7 @@ export default function OffersPage() {
                     type="checkbox"
                     checked={filters.freeShipping}
                     onChange={(e) => { setFilters(f => ({ ...f, freeShipping: e.target.checked })); setPage(1); }}
-                    className="w-10 h-5 bg-slate-200 rounded-full appearance-none checked:bg-[#FF6B4A] relative after:w-4 after:h-4 after:bg-white after:rounded-full after:absolute after:top-0.5 after:left-0.5 checked:after:translate-x-5 after:transition-all cursor-pointer"
+                    className="w-10 h-5 bg-slate-200 rounded-full appearance-none checked:bg-[#ff4d2e] relative after:w-4 after:h-4 after:bg-white after:rounded-full after:absolute after:top-0.5 after:left-0.5 checked:after:translate-x-5 after:transition-all cursor-pointer"
                   />
                 </label>
                 <p className="text-xs text-slate-400 mt-1">Con el carrito de compras</p>
@@ -270,12 +270,12 @@ export default function OffersPage() {
               <div className="mb-4 pb-4 border-b border-slate-100">
                 <p className="font-semibold text-slate-700 mb-2 text-sm">Tiempo de entrega</p>
                 <div className="space-y-1">
-                  <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer hover:text-[#FF6B4A]">
-                    <input type="radio" name="delivery" className="accent-[#FF6B4A]" />
+                  <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer hover:text-[#ff4d2e]">
+                    <input type="radio" name="delivery" className="accent-[#ff4d2e]" />
                     <span>Llega hoy (6279)</span>
                   </label>
-                  <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer hover:text-[#FF6B4A]">
-                    <input type="radio" name="delivery" className="accent-[#FF6B4A]" />
+                  <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer hover:text-[#ff4d2e]">
+                    <input type="radio" name="delivery" className="accent-[#ff4d2e]" />
                     <span>Llega en menos de 24 h (8280)</span>
                   </label>
                 </div>
@@ -285,14 +285,14 @@ export default function OffersPage() {
               <div className="mb-4 pb-4 border-b border-slate-100">
                 <p className="font-semibold text-slate-700 mb-2 text-sm">Tipo de promoción</p>
                 <div className="space-y-1">
-                  <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer hover:text-[#FF6B4A]">
-                    <input type="checkbox" className="accent-[#FF6B4A]" />
+                  <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer hover:text-[#ff4d2e]">
+                    <input type="checkbox" className="accent-[#ff4d2e]" />
                     <span>Oferta relámpago (1339)</span>
                   </label>
-                  <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer hover:text-[#FF6B4A]">
+                  <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer hover:text-[#ff4d2e]">
                     <input 
                       type="checkbox" 
-                      className="accent-[#FF6B4A]"
+                      className="accent-[#ff4d2e]"
                       checked={filters.flash}
                       onChange={(e) => { setFilters(f => ({ ...f, flash: e.target.checked })); setPage(1); }}
                     />
@@ -309,8 +309,8 @@ export default function OffersPage() {
                     <label 
                       key={cat.slug}
                       className={cn(
-                        "flex items-center justify-between text-sm cursor-pointer hover:text-[#FF6B4A]",
-                        activeCategory === cat.slug ? "text-[#FF6B4A] font-medium" : "text-slate-600"
+                        "flex items-center justify-between text-sm cursor-pointer hover:text-[#ff4d2e]",
+                        activeCategory === cat.slug ? "text-[#ff4d2e] font-medium" : "text-slate-600"
                       )}
                       onClick={() => { setActiveCategory(cat.slug); setPage(1); }}
                     >
@@ -326,8 +326,8 @@ export default function OffersPage() {
                 <p className="font-semibold text-slate-700 mb-2 text-sm">Precio</p>
                 <div className="space-y-2">
                   {["Hasta $40.000", "$40.000 a $100.000", "Más de $100.000"].map((range) => (
-                    <label key={range} className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer hover:text-[#FF6B4A]">
-                      <input type="checkbox" className="accent-[#FF6B4A]" />
+                    <label key={range} className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer hover:text-[#ff4d2e]">
+                      <input type="checkbox" className="accent-[#ff4d2e]" />
                       <span>{range}</span>
                     </label>
                   ))}
@@ -336,14 +336,14 @@ export default function OffersPage() {
                   <input
                     type="number"
                     placeholder="Mínimo"
-                    className="w-1/2 px-2 py-1 text-sm border border-slate-200 rounded focus:outline-none focus:border-[#FF6B4A]"
+                    className="w-1/2 px-2 py-1 text-sm border border-slate-200 rounded focus:outline-none focus:border-[#ff4d2e]"
                     value={filters.minPrice}
                     onChange={(e) => setFilters(f => ({ ...f, minPrice: e.target.value }))}
                   />
                   <input
                     type="number"
                     placeholder="Máximo"
-                    className="w-1/2 px-2 py-1 text-sm border border-slate-200 rounded focus:outline-none focus:border-[#FF6B4A]"
+                    className="w-1/2 px-2 py-1 text-sm border border-slate-200 rounded focus:outline-none focus:border-[#ff4d2e]"
                     value={filters.maxPrice}
                     onChange={(e) => setFilters(f => ({ ...f, maxPrice: e.target.value }))}
                   />
@@ -355,8 +355,8 @@ export default function OffersPage() {
                 <p className="font-semibold text-slate-700 mb-2 text-sm">Cuotas</p>
                 <div className="space-y-1">
                   {["En cuotas", "Sin interés", "Cuota promocionada", "Mejor precio en cuotas"].map((option) => (
-                    <label key={option} className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer hover:text-[#FF6B4A]">
-                      <input type="checkbox" className="accent-[#FF6B4A]" />
+                    <label key={option} className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer hover:text-[#ff4d2e]">
+                      <input type="checkbox" className="accent-[#ff4d2e]" />
                       <span>{option}</span>
                     </label>
                   ))}
@@ -366,10 +366,10 @@ export default function OffersPage() {
               {/* Costo de envío */}
               <div className="mb-4">
                 <p className="font-semibold text-slate-700 mb-2 text-sm">Costo de envío</p>
-                <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer hover:text-[#FF6B4A]">
+                <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer hover:text-[#ff4d2e]">
                   <input 
                     type="checkbox" 
-                    className="accent-[#FF6B4A]"
+                    className="accent-[#ff4d2e]"
                     checked={filters.freeShipping}
                     onChange={(e) => { setFilters(f => ({ ...f, freeShipping: e.target.checked })); setPage(1); }}
                   />
@@ -385,7 +385,7 @@ export default function OffersPage() {
                   setSearchQuery("")
                   setPage(1)
                 }}
-                className="w-full py-2 text-sm text-[#FF6B4A] hover:bg-[#FF6B4A]/5 rounded-lg transition-colors"
+                className="w-full py-2 text-sm text-[#ff4d2e] hover:bg-[#ff4d2e]/5 rounded-lg transition-colors"
               >
                 Limpiar filtros
               </button>
@@ -404,7 +404,7 @@ export default function OffersPage() {
                 <select
                   value={sortBy}
                   onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
-                  className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-[#FF6B4A]"
+                  className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-[#ff4d2e]"
                 >
                   <option value="discount_desc">Mayor descuento</option>
                   <option value="price_asc">Menor precio</option>
@@ -440,7 +440,7 @@ export default function OffersPage() {
                     <button
                       onClick={() => setPage(p => Math.max(1, p - 1))}
                       disabled={page === 1}
-                      className="p-2 rounded-lg border border-slate-200 disabled:opacity-50 hover:border-[#FF6B4A] hover:text-[#FF6B4A]"
+                      className="p-2 rounded-lg border border-slate-200 disabled:opacity-50 hover:border-[#ff4d2e] hover:text-[#ff4d2e]"
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </button>
@@ -452,7 +452,7 @@ export default function OffersPage() {
                         className={cn(
                           "w-8 h-8 rounded-lg text-sm font-medium",
                           page === i + 1
-                            ? "bg-[#FF6B4A] text-white"
+                            ? "bg-[#ff4d2e] text-white"
                             : "text-slate-600 hover:bg-slate-100"
                         )}
                       >
@@ -463,7 +463,7 @@ export default function OffersPage() {
                     <button
                       onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                       disabled={page === totalPages}
-                      className="p-2 rounded-lg border border-slate-200 disabled:opacity-50 hover:border-[#FF6B4A] hover:text-[#FF6B4A]"
+                      className="p-2 rounded-lg border border-slate-200 disabled:opacity-50 hover:border-[#ff4d2e] hover:text-[#ff4d2e]"
                     >
                       <ChevronRight className="w-4 h-4" />
                     </button>
@@ -479,7 +479,7 @@ export default function OffersPage() {
                     setActiveCategory("all")
                     setSearchQuery("")
                   }}
-                  className="mt-4 px-6 py-2 bg-[#FF6B4A] text-white rounded-lg hover:bg-[#FF8C42] transition-colors"
+                  className="mt-4 px-6 py-2 bg-[#ff4d2e] text-white rounded-lg hover:bg-[#ff9100] transition-colors"
                 >
                   Ver todas las ofertas
                 </button>
@@ -488,11 +488,11 @@ export default function OffersPage() {
 
             {/* Indicador de productos demo */}
             {stats?.demo_offers_used > 0 && (
-              <div className="mt-6 p-4 bg-gradient-to-r from-[#FFC107]/20 to-[#FF6B4A]/10 rounded-lg border border-[#FFC107]/30">
+              <div className="mt-6 p-4 bg-gradient-to-r from-[#ffb703]/20 to-[#ff4d2e]/10 rounded-lg border border-[#ffb703]/30">
                 <p className="text-sm text-slate-700 flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-[#FF6B4A]" />
+                  <Sparkles className="w-4 h-4 text-[#ff4d2e]" />
                   <span>
-                    Mostrando <span className="font-bold text-[#FF6B4A]">{stats.demo_offers_used}</span> ofertas de ejemplo. 
+                    Mostrando <span className="font-bold text-[#ff4d2e]">{stats.demo_offers_used}</span> ofertas de ejemplo. 
                     ¡Publicá tus productos con descuentos para que aparezcan aquí!
                   </span>
                 </p>
@@ -506,11 +506,11 @@ export default function OffersPage() {
       <footer className="bg-white border-t border-slate-200 mt-12">
         <div className="max-w-[1200px] mx-auto px-4 py-6">
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-slate-500">
-            <Link href="/about" className="hover:text-[#FF6B4A] hover:underline">Trabajá con nosotros</Link>
-            <Link href="/legal/terminos" className="hover:text-[#FF6B4A] hover:underline">Términos y condiciones</Link>
-            <Link href="/promotions" className="hover:text-[#FF6B4A] hover:underline">Promociones</Link>
-            <Link href="/legal/privacidad" className="hover:text-[#FF6B4A] hover:underline">Cómo cuidamos tu privacidad</Link>
-            <Link href="/help" className="hover:text-[#FF6B4A] hover:underline">Ayuda</Link>
+            <Link href="/about" className="hover:text-[#ff4d2e] hover:underline">Trabajá con nosotros</Link>
+            <Link href="/legal/terminos" className="hover:text-[#ff4d2e] hover:underline">Términos y condiciones</Link>
+            <Link href="/promotions" className="hover:text-[#ff4d2e] hover:underline">Promociones</Link>
+            <Link href="/legal/privacidad" className="hover:text-[#ff4d2e] hover:underline">Cómo cuidamos tu privacidad</Link>
+            <Link href="/help" className="hover:text-[#ff4d2e] hover:underline">Ayuda</Link>
           </div>
           <div className="text-center mt-4 text-xs text-slate-400">
             Copyright © 2026 MadsJeez Commerce Group S.R.L. - Spegazzini, Buenos Aires, Argentina

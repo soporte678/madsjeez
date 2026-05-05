@@ -710,7 +710,7 @@ export async function GET(req: Request) {
           expiresAt,
           store: {
             name: coupon.seller.sellerName || coupon.seller.name || "Tienda MadsJeez",
-            logo: coupon.seller.image || "https://placehold.co/50x50/FF6B4A/white?text=M",
+            logo: coupon.seller.image || "https://placehold.co/50x50/ff4d2e/white?text=M",
             reputation: coupon.seller.reputationLevel || "VENDEDOR NUEVO",
           },
           category: firstCategory?.name || "Cupones de vendedores",

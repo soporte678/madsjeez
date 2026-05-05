@@ -1,16 +1,19 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { assertAdminBootstrapAllowed } from "@/lib/admin-bootstrap"
 
 // This endpoint creates the first admin user
 // It can only be used once when no admins exist
 export async function POST(request: NextRequest) {
+  const gate = assertAdminBootstrapAllowed()
+  if (gate) return gate
+
   try {
     const body = await request.json()
     const { email, password, firstName, lastName, secretKey } = body
 
-    // Verify secret key for security
-    const expectedSecret = process.env.ADMIN_SETUP_SECRET || "MadsJeez-setup-2024"
-    if (secretKey !== expectedSecret) {
+    const expectedSecret = process.env.ADMIN_SETUP_SECRET
+    if (!expectedSecret || secretKey !== expectedSecret) {
       return NextResponse.json(
         { error: "Invalid secret key" },
         { status: 403 }

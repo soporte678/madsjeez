@@ -55,9 +55,9 @@
 # Copiar template
 cp .env.example .env.local
 
-# Configurar Supabase
-NEXT_PUBLIC_SUPABASE_URL=https://doweovsukuskflgnxhhn.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_DmXmnt4V6A3tpwCq73ZIuA_a0dtWb0h
+# Configurar Supabase (valores reales solo en .env.local / hosting, nunca en el repo)
+NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 ```
 
 ### 2. **Instalación**

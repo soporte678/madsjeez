@@ -144,14 +144,14 @@ export default function Navbar() {
 
   // Efecto de desarmado/armado del logo MADSJEEZ - NUEVA PALETA
   const logoLetters = [
-    { char: 'M', dx: '-10px', dy: '-12px', rot: '-15deg', delay: '0s', color: '#FF6B4A' },
-    { char: 'A', dx: '-5px', dy: '10px', rot: '10deg', delay: '0.05s', color: '#FF8C42' },
-    { char: 'D', dx: '8px', dy: '-10px', rot: '-8deg', delay: '0.1s', color: '#FFC107' },
-    { char: 'S', dx: '15px', dy: '12px', rot: '12deg', delay: '0.15s', color: '#FFD700' },
-    { char: 'J', dx: '-10px', dy: '15px', rot: '-10deg', delay: '0.2s', color: '#00D4FF' },
-    { char: 'E', dx: '5px', dy: '-15px', rot: '20deg', delay: '0.25s', color: '#00B4E6' },
-    { char: 'E', dx: '12px', dy: '8px', rot: '-5deg', delay: '0.3s', color: '#7CFC00' },
-    { char: 'Z', dx: '20px', dy: '-8px', rot: '15deg', delay: '0.35s', color: '#32CD32' },
+    { char: 'M', dx: '-10px', dy: '-12px', rot: '-15deg', delay: '0s', color: '#ff4d2e' },
+    { char: 'A', dx: '-5px', dy: '10px', rot: '10deg', delay: '0.05s', color: '#ff9100' },
+    { char: 'D', dx: '8px', dy: '-10px', rot: '-8deg', delay: '0.1s', color: '#ffb703' },
+    { char: 'S', dx: '15px', dy: '12px', rot: '12deg', delay: '0.15s', color: '#ffa60a' },
+    { char: 'J', dx: '-10px', dy: '15px', rot: '-10deg', delay: '0.2s', color: '#00b4d8' },
+    { char: 'E', dx: '5px', dy: '-15px', rot: '20deg', delay: '0.25s', color: '#0096c7' },
+    { char: 'E', dx: '12px', dy: '8px', rot: '-5deg', delay: '0.3s', color: '#10b981' },
+    { char: 'Z', dx: '20px', dy: '-8px', rot: '15deg', delay: '0.35s', color: '#059669' },
   ];
 
   return (
@@ -228,17 +228,17 @@ export default function Navbar() {
 
         .search-shadow { box-shadow: 0 1px 2px 0 rgba(0,0,0,0.2); }
         .nav-link { cursor: pointer; color: rgba(45, 50, 119, 0.8); transition: all 0.2s ease; }
-        .nav-link:hover { color: #FF6B4A; transform: translateY(-1px); }
+        .nav-link:hover { color: #ff4d2e; transform: translateY(-1px); }
         
         .search-glow:focus-within { 
-          box-shadow: 0 0 0 3px rgba(255, 107, 74, 0.15), 0 4px 20px rgba(255, 107, 74, 0.1); 
+          box-shadow: 0 0 0 3px rgba(255, 77, 46, 0.16), 0 4px 20px rgba(255, 77, 46, 0.11); 
         }
         
         .suggestion-item { 
           transition: all 0.15s ease; 
         }
         .suggestion-item:hover, .suggestion-item.selected {
-          background: linear-gradient(90deg, rgba(255, 107, 74, 0.08), rgba(255, 193, 7, 0.05));
+          background: linear-gradient(90deg, rgba(255, 77, 46, 0.09), rgba(255, 183, 3, 0.06));
           transform: translateX(4px);
         }
         
@@ -248,7 +248,7 @@ export default function Navbar() {
         }
         
         .gradient-text {
-          background: linear-gradient(90deg, #FF6B4A, #FFC107, #00D4FF, #FF6B4A);
+          background: linear-gradient(90deg, #ff4d2e, #ffb703, #00b4d8, #ff4d2e);
           background-size: 200% auto;
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
@@ -256,14 +256,14 @@ export default function Navbar() {
         }
         
         .mads-pro-gradient {
-          background: linear-gradient(90deg, #FF2E8C, #FF6B9D, #FF2E8C);
+          background: linear-gradient(90deg, #db2777, #ec4899, #db2777);
           background-size: 200% auto;
           animation: shimmer 3s linear infinite;
         }
       `}</style>
 
       {/* NAVBAR MADSJEEZ - NUEVA PALETA ENERGÉTICA */}
-      <header className="bg-gradient-to-r from-[#FFC107] via-[#FFD700] to-[#FFC107] w-full sticky top-0 z-[100] border-b border-[#FF6B4A]/20 h-[100px] flex flex-col justify-center font-outfit shadow-lg shadow-orange-500/10">
+      <header className="bg-gradient-to-r from-[#ffb703] via-[#ffa60a] to-[#ffb703] w-full sticky top-0 z-[100] border-b border-[#ff4d2e]/20 h-[100px] flex flex-col justify-center font-outfit shadow-lg shadow-orange-500/10">
         <div className="max-w-[1200px] mx-auto px-4 lg:px-0 w-full">
           
           {/* --- FILA 1: LOGO | BÚSQUEDA | BOTÓN MADS PRO ANIMADO --- */}
@@ -273,10 +273,10 @@ export default function Navbar() {
             <Link href="/" className="flex items-center gap-2 cursor-pointer group w-[160px] flex-shrink-0">
               <div className="relative w-9 h-9 bg-gradient-to-br from-[#1a1a2e] to-[#16213e] rounded-lg flex items-center justify-center shadow-lg shadow-orange-500/30 overflow-hidden group-hover:shadow-xl group-hover:shadow-orange-500/40 transition-all duration-300">
                  <svg viewBox="0 0 100 100" className="w-6 h-6">
-                    <path d="M 15 80 L 35 30 L 55 55" stroke="#FF6B4A" fill="none" strokeWidth="15" strokeLinecap="round"/>
-                    <path d="M 85 80 L 65 30 L 45 65" stroke="#00D4FF" fill="none" strokeWidth="15" strokeLinecap="round"/>
+                    <path d="M 15 80 L 35 30 L 55 55" stroke="#ff4d2e" fill="none" strokeWidth="15" strokeLinecap="round"/>
+                    <path d="M 85 80 L 65 30 L 45 65" stroke="#00b4d8" fill="none" strokeWidth="15" strokeLinecap="round"/>
                  </svg>
-                 <div className="absolute inset-0 bg-gradient-to-tr from-[#FF6B4A]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                 <div className="absolute inset-0 bg-gradient-to-tr from-[#ff4d2e]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
               <div className="flex flex-col justify-center leading-none">
                 <span className="font-montserrat font-black text-[20px] tracking-tighter uppercase">
@@ -305,7 +305,7 @@ export default function Navbar() {
                 <div 
                   className={cn(
                     "flex items-center bg-white rounded-xl h-11 px-4 transition-all duration-300 search-glow border-2",
-                    isSearchOpen ? "border-[#FF6B4A] shadow-lg shadow-orange-500/20" : "border-transparent"
+                    isSearchOpen ? "border-[#ff4d2e] shadow-lg shadow-orange-500/20" : "border-transparent"
                   )}
                 >
                   <input 
@@ -335,21 +335,21 @@ export default function Navbar() {
                   <div className="h-6 w-[1px] bg-slate-200 mx-2"></div>
                   <button 
                     type="button" 
-                    className="p-1.5 text-slate-400 hover:text-[#FF6B4A] transition-colors"
+                    className="p-1.5 text-slate-400 hover:text-[#ff4d2e] transition-colors"
                     title="Búsqueda por voz"
                   >
                     <Mic size={18} />
                   </button>
                   <button 
                     type="button" 
-                    className="p-1.5 text-slate-400 hover:text-[#00D4FF] transition-colors mr-1"
+                    className="p-1.5 text-slate-400 hover:text-[#00b4d8] transition-colors mr-1"
                     title="Búsqueda por imagen"
                   >
                     <Camera size={18} />
                   </button>
                   <button 
                     type="submit" 
-                    className="bg-gradient-to-r from-[#FF6B4A] to-[#FF8C42] text-white p-2 rounded-lg hover:from-[#FF8C42] hover:to-[#FFC107] transition-all duration-300 shadow-md shadow-orange-500/30 hover:shadow-lg hover:shadow-orange-500/40 hover:scale-105"
+                    className="bg-gradient-to-r from-[#ff4d2e] to-[#ff9100] text-white p-2 rounded-lg hover:from-[#ff9100] hover:to-[#ffb703] transition-all duration-300 shadow-md shadow-orange-500/30 hover:shadow-lg hover:shadow-orange-500/40 hover:scale-105"
                   >
                     <Search size={18} strokeWidth={2.5} />
                   </button>
@@ -362,7 +362,7 @@ export default function Navbar() {
                   {/* Loading state */}
                   {isLoading && (
                     <div className="p-4 flex items-center justify-center gap-2 text-slate-400">
-                      <div className="w-5 h-5 border-2 border-[#FF6B4A] border-t-transparent rounded-full animate-spin" />
+                      <div className="w-5 h-5 border-2 border-[#ff4d2e] border-t-transparent rounded-full animate-spin" />
                       <span className="text-sm">Buscando...</span>
                     </div>
                   )}
@@ -372,8 +372,8 @@ export default function Navbar() {
                     <div className="max-h-[400px] overflow-y-auto">
                       {/* Título de sección */}
                       {searchQuery && (
-                        <div className="px-4 py-2 bg-gradient-to-r from-[#FF6B4A]/5 to-[#FFC107]/5 border-b border-slate-100">
-                          <span className="text-xs font-bold text-[#FF6B4A] uppercase tracking-wider flex items-center gap-1">
+                        <div className="px-4 py-2 bg-gradient-to-r from-[#ff4d2e]/5 to-[#ffb703]/5 border-b border-slate-100">
+                          <span className="text-xs font-bold text-[#ff4d2e] uppercase tracking-wider flex items-center gap-1">
                             <Sparkles size={12} />
                             Sugerencias inteligentes
                           </span>
@@ -392,8 +392,8 @@ export default function Navbar() {
                       
                       {/* Tendencias */}
                       {!searchQuery && (
-                        <div className="px-4 py-2 bg-gradient-to-r from-[#FFC107]/10 to-[#FF6B4A]/5 border-b border-slate-100">
-                          <span className="text-xs font-bold text-[#FFC107] uppercase tracking-wider flex items-center gap-1">
+                        <div className="px-4 py-2 bg-gradient-to-r from-[#ffb703]/10 to-[#ff4d2e]/5 border-b border-slate-100">
+                          <span className="text-xs font-bold text-[#ffb703] uppercase tracking-wider flex items-center gap-1">
                             <TrendingUp size={12} />
                             Tendencias
                           </span>
@@ -415,7 +415,7 @@ export default function Navbar() {
                               <History size={16} className="text-slate-400 flex-shrink-0" />
                             )}
                             {suggestion.type === 'trending' && (
-                              <TrendingUp size={16} className="text-[#FF6B4A] flex-shrink-0" />
+                              <TrendingUp size={16} className="text-[#ff4d2e] flex-shrink-0" />
                             )}
                             {suggestion.type === 'product' && (
                               <div className="w-8 h-8 rounded bg-slate-100 flex items-center justify-center flex-shrink-0">
@@ -427,13 +427,13 @@ export default function Navbar() {
                               </div>
                             )}
                             {suggestion.type === 'category' && (
-                              <div className="w-8 h-8 rounded bg-gradient-to-br from-[#FF6B4A]/10 to-[#FFC107]/10 flex items-center justify-center flex-shrink-0">
-                                <ArrowRight size={14} className="text-[#FF6B4A]" />
+                              <div className="w-8 h-8 rounded bg-gradient-to-br from-[#ff4d2e]/10 to-[#ffb703]/10 flex items-center justify-center flex-shrink-0">
+                                <ArrowRight size={14} className="text-[#ff4d2e]" />
                               </div>
                             )}
                             {suggestion.type === 'brand' && (
-                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#00D4FF]/10 to-[#FF6B4A]/10 flex items-center justify-center flex-shrink-0">
-                                <Zap size={14} className="text-[#00D4FF]" />
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#00b4d8]/10 to-[#ff4d2e]/10 flex items-center justify-center flex-shrink-0">
+                                <Zap size={14} className="text-[#00b4d8]" />
                               </div>
                             )}
                             
@@ -474,7 +474,7 @@ export default function Navbar() {
                               setSearchHistory([]);
                               localStorage.removeItem('madsjeez_search_history');
                             }}
-                            className="text-xs text-[#FF6B4A] hover:text-[#FF8C42] font-medium"
+                            className="text-xs text-[#ff4d2e] hover:text-[#ff9100] font-medium"
                           >
                             Borrar historial
                           </button>
@@ -536,7 +536,7 @@ export default function Navbar() {
                  </div>
 
                  {/* 3. LA INSIGNIA MADS PRO (El Borrador Animado) - NUEVA PALETA FUCSIA */}
-                 <div className="absolute left-[6px] bg-gradient-to-r from-[#FF2E8C] via-[#FF6B9D] to-[#FF2E8C] rounded-full px-3 py-[5px] flex items-center shadow-lg shadow-fuchsia-500/30 animate-slide-badge z-20 mads-pro-badge">
+                 <div className="absolute left-[6px] bg-gradient-to-r from-[#db2777] via-[#ec4899] to-[#db2777] rounded-full px-3 py-[5px] flex items-center shadow-lg shadow-fuchsia-500/30 animate-slide-badge z-20 mads-pro-badge">
                     <span className="font-montserrat font-black text-white text-[11px] italic tracking-tight">MADS PRO</span>
                  </div>
 

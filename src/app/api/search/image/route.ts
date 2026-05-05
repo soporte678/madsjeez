@@ -1,9 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+import { getSupabaseService } from "@/lib/supabase/service"
 
 export async function POST(req: NextRequest) {
   try {
@@ -56,8 +53,17 @@ Si no podés identificar el producto, devolvé:
       parsed = { product_name: "Producto no identificado", keywords: [], confidence: 0, description: "Error al procesar la imagen" }
     }
 
+    let supabase
+    try {
+      supabase = getSupabaseService()
+    } catch {
+      return NextResponse.json(
+        { error: "SUPABASE_SERVICE_ROLE_KEY not configured on server" },
+        { status: 500 }
+      )
+    }
+
     // Search products with identified keywords
-    const supabase = createClient(supabaseUrl, supabaseKey)
     const keywords: string[] = parsed.keywords || []
 
     let products: any[] = []

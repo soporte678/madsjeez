@@ -83,14 +83,14 @@ export default function CategoriesPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="bg-gradient-to-r from-[#FFC107] via-[#FFD700] to-[#FFC107] border-b border-[#FF6B4A]/20">
+      <header className="bg-gradient-to-r from-[#ffb703] via-[#ffa60a] to-[#ffb703] border-b border-[#ff4d2e]/20">
         <div className="max-w-[1200px] mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
             <Link href="/" className="flex items-center gap-2">
               <div className="w-9 h-9 bg-gradient-to-br from-[#1a1a2e] to-[#16213e] rounded-lg flex items-center justify-center shadow-lg">
                 <svg viewBox="0 0 100 100" className="w-6 h-6">
-                  <path d="M 15 80 L 35 30 L 55 55" stroke="#FF6B4A" fill="none" strokeWidth="15" strokeLinecap="round"/>
-                  <path d="M 85 80 L 65 30 L 45 65" stroke="#00D4FF" fill="none" strokeWidth="15" strokeLinecap="round"/>
+                  <path d="M 15 80 L 35 30 L 55 55" stroke="#ff4d2e" fill="none" strokeWidth="15" strokeLinecap="round"/>
+                  <path d="M 85 80 L 65 30 L 45 65" stroke="#00b4d8" fill="none" strokeWidth="15" strokeLinecap="round"/>
                 </svg>
               </div>
               <span className="font-black text-xl tracking-tighter text-[#2d3277]">MADSJEEZ</span>
@@ -127,12 +127,12 @@ export default function CategoriesPage() {
                 {/* Categoría Principal */}
                 <Link 
                   href={`/category/${category.slug}`}
-                  className="group flex items-center gap-2 mb-4 hover:text-[#FF6B4A] transition-colors"
+                  className="group flex items-center gap-2 mb-4 hover:text-[#ff4d2e] transition-colors"
                 >
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#FF6B4A]/10 to-[#FFC107]/10 flex items-center justify-center text-[#FF6B4A] group-hover:from-[#FF6B4A] group-hover:to-[#FF8C42] group-hover:text-white transition-all">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#ff4d2e]/10 to-[#ffb703]/10 flex items-center justify-center text-[#ff4d2e] group-hover:from-[#ff4d2e] group-hover:to-[#ff9100] group-hover:text-white transition-all">
                     {categoryIcons[category.slug] || <ArrowRight className="w-5 h-5" />}
                   </div>
-                  <h3 className="text-lg font-bold text-slate-900 group-hover:text-[#FF6B4A]">
+                  <h3 className="text-lg font-bold text-slate-900 group-hover:text-[#ff4d2e]">
                     {category.name}
                   </h3>
                   <span className="text-sm text-slate-400 ml-2">
@@ -146,7 +146,7 @@ export default function CategoriesPage() {
                     <Link
                       key={child.id}
                       href={`/category/${child.slug}`}
-                      className="text-sm text-slate-500 hover:text-[#FF6B4A] hover:underline py-1 transition-colors"
+                      className="text-sm text-slate-500 hover:text-[#ff4d2e] hover:underline py-1 transition-colors"
                     >
                       {child.name}
                     </Link>
@@ -175,20 +175,20 @@ export default function CategoriesPage() {
       <footer className="bg-white border-t border-slate-200 mt-16">
         <div className="max-w-[1200px] mx-auto px-4 py-6">
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-slate-500">
-            <Link href="/about" className="hover:text-[#FF6B4A] hover:underline">Trabajá con nosotros</Link>
-            <Link href="/legal/terminos" className="hover:text-[#FF6B4A] hover:underline">Términos y condiciones</Link>
-            <Link href="/promotions" className="hover:text-[#FF6B4A] hover:underline">Promociones</Link>
-            <Link href="/legal/privacidad" className="hover:text-[#FF6B4A] hover:underline">Cómo cuidamos tu privacidad</Link>
-            <Link href="/accessibility" className="hover:text-[#FF6B4A] hover:underline">Accesibilidad</Link>
-            <Link href="/legal/aviso-legal" className="hover:text-[#FF6B4A] hover:underline">Información al usuario financiero</Link>
-            <Link href="/help" className="hover:text-[#FF6B4A] hover:underline">Ayuda</Link>
-            <Link href="/defensa-del-consumidor" className="hover:text-[#FF6B4A] hover:underline">Defensa del Consumidor</Link>
-            <Link href="/insurance" className="hover:text-[#FF6B4A] hover:underline">Información sobre seguros</Link>
+            <Link href="/about" className="hover:text-[#ff4d2e] hover:underline">Trabajá con nosotros</Link>
+            <Link href="/legal/terminos" className="hover:text-[#ff4d2e] hover:underline">Términos y condiciones</Link>
+            <Link href="/promotions" className="hover:text-[#ff4d2e] hover:underline">Promociones</Link>
+            <Link href="/legal/privacidad" className="hover:text-[#ff4d2e] hover:underline">Cómo cuidamos tu privacidad</Link>
+            <Link href="/accessibility" className="hover:text-[#ff4d2e] hover:underline">Accesibilidad</Link>
+            <Link href="/legal/aviso-legal" className="hover:text-[#ff4d2e] hover:underline">Información al usuario financiero</Link>
+            <Link href="/help" className="hover:text-[#ff4d2e] hover:underline">Ayuda</Link>
+            <Link href="/defensa-del-consumidor" className="hover:text-[#ff4d2e] hover:underline">Defensa del Consumidor</Link>
+            <Link href="/insurance" className="hover:text-[#ff4d2e] hover:underline">Información sobre seguros</Link>
           </div>
           
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-slate-500 mt-3">
-            <Link href="/complaints" className="hover:text-[#FF6B4A] hover:underline">Libro de quejas online</Link>
-            <Link href="/affiliates" className="hover:text-[#FF6B4A] hover:underline">Programa de Afiliados</Link>
+            <Link href="/complaints" className="hover:text-[#ff4d2e] hover:underline">Libro de quejas online</Link>
+            <Link href="/affiliates" className="hover:text-[#ff4d2e] hover:underline">Programa de Afiliados</Link>
           </div>
 
           <div className="text-center mt-6 pt-4 border-t border-slate-100">

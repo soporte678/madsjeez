@@ -1,16 +1,10 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-
-function getAdminSupabase() {
-  return createClient(supabaseUrl, supabaseServiceKey)
-}
+import { getSupabaseService } from "@/lib/supabase/service"
+import { simpleRateLimit } from "@/lib/simple-rate-limit"
 
 async function getMarketplaceContext(userMessage: string): Promise<string> {
-  const supabase = getAdminSupabase()
+  const supabase = getSupabaseService()
   const lower = userMessage.toLowerCase()
   const contextParts: string[] = []
 
@@ -234,6 +228,18 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const ip =
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      req.headers.get("x-real-ip") ||
+      "unknown"
+    const rl = simpleRateLimit(`chat:${ip}`, 40, 60_000)
+    if (!rl.ok) {
+      return NextResponse.json(
+        { error: "Demasiadas solicitudes. Probá de nuevo en unos segundos." },
+        { status: 429, headers: { "Retry-After": String(Math.ceil(rl.retryAfterMs / 1000)) } }
+      )
+    }
+
     const body = await req.json()
     const { messages, mode: requestMode } = body
 

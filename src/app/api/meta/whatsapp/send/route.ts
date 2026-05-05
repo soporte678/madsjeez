@@ -5,11 +5,8 @@ export async function POST(request: Request) {
   try {
     const { phoneNumber, templateName, languageCode, parameters } = await request.json()
 
-    // App credentials de AppJeezPro
-    const APP_ID = process.env.META_APP_ID || "1291657412404984"
-    const APP_SECRET = process.env.META_APP_SECRET
-    const ACCESS_TOKEN = process.env.META_ACCESS_TOKEN
-    const PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID
+    const ACCESS_TOKEN = process.env.META_ACCESS_TOKEN?.trim()
+    const PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID?.trim()
 
     if (!ACCESS_TOKEN || !PHONE_NUMBER_ID) {
       return NextResponse.json({ error: "Configuración de Meta incompleta" }, { status: 500 })

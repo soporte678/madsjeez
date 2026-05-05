@@ -123,9 +123,9 @@ export default function WhatsAppConfigPage() {
           Asegúrate de tener estas variables de entorno configuradas:
         </p>
         <code className="block bg-gray-900 text-green-400 p-4 rounded text-sm">
-          META_APP_ID=1291657412404984
+          META_APP_ID=tu_meta_app_id
           <br />
-          META_APP_SECRET=tu_app_secret
+          META_APP_SECRET=tu_meta_app_secret
           <br />
           META_ACCESS_TOKEN=tu_token_largo
           <br />

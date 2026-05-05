@@ -89,14 +89,14 @@ export default function PublicCouponsPage() {
   return (
     <div className="min-h-screen bg-[#EBEBEB]">
       {/* Header amarillo */}
-      <header className="bg-gradient-to-r from-[#FFC107] via-[#FFD700] to-[#FFC107]">
+      <header className="bg-gradient-to-r from-[#ffb703] via-[#ffa60a] to-[#ffb703]">
         <div className="max-w-[1200px] mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
             <Link href="/" className="flex items-center gap-2">
               <div className="w-9 h-9 bg-gradient-to-br from-[#1a1a2e] to-[#16213e] rounded-lg flex items-center justify-center shadow-lg">
                 <svg viewBox="0 0 100 100" className="w-6 h-6">
-                  <path d="M 15 80 L 35 30 L 55 55" stroke="#FF6B4A" fill="none" strokeWidth="15" strokeLinecap="round"/>
-                  <path d="M 85 80 L 65 30 L 45 65" stroke="#00D4FF" fill="none" strokeWidth="15" strokeLinecap="round"/>
+                  <path d="M 15 80 L 35 30 L 55 55" stroke="#ff4d2e" fill="none" strokeWidth="15" strokeLinecap="round"/>
+                  <path d="M 85 80 L 65 30 L 45 65" stroke="#00b4d8" fill="none" strokeWidth="15" strokeLinecap="round"/>
                 </svg>
               </div>
               <span className="font-black text-xl tracking-tighter text-[#2d3277]">MADSJEEZ</span>
@@ -238,9 +238,9 @@ export default function PublicCouponsPage() {
 
             {/* Demo notice */}
             {coupons.some(c => c.isDemo) && (
-              <div className="p-4 bg-[#FFC107]/20 rounded-lg border border-[#FFC107]/30">
+              <div className="p-4 bg-[#ffb703]/20 rounded-lg border border-[#ffb703]/30">
                 <p className="text-sm text-slate-700 flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-[#FF6B4A]" />
+                  <Sparkles className="w-4 h-4 text-[#ff4d2e]" />
                   <span>
                     Mostrando cupones de ejemplo. ¡Los vendedores pueden crear sus propios cupones para atraer más clientes!
                   </span>

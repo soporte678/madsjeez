@@ -1,18 +1,23 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+import { getSupabaseService } from "@/lib/supabase/service"
 
 export async function POST(req: NextRequest) {
   try {
+    let supabase
+    try {
+      supabase = getSupabaseService()
+    } catch {
+      return NextResponse.json(
+        { error: "SUPABASE_SERVICE_ROLE_KEY not configured on server" },
+        { status: 500 }
+      )
+    }
+
     const apiKey = process.env.GEMINI_API_KEY
     if (!apiKey) return NextResponse.json({ error: "GEMINI_API_KEY not configured" }, { status: 500 })
 
     const { productId, reviews } = await req.json()
-
-    const supabase = createClient(supabaseUrl, supabaseKey)
     const genAI = new GoogleGenerativeAI(apiKey)
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
 

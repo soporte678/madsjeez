@@ -1,27 +1,16 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { supabaseService } from "@/lib/supabase/service";
+import { getSupabaseUserFromBearer } from "@/lib/supabase-auth-request";
 
-interface CreatePreferenceRequest {
-  items: Array<{
+interface OrderItemRow {
+  quantity: number;
+  unit_price: number;
+  product_id: string;
+  product: {
     id: string;
     title: string;
-    quantity: number;
-    unit_price: number;
     seller_id: string;
-  }>;
-  shipping_cost: number;
-  buyer_email: string;
-  order_id: string;
-}
-
-interface MarketplaceFee {
-  amount: number;
-}
-
-interface PreferencePayer {
-  email: string;
+  } | null;
 }
 
 interface MercadoPagoPreference {
@@ -33,7 +22,7 @@ interface MercadoPagoPreference {
     currency_id: string;
   }>;
   marketplace_fee: number;
-  payer: PreferencePayer;
+  payer: { email: string };
   external_reference: string;
   notification_url: string;
   back_urls: {
@@ -42,55 +31,98 @@ interface MercadoPagoPreference {
     pending: string;
   };
   auto_return: string;
-  payment_methods?: {
-    excluded_payment_types?: Array<{ id: string }>;
-    installments?: number;
-  };
 }
 
 /**
  * POST /api/seller/payment-gateway/mercadopago/create-preference
  *
- * Modelo Marketplace MercadoPago (split payments):
- *
- * FLUJO DE DINERO:
- *  - El comprador paga: subtotal + shipping_cost (costo total de envío)
- *  - MercadoPago retiene el marketplace_fee y acredita el resto al VENDEDOR
- *  - MadsJeez NUNCA recibe el dinero completo, solo el marketplace_fee
- *
- * CÁLCULO DEL marketplace_fee (lo que queda en la cuenta de MadsJeez):
- *  - 10% del subtotal (comisión por usar el marketplace)
- *  - 50% del shipping_cost (el vendedor absorbe la mitad del costo de envío)
- *  - marketplace_fee = (subtotal * 0.10) + (shipping_cost * 0.50)
- *
- * LO QUE RECIBE EL VENDEDOR (acreditado por MP automáticamente):
- *  - total_cobrado - marketplace_fee
- *  - = (subtotal + shipping_cost) - ((subtotal * 0.10) + (shipping_cost * 0.50))
- *  - = subtotal * 0.90 + shipping_cost * 0.50
- *
- * La preferencia se crea con el ACCESS TOKEN del VENDEDOR (OAuth) para que
- * el dinero vaya directo a su cuenta de MP.
+ * Montos e ítems se reconstruyen desde la orden en Supabase (anti-tampering).
+ * Auth: Authorization Bearer = access_token de Supabase (mismo flujo que checkout).
  */
 export async function POST(request: Request) {
   try {
-    const body: CreatePreferenceRequest = await request.json();
-    const { items, shipping_cost, buyer_email, order_id } = body;
+    const body = await request.json();
+    const order_id = body?.order_id as string | undefined;
+    const buyer_email = (body?.buyer_email as string | undefined) || undefined;
 
-    if (!items || items.length === 0) {
+    if (!order_id) {
+      return NextResponse.json({ error: "order_id es requerido" }, { status: 400 });
+    }
+
+    const authUser = await getSupabaseUserFromBearer(request);
+    if (!authUser) {
       return NextResponse.json(
-        { error: "No hay items en el carrito" },
+        { error: "No autorizado. Enviá Authorization: Bearer con el access_token de Supabase." },
+        { status: 401 }
+      );
+    }
+
+    const { data: order, error: orderError } = await supabaseService
+      .from("orders")
+      .select("id, buyer_id, seller_id, status, shipping_cost, total_amount")
+      .eq("id", order_id)
+      .single();
+
+    if (orderError || !order) {
+      return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
+    }
+
+    if (order.buyer_id !== authUser.id) {
+      return NextResponse.json({ error: "No autorizado para esta orden" }, { status: 403 });
+    }
+
+    if (order.status !== "pending") {
+      return NextResponse.json(
+        { error: "La orden ya no está pendiente de pago" },
+        { status: 409 }
+      );
+    }
+
+    const { data: lines, error: linesError } = await supabaseService
+      .from("order_items")
+      .select(
+        `
+        quantity,
+        unit_price,
+        product_id,
+        product:products ( id, title, seller_id )
+      `
+      )
+      .eq("order_id", order_id);
+
+    if (linesError || !lines?.length) {
+      return NextResponse.json(
+        { error: "La orden no tiene ítems válidos" },
         { status: 400 }
       );
     }
 
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    const typedLines = lines as unknown as OrderItemRow[];
+    const sellerId = order.seller_id as string;
+
+    for (const row of typedLines) {
+      if (!row.product || row.product.seller_id !== sellerId) {
+        return NextResponse.json(
+          { error: "Inconsistencia vendedor/producto en la orden" },
+          { status: 400 }
+        );
+      }
     }
 
-    const sellerId = items[0].seller_id;
+    const subtotal = typedLines.reduce(
+      (sum, row) => sum + Number(row.unit_price) * row.quantity,
+      0
+    );
+    const totalShipping = Number(order.shipping_cost ?? 0);
 
-    // Verificar que el vendedor tenga MercadoPago conectado vía OAuth
+    const subtotalFromOrder = Number(order.total_amount ?? 0);
+    if (Math.abs(subtotal - subtotalFromOrder) > 0.02) {
+      return NextResponse.json(
+        { error: "Totales de orden inconsistentes. Recargá el checkout." },
+        { status: 400 }
+      );
+    }
+
     const { data: mpConnection, error: mpError } = await supabaseService
       .from("seller_mercadopago")
       .select("mp_access_token, is_active")
@@ -98,41 +130,30 @@ export async function POST(request: Request) {
       .eq("is_active", true)
       .single();
 
-    if (mpError || !mpConnection) {
+    if (mpError || !mpConnection?.mp_access_token) {
       return NextResponse.json(
-        { error: "El vendedor no tiene MercadoPago conectado. Debe vincular su cuenta desde el panel de vendedor." },
+        {
+          error:
+            "El vendedor no tiene MercadoPago conectado. Debe vincular su cuenta desde el panel de vendedor.",
+        },
         { status: 400 }
       );
     }
 
-    // ── CÁLCULO DEL SPLIT ──────────────────────────────────────────────────
-    // El comprador paga el precio de los productos + el costo total del envío
-    const subtotal = items.reduce((sum, item) => sum + item.unit_price * item.quantity, 0);
-    const totalShipping = shipping_cost;
-
-    // El comprador paga todo upfront
     const totalBuyerPays = subtotal + totalShipping;
-
-    // marketplace_fee = 10% sobre productos + 50% del envío que absorbe el vendedor
-    // Este monto queda en la cuenta de MadsJeez automáticamente via split
-    const commissionOnProducts = Math.round(subtotal * 0.10 * 100) / 100;
-    const sellerShippingShare  = Math.round(totalShipping * 0.50 * 100) / 100;
-    const marketplaceFee       = commissionOnProducts + sellerShippingShare;
-
-    // Lo que acredita MP al vendedor directamente (sin pasar por MadsJeez)
+    const commissionOnProducts = Math.round(subtotal * 0.1 * 100) / 100;
+    const sellerShippingShare = Math.round(totalShipping * 0.5 * 100) / 100;
+    const marketplaceFee = commissionOnProducts + sellerShippingShare;
     const sellerReceives = totalBuyerPays - marketplaceFee;
-    // ──────────────────────────────────────────────────────────────────────
 
-    // Items para la preferencia de MP
-    const mpItems: Array<{ id: string; title: string; quantity: number; unit_price: number; currency_id: string }> = items.map(item => ({
-      id: item.id,
-      title: item.title,
-      quantity: item.quantity,
-      unit_price: item.unit_price,
+    const mpItems: MercadoPagoPreference["items"] = typedLines.map((row) => ({
+      id: row.product_id,
+      title: row.product?.title ?? "Producto",
+      quantity: row.quantity,
+      unit_price: Number(row.unit_price),
       currency_id: "ARS",
     }));
 
-    // El envío aparece como ítem separado (el comprador lo ve desglosado)
     if (totalShipping > 0) {
       mpItems.push({
         id: "shipping",
@@ -143,15 +164,13 @@ export async function POST(request: Request) {
       });
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.madsjeez.com.ar";
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
-    // Preferencia con el token OAuth del VENDEDOR → dinero va a su cuenta
-    // marketplace_fee → va a la cuenta de MadsJeez (la del CLIENT_ID de la app)
     const preference: MercadoPagoPreference = {
       items: mpItems,
       marketplace_fee: marketplaceFee,
       payer: {
-        email: buyer_email || session.user.email || "",
+        email: buyer_email || authUser.email || "",
       },
       external_reference: order_id,
       notification_url: `${appUrl}/api/webhooks/mercadopago`,
@@ -163,7 +182,6 @@ export async function POST(request: Request) {
       auto_return: "approved",
     };
 
-    // Crear preferencia usando el ACCESS TOKEN OAuth del vendedor
     const mpResponse = await fetch("https://api.mercadopago.com/checkout/preferences", {
       method: "POST",
       headers: {
@@ -174,7 +192,7 @@ export async function POST(request: Request) {
     });
 
     if (!mpResponse.ok) {
-      const errorData = await mpResponse.json();
+      const errorData = await mpResponse.json().catch(() => ({}));
       console.error("Error creando preferencia de MercadoPago:", errorData);
       return NextResponse.json(
         { error: "Error creando preferencia de pago", details: errorData },
@@ -184,7 +202,6 @@ export async function POST(request: Request) {
 
     const mpData = await mpResponse.json();
 
-    // Registrar el pago en nuestra BD (referencia y desglose)
     const { error: paymentError } = await supabaseService.from("payments").insert({
       order_id,
       mp_preference_id: mpData.id,
@@ -199,7 +216,7 @@ export async function POST(request: Request) {
       shipping_buyer_share: totalShipping - sellerShippingShare,
       status: "pending",
       seller_id: sellerId,
-      buyer_id: session.user.id,
+      buyer_id: authUser.id,
       created_at: new Date().toISOString(),
     });
 
@@ -226,12 +243,8 @@ export async function POST(request: Request) {
         seller_receives: sellerReceives,
       },
     });
-
   } catch (error) {
     console.error("Error creando preferencia de MercadoPago:", error);
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
   }
 }

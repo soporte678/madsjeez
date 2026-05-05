@@ -8,23 +8,23 @@ const badgeVariants = cva(
     variants: {
       variant: {
         default:
-          "border-transparent bg-gradient-to-r from-[#FF6B4A] to-[#FF8C42] text-white shadow-md shadow-orange-500/30 hover:shadow-lg hover:shadow-orange-500/40",
+          "border-transparent bg-gradient-to-r from-primary via-brand-flare to-secondary text-primary-foreground shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/35",
         secondary:
-          "border-transparent bg-gradient-to-r from-[#FFC107] to-[#FFD700] text-slate-900 shadow-md shadow-yellow-500/30 hover:shadow-lg hover:shadow-yellow-500/40",
+          "border-transparent bg-gradient-to-r from-secondary to-secondary-hover text-secondary-foreground shadow-md shadow-amber-500/35 hover:shadow-lg hover:shadow-amber-500/45",
         accent:
-          "border-transparent bg-gradient-to-r from-[#00D4FF] to-[#00B4E6] text-slate-900 shadow-md shadow-cyan-500/30 hover:shadow-lg hover:shadow-cyan-500/40",
+          "border-transparent bg-gradient-to-r from-accent to-accent-hover text-accent-foreground shadow-md shadow-cyan-500/35 hover:shadow-lg hover:shadow-cyan-500/45",
         success:
-          "border-transparent bg-gradient-to-r from-[#7CFC00] to-[#32CD32] text-slate-900 shadow-md shadow-lime-500/30 hover:shadow-lg hover:shadow-lime-500/40",
+          "border-transparent bg-gradient-to-r from-success to-success-hover text-success-foreground shadow-md shadow-emerald-500/35 hover:shadow-lg hover:shadow-emerald-500/45",
         warning:
-          "border-transparent bg-gradient-to-r from-[#FF2E8C] to-[#FF6B9D] text-white shadow-md shadow-pink-500/30 hover:shadow-lg hover:shadow-pink-500/40",
+          "border-transparent bg-gradient-to-r from-warning via-pink-500 to-pink-400 text-warning-foreground shadow-md shadow-pink-500/35 hover:shadow-lg hover:shadow-pink-500/45",
         destructive:
-          "border-transparent bg-gradient-to-r from-red-500 to-red-600 text-white shadow-md shadow-red-500/30 hover:shadow-lg hover:shadow-red-500/40",
+          "border-transparent bg-gradient-to-r from-destructive to-destructive-hover text-destructive-foreground shadow-md shadow-red-500/30 hover:shadow-lg hover:shadow-red-500/40",
         outline:
-          "border-2 border-[#FF6B4A] text-[#FF6B4A] hover:bg-[#FF6B4A] hover:text-white transition-colors",
+          "border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors",
         ghost:
           "border-transparent bg-slate-100 text-slate-700 hover:bg-slate-200",
         pulse:
-          "border-transparent bg-gradient-to-r from-[#FF6B4A] to-[#FF8C42] text-white shadow-lg shadow-orange-500/40 animate-scale-pulse",
+          "border-transparent bg-gradient-to-r from-primary via-brand-flare to-secondary text-primary-foreground shadow-lg shadow-primary/40 animate-scale-pulse",
       },
       size: {
         default: "px-3 py-1",

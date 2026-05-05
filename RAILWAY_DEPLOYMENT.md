@@ -28,8 +28,8 @@ Crea el archivo `apps/web/.env.production`:
 # SUPABASE - Base de datos
 # ============================================
 NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIs...
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIs...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=(set in Railway UI — never commit)
+SUPABASE_SERVICE_ROLE_KEY=(set in Railway UI — never commit)
 
 # ============================================
 # APP CONFIG
@@ -46,8 +46,8 @@ MERCADOPAGO_PUBLIC_KEY=TEST-...
 MERCADOPAGO_ACCESS_TOKEN=TEST-...
 
 # Modo producción (activar cuando esté todo listo)
-# MERCADOPAGO_PUBLIC_KEY=APP_USR-...
-# MERCADOPAGO_ACCESS_TOKEN=APP_USR-...
+# MERCADOPAGO_PUBLIC_KEY=your_mp_public_key
+# MERCADOPAGO_ACCESS_TOKEN=your_mp_access_token
 MERCADOPAGO_WEBHOOK_SECRET=tu-webhook-secret
 
 # ============================================
@@ -129,7 +129,7 @@ railway init
 ```bash
 # Agregar variables una por una
 railway variables set NEXT_PUBLIC_SUPABASE_URL="https://tu-proyecto.supabase.co"
-railway variables set NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIs..."
+railway variables set NEXT_PUBLIC_SUPABASE_ANON_KEY="(your anon key)"
 # ... agregar todas las demás
 ```
 
@@ -235,8 +235,8 @@ Asegúrate de que las políticas de storage permitan:
 
 ### 7.2 Actualizar variables en Railway
 ```bash
-railway variables set MERCADOPAGO_PUBLIC_KEY="APP_USR-..."
-railway variables set MERCADOPAGO_ACCESS_TOKEN="APP_USR-..."
+railway variables set MERCADOPAGO_PUBLIC_KEY="your_mp_public_key"
+railway variables set MERCADOPAGO_ACCESS_TOKEN="your_mp_access_token"
 ```
 
 ### 7.3 Configurar Webhooks

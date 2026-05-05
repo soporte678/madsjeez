@@ -245,10 +245,10 @@ export default function Home() {
                 
                 <Link 
                   href={banner.id === 5 ? "/seller/register" : "/search"}
-                  className="mt-8 group/btn bg-gradient-to-r from-[#FF6B4A] to-[#FF8C42] hover:from-[#FF8C42] hover:to-[#FFC107] text-white text-[14px] font-black py-4 px-10 rounded-2xl shadow-xl shadow-orange-500/30 hover:shadow-2xl hover:shadow-orange-500/50 transition-all duration-300 hover:-translate-y-2 inline-flex items-center gap-4 uppercase tracking-wider btn-shine"
+                  className="mt-8 group/btn bg-gradient-to-r from-[#ff4d2e] to-[#ff9100] hover:from-[#ff9100] hover:to-[#ffb703] text-white text-[14px] font-black py-4 px-10 rounded-2xl shadow-xl shadow-orange-500/30 hover:shadow-2xl hover:shadow-orange-500/50 transition-all duration-300 hover:-translate-y-2 inline-flex items-center gap-4 uppercase tracking-wider btn-shine"
                 >
                   {banner.btn1}
-                  <div className="w-8 h-8 rounded-full bg-white text-[#FF6B4A] flex items-center justify-center group-hover/btn:scale-110 group-hover/btn:rotate-12 transition-all">
+                  <div className="w-8 h-8 rounded-full bg-white text-[#ff4d2e] flex items-center justify-center group-hover/btn:scale-110 group-hover/btn:rotate-12 transition-all">
                     <ChevronRight size={18} strokeWidth={3} />
                   </div>
                 </Link>
@@ -349,12 +349,12 @@ export default function Home() {
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <div className="flex flex-col sm:flex-row justify-between items-center px-6 py-4 border-b border-gray-100 gap-4">
             <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-r from-[#FF2E8C] to-[#FF6B9D] text-white px-4 py-1.5 rounded-full font-black italic text-lg tracking-tight shadow-lg shadow-pink-500/30 animate-pulse-glow">
+              <div className="bg-gradient-to-r from-[#db2777] to-[#ec4899] text-white px-4 py-1.5 rounded-full font-black italic text-lg tracking-tight shadow-lg shadow-pink-500/30 animate-pulse-glow">
                 mads+
               </div>
               <span className="font-bold text-gradient text-[15px]">VIVÍ MADSJEEZ COMO UN EXPERTO</span>
             </div>
-            <Link href="/subscriptions" className="bg-gradient-to-r from-[#FF6B4A] to-[#FF8C42] hover:from-[#FF8C42] hover:to-[#FFC107] text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/50 transition-all duration-300 hover:-translate-y-1 btn-shine">
+            <Link href="/subscriptions" className="bg-gradient-to-r from-[#ff4d2e] to-[#ff9100] hover:from-[#ff9100] hover:to-[#ffb703] text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/50 transition-all duration-300 hover:-translate-y-1 btn-shine">
               Suscribirme desde $ 3.490
             </Link>
           </div>
@@ -446,7 +446,7 @@ export default function Home() {
             <div className="w-1/2 p-8 flex flex-col justify-center">
               <span className="text-[10px] font-bold tracking-[2px] text-[#666] mb-2 uppercase">Organizá mejor</span>
               <h3 className="text-[22px] font-bold text-[#333] leading-tight mb-4">MÁS ESPACIO Y<br/>ORDEN PRÁCTICO</h3>
-              <Link href="/search" className="bg-gradient-to-r from-[#FF6B4A] to-[#FF8C42] hover:from-[#FF8C42] hover:to-[#FFC107] text-white px-5 py-2 rounded-lg font-bold text-[14px] w-fit shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/50 transition-all duration-300 hover:-translate-y-0.5 btn-shine">Ver ofertas</Link>
+              <Link href="/search" className="bg-gradient-to-r from-[#ff4d2e] to-[#ff9100] hover:from-[#ff9100] hover:to-[#ffb703] text-white px-5 py-2 rounded-lg font-bold text-[14px] w-fit shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/50 transition-all duration-300 hover:-translate-y-0.5 btn-shine">Ver ofertas</Link>
             </div>
             <div className="w-1/2 bg-gray-100 overflow-hidden relative">
               <img src="https://images.unsplash.com/photo-1595515106969-1ce29566ff1c?auto=format&fit=crop&q=80&w=400" alt="Mueble" className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" />
@@ -456,7 +456,7 @@ export default function Home() {
             <div className="w-1/2 p-8 flex flex-col justify-center">
               <span className="text-[10px] font-bold tracking-[2px] text-[#666] mb-2 uppercase">Renová tu hogar</span>
               <h3 className="text-[22px] font-bold text-[#333] leading-tight mb-4">¡HOGAR Y MUEBLES!<br/>HASTA 35% OFF</h3>
-              <Link href="/search" className="bg-gradient-to-r from-[#FF6B4A] to-[#FF8C42] hover:from-[#FF8C42] hover:to-[#FFC107] text-white px-5 py-2 rounded-lg font-bold text-[14px] w-fit shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/50 transition-all duration-300 hover:-translate-y-0.5 btn-shine">Ver ofertas</Link>
+              <Link href="/search" className="bg-gradient-to-r from-[#ff4d2e] to-[#ff9100] hover:from-[#ff9100] hover:to-[#ffb703] text-white px-5 py-2 rounded-lg font-bold text-[14px] w-fit shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/50 transition-all duration-300 hover:-translate-y-0.5 btn-shine">Ver ofertas</Link>
             </div>
             <div className="w-1/2 bg-gray-100 overflow-hidden relative">
               <img src="https://images.unsplash.com/photo-1505843490538-5133c6c7d0e1?auto=format&fit=crop&q=80&w=400" alt="Silla" className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" />
@@ -469,7 +469,7 @@ export default function Home() {
       <section className="bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] py-20 px-4">
         <div className="text-center max-w-2xl mx-auto mb-16">
           <h2 className="text-4xl md:text-5xl font-black text-white mb-4 tracking-tight">
-            ¿LISTO PARA <span className="bg-gradient-to-r from-[#FF6B4A] via-[#FFC107] to-[#00D4FF] bg-clip-text text-transparent">ESCALAR?</span>
+            ¿LISTO PARA <span className="bg-gradient-to-r from-[#ff4d2e] via-[#ffb703] to-[#00b4d8] bg-clip-text text-transparent">ESCALAR?</span>
           </h2>
           <p className="text-gray-400 text-sm md:text-base font-light">
             Únete a la red Commerce Group más avanzada. Herramientas de grado empresarial para marcas que no conocen fronteras.
@@ -520,12 +520,12 @@ export default function Home() {
               key={plan.name}
               className={`relative flex flex-col rounded-3xl p-8 transition-all duration-500 hover:-translate-y-2 ${
                 plan.featured
-                  ? 'bg-gradient-to-b from-[#1a1a2e] to-[#16213e] border-2 border-[#FFC107] shadow-[0_0_40px_rgba(255,193,7,0.3)] md:-mt-8 md:mb-8 animate-pulse-glow-yellow'
-                  : 'bg-gradient-to-b from-[#1a1a2e] to-[#16213e] border border-slate-700 hover:border-[#FF6B4A]/50 hover:shadow-[0_0_30px_rgba(255,107,74,0.15)]'
+                  ? 'bg-gradient-to-b from-[#1a1a2e] to-[#16213e] border-2 border-[#ffb703] shadow-[0_0_40px_rgba(255,193,7,0.3)] md:-mt-8 md:mb-8 animate-pulse-glow-yellow'
+                  : 'bg-gradient-to-b from-[#1a1a2e] to-[#16213e] border border-slate-700 hover:border-[#ff4d2e]/50 hover:shadow-[0_0_30px_rgba(255,107,74,0.15)]'
               }`}
             >
               {plan.featured && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#FFC107] to-[#FFD700] text-slate-900 px-4 py-1 rounded-full text-xs font-black uppercase tracking-wider shadow-lg">
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#ffb703] to-[#ffa60a] text-slate-900 px-4 py-1 rounded-full text-xs font-black uppercase tracking-wider shadow-lg">
                   Más Popular
                 </div>
               )}
@@ -533,24 +533,24 @@ export default function Home() {
               <div className="flex flex-col items-center text-center mb-8 border-b border-slate-700/60 pb-8">
                 <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-4 transition-all duration-300 ${
                   plan.featured
-                    ? 'bg-gradient-to-br from-[#FFC107] to-[#FFD700] shadow-lg shadow-yellow-500/30'
+                    ? 'bg-gradient-to-br from-[#ffb703] to-[#ffa60a] shadow-lg shadow-yellow-500/30'
                     : plan.name === 'PLATINUM'
-                    ? 'bg-gradient-to-br from-[#00D4FF] to-[#00B4E6] shadow-lg shadow-cyan-500/30'
-                    : 'bg-gradient-to-br from-[#FF6B4A] to-[#FF8C42] shadow-lg shadow-orange-500/30'
+                    ? 'bg-gradient-to-br from-[#00b4d8] to-[#0096c7] shadow-lg shadow-cyan-500/30'
+                    : 'bg-gradient-to-br from-[#ff4d2e] to-[#ff9100] shadow-lg shadow-orange-500/30'
                 }`}>
                   <plan.icon className={`w-8 h-8 ${plan.featured ? 'text-slate-900' : 'text-white'}`} />
                 </div>
-                <h3 className={`text-xl font-black mb-2 ${plan.featured ? 'text-[#FFC107]' : plan.name === 'PLATINUM' ? 'text-[#00D4FF]' : 'text-[#FF6B4A]'}`}>{plan.name}</h3>
+                <h3 className={`text-xl font-black mb-2 ${plan.featured ? 'text-[#ffb703]' : plan.name === 'PLATINUM' ? 'text-[#00b4d8]' : 'text-[#ff4d2e]'}`}>{plan.name}</h3>
                 <div className="flex items-baseline justify-center gap-1 mb-4">
                   <span className="text-5xl font-black text-white">${plan.price}</span>
                   <span className="text-slate-400 text-sm">/mes</span>
                 </div>
                 <div className={`text-xs font-black py-1.5 px-4 rounded-full ${
                   plan.featured
-                    ? 'bg-[#FFC107]/20 text-[#FFC107] border border-[#FFC107]/30'
+                    ? 'bg-[#ffb703]/20 text-[#ffb703] border border-[#ffb703]/30'
                     : plan.name === 'PLATINUM'
-                    ? 'bg-[#00D4FF]/20 text-[#00D4FF] border border-[#00D4FF]/30'
-                    : 'bg-[#FF6B4A]/20 text-[#FF6B4A] border border-[#FF6B4A]/30'
+                    ? 'bg-[#00b4d8]/20 text-[#00b4d8] border border-[#00b4d8]/30'
+                    : 'bg-[#ff4d2e]/20 text-[#ff4d2e] border border-[#ff4d2e]/30'
                 }`}>
                   {plan.comm} COMISIÓN
                 </div>
@@ -561,10 +561,10 @@ export default function Home() {
                   <li key={i} className="flex items-start gap-3">
                     <div className={`mt-0.5 rounded-full p-1 ${
                       plan.featured
-                        ? 'bg-[#FFC107]/20 text-[#FFC107]'
+                        ? 'bg-[#ffb703]/20 text-[#ffb703]'
                         : plan.name === 'PLATINUM'
-                        ? 'bg-[#00D4FF]/20 text-[#00D4FF]'
-                        : 'bg-[#FF6B4A]/20 text-[#FF6B4A]'
+                        ? 'bg-[#00b4d8]/20 text-[#00b4d8]'
+                        : 'bg-[#ff4d2e]/20 text-[#ff4d2e]'
                     }`}>
                       <Check size={14} strokeWidth={3} />
                     </div>
@@ -577,10 +577,10 @@ export default function Home() {
                 href="/subscriptions"
                 className={`w-full py-3.5 rounded-xl font-bold text-sm tracking-wide transition-all duration-300 text-center btn-shine ${
                   plan.featured
-                    ? 'bg-gradient-to-r from-[#FFC107] to-[#FFD700] text-slate-900 shadow-lg shadow-yellow-500/40 hover:shadow-xl hover:shadow-yellow-500/60 hover:-translate-y-0.5'
+                    ? 'bg-gradient-to-r from-[#ffb703] to-[#ffa60a] text-slate-900 shadow-lg shadow-yellow-500/40 hover:shadow-xl hover:shadow-yellow-500/60 hover:-translate-y-0.5'
                     : plan.name === 'PLATINUM'
-                    ? 'bg-gradient-to-r from-[#00D4FF] to-[#00B4E6] text-slate-900 shadow-lg shadow-cyan-500/30 hover:shadow-xl hover:shadow-cyan-500/50 hover:-translate-y-0.5'
-                    : 'bg-gradient-to-r from-[#FF6B4A] to-[#FF8C42] text-white shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/50 hover:-translate-y-0.5'
+                    ? 'bg-gradient-to-r from-[#00b4d8] to-[#0096c7] text-slate-900 shadow-lg shadow-cyan-500/30 hover:shadow-xl hover:shadow-cyan-500/50 hover:-translate-y-0.5'
+                    : 'bg-gradient-to-r from-[#ff4d2e] to-[#ff9100] text-white shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/50 hover:-translate-y-0.5'
                 }`}
               >
                 SELECCIONAR
@@ -594,15 +594,15 @@ export default function Home() {
       <section className="bg-white py-24 border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-16">
           {[
-            { icon: CreditCard, title: "Pagos Certificados", desc: "Blindaje digital de nivel bancario para cada transacción. Crédito instantáneo sin tarjeta.", color: "from-[#FF6B4A] to-[#FF8C42]", shadow: "shadow-orange-500/30" },
-            { icon: Truck, title: "Logística Inteligente", desc: "Tu pedido siempre localizado. Red de entrega Flash con monitoreo 24/7.", color: "from-[#00D4FF] to-[#00B4E6]", shadow: "shadow-cyan-500/30" },
-            { icon: ShieldCheck, title: "Compra Protegida", desc: "Garantía total de satisfacción. Si no es lo que esperabas, lo resolvemos en el acto.", color: "from-[#7CFC00] to-[#32CD32]", shadow: "shadow-lime-500/30" }
+            { icon: CreditCard, title: "Pagos Certificados", desc: "Blindaje digital de nivel bancario para cada transacción. Crédito instantáneo sin tarjeta.", color: "from-[#ff4d2e] to-[#ff9100]", shadow: "shadow-orange-500/30" },
+            { icon: Truck, title: "Logística Inteligente", desc: "Tu pedido siempre localizado. Red de entrega Flash con monitoreo 24/7.", color: "from-[#00b4d8] to-[#0096c7]", shadow: "shadow-cyan-500/30" },
+            { icon: ShieldCheck, title: "Compra Protegida", desc: "Garantía total de satisfacción. Si no es lo que esperabas, lo resolvemos en el acto.", color: "from-[#10b981] to-[#059669]", shadow: "shadow-lime-500/30" }
           ].map((item, idx) => (
             <div key={idx} className="flex flex-col items-center text-center group cursor-pointer">
               <div className={`w-20 h-20 rounded-[2.5rem] bg-gradient-to-br ${item.color} flex items-center justify-center text-white mb-8 shadow-lg ${item.shadow} group-hover:scale-110 group-hover:rotate-3 transition-all duration-500`}>
                 <item.icon size={36} strokeWidth={1.5} />
               </div>
-              <h4 className="text-xl font-black text-slate-900 mb-4 uppercase tracking-tighter group-hover:text-[#FF6B4A] transition-colors">{item.title}</h4>
+              <h4 className="text-xl font-black text-slate-900 mb-4 uppercase tracking-tighter group-hover:text-[#ff4d2e] transition-colors">{item.title}</h4>
               <p className="text-slate-500 font-medium leading-relaxed">{item.desc}</p>
             </div>
           ))}
@@ -620,12 +620,12 @@ export default function Home() {
       <AISmartNotifications />
 
       {/* FOOTER */}
-      <footer className="bg-gradient-to-b from-[#1a1a2e] to-[#16213e] pt-20 pb-10 border-t-[10px] border-[#FF6B4A]">
+      <footer className="bg-gradient-to-b from-[#1a1a2e] to-[#16213e] pt-20 pb-10 border-t-[10px] border-[#ff4d2e]">
         <div className="max-w-7xl mx-auto px-4 flex flex-col gap-16">
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-10">
             <div className="col-span-2">
               <div className="flex items-center gap-3 mb-8">
-                <span className="font-montserrat font-black text-2xl tracking-tighter uppercase text-white">MADS<span className="text-[#FF6B4A]">JEEZ</span></span>
+                <span className="font-montserrat font-black text-2xl tracking-tighter uppercase text-white">MADS<span className="text-[#ff4d2e]">JEEZ</span></span>
               </div>
               <p className="text-slate-400 font-medium text-sm max-w-sm leading-relaxed mb-8">
                 La plataforma definitiva para el comercio del siglo XXI. Innovación, velocidad y seguridad en cada clic.
@@ -637,13 +637,13 @@ export default function Home() {
               { title: "Legales", links: ["Términos", "Privacidad", "Aviso Legal"] }
             ].map((section) => (
               <div key={section.title}>
-                <h5 className="font-black text-[#FF6B4A] uppercase tracking-widest text-[11px] mb-6">{section.title}</h5>
+                <h5 className="font-black text-[#ff4d2e] uppercase tracking-widest text-[11px] mb-6">{section.title}</h5>
                 <ul className="flex flex-col gap-3">
                   {section.links.map((link) => (
                     <li key={link}>
                       <Link
                         href={link === "Términos" ? "/legal/terminos" : link === "Privacidad" ? "/legal/privacidad" : link === "Aviso Legal" ? "/legal/aviso-legal" : link === "Vender" ? "/seller/register" : link === "Suscripciones" ? "/subscriptions" : link === "Impulsar" ? "/seller/boost" : "/"}
-                        className="text-[13px] font-bold text-slate-400 hover:text-[#00D4FF] transition-colors cursor-pointer"
+                        className="text-[13px] font-bold text-slate-400 hover:text-[#00b4d8] transition-colors cursor-pointer"
                       >
                         {link}
                       </Link>
@@ -657,7 +657,7 @@ export default function Home() {
             <span className="text-slate-400">COPYRIGHT © 2026 MADSJEEZ COMMERCE GROUP S.R.L.</span>
             <div className="flex gap-8">
               <span className="text-slate-400">SPEGAZZINI / BUENOS AIRES / ARG</span>
-              <Link href="/legal/aviso-legal" className="text-[#FF6B4A] hover:text-[#FFC107] transition-colors">DATA FISCAL</Link>
+              <Link href="/legal/aviso-legal" className="text-[#ff4d2e] hover:text-[#ffb703] transition-colors">DATA FISCAL</Link>
             </div>
           </div>
         </div>

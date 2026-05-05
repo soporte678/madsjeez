@@ -58,7 +58,7 @@ const plans: Plan[] = [
     price: 19999,
     description: "Para vendedores en crecimiento",
     icon: Crown,
-    color: "#FFD700",
+    color: "#ffa60a",
     commission: "10%",
     popular: true,
     features: [
@@ -79,7 +79,7 @@ const plans: Plan[] = [
     price: 49999,
     description: "Para empresas y sellers profesionales",
     icon: Gem,
-    color: "#00D4FF",
+    color: "#00b4d8",
     commission: "5%",
     features: [
       "Productos ilimitados",
@@ -197,7 +197,7 @@ export default function SubscriptionsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#1a1a2e] to-[#16213e]">
       {/* Header */}
-      <div className="bg-gradient-to-r from-[#FF6B4A] via-[#FFC107] to-[#00D4FF] py-16">
+      <div className="bg-gradient-to-r from-[#ff4d2e] via-[#ffb703] to-[#00b4d8] py-16">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <h1 className="text-4xl md:text-5xl font-black text-white mb-4 drop-shadow-lg">
             Suscripciones MadsJeez
@@ -219,7 +219,7 @@ export default function SubscriptionsPage() {
                 }`}
               >
                 {option.badge && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#FF6B4A] text-white text-xs px-2 py-0.5 rounded-full font-bold whitespace-nowrap">
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#ff4d2e] text-white text-xs px-2 py-0.5 rounded-full font-bold whitespace-nowrap">
                     {option.badge}
                   </span>
                 )}
@@ -261,7 +261,7 @@ export default function SubscriptionsPage() {
                 } ${plan.popular ? "md:-mt-4 md:mb-4" : ""}`}
               >
                 {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#FFC107] to-[#FFD700] text-slate-900 px-4 py-1 rounded-full text-sm font-black shadow-lg">
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#ffb703] to-[#ffa60a] text-slate-900 px-4 py-1 rounded-full text-sm font-black shadow-lg">
                     MÁS POPULAR
                   </div>
                 )}
@@ -398,7 +398,7 @@ export default function SubscriptionsPage() {
               <Button
                 onClick={handleSubscribe}
                 disabled={isLoading}
-                className="w-full py-6 text-lg font-bold bg-gradient-to-r from-[#FF6B4A] to-[#FF8C42] hover:from-[#E55A3A] hover:to-[#E57A32] text-white rounded-xl shadow-lg hover:shadow-xl transition-all"
+                className="w-full py-6 text-lg font-bold bg-gradient-to-r from-[#ff4d2e] to-[#ff9100] hover:from-[#E55A3A] hover:to-[#E57A32] text-white rounded-xl shadow-lg hover:shadow-xl transition-all"
               >
                 {isLoading ? (
                   <>
@@ -428,7 +428,7 @@ export default function SubscriptionsPage() {
           </h3>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="bg-white/5 backdrop-blur rounded-xl p-6">
-              <h4 className="font-bold text-[#FFC107] mb-2 flex items-center gap-2">
+              <h4 className="font-bold text-[#ffb703] mb-2 flex items-center gap-2">
                 <Percent className="w-5 h-5" />
                 ¿Cómo funcionan los descuentos?
               </h4>
@@ -438,7 +438,7 @@ export default function SubscriptionsPage() {
               </p>
             </div>
             <div className="bg-white/5 backdrop-blur rounded-xl p-6">
-              <h4 className="font-bold text-[#00D4FF] mb-2 flex items-center gap-2">
+              <h4 className="font-bold text-[#00b4d8] mb-2 flex items-center gap-2">
                 <Clock className="w-5 h-5" />
                 ¿Puedo cambiar de plan?
               </h4>
@@ -448,7 +448,7 @@ export default function SubscriptionsPage() {
               </p>
             </div>
             <div className="bg-white/5 backdrop-blur rounded-xl p-6">
-              <h4 className="font-bold text-[#FF6B4A] mb-2 flex items-center gap-2">
+              <h4 className="font-bold text-[#ff4d2e] mb-2 flex items-center gap-2">
                 <TrendingUp className="w-5 h-5" />
                 ¿Qué pasa si no renuevo?
               </h4>
@@ -458,7 +458,7 @@ export default function SubscriptionsPage() {
               </p>
             </div>
             <div className="bg-white/5 backdrop-blur rounded-xl p-6">
-              <h4 className="font-bold text-[#7CFC00] mb-2 flex items-center gap-2">
+              <h4 className="font-bold text-[#10b981] mb-2 flex items-center gap-2">
                 <Sparkles className="w-5 h-5" />
                 ¿Hay período de prueba?
               </h4>

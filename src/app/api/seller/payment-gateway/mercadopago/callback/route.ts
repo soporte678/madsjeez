@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseService } from "@/lib/supabase/service";
+import { verifyMpOAuthState } from "@/lib/mp-oauth-state";
 
 interface MercadoPagoTokenResponse {
   access_token: string;
@@ -16,10 +17,14 @@ interface MercadoPagoUserInfo {
   nickname?: string;
 }
 
+function appBase(): string {
+  return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+}
+
 /**
  * GET /api/seller/payment-gateway/mercadopago/callback
- * 
- * Callback de OAuth de MercadoPago. Intercambia el código por tokens y guarda en DB.
+ *
+ * Callback OAuth MercadoPago: valida `state` firmado y anti-replay de nonce.
  */
 export async function GET(request: Request) {
   try {
@@ -28,21 +33,44 @@ export async function GET(request: Request) {
     const state = url.searchParams.get("state");
     const error = url.searchParams.get("error");
 
-    // Redirigir al perfil del dashboard con error si el usuario canceló
     if (error) {
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL || "https://www.madsjeez.com.ar"}/dashboard?mp_error=${encodeURIComponent(error)}#perfil`
+        `${appBase()}/dashboard?mp_error=${encodeURIComponent(error)}#perfil`
       );
     }
 
     if (!code || !state) {
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL || "https://www.madsjeez.com.ar"}/dashboard?mp_error=missing_params#perfil`
+        `${appBase()}/dashboard?mp_error=missing_params#perfil`
       );
     }
 
-    // Decodificar el estado para obtener el user_id
-    const sellerId = Buffer.from(state, "base64").toString("utf-8");
+    const stateSecret = process.env.MP_OAUTH_STATE_SECRET;
+    if (!stateSecret || stateSecret.length < 16) {
+      return NextResponse.redirect(
+        `${appBase()}/dashboard?mp_error=oauth_config#perfil`
+      );
+    }
+
+    const payload = verifyMpOAuthState(state, stateSecret);
+    if (!payload) {
+      return NextResponse.redirect(
+        `${appBase()}/dashboard?mp_error=invalid_state#perfil`
+      );
+    }
+
+    const { error: nonceErr } = await supabaseService
+      .from("mp_oauth_used_nonces")
+      .insert({ nonce: payload.nonce });
+
+    if (nonceErr) {
+      console.warn("MP OAuth nonce replay or DB error:", nonceErr);
+      return NextResponse.redirect(
+        `${appBase()}/dashboard?mp_error=replay#perfil`
+      );
+    }
+
+    const sellerId = payload.sellerUserId;
 
     const clientId = process.env.MERCADOPAGO_CLIENT_ID;
     const clientSecret = process.env.MERCADOPAGO_CLIENT_SECRET;
@@ -51,16 +79,15 @@ export async function GET(request: Request) {
     if (!clientId || !clientSecret || !redirectUri) {
       console.error("Variables de MercadoPago no configuradas");
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL || "https://www.madsjeez.com.ar"}/dashboard?mp_error=config_error#perfil`
+        `${appBase()}/dashboard?mp_error=config_error#perfil`
       );
     }
 
-    // Intercambiar código por tokens
     const tokenResponse = await fetch("https://api.mercadopago.com/oauth/token", {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
-        "Accept": "application/json",
+        Accept: "application/json",
       },
       body: new URLSearchParams({
         grant_type: "authorization_code",
@@ -75,16 +102,15 @@ export async function GET(request: Request) {
       const errorData = await tokenResponse.json();
       console.error("Error obteniendo tokens de MercadoPago:", errorData);
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL || "https://www.madsjeez.com.ar"}/dashboard?mp_error=token_error#perfil`
+        `${appBase()}/dashboard?mp_error=token_error#perfil`
       );
     }
 
     const tokenData: MercadoPagoTokenResponse = await tokenResponse.json();
 
-    // Obtener información del usuario de MercadoPago
     const userInfoResponse = await fetch("https://api.mercadopago.com/users/me", {
       headers: {
-        "Authorization": `Bearer ${tokenData.access_token}`,
+        Authorization: `Bearer ${tokenData.access_token}`,
       },
     });
 
@@ -93,14 +119,12 @@ export async function GET(request: Request) {
       userInfo = await userInfoResponse.json();
     }
 
-    // Calcular fecha de expiración
     const expiresAt = tokenData.expires_in
       ? new Date(Date.now() + tokenData.expires_in * 1000).toISOString()
       : null;
 
-    const { error: dbError } = await supabaseService
-      .from("seller_mercadopago")
-      .upsert({
+    const { error: dbError } = await supabaseService.from("seller_mercadopago").upsert(
+      {
         seller_id: sellerId,
         mp_access_token: tokenData.access_token,
         mp_refresh_token: tokenData.refresh_token || null,
@@ -111,26 +135,26 @@ export async function GET(request: Request) {
         is_connected: true,
         is_active: true,
         updated_at: new Date().toISOString(),
-      }, {
-        onConflict: "seller_id"
-      });
+      },
+      {
+        onConflict: "seller_id",
+      }
+    );
 
     if (dbError) {
       console.error("Error guardando credenciales:", dbError);
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL || "https://www.madsjeez.com.ar"}/dashboard?mp_error=db_error#perfil`
+        `${appBase()}/dashboard?mp_error=db_error#perfil`
       );
     }
 
-    // Redirigir al dashboard (perfil) con éxito
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL || "https://www.madsjeez.com.ar"}/dashboard?mp_success=connected#perfil`
+      `${appBase()}/dashboard?mp_success=connected#perfil`
     );
-
   } catch (error) {
     console.error("Error en callback de MercadoPago:", error);
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL || "https://www.madsjeez.com.ar"}/dashboard?mp_error=server_error#perfil`
+      `${appBase()}/dashboard?mp_error=server_error#perfil`
     );
   }
 }

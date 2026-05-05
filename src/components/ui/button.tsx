@@ -8,16 +8,24 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-gradient-to-r from-[#FF6B4A] to-[#FF8C42] text-white shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/40 hover:from-[#FF8C42] hover:to-[#FFC107] hover:-translate-y-0.5 btn-shine",
-        destructive: "bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/30 hover:shadow-xl hover:shadow-red-500/40 hover:-translate-y-0.5",
-        outline: "border-2 border-[#FF6B4A] bg-transparent text-[#FF6B4A] hover:bg-gradient-to-r hover:from-[#FF6B4A] hover:to-[#FF8C42] hover:text-white hover:border-transparent hover:shadow-lg hover:shadow-orange-500/30 transition-all duration-300",
-        secondary: "bg-gradient-to-r from-[#FFC107] to-[#FFD700] text-slate-900 shadow-lg shadow-yellow-500/30 hover:shadow-xl hover:shadow-yellow-500/40 hover:-translate-y-0.5",
-        accent: "bg-gradient-to-r from-[#00D4FF] to-[#00B4E6] text-slate-900 shadow-lg shadow-cyan-500/30 hover:shadow-xl hover:shadow-cyan-500/40 hover:-translate-y-0.5 btn-shine",
-        success: "bg-gradient-to-r from-[#7CFC00] to-[#32CD32] text-slate-900 shadow-lg shadow-lime-500/30 hover:shadow-xl hover:shadow-lime-500/40 hover:-translate-y-0.5",
-        warning: "bg-gradient-to-r from-[#FF2E8C] to-[#FF6B9D] text-white shadow-lg shadow-pink-500/30 hover:shadow-xl hover:shadow-pink-500/40 hover:-translate-y-0.5",
-        ghost: "hover:bg-[#FF6B4A]/10 hover:text-[#FF6B4A] transition-colors duration-300",
-        link: "text-[#FF6B4A] underline-offset-4 hover:underline font-semibold hover:text-[#FF8C42] transition-colors",
-        glow: "bg-gradient-to-r from-[#FF6B4A] to-[#FF8C42] text-white shadow-lg shadow-orange-500/50 animate-pulse-glow hover:shadow-xl hover:shadow-orange-500/60 hover:-translate-y-0.5 btn-shine",
+        default:
+          "bg-gradient-to-r from-primary via-brand-flare to-secondary text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/35 hover:from-primary-hover hover:via-brand-flare hover:to-secondary-hover hover:-translate-y-0.5 btn-shine",
+        destructive:
+          "bg-gradient-to-r from-destructive to-destructive-hover text-destructive-foreground shadow-lg shadow-red-500/30 hover:shadow-xl hover:shadow-red-500/40 hover:-translate-y-0.5",
+        outline:
+          "border-2 border-primary bg-transparent text-primary hover:bg-gradient-to-r hover:from-primary hover:via-brand-flare hover:to-secondary-hover hover:text-primary-foreground hover:border-transparent hover:shadow-lg hover:shadow-primary/25 transition-all duration-300",
+        secondary:
+          "bg-gradient-to-r from-secondary to-secondary-hover text-secondary-foreground shadow-lg shadow-amber-500/35 hover:shadow-xl hover:shadow-amber-500/45 hover:-translate-y-0.5",
+        accent:
+          "bg-gradient-to-r from-accent to-accent-hover text-accent-foreground shadow-lg shadow-cyan-500/35 hover:shadow-xl hover:shadow-cyan-500/45 hover:-translate-y-0.5 btn-shine",
+        success:
+          "bg-gradient-to-r from-success to-success-hover text-success-foreground shadow-lg shadow-emerald-500/35 hover:shadow-xl hover:shadow-emerald-500/45 hover:-translate-y-0.5",
+        warning:
+          "bg-gradient-to-r from-warning via-pink-500 to-pink-400 text-warning-foreground shadow-lg shadow-pink-500/35 hover:shadow-xl hover:shadow-pink-500/45 hover:-translate-y-0.5",
+        ghost: "hover:bg-primary/10 hover:text-primary transition-colors duration-300",
+        link: "text-primary underline-offset-4 hover:underline font-semibold hover:text-primary-hover transition-colors",
+        glow:
+          "bg-gradient-to-r from-primary via-brand-flare to-secondary text-primary-foreground shadow-lg shadow-primary/45 animate-pulse-glow hover:shadow-xl hover:shadow-primary/55 hover:-translate-y-0.5 btn-shine",
       },
       size: {
         default: "h-11 px-6 py-2.5",

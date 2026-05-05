@@ -10,8 +10,10 @@ import dotenv from 'dotenv'
 
 dotenv.config({ path: path.resolve(__dirname, '../.env.local') })
 
-// Use session-mode pooler (port 5432) which resolves to IPv4 and is Prisma-compatible
-const POOLER_URL = `postgresql://postgres.doweovsukuskflgnxhhn:NXnPpq963f1oFIGI@aws-0-us-east-1.pooler.supabase.com:6543/postgres`
+const POOLER_URL = process.env.DATABASE_URL || process.env.SUPABASE_DATABASE_URL
+if (!POOLER_URL) {
+  throw new Error("Set DATABASE_URL or SUPABASE_DATABASE_URL in .env.local before running this script.")
+}
 
 async function getPrisma() {
   const { Pool } = await import('pg')

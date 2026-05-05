@@ -1,11 +1,13 @@
 const { createClient } = require('@supabase/supabase-js')
+const path = require('path')
+require('dotenv').config({ path: path.resolve(__dirname, '../.env.local') })
 
-const supabaseUrl = 'https://doweovsukuskflgnxhhn.supabase.co'
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-if (!supabaseServiceKey) {
-  console.error('❌ Error: Se requiere SUPABASE_SERVICE_ROLE_KEY')
-  console.log('Configuralo como variable de entorno y vuelve a ejecutar')
+if (!supabaseUrl || !supabaseServiceKey) {
+  console.error('❌ Error: Se requiere NEXT_PUBLIC_SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY')
+  console.log('Configuralo en .env.local y vuelve a ejecutar')
   process.exit(1)
 }
 

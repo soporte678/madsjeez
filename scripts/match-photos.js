@@ -13,11 +13,17 @@
 const { createClient } = require("@supabase/supabase-js");
 const fs = require("fs");
 const path = require("path");
+require("dotenv").config({ path: path.resolve(__dirname, "../.env.local") });
 
 // ── Config ──
-const SUPABASE_URL = "https://doweovsukuskflgnxhhn.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvd2VvdnN1a3Vza2ZsZ254aGhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyMTkyNzEsImV4cCI6MjA5Mjc5NTI3MX0.a0H7VrFwHWZavy8L0DjUyoAecQAdEf22UsA-a0p0u4Y";
-const PHOTO_BANK = "C:\\Users\\Mi Pc\\Desktop\\MERCADOLIBRE CUENTA NUEVA";
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const PHOTO_BANK = process.env.PHOTO_BANK_PATH || path.join(process.cwd(), "photo-bank");
+
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+  console.error("Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or anon) in .env.local");
+  process.exit(1);
+}
 const STORAGE_BUCKET = "product-images";
 
 const args = process.argv.slice(2);

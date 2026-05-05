@@ -74,18 +74,18 @@ Tu URL de Supabase: `https://svbzmvmmzaqkepeysjyk.supabase.co`
 En tu proyecto de Railway, ve a **Variables** y agrega:
 
 ```env
-# Database (Supabase)
-DATABASE_URL=postgresql://postgres.svbzmvmmzaqkepeysjyk:[PASSWORD]@aws-0-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1
-DIRECT_URL=postgresql://postgres.svbzmvmmzaqkepeysjyk:[PASSWORD]@aws-0-us-east-1.pooler.supabase.com:5432/postgres
+# Database (Supabase) — copiá las URLs desde el dashboard de tu proyecto (sin commitear credenciales reales)
+DATABASE_URL=postgresql://postgres.[YOUR-POOLER-USER]:[PASSWORD]@[REGION].pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1
+DIRECT_URL=postgresql://postgres.[YOUR-POOLER-USER]:[PASSWORD]@[REGION].pooler.supabase.com:5432/postgres
 
 # Auth
 NEXTAUTH_URL=https://madsjeez.com.ar
-NEXTAUTH_SECRET=madsjeez-secret-key-2024-generate-a-random-string
+NEXTAUTH_SECRET=[openssl rand -base64 32]
 
 # Supabase
-NEXT_PUBLIC_SUPABASE_URL=https://svbzmvmmzaqkepeysjyk.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=[TU-ANON-KEY]
-SUPABASE_SERVICE_ROLE_KEY=[TU-SERVICE-ROLE-KEY]
+NEXT_PUBLIC_SUPABASE_URL=https://[YOUR-PROJECT-REF].supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=[publishable o anon desde Dashboard → API Keys]
+SUPABASE_SERVICE_ROLE_KEY=[secret o service_role — solo servidor]
 
 # Stripe (para pagos)
 STRIPE_PUBLIC_KEY=pk_live_...

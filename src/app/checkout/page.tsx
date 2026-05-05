@@ -175,22 +175,21 @@ function CheckoutContent() {
         // Use the first order (single seller flow for now)
         const { orderId, sellerId, items: orderItems, orderShipping } = createdOrders[0];
 
-        const mpItems = orderItems.map((item) => ({
-          id: item.product.id,
-          title: item.product.title,
-          quantity: item.quantity,
-          unit_price: item.product.price,
-          seller_id: sellerId,
-        }));
+        const { data: authSession } = await supabase.auth.getSession();
+        const accessToken = authSession?.session?.access_token;
+        if (!accessToken) {
+          throw new Error("Sesión expirada. Iniciá sesión nuevamente.");
+        }
 
         const prefResponse = await fetch("/api/seller/payment-gateway/mercadopago/create-preference", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
           body: JSON.stringify({
-            items: mpItems,
-            shipping_cost: orderShipping,
-            buyer_email: user.email,
             order_id: orderId,
+            buyer_email: user.email,
           }),
         });
 

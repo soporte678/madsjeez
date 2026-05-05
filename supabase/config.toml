@@ -13,7 +13,8 @@ major_version = 15
 [studio]
 enabled = true
 port = 54323
-api_url = "https://doweovsukuskflgnxhhn.supabase.co"
+# Local Studio; for hosted project use your Supabase dashboard URL (not committed secrets).
+api_url = "http://127.0.0.1:54321"
 
 [ingest]
 enabled = false

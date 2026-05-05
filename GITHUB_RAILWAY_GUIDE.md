@@ -63,8 +63,8 @@ En Railway Dashboard:
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIs...
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIs...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=(set in GitHub/Railway secrets — never commit)
+SUPABASE_SERVICE_ROLE_KEY=(set in GitHub/Railway secrets — never commit)
 NEXT_PUBLIC_APP_URL=https://tudominio.com
 ```
 

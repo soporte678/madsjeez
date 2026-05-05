@@ -4,24 +4,23 @@
 
 - **Dominio**: www.madsjeez.com.ar
 - **Railway**: madsjeez-production-9f46.up.railway.app
-- **Supabase**: doweovsukuskflgnxhhn.supabase.co
+- **Supabase**: (ref de proyecto configurado en variables de entorno)
 - **Repositorio**: soporte678/madsjeez (rama main)
 
 ---
 
 ## PASO 1: Configurar Variables de Entorno en Railway
 
-Las variables de entorno están configuradas en `railway.toml`:
+No commitees secretos en `railway.toml`. Configurá en el dashboard de Railway:
 
 ```toml
 [environments.production.env]
-NEXT_PUBLIC_SUPABASE_URL = "https://doweovsukuskflgnxhhn.supabase.co"
-NEXT_PUBLIC_SUPABASE_ANON_KEY = "sb_publishable_DmXmnt4V6A3tpwCq73ZIuA_a0dtWb0h"
-DATABASE_URL = "postgresql://postgres:[YOUR-PASSWORD]@db.doweovsukuskflgnxhhn.supabase.co:5432/postgres"
 NEXTAUTH_URL = "https://www.madsjeez.com.ar"
 PORT = "3000"
 NODE_ENV = "production"
 ```
+
+Y en la UI de Railway: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `DATABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXTAUTH_SECRET`, claves de pagos, `MERCADOPAGO_WEBHOOK_SECRET`, `MP_OAUTH_STATE_SECRET`, etc.
 
 ### Variables adicionales necesarias en Railway:
 
@@ -47,7 +46,7 @@ EMAIL_FROM=noreply@madsjeez.com.ar
 
 ```bash
 supabase login
-supabase link --project-ref doweovsukuskflgnxhhn
+supabase link --project-ref YOUR_PROJECT_REF
 ```
 
 ### 2.2 Configurar Supabase Auth

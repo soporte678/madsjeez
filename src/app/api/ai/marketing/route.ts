@@ -1,9 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+import { getSupabaseService } from "@/lib/supabase/service"
 
 export async function POST(req: NextRequest) {
   try {
@@ -128,7 +125,15 @@ Generá textos para la campaña en JSON:
     // ═══════════════════════════════════════
     if (action === "price_analysis") {
       const { productTitle, productPrice, productCategory } = body
-      const supabase = createClient(supabaseUrl, supabaseKey)
+      let supabase
+      try {
+        supabase = getSupabaseService()
+      } catch {
+        return NextResponse.json(
+          { error: "SUPABASE_SERVICE_ROLE_KEY not configured on server" },
+          { status: 500 }
+        )
+      }
 
       // Get similar products from the marketplace
       const keywords = productTitle.toLowerCase().split(" ").filter((w: string) => w.length > 3).slice(0, 3)
