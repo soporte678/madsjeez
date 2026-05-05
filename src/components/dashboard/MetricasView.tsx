@@ -9,7 +9,7 @@ import {
 import {
   Info, Download, Filter, ChevronDown, ChevronRight, ChevronLeft,
   Eye, TrendingUp, TrendingDown, Minus, Search, FileText, MoreVertical,
-  Calendar, X, Check, Package, Store
+  Calendar, X, Check, Package, Store, Users
 } from 'lucide-react';
 
 // --- DATA DEMO ---
@@ -108,6 +108,8 @@ export default function MetricasView() {
   const [activeMercadoSubTab, setActiveMercadoSubTab] = useState('posicion');
   const [activeMercadoTab, setActiveMercadoTab] = useState('competencia');
   const [activeMiPaginaSubTab, setActiveMiPaginaSubTab] = useState('trafico');
+  const [activeMiPaginaMetric, setActiveMiPaginaMetric] = useState('visitas');
+  const [activeAudienciasMetric, setActiveAudienciasMetric] = useState('seguidores');
 
   const tabs = [
     { id: 'negocio', label: 'Negocio' },
@@ -1840,158 +1842,498 @@ export default function MetricasView() {
             </button>
           </div>
 
-          {/* Filters */}
-          <div className="flex items-center gap-4 flex-wrap">
-            <div className="flex items-center gap-2">
-              <button className={`px-3 py-1.5 rounded-lg text-xs font-medium ${activeMiPaginaSubTab === 'trafico' ? 'bg-blue-600 text-white' : 'bg-white border border-gray-300 text-gray-700'}`}>Visitas</button>
-              <button className="px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs text-gray-700 font-medium">Seguidores</button>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500">Tipo de audiencia</span>
-              <button className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs text-gray-700">
-                Todas <ChevronDown size={12} />
-              </button>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500">Frecuencia de las visitas</span>
-              <button className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs text-gray-700">
-                Todas <ChevronDown size={12} />
-              </button>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500">Período</span>
-              <button className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs text-gray-700">
-                Últimos 30 días <ChevronDown size={12} />
-              </button>
-            </div>
-          </div>
-
-          {/* Charts row */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Origen de tus visitas — Donut */}
-            <div className="bg-white rounded-xl border border-gray-200 p-5">
-              <div className="flex items-center gap-1 text-sm font-semibold text-gray-800 mb-4">
-                Origen de tus visitas <Info size={14} className="text-gray-400" />
+          {/* Filters for Tráfico */}
+          {activeMiPaginaSubTab === 'trafico' && (
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setActiveMiPaginaMetric('visitas')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium ${activeMiPaginaMetric === 'visitas' ? 'bg-blue-600 text-white' : 'bg-white border border-gray-300 text-gray-700'}`}
+                >
+                  Visitas
+                </button>
+                <button
+                  onClick={() => setActiveMiPaginaMetric('seguidores')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium ${activeMiPaginaMetric === 'seguidores' ? 'bg-blue-600 text-white' : 'bg-white border border-gray-300 text-gray-700'}`}
+                >
+                  Seguidores
+                </button>
               </div>
-              <div className="flex items-center gap-6">
-                <div className="w-40 h-40">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={[
-                          { name: 'Orgánicas', value: 108, fill: '#8B5CF6' },
-                          { name: 'Publicidad', value: 18, fill: '#F59E0B' },
-                          { name: 'Externas', value: 46, fill: '#06B6D4' },
-                        ]}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={45}
-                        outerRadius={70}
-                        paddingAngle={2}
-                        dataKey="value"
-                        stroke="none"
-                      />
-                    </PieChart>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500">Tipo de audiencia</span>
+                <button className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs text-gray-700">
+                  Todas <ChevronDown size={12} />
+                </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500">Frecuencia de las visitas</span>
+                <button className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs text-gray-700">
+                  Todas <ChevronDown size={12} />
+                </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500">Período</span>
+                <button className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs text-gray-700">
+                  Últimos 30 días <ChevronDown size={12} />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Filters for Audiencias */}
+          {activeMiPaginaSubTab === 'audiencias' && (
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setActiveAudienciasMetric('visitantes')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium ${activeAudienciasMetric === 'visitantes' ? 'bg-blue-600 text-white' : 'bg-white border border-gray-300 text-gray-700'}`}
+                >
+                  Visitantes
+                </button>
+                <button
+                  onClick={() => setActiveAudienciasMetric('seguidores')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium ${activeAudienciasMetric === 'seguidores' ? 'bg-blue-600 text-white' : 'bg-white border border-gray-300 text-gray-700'}`}
+                >
+                  Seguidores
+                </button>
+                <button
+                  onClick={() => setActiveAudienciasMetric('compradores')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium ${activeAudienciasMetric === 'compradores' ? 'bg-blue-600 text-white' : 'bg-white border border-gray-300 text-gray-700'}`}
+                >
+                  Compradores
+                </button>
+              </div>
+              <div className="ml-auto text-xs text-gray-500">Últimos 30 días</div>
+            </div>
+          )}
+
+          {/* === TRÁFICO — VISITAS === */}
+          {activeMiPaginaSubTab === 'trafico' && activeMiPaginaMetric === 'visitas' && (
+            <>
+              {/* Charts row */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Origen de tus visitas — Donut */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5">
+                  <div className="flex items-center gap-1 text-sm font-semibold text-gray-800 mb-4">
+                    Origen de tus visitas <Info size={14} className="text-gray-400" />
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <div className="w-40 h-40">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={[
+                              { name: 'Orgánicas', value: 108, fill: '#8B5CF6' },
+                              { name: 'Publicidad', value: 18, fill: '#F59E0B' },
+                              { name: 'Externas', value: 46, fill: '#06B6D4' },
+                            ]}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={45}
+                            outerRadius={70}
+                            paddingAngle={2}
+                            dataKey="value"
+                            stroke="none"
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="text-2xl font-bold text-gray-800">172</div>
+                        <div className="text-[10px] text-red-500">▼ 0%</div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                          <span className="text-xs text-gray-600">Orgánicas</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-cyan-500"></span>
+                          <span className="text-xs text-gray-600">Publicidad</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                          <span className="text-xs text-gray-600">Externas</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Detalle del origen — Bar chart */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5">
+                  <div className="flex items-center gap-1 text-sm font-semibold text-gray-800 mb-4">
+                    Detalle del origen <Info size={14} className="text-gray-400" />
+                  </div>
+                  <ResponsiveContainer width="100%" height={180}>
+                    <BarChart
+                      data={[
+                        { name: 'Orgánicas', value: 108, fill: '#8B5CF6' },
+                        { name: 'Externas', value: 46, fill: '#06B6D4' },
+                        { name: 'Publicidad', value: 18, fill: '#F59E0B' },
+                      ]}
+                      layout="vertical"
+                      barSize={20}
+                      margin={{ left: 20 }}
+                    >
+                      <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9CA3AF' }} />
+                      <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9CA3AF' }} width={70} />
+                      <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                        {[
+                          { fill: '#8B5CF6' },
+                          { fill: '#06B6D4' },
+                          { fill: '#F59E0B' },
+                        ].map((entry, index) => (
+                          <Cell key={index} fill={entry.fill} />
+                        ))}
+                      </Bar>
+                    </BarChart>
                   </ResponsiveContainer>
                 </div>
-                <div className="space-y-3">
-                  <div>
-                    <div className="text-2xl font-bold text-gray-800">172</div>
-                    <div className="text-[10px] text-red-500">▼ 0%</div>
+              </div>
+
+              {/* Evolución de tus visitas — Line chart */}
+              <div className="bg-white rounded-xl border border-gray-200 p-5">
+                <div className="text-sm font-semibold text-gray-800 mb-4">Evolución de tus visitas</div>
+                <ResponsiveContainer width="100%" height={200}>
+                  <LineChart data={[
+                    { day: '6 abr', organicas: 5, publicidad: 2, externas: 1 },
+                    { day: '8 abr', organicas: 8, publicidad: 3, externas: 2 },
+                    { day: '10 abr', organicas: 12, publicidad: 4, externas: 3 },
+                    { day: '13 abr', organicas: 6, publicidad: 2, externas: 1 },
+                    { day: '15 abr', organicas: 10, publicidad: 5, externas: 2 },
+                    { day: '17 abr', organicas: 14, publicidad: 3, externas: 4 },
+                    { day: '20 abr', organicas: 8, publicidad: 2, externas: 1 },
+                    { day: '22 abr', organicas: 11, publicidad: 4, externas: 3 },
+                    { day: '24 abr', organicas: 16, publicidad: 5, externas: 2 },
+                    { day: '27 abr', organicas: 9, publicidad: 3, externas: 1 },
+                    { day: '29 abr', organicas: 13, publicidad: 4, externas: 3 },
+                    { day: '1 may', organicas: 7, publicidad: 2, externas: 2 },
+                    { day: '3 may', organicas: 15, publicidad: 6, externas: 4 },
+                    { day: '4 may', organicas: 10, publicidad: 3, externas: 2 },
+                  ]}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                    <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9CA3AF' }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9CA3AF' }} />
+                    <Line type="monotone" dataKey="organicas" stroke="#8B5CF6" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="publicidad" stroke="#06B6D4" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="externas" stroke="#F59E0B" strokeWidth={2} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+                <div className="flex items-center justify-center gap-6 mt-3">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
+                    <span className="text-xs text-gray-500">Orgánicas</span>
                   </div>
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-purple-500"></span>
-                      <span className="text-xs text-gray-600">Orgánicas</span>
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-cyan-500"></span>
+                    <span className="text-xs text-gray-500">Publicidad</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                    <span className="text-xs text-gray-500">Externas</span>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* === TRÁFICO — SEGUIDORES === */}
+          {activeMiPaginaSubTab === 'trafico' && activeMiPaginaMetric === 'seguidores' && (
+            <>
+              {/* Balance + Origen cards */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Balance de tus seguidores */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5">
+                  <div className="flex items-center gap-1 text-sm font-semibold text-gray-800 mb-4">
+                    Balance de tus seguidores <Info size={14} className="text-gray-400" />
+                  </div>
+                  <div className="flex items-center gap-6 mb-4">
+                    <div className="text-center">
+                      <div className="text-xs text-gray-500">Nuevos seguidores</div>
+                      <div className="text-lg font-bold text-gray-800">19 <span className="text-xs text-red-500">▼ 55%</span></div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-cyan-500"></span>
-                      <span className="text-xs text-gray-600">Publicidad</span>
+                    <div className="text-center">
+                      <div className="text-xs text-gray-500">Dejaron de seguirte</div>
+                      <div className="text-lg font-bold text-gray-800">0 <span className="text-xs text-gray-400">—%</span></div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                      <span className="text-xs text-gray-600">Externas</span>
+                    <div className="text-center">
+                      <div className="text-xs text-gray-500">Balance</div>
+                      <div className="text-lg font-bold text-gray-800">19 <span className="text-xs text-red-500">▼ 54%</span></div>
+                    </div>
+                  </div>
+                  <ResponsiveContainer width="100%" height={150}>
+                    <LineChart data={[
+                      { day: '5 abr', val: 0 },
+                      { day: '12 abr', val: 2 },
+                      { day: '19 abr', val: 1 },
+                      { day: '26 abr', val: 0 },
+                      { day: '3 may', val: 4 },
+                    ]}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                      <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9CA3AF' }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9CA3AF' }} />
+                      <Line type="monotone" dataKey="val" stroke="#3B82F6" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Origen de tus nuevos seguidores */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5">
+                  <div className="flex items-center gap-1 text-sm font-semibold text-gray-800 mb-4">
+                    Origen de tus nuevos seguidores <Info size={14} className="text-gray-400" />
+                  </div>
+                  <div className="flex items-center gap-6 mb-4">
+                    <div className="text-center">
+                      <div className="text-xs text-gray-500">Nuevos seguidores</div>
+                      <div className="text-lg font-bold text-gray-800">19 <span className="text-xs text-red-500">▼ 55%</span></div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-xs text-gray-500">Te siguieron por cupón</div>
+                      <div className="text-lg font-bold text-gray-800">0</div>
+                      <div className="text-xs text-gray-400">Multiplicá tus seguidores. <span className="text-blue-600 cursor-pointer hover:underline">Crear cupón</span></div>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-gray-600 w-20">Orgánicas</span>
+                      <div className="flex-1 h-5 bg-gray-100 rounded overflow-hidden">
+                        <div className="h-full bg-blue-300 rounded" style={{ width: '35%' }}></div>
+                      </div>
+                      <span className="text-xs font-bold text-gray-800 w-6 text-right">5</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-gray-600 w-20">Publicidad</span>
+                      <div className="flex-1 h-5 bg-gray-100 rounded overflow-hidden">
+                        <div className="h-full bg-blue-400 rounded" style={{ width: '100%' }}></div>
+                      </div>
+                      <span className="text-xs font-bold text-gray-800 w-6 text-right">14</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 mt-4 text-[10px] text-gray-500">
+                    <span className="w-2 h-2 rounded-full bg-blue-300"></span> Sin cupón
+                  </div>
+                </div>
+              </div>
+
+              {/* Evolución de tus nuevos seguidores */}
+              <div className="bg-white rounded-xl border border-gray-200 p-5">
+                <div className="text-sm font-semibold text-gray-800 mb-4">Evolución de tus nuevos seguidores</div>
+                <ResponsiveContainer width="100%" height={150}>
+                  <LineChart data={[
+                    { day: '5 abr', publicidad: 0, organicas: 0 },
+                    { day: '12 abr', publicidad: 0, organicas: 1 },
+                    { day: '19 abr', publicidad: 1, organicas: 0 },
+                    { day: '26 abr', publicidad: 2, organicas: 0 },
+                    { day: '3 may', publicidad: 4, organicas: 0 },
+                  ]}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                    <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9CA3AF' }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9CA3AF' }} />
+                    <Line type="monotone" dataKey="publicidad" stroke="#06B6D4" strokeWidth={2} dot={false} name="Publicidad" />
+                    <Line type="monotone" dataKey="organicas" stroke="#8B5CF6" strokeWidth={2} dot={false} name="Orgánicas" />
+                  </LineChart>
+                </ResponsiveContainer>
+                <div className="flex items-center justify-center gap-6 mt-3">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-cyan-500"></span>
+                    <span className="text-xs text-gray-500">Publicidad</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
+                    <span className="text-xs text-gray-500">Orgánicas</span>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* === AUDIENCIAS — SEGUIDORES === */}
+          {activeMiPaginaSubTab === 'audiencias' && activeAudienciasMetric === 'seguidores' && (
+            <>
+              {/* Summary cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-white rounded-xl border border-gray-200 p-5">
+                  <div className="text-xs text-gray-500 mb-1">Seguidores totales</div>
+                  <div className="text-2xl font-bold text-gray-800">620</div>
+                </div>
+                <div className="bg-white rounded-xl border border-gray-200 p-5">
+                  <div className="text-xs text-gray-500 mb-1">Seguidores que te visitaron en los últimos 30 días</div>
+                  <div className="text-2xl font-bold text-gray-800">13 <span className="text-xs text-gray-400">(2.1%)</span></div>
+                </div>
+                <div className="bg-white rounded-xl border border-gray-200 p-5">
+                  <div className="text-xs text-gray-500 mb-1">Seguidores que te compraron en los últimos 30 días</div>
+                  <div className="text-2xl font-bold text-gray-800">0 <span className="text-xs text-gray-400">(0%)</span></div>
+                </div>
+              </div>
+
+              {/* Demographics row */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Dispositivo */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5">
+                  <div className="text-sm font-semibold text-gray-800 mb-4">Dispositivo</div>
+                  <div className="space-y-3">
+                    <div>
+                      <div className="flex-1 h-4 bg-gray-100 rounded overflow-hidden flex">
+                        <div className="h-full bg-purple-500 rounded-l" style={{ width: '92%' }}></div>
+                        <div className="h-full bg-cyan-400 rounded-r" style={{ width: '8%' }}></div>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-center gap-4 text-[10px] text-gray-500">
+                      <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-purple-500"></span> Móvil</div>
+                      <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-cyan-400"></span> Computadora</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Género */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5">
+                  <div className="text-sm font-semibold text-gray-800 mb-4">Género</div>
+                  <div className="space-y-3">
+                    <div>
+                      <div className="flex-1 h-4 bg-gray-100 rounded overflow-hidden flex">
+                        <div className="h-full bg-cyan-400 rounded-l" style={{ width: '65%' }}></div>
+                        <div className="h-full bg-purple-500 rounded-r" style={{ width: '35%' }}></div>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-center gap-4 text-[10px] text-gray-500">
+                      <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-cyan-400"></span> Masculino</div>
+                      <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-purple-500"></span> Femenino</div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Detalle del origen — Bar chart */}
-            <div className="bg-white rounded-xl border border-gray-200 p-5">
-              <div className="flex items-center gap-1 text-sm font-semibold text-gray-800 mb-4">
-                Detalle del origen <Info size={14} className="text-gray-400" />
-              </div>
-              <ResponsiveContainer width="100%" height={180}>
-                <BarChart
-                  data={[
-                    { name: 'Orgánicas', value: 108, fill: '#8B5CF6' },
-                    { name: 'Externas', value: 46, fill: '#06B6D4' },
-                    { name: 'Publicidad', value: 18, fill: '#F59E0B' },
-                  ]}
-                  layout="vertical"
-                  barSize={20}
-                  margin={{ left: 20 }}
-                >
-                  <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9CA3AF' }} />
-                  <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9CA3AF' }} width={70} />
-                  <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                    {[
-                      { fill: '#8B5CF6' },
-                      { fill: '#06B6D4' },
-                      { fill: '#F59E0B' },
-                    ].map((entry, index) => (
-                      <Cell key={index} fill={entry.fill} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+              {/* Age + Purchase charts */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Rango de edad */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5">
+                  <div className="text-sm font-semibold text-gray-800 mb-4">Rango de edad</div>
+                  <ResponsiveContainer width="100%" height={160}>
+                    <BarChart data={[
+                      { range: '18 a 24', pct: 5 },
+                      { range: '25 a 34', pct: 18 },
+                      { range: '35 a 44', pct: 34 },
+                      { range: '45 a 54', pct: 24 },
+                      { range: '55 a 64', pct: 11 },
+                      { range: '+65', pct: 7 },
+                    ]} barSize={24}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                      <XAxis dataKey="range" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9CA3AF' }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9CA3AF' }} tickFormatter={(v) => `${v}%`} />
+                      <Bar dataKey="pct" fill="#8B5CF6" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
 
-          {/* Evolución de tus visitas — Line chart */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <div className="text-sm font-semibold text-gray-800 mb-4">Evolución de tus visitas</div>
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={[
-                { day: '6 abr', organicas: 5, publicidad: 2, externas: 1 },
-                { day: '8 abr', organicas: 8, publicidad: 3, externas: 2 },
-                { day: '10 abr', organicas: 12, publicidad: 4, externas: 3 },
-                { day: '13 abr', organicas: 6, publicidad: 2, externas: 1 },
-                { day: '15 abr', organicas: 10, publicidad: 5, externas: 2 },
-                { day: '17 abr', organicas: 14, publicidad: 3, externas: 4 },
-                { day: '20 abr', organicas: 8, publicidad: 2, externas: 1 },
-                { day: '22 abr', organicas: 11, publicidad: 4, externas: 3 },
-                { day: '24 abr', organicas: 16, publicidad: 5, externas: 2 },
-                { day: '27 abr', organicas: 9, publicidad: 3, externas: 1 },
-                { day: '29 abr', organicas: 13, publicidad: 4, externas: 3 },
-                { day: '1 may', organicas: 7, publicidad: 2, externas: 2 },
-                { day: '3 may', organicas: 15, publicidad: 6, externas: 4 },
-                { day: '4 may', organicas: 10, publicidad: 3, externas: 2 },
-              ]}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9CA3AF' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9CA3AF' }} />
-                <Line type="monotone" dataKey="organicas" stroke="#8B5CF6" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="publicidad" stroke="#06B6D4" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="externas" stroke="#F59E0B" strokeWidth={2} dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
-            <div className="flex items-center justify-center gap-6 mt-3">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
-                <span className="text-xs text-gray-500">Orgánicas</span>
+                {/* Poder de compra */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5">
+                  <div className="flex items-center gap-1 text-sm font-semibold text-gray-800 mb-4">
+                    Poder de compra <Info size={14} className="text-gray-400" />
+                  </div>
+                  <div className="flex items-center justify-center">
+                    <div className="w-24 h-24">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={[
+                              { name: 'Alto', value: 30, fill: '#8B5CF6' },
+                              { name: 'Medio', value: 50, fill: '#06B6D4' },
+                              { name: 'Bajo', value: 20, fill: '#FBBF24' },
+                            ]}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={28}
+                            outerRadius={42}
+                            dataKey="value"
+                            stroke="none"
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-center gap-3 mt-2 text-[10px] text-gray-500">
+                    <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-purple-500"></span> Alto</div>
+                    <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-cyan-400"></span> Medio</div>
+                    <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400"></span> Bajo</div>
+                  </div>
+                </div>
+
+                {/* Hábito de compra */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5">
+                  <div className="flex items-center gap-1 text-sm font-semibold text-gray-800 mb-4">
+                    Hábito de compra <Info size={14} className="text-gray-400" />
+                  </div>
+                  <div className="flex items-center justify-center">
+                    <div className="w-24 h-24">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={[
+                              { name: 'Alto', value: 25, fill: '#8B5CF6' },
+                              { name: 'Medio', value: 45, fill: '#06B6D4' },
+                              { name: 'Bajo', value: 30, fill: '#FBBF24' },
+                            ]}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={28}
+                            outerRadius={42}
+                            dataKey="value"
+                            stroke="none"
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-center gap-3 mt-2 text-[10px] text-gray-500">
+                    <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-purple-500"></span> Alto</div>
+                    <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-cyan-400"></span> Medio</div>
+                    <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400"></span> Bajo</div>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-cyan-500"></span>
-                <span className="text-xs text-gray-500">Publicidad</span>
+
+              {/* Categorías que más navegan */}
+              <div className="bg-white rounded-xl border border-gray-200 p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="text-sm font-semibold text-gray-800">Categorías que más navegan tus seguidores en Mercado Libre</div>
+                  <div className="text-xs text-gray-500">Últimos 30 días</div>
+                </div>
+                <div className="space-y-3">
+                  {[
+                    { cat: 'Hogar, Muebles y Jardín', val: 429, pct: 100 },
+                    { cat: 'Accesorios para Vehículos', val: 344, pct: 80 },
+                    { cat: 'Herramientas', val: 343, pct: 80 },
+                    { cat: 'Ropa, Calzados y Accesorios', val: 298, pct: 69 },
+                    { cat: 'Deportes y Fitness', val: 273, pct: 64 },
+                    { cat: 'Construcción', val: 256, pct: 60 },
+                    { cat: 'Electrodomésticos y Aires Ac.', val: 245, pct: 57 },
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <span className="text-[10px] text-gray-500 w-40 text-right truncate">{item.cat}</span>
+                      <div className="flex-1 h-3 bg-gray-100 rounded overflow-hidden">
+                        <div className="h-full bg-purple-500 rounded" style={{ width: `${item.pct}%` }}></div>
+                      </div>
+                      <span className="text-xs font-bold text-gray-800 w-8 text-right">{item.val}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-                <span className="text-xs text-gray-500">Externas</span>
+            </>
+          )}
+
+          {/* === AUDIENCIAS — COMPRADORES (empty state) === */}
+          {activeMiPaginaSubTab === 'audiencias' && activeAudienciasMetric === 'compradores' && (
+            <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Users size={28} className="text-gray-400" />
               </div>
+              <p className="text-sm text-gray-700 font-medium mb-1">Alcanzá 100 compradores en los últimos 30 días para acceder a sus métricas</p>
+              <p className="text-xs text-gray-500 mb-3">Compartí el link de tu tienda en redes sociales para conseguirlos.</p>
+              <button className="text-blue-600 text-xs font-medium hover:underline">Copiar link</button>
             </div>
-          </div>
+          )}
         </>
       )}
     </div>
