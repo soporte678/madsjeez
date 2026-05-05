@@ -9,7 +9,7 @@ import {
 import {
   Info, Download, Filter, ChevronDown, ChevronRight, ChevronLeft,
   Eye, TrendingUp, TrendingDown, Minus, Search, FileText, MoreVertical,
-  Calendar, X, Check
+  Calendar, X, Check, Package, Store
 } from 'lucide-react';
 
 // --- DATA DEMO ---
@@ -1403,10 +1403,39 @@ export default function MetricasView() {
         </>
       )}
 
-      {/* Other tabs placeholder */}
-      {activeTab !== 'negocio' && activeTab !== 'promociones' && activeTab !== 'costos' && activeTab !== 'atencion' && activeTab !== 'envios' && (
-        <div className="bg-white rounded-xl border border-gray-200 p-20 text-center text-gray-400 italic">
-          Panel de {tabs.find(t => t.id === activeTab)?.label} en preparación...
+      {/* === STOCK FULL === */}
+      {activeTab === 'stock' && (
+        <div className="bg-white rounded-xl border border-gray-200 p-20 text-center">
+          <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Package size={32} className="text-blue-500" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">Stock Full</h3>
+          <p className="text-sm text-gray-500 mb-1">Próximamente</p>
+          <p className="text-xs text-gray-400 max-w-md mx-auto">Asignación y estimación de tu espacio, espacio de almacenamiento y gestión de stock.</p>
+        </div>
+      )}
+
+      {/* === ANÁLISIS DE MERCADO === */}
+      {activeTab === 'mercado' && (
+        <div className="bg-white rounded-xl border border-gray-200 p-20 text-center">
+          <div className="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <TrendingUp size={32} className="text-purple-500" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">Análisis de mercado</h3>
+          <p className="text-sm text-gray-500 mb-1">Próximamente</p>
+          <p className="text-xs text-gray-400 max-w-md mx-auto">Tendencias, precios competitivos y oportunidades de mercado.</p>
+        </div>
+      )}
+
+      {/* === MI PÁGINA === */}
+      {activeTab === 'mipagina' && (
+        <div className="bg-white rounded-xl border border-gray-200 p-20 text-center">
+          <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Store size={32} className="text-orange-500" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">Mi página</h3>
+          <p className="text-sm text-gray-500 mb-1">Próximamente</p>
+          <p className="text-xs text-gray-400 max-w-md mx-auto">Métricas de tu tienda oficial y perfil de vendedor.</p>
         </div>
       )}
     </div>
