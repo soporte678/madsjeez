@@ -28,6 +28,7 @@ import NotificationsDropdown from "@/components/dashboard/NotificationsDropdown"
 import PublicacionesView from "@/components/dashboard/PublicacionesView";
 import MarketingIAPage from "@/app/dashboard/marketing/page";
 import MetricasView from "@/components/dashboard/MetricasView";
+import ClipsView from "@/components/dashboard/ClipsView";
 
 function getInitialMenu() {
   if (typeof window !== 'undefined') {
@@ -609,6 +610,7 @@ export default function App() {
             {activeMenu === 'ayuda' && <HelpView userData={currentUser || undefined} onNavigate={(section) => setActiveMenu(section)} />}
             {activeMenu === 'publicaciones' && <div className="-mx-4 lg:-mx-8">{renderPublicaciones()}</div>}
             {activeMenu === 'marketing-ia' && <MarketingIAPage />}
+            {activeMenu === 'clips' && <ClipsView />}
           </div>
         </section>
       </div>
