@@ -44,6 +44,7 @@ export default function AIChatBot() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
+  const [backendReady, setBackendReady] = useState<boolean | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -69,21 +70,42 @@ export default function AIChatBot() {
     if (isOpen) inputRef.current?.focus()
   }, [isOpen])
 
-  const sendMessage = async () => {
-    if (!input.trim() || loading) return
+  // Healthcheck backend on first open
+  useEffect(() => {
+    if (isOpen && backendReady === null) {
+      fetch("/api/chat", { method: "HEAD" })
+        .then(() => setBackendReady(true))
+        .catch(() => setBackendReady(false))
+    }
+  }, [isOpen, backendReady])
 
-    const userMessage: Message = { role: "user", content: input.trim() }
-    const newMessages = [...messages, userMessage]
-    setMessages(newMessages)
-    setInput("")
+  const fetchWithTimeout = (url: string, options: RequestInit, timeout = 15000) => {
+    return Promise.race([
+      fetch(url, options),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Timeout: el servidor tardó demasiado en responder")), timeout)
+      ),
+    ])
+  }
+
+  const sendChatRequest = async (msgs: Message[]) => {
     setLoading(true)
-
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetchWithTimeout("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: newMessages, mode }),
-      })
+        body: JSON.stringify({ messages: msgs, mode }),
+      }, 15000)
+
+      if (!res.ok) {
+        const status = res.status
+        let errorMsg = "Disculpá, tuve un problema técnico. Intentá de nuevo en unos segundos."
+        if (status === 404) errorMsg = "⚠️ El servicio de IA no está disponible en este momento (endpoint no encontrado)."
+        if (status === 500) errorMsg = "⚠️ Error interno del servidor. Estamos trabajando para solucionarlo."
+        if (status === 429) errorMsg = "⚠️ Muchas solicitudes seguidas. Esperá unos segundos e intentá de nuevo."
+        setMessages((prev) => [...prev, { role: "assistant", content: errorMsg }])
+        return
+      }
 
       const data = await res.json()
 
@@ -94,19 +116,32 @@ export default function AIChatBot() {
         ])
       } else {
         const isFallback = data._meta?.fallback
-        const messageContent = isFallback 
-          ? data.message + "\n\n— ⚠️ Modo respuestas predefinidas: la IA avanzada no está configurada."
+        const messageContent = isFallback
+          ? data.message + "\n\n— ⚠️ Modo respuestas predefinidas: la IA avanzada no está configurada. Agregá GEMINI_API_KEY en las variables de entorno."
           : data.message
         setMessages((prev) => [...prev, { role: "assistant", content: messageContent }])
       }
-    } catch (error) {
+    } catch (error: any) {
+      const msg = error?.message?.includes("Timeout")
+        ? "⚠️ El servidor tardó demasiado en responder. Puede estar redeployeando. Esperá 1-2 minutos y probá de nuevo."
+        : "⚠️ Error de conexión. Verificá tu internet o probá de nuevo en unos segundos."
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: "Error de conexión. Verificá tu internet e intentá de nuevo." },
+        { role: "assistant", content: msg },
       ])
     } finally {
       setLoading(false)
     }
+  }
+
+  const sendMessage = async () => {
+    if (!input.trim() || loading) return
+
+    const userMessage: Message = { role: "user", content: input.trim() }
+    const newMessages = [...messages, userMessage]
+    setMessages(newMessages)
+    setInput("")
+    await sendChatRequest(newMessages)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -208,31 +243,11 @@ export default function AIChatBot() {
                   <button
                     key={q}
                     onClick={() => {
-                      setInput(q)
-                      setTimeout(() => {
-                        const fakeMsg: Message = { role: "user", content: q }
-                        const newMsgs = [...messages, fakeMsg]
-                        setMessages(newMsgs)
-                        setLoading(true)
-                        fetch("/api/chat", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ messages: newMsgs, mode }),
-                        })
-                          .then((r) => r.json())
-                          .then((data) => {
-                            const isFallback = data._meta?.fallback
-                            const msg = isFallback 
-                              ? (data.message || "Error") + "\n\n— ⚠️ Modo respuestas predefinidas: la IA avanzada no está configurada."
-                              : (data.message || "Error")
-                            setMessages((prev) => [...prev, { role: "assistant", content: msg }])
-                          })
-                          .catch(() => {
-                            setMessages((prev) => [...prev, { role: "assistant", content: "Error de conexión." }])
-                          })
-                          .finally(() => setLoading(false))
-                        setInput("")
-                      }, 0)
+                      const fakeMsg: Message = { role: "user", content: q }
+                      const newMsgs = [...messages, fakeMsg]
+                      setMessages(newMsgs)
+                      setInput("")
+                      sendChatRequest(newMsgs)
                     }}
                     className="text-xs bg-white border border-gray-200 text-gray-700 px-3 py-1.5 rounded-full hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-colors"
                   >
