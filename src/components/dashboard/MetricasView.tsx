@@ -105,6 +105,8 @@ export default function MetricasView() {
   const [currentPage, setCurrentPage] = useState(1);
   const [activeAtencionSubTab, setActiveAtencionSubTab] = useState('reclamos');
   const [activeEnvioSubTab, setActiveEnvioSubTab] = useState('turbo');
+  const [activeMercadoSubTab, setActiveMercadoSubTab] = useState('posicion');
+  const [activeMercadoTab, setActiveMercadoTab] = useState('competencia');
 
   const tabs = [
     { id: 'negocio', label: 'Negocio' },
@@ -1420,15 +1422,28 @@ export default function MetricasView() {
         <>
           {/* Sub-tabs */}
           <div className="flex gap-4 border-b border-gray-200">
-            <button className="pb-2 text-sm font-semibold text-blue-600 border-b-2 border-blue-600">Competencia</button>
-            <button className="pb-2 text-sm text-gray-500 hover:text-gray-700">Tendencias por categoría</button>
+            <button
+              onClick={() => setActiveMercadoTab('competencia')}
+              className={`pb-2 text-sm transition-colors ${activeMercadoTab === 'competencia' ? 'font-semibold text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              Competencia
+            </button>
+            <button
+              onClick={() => setActiveMercadoTab('tendencias')}
+              className={`pb-2 text-sm transition-colors ${activeMercadoTab === 'tendencias' ? 'font-semibold text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              Tendencias por categoría
+            </button>
           </div>
 
-          {/* Header */}
-          <div>
-            <h2 className="text-lg font-semibold text-gray-800 mb-1">Ranking de competidores de tus categorías</h2>
-            <p className="text-xs text-gray-500 mb-4">Las categorías y los competidores están ordenados de mayor a menor según el monto de ventas brutas.</p>
-          </div>
+          {/* === COMPETENCIA === */}
+          {activeMercadoTab === 'competencia' && (
+            <>
+              {/* Header */}
+              <div>
+                <h2 className="text-lg font-semibold text-gray-800 mb-1">Ranking de competidores de tus categorías</h2>
+                <p className="text-xs text-gray-500 mb-4">Las categorías y los competidores están ordenados de mayor a menor según el monto de ventas brutas.</p>
+              </div>
 
           {/* Filters */}
           <div className="flex items-center justify-between">
@@ -1478,93 +1493,301 @@ export default function MetricasView() {
 
           {/* Position tabs */}
           <div className="flex gap-4 border-b border-gray-200">
-            <button className="pb-2 text-sm font-semibold text-blue-600 border-b-2 border-blue-600">Tu posición</button>
-            <button className="pb-2 text-sm text-gray-500 hover:text-gray-700">Mejores vendedores</button>
+            <button
+              onClick={() => setActiveMercadoSubTab('posicion')}
+              className={`pb-2 text-sm transition-colors ${activeMercadoSubTab === 'posicion' ? 'font-semibold text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              Tu posición
+            </button>
+            <button
+              onClick={() => setActiveMercadoSubTab('mejores')}
+              className={`pb-2 text-sm transition-colors ${activeMercadoSubTab === 'mejores' ? 'font-semibold text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              Mejores vendedores
+            </button>
           </div>
 
           <div className="flex justify-end">
             <button className="text-blue-600 text-xs font-medium hover:underline">Ir a tendencias de búsqueda</button>
           </div>
 
-          {/* Competitor Table */}
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="text-left p-3 text-[10px] font-semibold text-gray-500 uppercase w-16">Posición</th>
-                  <th className="text-left p-3 text-[10px] font-semibold text-gray-500 uppercase">
-                    Vendedor <Info size={12} className="inline ml-1 text-gray-400" />
-                  </th>
-                  <th className="text-right p-3 text-[10px] font-semibold text-gray-500 uppercase">Ventas brutas</th>
-                  <th className="text-right p-3 text-[10px] font-semibold text-gray-500 uppercase">Cantidad de ventas</th>
-                  <th className="text-right p-3 text-[10px] font-semibold text-gray-500 uppercase">Visitas</th>
-                  <th className="text-right p-3 text-[10px] font-semibold text-gray-500 uppercase">Conversión</th>
-                  <th className="text-right p-3 text-[10px] font-semibold text-gray-500 uppercase"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  { pos: 491, change: 86, changeUp: true, name: 'BRONCE.HURON.MITICO', level: 'MercadoLider Platinum', official: false, sales: '$ 6.200.000', salesChange: 22.9, salesUp: true, qty: 70, qtyChange: 9.4, qtyUp: true, visits: 2100, visitsChange: 10.5, visitsUp: false, conv: '3.3%' },
-                  { pos: 492, change: 108, changeUp: true, name: 'LILA.ASCIDIAS.ARENOSO', level: 'MercadoLider Platinum', official: true, sales: '$ 6.200.000', salesChange: 21.0, salesUp: true, qty: 120, qtyChange: 11.6, qtyUp: true, visits: 5900, visitsChange: 16.2, visitsUp: true, conv: '2.1%' },
-                  { pos: 493, change: 9, changeUp: true, name: 'PORRACO.SALAMANDRA.NOCTUR...', level: 'MercadoLider Platinum', official: true, sales: '$ 6.200.000', salesChange: 2.2, salesUp: true, qty: 170, qtyChange: 20.6, qtyUp: true, visits: 7800, visitsChange: 32.7, visitsUp: true, conv: '2.2%' },
-                  { pos: 494, change: 243, changeUp: true, name: 'AMARILLO.CIVETA.PRECISO', level: 'MercadoLider Platinum', official: true, sales: '$ 6.100.000', salesChange: 47.8, salesUp: true, qty: 330, qtyChange: 88.2, qtyUp: true, visits: 5400, visitsChange: 17.6, visitsUp: true, conv: '6.2%' },
-                  { pos: 495, change: 64, changeUp: true, name: 'CARMESI.PAVO.MEDIAS', level: 'MercadoLider Platinum', official: true, sales: '$ 6.100.000', salesChange: 12.4, salesUp: true, qty: 240, qtyChange: 20.4, qtyUp: true, visits: 4300, visitsChange: 26.6, visitsUp: true, conv: '5.6%' },
-                  { pos: 496, change: 79, changeUp: true, name: 'GRANATE.CABALLO.DORADO', level: 'MercadoLider Platinum', official: true, sales: '$ 6.100.000', salesChange: 15.7, salesUp: true, qty: 40, qtyChange: 21.7, qtyUp: true, visits: 6100, visitsChange: 26.0, visitsUp: true, conv: '0.6%' },
-                  { pos: 497, change: 38, changeUp: true, name: 'ARENA.ZARIGUEYA.CASUAL', level: 'MercadoLider Platinum', official: false, sales: '$ 6.100.000', salesChange: 8.2, salesUp: true, qty: 110, qtyChange: 14.3, qtyUp: true, visits: 1400, visitsChange: 48.8, visitsUp: true, conv: '7.5%' },
-                  { pos: 498, change: 400, changeUp: false, name: 'RUFO.TIBURON.INNATO', level: 'MercadoLider Platinum', official: true, sales: '$ 6.100.000', salesChange: 71.8, salesUp: true, qty: 20, qtyChange: 66.2, qtyUp: true, visits: 1300, visitsChange: 40.6, visitsUp: true, conv: '1.6%' },
-                  { pos: 499, change: 56, changeUp: false, name: 'MORADO.JIRAFA.BIOLOGICO', level: 'MercadoLider Platinum', official: true, sales: '$ 6.100.000', salesChange: 7.1, salesUp: true, qty: 60, qtyChange: 0.0, qtyUp: false, visits: 6100, visitsChange: 48.9, visitsUp: true, conv: '1.0%' },
-                  { pos: 500, change: 500, changeUp: true, isMe: true, name: 'MAQJEEZ_J', level: 'MercadoLider Platinum', official: false, sales: '$ 284.970,54', salesChange: 41.7, salesUp: true, qty: 9, qtyChange: 28.6, qtyUp: true, visits: 443, visitsChange: 18.4, visitsUp: true, conv: '2.0%' },
-                ].map((row, i) => (
-                  <tr key={i} className={`border-b border-gray-100 hover:bg-gray-50 ${row.isMe ? 'bg-purple-50' : ''}`}>
-                    <td className="p-3 text-center">
-                      <div className="text-sm font-bold text-gray-800">{row.pos}</div>
-                      <div className={`text-[10px] font-semibold flex items-center justify-center gap-0.5 ${row.changeUp ? 'text-green-600' : 'text-red-500'}`}>
-                        {row.changeUp ? '▲' : '▼'} {row.change}
-                      </div>
-                    </td>
-                    <td className="p-3">
-                      <div className="text-xs font-semibold text-gray-800">{row.name}</div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[10px] text-gray-500">{row.level}</span>
-                        {row.official && (
-                          <span className="text-[10px] text-green-600 font-medium">Tienda oficial</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="p-3 text-right">
-                      <div className="text-xs text-gray-800 font-medium">+ {row.sales}</div>
-                      <div className={`text-[10px] font-semibold ${row.salesUp ? 'text-green-600' : 'text-red-500'}`}>
-                        {row.salesUp ? '▲' : '▼'} {row.salesChange}%
-                      </div>
-                    </td>
-                    <td className="p-3 text-right">
-                      <div className="text-xs text-gray-800 font-medium">+ {row.qty}</div>
-                      <div className={`text-[10px] font-semibold ${row.qtyUp ? 'text-green-600' : 'text-red-500'}`}>
-                        {row.qtyUp ? '▲' : '▼'} {row.qtyChange}%
-                      </div>
-                    </td>
-                    <td className="p-3 text-right">
-                      <div className="text-xs text-gray-800 font-medium">+ {row.visits.toLocaleString()}</div>
-                      <div className={`text-[10px] font-semibold ${row.visitsUp ? 'text-green-600' : 'text-red-500'}`}>
-                        {row.visitsUp ? '▲' : '▼'} {row.visitsChange}%
-                      </div>
-                    </td>
-                    <td className="p-3 text-right">
-                      <div className="text-xs text-gray-800 font-medium">{row.conv}</div>
-                    </td>
-                    <td className="p-3 text-right">
-                      {!row.isMe && (
-                        <button className="text-blue-600 text-xs font-medium hover:underline">Compararme</button>
-                      )}
-                      {row.isMe && (
-                        <span className="text-xs text-gray-400">—</span>
-                      )}
-                    </td>
+          {/* TU POSICIÓN Table */}
+          {activeMercadoSubTab === 'posicion' && (
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    <th className="text-left p-3 text-[10px] font-semibold text-gray-500 uppercase w-16">Posición</th>
+                    <th className="text-left p-3 text-[10px] font-semibold text-gray-500 uppercase">
+                      Vendedor <Info size={12} className="inline ml-1 text-gray-400" />
+                    </th>
+                    <th className="text-right p-3 text-[10px] font-semibold text-gray-500 uppercase">Ventas brutas</th>
+                    <th className="text-right p-3 text-[10px] font-semibold text-gray-500 uppercase">Cantidad de ventas</th>
+                    <th className="text-right p-3 text-[10px] font-semibold text-gray-500 uppercase">Visitas</th>
+                    <th className="text-right p-3 text-[10px] font-semibold text-gray-500 uppercase">Conversión</th>
+                    <th className="text-right p-3 text-[10px] font-semibold text-gray-500 uppercase"></th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {[
+                    { pos: 491, change: 86, changeUp: true, name: 'BRONCE.HURON.MITICO', level: 'MercadoLider Platinum', official: false, sales: '$ 6.200.000', salesChange: 22.9, salesUp: true, qty: 70, qtyChange: 9.4, qtyUp: true, visits: 2100, visitsChange: 10.5, visitsUp: false, conv: '3.3%' },
+                    { pos: 492, change: 108, changeUp: true, name: 'LILA.ASCIDIAS.ARENOSO', level: 'MercadoLider Platinum', official: true, sales: '$ 6.200.000', salesChange: 21.0, salesUp: true, qty: 120, qtyChange: 11.6, qtyUp: true, visits: 5900, visitsChange: 16.2, visitsUp: true, conv: '2.1%' },
+                    { pos: 493, change: 9, changeUp: true, name: 'PORRACO.SALAMANDRA.NOCTUR...', level: 'MercadoLider Platinum', official: true, sales: '$ 6.200.000', salesChange: 2.2, salesUp: true, qty: 170, qtyChange: 20.6, qtyUp: true, visits: 7800, visitsChange: 32.7, visitsUp: true, conv: '2.2%' },
+                    { pos: 494, change: 243, changeUp: true, name: 'AMARILLO.CIVETA.PRECISO', level: 'MercadoLider Platinum', official: true, sales: '$ 6.100.000', salesChange: 47.8, salesUp: true, qty: 330, qtyChange: 88.2, qtyUp: true, visits: 5400, visitsChange: 17.6, visitsUp: true, conv: '6.2%' },
+                    { pos: 495, change: 64, changeUp: true, name: 'CARMESI.PAVO.MEDIAS', level: 'MercadoLider Platinum', official: true, sales: '$ 6.100.000', salesChange: 12.4, salesUp: true, qty: 240, qtyChange: 20.4, qtyUp: true, visits: 4300, visitsChange: 26.6, visitsUp: true, conv: '5.6%' },
+                    { pos: 496, change: 79, changeUp: true, name: 'GRANATE.CABALLO.DORADO', level: 'MercadoLider Platinum', official: true, sales: '$ 6.100.000', salesChange: 15.7, salesUp: true, qty: 40, qtyChange: 21.7, qtyUp: true, visits: 6100, visitsChange: 26.0, visitsUp: true, conv: '0.6%' },
+                    { pos: 497, change: 38, changeUp: true, name: 'ARENA.ZARIGUEYA.CASUAL', level: 'MercadoLider Platinum', official: false, sales: '$ 6.100.000', salesChange: 8.2, salesUp: true, qty: 110, qtyChange: 14.3, qtyUp: true, visits: 1400, visitsChange: 48.8, visitsUp: true, conv: '7.5%' },
+                    { pos: 498, change: 400, changeUp: false, name: 'RUFO.TIBURON.INNATO', level: 'MercadoLider Platinum', official: true, sales: '$ 6.100.000', salesChange: 71.8, salesUp: true, qty: 20, qtyChange: 66.2, qtyUp: true, visits: 1300, visitsChange: 40.6, visitsUp: true, conv: '1.6%' },
+                    { pos: 499, change: 56, changeUp: false, name: 'MORADO.JIRAFA.BIOLOGICO', level: 'MercadoLider Platinum', official: true, sales: '$ 6.100.000', salesChange: 7.1, salesUp: true, qty: 60, qtyChange: 0.0, qtyUp: false, visits: 6100, visitsChange: 48.9, visitsUp: true, conv: '1.0%' },
+                    { pos: 500, change: 500, changeUp: true, isMe: true, name: 'MAQJEEZ_J', level: 'MercadoLider Platinum', official: false, sales: '$ 284.970,54', salesChange: 41.7, salesUp: true, qty: 9, qtyChange: 28.6, qtyUp: true, visits: 443, visitsChange: 18.4, visitsUp: true, conv: '2.0%' },
+                  ].map((row, i) => (
+                    <tr key={i} className={`border-b border-gray-100 hover:bg-gray-50 ${row.isMe ? 'bg-purple-50' : ''}`}>
+                      <td className="p-3 text-center">
+                        <div className="text-sm font-bold text-gray-800">{row.pos}</div>
+                        <div className={`text-[10px] font-semibold flex items-center justify-center gap-0.5 ${row.changeUp ? 'text-green-600' : 'text-red-500'}`}>
+                          {row.changeUp ? '▲' : '▼'} {row.change}
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        <div className="text-xs font-semibold text-gray-800">{row.name}</div>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[10px] text-gray-500">{row.level}</span>
+                          {row.official && (
+                            <span className="text-[10px] text-green-600 font-medium">Tienda oficial</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="p-3 text-right">
+                        <div className="text-xs text-gray-800 font-medium">+ {row.sales}</div>
+                        <div className={`text-[10px] font-semibold ${row.salesUp ? 'text-green-600' : 'text-red-500'}`}>
+                          {row.salesUp ? '▲' : '▼'} {row.salesChange}%
+                        </div>
+                      </td>
+                      <td className="p-3 text-right">
+                        <div className="text-xs text-gray-800 font-medium">+ {row.qty}</div>
+                        <div className={`text-[10px] font-semibold ${row.qtyUp ? 'text-green-600' : 'text-red-500'}`}>
+                          {row.qtyUp ? '▲' : '▼'} {row.qtyChange}%
+                        </div>
+                      </td>
+                      <td className="p-3 text-right">
+                        <div className="text-xs text-gray-800 font-medium">+ {row.visits.toLocaleString()}</div>
+                        <div className={`text-[10px] font-semibold ${row.visitsUp ? 'text-green-600' : 'text-red-500'}`}>
+                          {row.visitsUp ? '▲' : '▼'} {row.visitsChange}%
+                        </div>
+                      </td>
+                      <td className="p-3 text-right">
+                        <div className="text-xs text-gray-800 font-medium">{row.conv}</div>
+                      </td>
+                      <td className="p-3 text-right">
+                        {!row.isMe && (
+                          <button className="text-blue-600 text-xs font-medium hover:underline">Compararme</button>
+                        )}
+                        {row.isMe && (
+                          <span className="text-xs text-gray-400">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* MEJORES VENDEDORES Table */}
+          {activeMercadoSubTab === 'mejores' && (
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    <th className="text-left p-3 text-[10px] font-semibold text-gray-500 uppercase w-12">Posición</th>
+                    <th className="text-left p-3 text-[10px] font-semibold text-gray-500 uppercase">
+                      Vendedor <Info size={12} className="inline ml-1 text-gray-400" />
+                    </th>
+                    <th className="text-right p-3 text-[10px] font-semibold text-gray-500 uppercase">Ventas brutas</th>
+                    <th className="text-right p-3 text-[10px] font-semibold text-gray-500 uppercase">Cantidad de ventas</th>
+                    <th className="text-right p-3 text-[10px] font-semibold text-gray-500 uppercase">Visitas</th>
+                    <th className="text-right p-3 text-[10px] font-semibold text-gray-500 uppercase">Conversión</th>
+                    <th className="text-right p-3 text-[10px] font-semibold text-gray-500 uppercase"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { pos: 1, change: 0, changeUp: true, name: 'INDIGO.KAKAPO.AUTENTICO', level: 'MercadoLider Platinum', official: true, sales: '$ 287.000.000', salesChange: 24.1, salesUp: true, qty: 2700, qtyChange: 40.4, qtyUp: true, visits: 106000, visitsChange: 26.6, visitsUp: true, conv: '2.5%' },
+                    { pos: 2, change: 5, changeUp: false, name: 'MOSTAZA.RUNNER.AFERRABLE', level: 'MercadoLider Platinum', official: true, sales: '$ 167.000.000', salesChange: 24.9, salesUp: true, qty: 1900, qtyChange: 8.1, qtyUp: true, visits: 23500, visitsChange: 55.6, visitsUp: true, conv: '0.8%' },
+                    { pos: 3, change: 2, changeUp: true, name: 'ACERO.PERCEBE.FRONTIERIZOS', level: 'MercadoLider Platinum', official: true, sales: '$ 147.000.000', salesChange: 4.9, salesUp: true, qty: 2100, qtyChange: 12.1, qtyUp: true, visits: 42800, visitsChange: 29.0, visitsUp: true, conv: '5.1%' },
+                    { pos: 4, change: 6, changeUp: true, name: 'AZUL.ARCON.ORNITORRINCO.ESTABLE', level: 'MercadoLider Platinum', official: true, sales: '$ 141.100.000', salesChange: 17.0, salesUp: true, qty: 1100, qtyChange: 14.0, qtyUp: true, visits: 108000, visitsChange: 23.1, visitsUp: true, conv: '4.0%' },
+                    { pos: 5, change: 11, changeUp: true, name: 'VIOLETA.ANDINO.PRACTICAS', level: 'MercadoLider Platinum', official: true, sales: '$ 128.700.000', salesChange: 69.6, salesUp: true, qty: 1900, qtyChange: 16.2, qtyUp: true, visits: 13400, visitsChange: 25.2, visitsUp: true, conv: '1.3%' },
+                    { pos: 6, change: 0, changeUp: true, name: 'TRIGO.URRACA.ROTA', level: 'MercadoLider Platinum', official: true, sales: '$ 118.700.000', salesChange: 5.4, salesUp: true, qty: 1800, qtyChange: 2.8, qtyUp: true, visits: 53300, visitsChange: 44.0, visitsUp: true, conv: '5.8%' },
+                    { pos: 7, change: 18, changeUp: true, name: 'ROSA.SALTAMONTES.REVOLUCION', level: 'MercadoLider Platinum', official: true, sales: '$ 118.300.000', salesChange: 83.4, salesUp: true, qty: 400, qtyChange: 104.5, qtyUp: true, visits: 65800, visitsChange: 8.2, visitsUp: false, conv: '0.6%' },
+                    { pos: 8, change: 8, changeUp: true, name: 'CASTAÑO.SERPIENTE.PARTICULARES', level: 'MercadoLider Platinum', official: true, sales: '$ 107.400.000', salesChange: 2.0, salesUp: true, qty: 1600, qtyChange: 1.1, qtyUp: true, visits: 20200, visitsChange: 33.2, visitsUp: true, conv: '5.8%' },
+                    { pos: 9, change: 9, changeUp: true, name: 'AZABACHE.URRACA.AMIGO', level: 'MercadoLider Platinum', official: true, sales: '$ 105.200.000', salesChange: 22.6, salesUp: true, qty: 650, qtyChange: 7.4, qtyUp: true, visits: 22300, visitsChange: 55.6, visitsUp: true, conv: '2.5%' },
+                    { pos: 10, change: 2, changeUp: false, name: 'GRIS.GALLINA.CONCRETO', level: 'MercadoLider Platinum', official: true, sales: '$ 103.900.000', salesChange: 5.2, salesUp: true, qty: 1100, qtyChange: 3.0, qtyUp: true, visits: 33500, visitsChange: 52.2, visitsUp: true, conv: '3.5%' },
+                    { pos: 41, change: 4, changeUp: true, name: 'XANADU.BUFALO.CRUEL', level: 'MercadoLider Platinum', official: true, sales: '$ 51.000.000', salesChange: 21.0, salesUp: true, qty: 530, qtyChange: 23.3, qtyUp: true, visits: 33800, visitsChange: 23.9, visitsUp: true, conv: '2.5%' },
+                    { pos: 42, change: 9, changeUp: false, name: 'ALUMINIO.PEREZOSO.PROPICIO', level: 'MercadoLider Platinum', official: true, sales: '$ 44.400.000', salesChange: 12.3, salesUp: true, qty: 1600, qtyChange: 9.0, qtyUp: true, visits: 27450, visitsChange: 54.9, visitsUp: true, conv: '5.9%' },
+                    { pos: 43, change: 13, changeUp: false, name: 'JADE.ORANGUTAN.AUSTRALES', level: 'MercadoLider Platinum', official: true, sales: '$ 43.600.000', salesChange: 5.4, salesUp: true, qty: 270, qtyChange: 26.9, qtyUp: true, visits: 9200, visitsChange: 9.2, visitsUp: false, conv: '3.0%' },
+                    { pos: 44, change: 0, changeUp: true, name: 'UVA.FOCA.ADMIRABLE', level: 'MercadoLider Platinum', official: true, sales: '$ 43.200.000', salesChange: 0.9, salesUp: true, qty: 1500, qtyChange: 22.3, qtyUp: true, visits: 21500, visitsChange: 28.2, visitsUp: true, conv: '7.4%' },
+                    { pos: 45, change: 27, changeUp: false, name: 'SEPIA.COYOTE.CAMPO', level: 'MercadoLider Platinum', official: true, sales: '$ 42.300.000', salesChange: 57.2, salesUp: true, qty: 280, qtyChange: 94.9, qtyUp: true, visits: 14400, visitsChange: 65.1, visitsUp: true, conv: '2.1%' },
+                    { pos: 46, change: 90, changeUp: true, name: 'CALIPSO.CAMARON.SIMBOLO', level: 'MercadoLider Platinum', official: true, sales: '$ 41.700.000', salesChange: 133.5, salesUp: true, qty: 3400, qtyChange: 118.6, qtyUp: true, visits: 11600, visitsChange: 10.5, visitsUp: false, conv: '28.6%' },
+                    { pos: 47, change: 26, changeUp: false, name: 'FucsIA.LOBATO.PROVINCIAL', level: 'MercadoLider Platinum', official: true, sales: '$ 41.600.000', salesChange: 39.9, salesUp: true, qty: 680, qtyChange: 50.9, qtyUp: true, visits: 40600, visitsChange: 16.2, visitsUp: true, conv: '1.7%' },
+                    { pos: 48, change: 34, changeUp: true, name: 'SEPIA.TIBURON.PIRENAICO', level: 'MercadoLider Platinum', official: true, sales: '$ 41.600.000', salesChange: 66.3, salesUp: true, qty: 160, qtyChange: 109.6, qtyUp: true, visits: 11700, visitsChange: 7.1, visitsUp: false, conv: '0.7%' },
+                    { pos: 49, change: 5, changeUp: true, name: 'HIELO.SEPIA.SIMILAR', level: 'MercadoLider Platinum', official: true, sales: '$ 40.800.000', salesChange: 4.2, salesUp: true, qty: 470, qtyChange: 25.0, qtyUp: true, visits: 23400, visitsChange: 18.6, visitsUp: true, conv: '2.0%' },
+                    { pos: 50, change: 9, changeUp: false, name: 'CALABAZA.ASOCIAS.REVELADORA', level: 'MercadoLider Platinum', official: true, sales: '$ 39.100.000', salesChange: 23.4, salesUp: true, qty: 150, qtyChange: 7.0, qtyUp: true, visits: 14000, visitsChange: 40.0, visitsUp: true, conv: '1.1%' },
+                  ].map((row, i) => (
+                    <tr key={i} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="p-3 text-center">
+                        <div className="text-sm font-bold text-gray-800">{row.pos}</div>
+                        <div className={`text-[10px] font-semibold flex items-center justify-center gap-0.5 ${row.changeUp ? 'text-green-600' : 'text-red-500'}`}>
+                          {row.changeUp ? '▲' : '▼'} {row.change}
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        <div className="text-xs font-semibold text-gray-800">{row.name}</div>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[10px] text-gray-500">{row.level}</span>
+                          {row.official && (
+                            <span className="text-[10px] text-green-600 font-medium">Tienda oficial</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="p-3 text-right">
+                        <div className="text-xs text-gray-800 font-medium">+ {row.sales}</div>
+                        <div className={`text-[10px] font-semibold ${row.salesUp ? 'text-green-600' : 'text-red-500'}`}>
+                          {row.salesUp ? '▲' : '▼'} {row.salesChange}%
+                        </div>
+                      </td>
+                      <td className="p-3 text-right">
+                        <div className="text-xs text-gray-800 font-medium">+ {row.qty}</div>
+                        <div className={`text-[10px] font-semibold ${row.qtyUp ? 'text-green-600' : 'text-red-500'}`}>
+                          {row.qtyUp ? '▲' : '▼'} {row.qtyChange}%
+                        </div>
+                      </td>
+                      <td className="p-3 text-right">
+                        <div className="text-xs text-gray-800 font-medium">+ {row.visits.toLocaleString()}</div>
+                        <div className={`text-[10px] font-semibold ${row.visitsUp ? 'text-green-600' : 'text-red-500'}`}>
+                          {row.visitsUp ? '▲' : '▼'} {row.visitsChange}%
+                        </div>
+                      </td>
+                      <td className="p-3 text-right">
+                        <div className="text-xs text-gray-800 font-medium">{row.conv}</div>
+                      </td>
+                      <td className="p-3 text-right">
+                        <button className="text-blue-600 text-xs font-medium hover:underline">Compararme</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          </>
+          )}
+
+          {/* === TENDENCIAS POR CATEGORÍA === */}
+          {activeMercadoTab === 'tendencias' && (
+            <>
+              {/* Header */}
+              <div>
+                <h2 className="text-lg font-semibold text-gray-800 mb-1">Conocé las tendencias de venta y llegá a más compradores</h2>
+              </div>
+
+              {/* Period filter */}
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-gray-500">Período</span>
+                <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">
+                  Mes en curso
+                  <ChevronDown size={16} />
+                </button>
+              </div>
+
+              <p className="text-xs text-gray-500">Seguí el avance de las categorías donde tenés presencia y ajustá tu estrategia.</p>
+
+              {/* Desempeño de tus categorías */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-800 mb-3">Desempeño de tus categorías</h3>
+                <div className="flex gap-4">
+                  <div className="flex-1 bg-white rounded-xl border border-gray-200 p-5">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 font-bold text-sm">0%</div>
+                      <div>
+                        <div className="text-sm font-semibold text-gray-800">Hogar, Muebles y Jardín</div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-y-2 text-xs text-gray-600">
+                      <div>Unidades vendidas: <span className="font-medium text-gray-800">14.970</span></div>
+                      <div>Ventas promedio: <span className="font-medium text-gray-800">$174.000</span></div>
+                      <div>Visitas: <span className="font-medium text-gray-800">6.500</span></div>
+                      <div>Precio promedio: <span className="font-medium text-gray-800">$39.999</span></div>
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                      <button className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700">Ir a detalle</button>
+                      <button className="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-50">Clonar 10 publicaciones</button>
+                    </div>
+                  </div>
+                  <div className="flex-1 bg-white rounded-xl border border-gray-200 p-5">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-sm">0%</div>
+                      <div>
+                        <div className="text-sm font-semibold text-gray-800">Herramientas</div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-y-2 text-xs text-gray-600">
+                      <div>Unidades vendidas: <span className="font-medium text-gray-800">2</span></div>
+                      <div>Ventas promedio: <span className="font-medium text-gray-800">$101.000</span></div>
+                      <div>Visitas: <span className="font-medium text-gray-800">1.200</span></div>
+                      <div>Precio promedio: <span className="font-medium text-gray-800">$39.999</span></div>
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                      <button className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700">Ir a detalle</button>
+                      <button className="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-50">Clonar 10 publicaciones</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Otras categorías */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-800 mb-3">Otras categorías</h3>
+                <p className="text-xs text-gray-500 mb-3">Consultá nuevos segmentos para expandir tu oferta.</p>
+                <div className="grid grid-cols-4 gap-3">
+                  {[
+                    { name: 'Juegos y Juguetes', trend: '+9.4%', up: true },
+                    { name: 'Ropa y Accesorios', trend: '+5.0%', up: true },
+                    { name: 'Muebles', trend: '+5.1%', up: true },
+                    { name: 'Electrónica, Audio y Video', trend: '+2.1%', up: true },
+                    { name: 'Música, Películas y Series', trend: '+5.9%', up: true },
+                    { name: 'Belleza y Cuidado Personal', trend: '+8.5%', up: true },
+                    { name: 'Cámaras y Accesorios', trend: '+9.8%', up: true },
+                    { name: 'Celulares y Teléfonos', trend: '+6.3%', up: true },
+                    { name: 'Motos', trend: '+9.8%', up: true },
+                    { name: 'Puericultura, Juegos y Bebés', trend: '+6.9%', up: true },
+                    { name: 'Otras categorías', trend: '+5.8%', up: true },
+                    { name: 'Joyería y Relojes', trend: '+6.3%', up: true },
+                    { name: 'Instrumentos Musicales', trend: '-0.5%', up: false },
+                    { name: 'Antigüedades y Colecciones', trend: '-6.4%', up: false },
+                    { name: 'Animales y Mascotas', trend: '-5.8%', up: false },
+                    { name: 'Hogar, Limpieza y Mascotas', trend: '-5.8%', up: false },
+                    { name: 'Souvenirs, Cotillón y Fiestas', trend: '-3.9%', up: false },
+                    { name: 'Deportes y Fitness', trend: '-5.7%', up: false },
+                    { name: 'Construcción', trend: '-4.8%', up: false },
+                    { name: 'Automóviles y Camionetas', trend: '-4.8%', up: false },
+                    { name: 'Industria y Oficina', trend: '-0.5%', up: false },
+                    { name: 'Computación', trend: '-4.8%', up: false },
+                    { name: 'Salud y Equipamiento Médico', trend: '-2.0%', up: false },
+                    { name: 'Agro', trend: '-5.9%', up: false },
+                    { name: 'Consolas y Videojuegos', trend: '-3.0%', up: false },
+                    { name: 'Libros, Revistas y Comics', trend: '-4.8%', up: false },
+                    { name: 'Servicios', trend: '+9.9%', up: true },
+                    { name: 'Entradas para Eventos', trend: '-5.9%', up: false },
+                  ].map((cat, i) => (
+                    <div key={i} className="bg-white rounded-lg border border-gray-200 p-3 flex items-center justify-between hover:border-blue-300 transition-colors cursor-pointer">
+                      <span className="text-xs text-gray-700 font-medium truncate">{cat.name}</span>
+                      <span className={`text-xs font-semibold ${cat.up ? 'text-green-600' : 'text-red-500'}`}>{cat.trend}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
         </>
       )}
 
