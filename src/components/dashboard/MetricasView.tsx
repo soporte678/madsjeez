@@ -498,8 +498,131 @@ export default function MetricasView() {
         </>
       )}
 
+      {/* === PROMOCIONES === */}
+      {activeTab === 'promociones' && (
+        <>
+          {/* Metrics summary */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-white p-5 rounded-xl border border-gray-200">
+              <div className="flex items-center gap-1 text-xs font-semibold text-gray-500 mb-1">
+                Ventas brutas <Info size={12} className="text-gray-400" />
+              </div>
+              <div className="text-xl font-black text-gray-800">$ 82.444 <span className="text-xs font-semibold text-green-600">+ 169 %</span></div>
+            </div>
+            <div className="bg-white p-5 rounded-xl border border-gray-200">
+              <div className="flex items-center gap-1 text-xs font-semibold text-gray-500 mb-1">
+                Unidades vendidas <Info size={12} className="text-gray-400" />
+              </div>
+              <div className="text-xl font-black text-gray-800">1 <span className="text-xs font-semibold text-red-500">- 50 %</span></div>
+            </div>
+          </div>
+
+          {/* Chart */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={[
+                { day: '28 abr', actual: 0, prev: 0 },
+                { day: '29 abr', actual: 0, prev: 0 },
+                { day: '30 abr', actual: 0, prev: 10000 },
+                { day: '1 may', actual: 0, prev: 0 },
+                { day: '2 may', actual: 0, prev: 0 },
+                { day: '3 may', actual: 82444, prev: 0 },
+                { day: '4 may', actual: 0, prev: 0 },
+              ]}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9CA3AF' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9CA3AF' }} tickFormatter={(v) => v > 0 ? `$${(v/1000).toFixed(0)}k` : ''} />
+                <Tooltip formatter={(value: number) => [`$${value.toLocaleString()}`, '']} />
+                <Line type="monotone" dataKey="actual" stroke="#8B5CF6" strokeWidth={2} dot={false} name="Ventas brutas" />
+                <Line type="monotone" dataKey="prev" stroke="#9CA3AF" strokeWidth={2} dot={false} name="Período anterior" />
+              </LineChart>
+            </ResponsiveContainer>
+            <div className="flex items-center justify-center gap-6 mt-2">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                <span className="text-xs text-gray-500">Ventas brutas</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-gray-400"></span>
+                <span className="text-xs text-gray-500">Período anterior</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Sub-tabs: Promociones | Cupones */}
+          <div className="flex gap-4 border-b border-gray-200">
+            <button className="pb-2 text-sm font-semibold text-blue-600 border-b-2 border-blue-600">Promociones</button>
+            <button className="pb-2 text-sm text-gray-500 hover:text-gray-700">Cupones</button>
+          </div>
+
+          {/* Search + count + download */}
+          <div className="flex items-center justify-between">
+            <div className="relative">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Buscar por nombre de la promoción"
+                className="pl-9 pr-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 w-72 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-xs text-gray-500">8 promociones</span>
+              <button className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700">
+                <Download size={14} />
+                Descargar reporte
+              </button>
+            </div>
+          </div>
+
+          {/* Promotions Table */}
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="text-left p-3 text-xs font-semibold text-gray-500 uppercase">Promociones</th>
+                  <th className="text-center p-3 text-xs font-semibold text-gray-500 uppercase">Visitas</th>
+                  <th className="text-center p-3 text-xs font-semibold text-gray-500 uppercase">Cantidad de ventas</th>
+                  <th className="text-center p-3 text-xs font-semibold text-gray-500 uppercase">Conversión</th>
+                  <th className="text-center p-3 text-xs font-semibold text-gray-500 uppercase">Unidades vendidas</th>
+                  <th className="text-center p-3 text-xs font-semibold text-gray-500 uppercase">Ventas brutas</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { name: 'Lo mejor para tu Hogar 2', dates: 'Del 30 de marzo al 28 de junio', visits: 13, sales: '-', conversion: '0%', units: '-', revenue: '-', active: true },
+                  { name: 'DESCUENTOS 5.5', dates: 'Del 18 de abril al 5 de mayo', visits: 41, sales: '-', conversion: '0%', units: '-', revenue: '-', active: true },
+                  { name: 'Potencia tus ventas Abril', dates: 'Del 4 de abril al 5 de mayo', visits: 70, sales: 1, conversion: '1,4%', units: 1, revenue: '$ 82.444,3', active: true },
+                  { name: 'Hace crecer tus ventas Abril', dates: 'Del 4 de abril al 5 de mayo', visits: 22, sales: '-', conversion: '0%', units: '-', revenue: '-', active: true },
+                  { name: 'Oferta relámpago Para MADSJEEZ', dates: '30 de abril de 15 a las 21 hs', visits: 48, sales: '-', conversion: '0%', units: '-', revenue: '-', active: false },
+                  { name: 'Ofertas Const e Ind Abril', dates: 'Del 31 de marzo al 30 de abril', visits: 2, sales: '-', conversion: '0%', units: '-', revenue: '-', active: false },
+                  { name: 'TIER_3', dates: 'Contiene fechas específicas', visits: 11, sales: '-', conversion: '0%', units: '-', revenue: '-', active: false },
+                  { name: 'Oferta relámpago', dates: 'Contiene fechas específicas', visits: 9, sales: '-', conversion: '0%', units: '-', revenue: '-', active: false },
+                ].map((promo, i) => (
+                  <tr key={i} className="border-b border-gray-100 hover:bg-gray-50">
+                    <td className="p-3">
+                      <div className="flex flex-col gap-1">
+                        {promo.active && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold text-white bg-green-500 w-fit">ACTIVA</span>
+                        )}
+                        <span className="text-xs text-gray-400">{promo.dates}</span>
+                        <span className="text-sm font-medium text-gray-800">{promo.name}</span>
+                      </div>
+                    </td>
+                    <td className="p-3 text-center text-sm text-gray-800">{promo.visits}</td>
+                    <td className="p-3 text-center text-sm text-gray-400">{promo.sales}</td>
+                    <td className="p-3 text-center text-sm text-gray-800">{promo.conversion}</td>
+                    <td className="p-3 text-center text-sm text-gray-400">{promo.units}</td>
+                    <td className="p-3 text-center text-sm text-gray-800 font-medium">{promo.revenue}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
       {/* Other tabs placeholder */}
-      {activeTab !== 'negocio' && (
+      {activeTab !== 'negocio' && activeTab !== 'promociones' && (
         <div className="bg-white rounded-xl border border-gray-200 p-20 text-center text-gray-400 italic">
           Panel de {tabs.find(t => t.id === activeTab)?.label} en preparación...
         </div>
