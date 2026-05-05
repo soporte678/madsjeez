@@ -248,6 +248,10 @@ export async function POST(req: NextRequest) {
     }
 
     const lastMessage = messages[messages.length - 1]
+    if (!lastMessage?.content || typeof lastMessage.content !== "string") {
+      return NextResponse.json({ error: "Last message content required" }, { status: 400 })
+    }
+
     const mode = (requestMode as ChatMode) || "general"
     const apiKey = process.env.GEMINI_API_KEY
     if (!apiKey || apiKey === "your-gemini-api-key" || apiKey.length < 10) {
@@ -276,13 +280,32 @@ export async function POST(req: NextRequest) {
     console.log("System prompt length:", systemPrompt.length)
 
     const genAI = new GoogleGenerativeAI(apiKey)
-    
-    async function tryGeminiModel(modelName: string) {
+
+    function extractGeminiText(result: any): string {
+      const res = result as {
+        response?: {
+          text?: () => string
+          candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>
+        }
+      }
+      try {
+        const t = res.response?.text?.()
+        if (typeof t === "string" && t.trim()) return t.trim()
+      } catch {
+        /* respuesta bloqueada o sin método text() */
+      }
+      const parts = res.response?.candidates?.[0]?.content?.parts
+      const joined = parts?.map((p) => p.text).filter(Boolean).join("")
+      if (joined?.trim()) return joined.trim()
+      throw new Error("Gemini devolvió texto vacío")
+    }
+
+    async function tryGeminiModel(modelName: string): Promise<string> {
       const model = genAI.getGenerativeModel({
         model: modelName,
         systemInstruction: systemPrompt,
       })
-      
+
       const history = messages
         .slice(0, -1)
         .filter((msg: any, idx: number) => {
@@ -293,41 +316,55 @@ export async function POST(req: NextRequest) {
           role: msg.role === "assistant" ? "model" : "user",
           parts: [{ text: msg.content }],
         }))
-      
+
       const chat = model.startChat({
         history: history.length > 0 ? history : undefined,
       })
-      
+
       console.log(`Sending message to ${modelName}...`)
       const result = await chat.sendMessage(lastMessage.content)
-      const response = result.response.text()
-      console.log(`${modelName} response received, length:`, response.length)
-      return response
+      const text = extractGeminiText(result)
+      console.log(`${modelName} response received, length:`, text.length)
+      return text
     }
-    
-    let response: string
-    try {
-      response = await tryGeminiModel("gemini-2.0-flash")
-    } catch (modelError: any) {
-      console.error("gemini-2.0-flash failed:", modelError?.message)
-      console.log("Falling back to gemini-1.5-flash...")
+
+    const modelChain = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
+    let response: string | undefined
+    let lastModelError: unknown
+
+    for (const modelName of modelChain) {
       try {
-        response = await tryGeminiModel("gemini-1.5-flash")
-      } catch (fallbackError: any) {
-        console.error("gemini-1.5-flash also failed:", fallbackError?.message)
-        throw fallbackError
+        response = await tryGeminiModel(modelName)
+        break
+      } catch (e) {
+        lastModelError = e
+        console.error(`${modelName} failed:`, e instanceof Error ? e.message : e)
       }
+    }
+
+    if (!response) {
+      console.error("All Gemini models failed:", lastModelError)
+      const fb = getFallbackResponse(mode, lastMessage.content)
+      return NextResponse.json({
+        message:
+          fb +
+          "\n\n— La IA no está disponible ahora mismo. Verificá en Google AI Studio que la API key tenga acceso a Gemini y que no hayas superado la cuota.",
+        _meta: { fallback: true, reason: "gemini_all_models_failed" },
+      })
     }
 
     return NextResponse.json({ message: response })
   } catch (error: any) {
     console.error("Chat API error:", error)
     console.error("Error details:", error?.message, error?.stack)
-    // Return a helpful fallback so the bot doesn't appear broken
-    // Return status 200 so frontend shows the message instead of error
-    return NextResponse.json({
-      message: "Disculpá, estoy teniendo dificultades técnicas en este momento. Podés probá de nuevo en unos segundos, o contactarnos por WhatsApp +54 11 2181-6064.",
-    }, { status: 200 })
+    return NextResponse.json(
+      {
+        message:
+          "Disculpá, hubo un error al procesar el mensaje. Probá de nuevo o escribinos por WhatsApp +54 11 2181-6064.",
+        _meta: { fallback: true, reason: "chat_exception" },
+      },
+      { status: 200 }
+    )
   }
 }
 

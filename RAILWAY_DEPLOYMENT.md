@@ -50,6 +50,10 @@ MERCADOPAGO_ACCESS_TOKEN=TEST-...
 # MERCADOPAGO_ACCESS_TOKEN=your_mp_access_token
 MERCADOPAGO_WEBHOOK_SECRET=tu-webhook-secret
 
+# OAuth conectar cuenta del vendedor (distinto del checkout): firmar "state"
+# Ver sección "OAuth Mercado Pago (vendedores)" más abajo — NO lo provee el panel de MP.
+MP_OAUTH_STATE_SECRET=
+
 # ============================================
 # EMAIL - Resend (recomendado)
 # ============================================
@@ -62,6 +66,19 @@ EMAIL_FROM_NAME=MADSJEEZ
 # ============================================
 # NEXT_PUBLIC_GOOGLE_ANALYTICS=G-XXXXXXXXXX
 ```
+
+### OAuth Mercado Pago (vendedores): `MP_OAUTH_STATE_SECRET`
+
+- **No** es una clave que descargues de Mercado Pago. Es un **secreto aleatorio** que vos generás (recomendado: 32 bytes en Base64; el código exige **mínimo 16 caracteres**).
+- Se usa solo en el servidor para firmar el parámetro `state` del flujo OAuth cuando un vendedor conecta su cuenta MP (`/api/seller/payment-gateway/mercadopago/auth` y `callback`).
+- **Windows (CMD):** generá el valor y copialo en Railway → Variables → `MP_OAUTH_STATE_SECRET`:
+
+```cmd
+powershell -NoProfile -Command "$r = New-Object System.Security.Cryptography.RNGCryptoServiceProvider; $b = New-Object byte[] 32; $r.GetBytes($b); [Convert]::ToBase64String($b)"
+```
+
+- Después de crear o cambiar la variable, **redeploy** del servicio.
+- En paralelo deben estar bien configuradas `MERCADOPAGO_CLIENT_ID`, `MERCADOPAGO_CLIENT_SECRET` y `MERCADOPAGO_REDIRECT_URI` (igual que en la aplicación OAuth de Mercado Pago).
 
 ---
 

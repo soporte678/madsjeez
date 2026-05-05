@@ -142,16 +142,16 @@ export default function Navbar() {
     }
   };
 
-  // Efecto de desarmado/armado del logo MADSJEEZ - NUEVA PALETA
+  // Logo: colores claros y saturados para leerse sobre barra oscura (contraste AA+)
   const logoLetters = [
-    { char: 'M', dx: '-10px', dy: '-12px', rot: '-15deg', delay: '0s', color: '#ff4d2e' },
-    { char: 'A', dx: '-5px', dy: '10px', rot: '10deg', delay: '0.05s', color: '#ff9100' },
-    { char: 'D', dx: '8px', dy: '-10px', rot: '-8deg', delay: '0.1s', color: '#ffb703' },
-    { char: 'S', dx: '15px', dy: '12px', rot: '12deg', delay: '0.15s', color: '#ffa60a' },
-    { char: 'J', dx: '-10px', dy: '15px', rot: '-10deg', delay: '0.2s', color: '#00b4d8' },
-    { char: 'E', dx: '5px', dy: '-15px', rot: '20deg', delay: '0.25s', color: '#0096c7' },
-    { char: 'E', dx: '12px', dy: '8px', rot: '-5deg', delay: '0.3s', color: '#10b981' },
-    { char: 'Z', dx: '20px', dy: '-8px', rot: '15deg', delay: '0.35s', color: '#059669' },
+    { char: 'M', dx: '-10px', dy: '-12px', rot: '-15deg', delay: '0s', color: '#fef08a' },
+    { char: 'A', dx: '-5px', dy: '10px', rot: '10deg', delay: '0.05s', color: '#fcd34d' },
+    { char: 'D', dx: '8px', dy: '-10px', rot: '-8deg', delay: '0.1s', color: '#fdba74' },
+    { char: 'S', dx: '15px', dy: '12px', rot: '12deg', delay: '0.15s', color: '#fb923c' },
+    { char: 'J', dx: '-10px', dy: '15px', rot: '-10deg', delay: '0.2s', color: '#67e8f9' },
+    { char: 'E', dx: '5px', dy: '-15px', rot: '20deg', delay: '0.25s', color: '#7dd3fc' },
+    { char: 'E', dx: '12px', dy: '8px', rot: '-5deg', delay: '0.3s', color: '#86efac' },
+    { char: 'Z', dx: '20px', dy: '-8px', rot: '15deg', delay: '0.35s', color: '#5eead4' },
   ];
 
   return (
@@ -170,6 +170,7 @@ export default function Navbar() {
         .letter-piece {
           display: inline-block;
           animation: assemble 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+          text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
         }
 
         .group:hover .letter-piece {
@@ -227,8 +228,8 @@ export default function Navbar() {
         .animate-wipe-in { animation: wipeIn2 8s infinite cubic-bezier(0.64, 0, 0.36, 1); }
 
         .search-shadow { box-shadow: 0 1px 2px 0 rgba(0,0,0,0.2); }
-        .nav-link { cursor: pointer; color: rgba(45, 50, 119, 0.8); transition: all 0.2s ease; }
-        .nav-link:hover { color: #ff4d2e; transform: translateY(-1px); }
+        .nav-link { cursor: pointer; color: rgba(226, 232, 240, 0.92); transition: all 0.2s ease; }
+        .nav-link:hover { color: #fcd34d; transform: translateY(-1px); }
         
         .search-glow:focus-within { 
           box-shadow: 0 0 0 3px rgba(255, 77, 46, 0.16), 0 4px 20px rgba(255, 77, 46, 0.11); 
@@ -262,8 +263,8 @@ export default function Navbar() {
         }
       `}</style>
 
-      {/* NAVBAR MADSJEEZ - NUEVA PALETA ENERGÉTICA */}
-      <header className="bg-gradient-to-r from-[#ffb703] via-[#ffa60a] to-[#ffb703] w-full sticky top-0 z-[100] border-b border-[#ff4d2e]/20 h-[100px] flex flex-col justify-center font-outfit shadow-lg shadow-orange-500/10">
+      {/* Barra oscura: logo y enlaces legibles; acento ámbar solo en borde */}
+      <header className="bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#0f172a] w-full sticky top-0 z-[100] border-b-2 border-[#ffb703]/50 h-[100px] flex flex-col justify-center font-outfit shadow-lg shadow-black/25">
         <div className="max-w-[1200px] mx-auto px-4 lg:px-0 w-full">
           
           {/* --- FILA 1: LOGO | BÚSQUEDA | BOTÓN MADS PRO ANIMADO --- */}
@@ -553,10 +554,10 @@ export default function Navbar() {
               
               {/* Ubicación (Ancho fijo alineado con el Logo) */}
               <div className="flex items-center gap-1 cursor-pointer w-[160px] flex-shrink-0 group">
-                <MapPin size={18} className="text-slate-900/60 group-hover:text-slate-900" />
+                <MapPin size={18} className="text-slate-400 group-hover:text-[#fcd34d]" />
                 <div className="flex flex-col leading-none">
-                  <span className="text-[10px] text-slate-700/60 group-hover:text-slate-700 whitespace-nowrap">Enviar a Capital Federal</span>
-                  <span className="text-[12px] text-slate-800 font-normal truncate">Av. Corrientes 1234, CABA</span>
+                  <span className="text-[10px] text-slate-400 group-hover:text-slate-300 whitespace-nowrap">Enviar a Capital Federal</span>
+                  <span className="text-[12px] text-slate-200 font-normal truncate group-hover:text-white">Av. Corrientes 1234, CABA</span>
                 </div>
               </div>
 
@@ -580,29 +581,29 @@ export default function Navbar() {
               
               {!session ? (
                 <>
-                  <Link href="/auth/register" className="nav-link whitespace-nowrap font-medium text-slate-800">Creá tu cuenta</Link>
-                  <Link href="/auth/login" className="nav-link whitespace-nowrap font-medium text-slate-800">Ingresá</Link>
+                  <Link href="/auth/register" className="nav-link whitespace-nowrap font-medium">Creá tu cuenta</Link>
+                  <Link href="/auth/login" className="nav-link whitespace-nowrap font-medium">Ingresá</Link>
                 </>
               ) : (
                 <>
                   <Link href="/dashboard" className="flex items-center gap-1.5 cursor-pointer nav-link group flex-shrink-0">
-                    <User size={16} className="text-slate-600" />
-                    <span className="whitespace-nowrap font-normal text-slate-800">{session.user?.name || "Mi cuenta"}</span>
-                    <ChevronDown size={10} className="opacity-40 group-hover:rotate-180 transition-transform" />
+                    <User size={16} className="text-slate-300 group-hover:text-[#fcd34d]" />
+                    <span className="whitespace-nowrap font-normal">{session.user?.name || "Mi cuenta"}</span>
+                    <ChevronDown size={10} className="opacity-50 group-hover:rotate-180 transition-transform" />
                   </Link>
-                  <Link href="/orders" className="nav-link whitespace-nowrap font-medium text-slate-800">Mis compras</Link>
+                  <Link href="/orders" className="nav-link whitespace-nowrap font-medium">Mis compras</Link>
                   <Link href="/favorites" className="flex items-center gap-0.5 nav-link whitespace-nowrap">
-                    Favoritos <ChevronDown size={10} className="opacity-40" />
+                    Favoritos <ChevronDown size={10} className="opacity-50" />
                   </Link>
                 </>
               )}
               
               <div className="flex items-center gap-4 ml-1">
                  <Link href="/notifications" className="relative cursor-pointer nav-link">
-                    <Bell size={18} strokeWidth={1.5} className="text-slate-800" />
+                    <Bell size={18} strokeWidth={1.5} className="text-slate-200 hover:text-[#fcd34d]" />
                  </Link>
                  <Link href="/cart" className="cursor-pointer nav-link relative">
-                    <ShoppingCart size={18} strokeWidth={1.5} className="text-slate-800" />
+                    <ShoppingCart size={18} strokeWidth={1.5} className="text-slate-200 hover:text-[#fcd34d]" />
                  </Link>
               </div>
             </div>
