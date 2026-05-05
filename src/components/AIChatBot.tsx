@@ -10,37 +10,62 @@ import { cn } from "@/lib/utils"
 interface Message {
   role: "user" | "assistant"
   content: string
-  isRecommendation?: boolean
-  productName?: string
-  productLink?: string
 }
 
-const modeConfig: Record<ChatMode, { welcome: string; title: string; quick: string[] }> = {
+const modeConfig: Record<ChatMode, { welcome: string; title: string; quick: string[]; label: string }> = {
   general: {
     welcome: "¡Hola! Soy Mauro, tu asistente en MadsJeez 🔧 Conozco todo sobre el marketplace: productos, envíos, pagos, ventas y más. ¿En qué te ayudo?",
     title: "Mauro - Asistente MadsJeez",
+    label: "Marketplace",
     quick: ["¿Cómo compro?", "¿Hacen envíos?", "¿Cómo vender?", "Devoluciones"],
   },
   products: {
-    welcome: "¡Hola! Soy Diego, el especialista técnico de MadsJeez � ¿Buscás herramientas, maquinaria o repuestos? Te ayudo a comparar especificaciones y encontrar el mejor producto para tu trabajo.",
+    welcome: "¡Hola! Soy Diego, especialista técnico de MadsJeez 🛠️ Te ayudo a buscar productos activos, comparar opciones, revisar stock, precios, envíos y características. ¿Qué producto necesitás encontrar?",
     title: "Diego - Experto en Productos",
-    quick: ["¿Qué motosierra recomendás?", "¿Cómo comparar productos?", "¿Hay envío gratis?", "Garantía de productos"],
+    label: "Productos",
+    quick: ["Buscar herramientas", "Comparar productos", "¿Hay envío gratis?", "Garantía de productos"],
   },
   seller: {
     welcome: "¡Hola! Soy Mariana, tu consultora de e-commerce en MadsJeez 📈 ¿Querés vender más? Te ayudo con publicaciones, pricing, marketing y estrategias de conversión.",
     title: "Mariana - Asesora de Ventas",
+    label: "Vendedores",
     quick: ["¿Cómo publicar?", "¿Cuál es la comisión?", "¿Cómo mejorar reputación?", "Marketing IA"],
   },
   support: {
     welcome: "¡Hola! Soy Laura, especialista en atención al cliente de MadsJeez 🛠️ ¿Tenés un problema con tu compra, envío, pago o cuenta? Voy a resolverlo.",
     title: "Laura - Soporte",
+    label: "Soporte",
     quick: ["Problema con envío", "Cuenta suspendida", "Cambiar datos", "Contactar soporte"],
   },
   buyer: {
-    welcome: "¡Hola! Soy tu asistente de compras. ¿Buscás algún producto específico?",
-    title: "Asistente de Compras",
-    quick: ["Ofertas del día", "Productos recomendados", "Estado de mi pedido", "Devoluciones"],
+    welcome: "¡Hola! Soy Carlos, tu asistente de compras 🛒 Te ayudo con ofertas, cupones, pagos, envíos, pedidos y recomendaciones según la sección donde estás. ¿Qué querés hacer?",
+    title: "Carlos - Asistente de Compras",
+    label: "Compras",
+    quick: ["Ofertas del día", "Cupones disponibles", "Estado de mi pedido", "Devoluciones"],
   },
+}
+
+function getModeForPath(pathname: string | null): ChatMode {
+  if (!pathname) return "general"
+  if (pathname.startsWith("/dashboard") || pathname.startsWith("/sell") || pathname.startsWith("/seller/register")) return "seller"
+  if (pathname.startsWith("/help") || pathname.startsWith("/messages") || pathname.startsWith("/settings")) return "support"
+  if (pathname.startsWith("/orders") || pathname.startsWith("/checkout") || pathname.startsWith("/cart")) return "support"
+  if (pathname.startsWith("/product") || pathname.startsWith("/products") || pathname.startsWith("/search") || pathname.startsWith("/category") || pathname.startsWith("/categories")) return "products"
+  if (pathname.startsWith("/coupons") || pathname.startsWith("/offers") || pathname.startsWith("/deals") || pathname.startsWith("/favorites") || pathname.startsWith("/supermarket") || pathname.startsWith("/fashion")) return "buyer"
+  return "general"
+}
+
+function getSectionIntro(pathname: string | null, mode: ChatMode) {
+  if (!pathname) return modeConfig[mode].welcome
+  if (pathname.startsWith("/coupons")) return "¡Hola! Soy Carlos 🛒 Estás en Cupones. Te ayudo a encontrar descuentos activos, copiar códigos, entender mínimos de compra y aprovechar beneficios por tienda."
+  if (pathname.startsWith("/offers") || pathname.startsWith("/deals")) return "¡Hola! Soy Carlos 🛒 Estás viendo ofertas. Puedo ayudarte a comparar descuentos, encontrar oportunidades y elegir la mejor opción según precio y envío."
+  if (pathname.startsWith("/search")) return "¡Hola! Soy Diego 🛠️ Estás en búsqueda. Decime qué necesitás y te ayudo a encontrar publicaciones activas, filtrar resultados y comparar productos."
+  if (pathname.startsWith("/product")) return "¡Hola! Soy Diego 🛠️ Estás viendo un producto. Puedo ayudarte con características, compatibilidad, garantía, envío y alternativas similares."
+  if (pathname.startsWith("/categories") || pathname.startsWith("/category")) return "¡Hola! Soy Diego 🛠️ Estás explorando categorías. Te ayudo a elegir la sección correcta y encontrar productos activos según tu necesidad."
+  if (pathname.startsWith("/dashboard")) return "¡Hola! Soy Mariana 📈 Estás en tu panel vendedor. Te ayudo con publicaciones, reputación, preguntas, precios, campañas y oportunidades de mejora."
+  if (pathname.startsWith("/cart") || pathname.startsWith("/checkout")) return "¡Hola! Soy Laura 🛠️ Te ayudo con carrito, pagos, envíos, cupones aplicables y cualquier problema antes de finalizar la compra."
+  if (pathname.startsWith("/orders")) return "¡Hola! Soy Laura 🛠️ Te ayudo con pedidos, tracking, reclamos, devoluciones y garantías."
+  return modeConfig[mode].welcome
 }
 
 export default function AIChatBot() {
@@ -48,25 +73,13 @@ export default function AIChatBot() {
   const { activeBot, closeBot, toggleBot } = useFloatingBots()
   const isOpen = activeBot === 'chatbot'
   const [isMinimized, setIsMinimized] = useState(false)
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: "assistant",
-      content: "¡Hola! Un clip puede ayudarte a mejorar la exposición de tu publicación y llamar más la atención en los resultados. \n\nTenés 1 publicación con oportunidad de video:",
-      isRecommendation: true,
-      productName: "Cuchilla Para Desmalezadora 3 Puntas Lusqtoff Niwa Gamma.",
-      productLink: "#"
-    }
-  ])
+  const initialMode = getModeForPath(pathname)
+  const [messages, setMessages] = useState<Message[]>([{ role: "assistant", content: getSectionIntro(pathname, initialMode) }])
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
-  const [mode, setMode] = useState<ChatMode>("general")
+  const [mode, setMode] = useState<ChatMode>(initialMode)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-
-  // Don't show on certain pages
-  if (pathname?.startsWith('/admin') || pathname?.startsWith('/dashboard')) {
-    return null
-  }
 
   // Si WhatsApp está abierto, ocultar el botón del chatbot
   const isHidden = activeBot === 'whatsapp'
@@ -78,6 +91,14 @@ export default function AIChatBot() {
   useEffect(() => {
     scrollToBottom()
   }, [messages])
+
+  useEffect(() => {
+    const nextMode = getModeForPath(pathname)
+    setMode(nextMode)
+    setMessages([{ role: "assistant", content: getSectionIntro(pathname, nextMode) }])
+    setInput("")
+    setLoading(false)
+  }, [pathname])
 
   useEffect(() => {
     if (isOpen) {
@@ -142,6 +163,15 @@ export default function AIChatBot() {
     await sendChatRequest(newMessages)
   }
 
+  const sendQuickQuestion = async (question: string) => {
+    if (loading) return
+    const userMessage: Message = { role: "user", content: question }
+    const newMessages = [...messages, userMessage]
+    setMessages(newMessages)
+    setInput("")
+    await sendChatRequest(newMessages)
+  }
+
   const minimizeChat = () => {
     setIsMinimized((prev) => !prev)
   }
@@ -154,6 +184,12 @@ export default function AIChatBot() {
   }
 
   const quickQuestions = modeConfig[mode].quick
+  const currentConfig = modeConfig[mode]
+
+  // Don't show on admin pages
+  if (pathname?.startsWith('/admin')) {
+    return null
+  }
 
   return (
     <>
@@ -185,7 +221,7 @@ export default function AIChatBot() {
                 <Clock className="w-4 h-4" />
               </button>
             </div>
-            <p className="font-bold text-sm text-white absolute left-1/2 -translate-x-1/2">Asistente</p>
+            <p className="font-bold text-sm text-white absolute left-1/2 -translate-x-1/2">{currentConfig.title}</p>
             <div className="flex items-center gap-1">
               {/* Botón Minimizar */}
               <button 
@@ -208,7 +244,7 @@ export default function AIChatBot() {
           {/* Nuevo label */}
           <div className="px-4 pt-3 pb-1 flex items-center gap-2 flex-shrink-0">
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#FF6B4A]/30 to-transparent" />
-            <span className="text-xs bg-gradient-to-r from-[#FF6B4A] to-[#FF8C42] text-white px-2 py-0.5 rounded-full font-bold">Nuevo</span>
+            <span className="text-xs bg-gradient-to-r from-[#FF6B4A] to-[#FF8C42] text-white px-2 py-0.5 rounded-full font-bold">{currentConfig.label}</span>
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#FF6B4A]/30 to-transparent" />
           </div>
 
@@ -230,32 +266,13 @@ export default function AIChatBot() {
                       : "bg-gray-50 text-gray-800"
                   }`}
                 >
-                  {msg.isRecommendation ? (
-                    <div className="space-y-3">
-                      <p className="text-sm text-gray-700 leading-relaxed">{msg.content}</p>
-                      {msg.productName && (
-                        <p className="text-sm text-gray-700">
-                          <span className="font-semibold">{msg.productName}</span> ⭐
-                        </p>
-                      )}
-                      {msg.productLink && (
-                        <a
-                          href={msg.productLink}
-                          className="inline-block text-blue-600 text-sm font-medium hover:underline"
-                        >
-                          Ir a crear clip
-                        </a>
-                      )}
-                    </div>
-                  ) : (
-                    <div
-                      className={`px-4 py-2.5 rounded-2xl border ${
-                        msg.role === "assistant" ? "bg-white border-gray-200 shadow-sm rounded-bl-md" : ""
-                      }`}
-                    >
-                      {msg.content}
-                    </div>
-                  )}
+                  <div
+                    className={`px-4 py-2.5 rounded-2xl border whitespace-pre-line ${
+                      msg.role === "assistant" ? "bg-white border-gray-200 shadow-sm rounded-bl-md" : ""
+                    }`}
+                  >
+                    {msg.content}
+                  </div>
                 </div>
                 {msg.role === "user" && (
                   <div className="w-7 h-7 bg-gradient-to-br from-[#00D4FF] to-[#00B4E6] rounded-full flex items-center justify-center flex-shrink-0 mt-1 shadow-md shadow-cyan-500/30">
@@ -270,14 +287,14 @@ export default function AIChatBot() {
           {/* Action Buttons */}
           {!isMinimized && messages.length <= 1 && (
             <div className="px-4 py-3 bg-white flex-shrink-0 space-y-2">
-              <button className="w-full text-sm text-gray-700 border border-gray-200 rounded-full px-4 py-2.5 hover:bg-gradient-to-r hover:from-[#FF6B4A]/10 hover:to-[#FF8C42]/10 hover:border-[#FF6B4A]/30 transition-all duration-300">
-                Quiero otra recomendación
+              <button onClick={() => sendQuickQuestion(quickQuestions[0])} className="w-full text-sm text-gray-700 border border-gray-200 rounded-full px-4 py-2.5 hover:bg-gradient-to-r hover:from-[#FF6B4A]/10 hover:to-[#FF8C42]/10 hover:border-[#FF6B4A]/30 transition-all duration-300">
+                {quickQuestions[0]}
               </button>
-              <button className="w-full text-sm text-gray-700 border border-gray-200 rounded-full px-4 py-2.5 hover:bg-gradient-to-r hover:from-[#00D4FF]/10 hover:to-[#00B4E6]/10 hover:border-[#00D4FF]/30 transition-all duration-300">
-                Conocer tareas pendientes
+              <button onClick={() => sendQuickQuestion(quickQuestions[1])} className="w-full text-sm text-gray-700 border border-gray-200 rounded-full px-4 py-2.5 hover:bg-gradient-to-r hover:from-[#00D4FF]/10 hover:to-[#00B4E6]/10 hover:border-[#00D4FF]/30 transition-all duration-300">
+                {quickQuestions[1]}
               </button>
-              <button className="w-full text-sm text-gray-700 border border-gray-200 rounded-full px-4 py-2.5 hover:bg-gradient-to-r hover:from-[#FF2E8C]/10 hover:to-[#FF6B9D]/10 hover:border-[#FF2E8C]/30 transition-all duration-300">
-                Consultar por otro tema
+              <button onClick={() => sendQuickQuestion(quickQuestions[2])} className="w-full text-sm text-gray-700 border border-gray-200 rounded-full px-4 py-2.5 hover:bg-gradient-to-r hover:from-[#FF2E8C]/10 hover:to-[#FF6B9D]/10 hover:border-[#FF2E8C]/30 transition-all duration-300">
+                {quickQuestions[2]}
               </button>
             </div>
           )}
@@ -290,13 +307,7 @@ export default function AIChatBot() {
                 {quickQuestions.map((q) => (
                   <button
                     key={q}
-                    onClick={() => {
-                      const fakeMsg: Message = { role: "user", content: q }
-                      const newMsgs = [...messages, fakeMsg]
-                      setMessages(newMsgs)
-                      setInput("")
-                      sendChatRequest(newMsgs)
-                    }}
+                    onClick={() => sendQuickQuestion(q)}
                     className="text-xs bg-white border border-gray-200 text-gray-700 px-3 py-1.5 rounded-full hover:bg-gradient-to-r hover:from-[#FF6B4A]/10 hover:to-[#FF8C42]/10 hover:border-[#FF6B4A]/30 hover:text-[#FF6B4A] transition-all duration-300"
                   >
                     {q}
