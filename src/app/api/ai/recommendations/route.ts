@@ -8,7 +8,22 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PU
 export async function POST(req: NextRequest) {
   try {
     const apiKey = process.env.GEMINI_API_KEY
-    if (!apiKey) return NextResponse.json({ error: "GEMINI_API_KEY not configured" }, { status: 500 })
+    if (!apiKey || apiKey.length < 10) {
+      return NextResponse.json({
+        section_title: "Productos populares",
+        products: [],
+        _meta: { fallback: true, reason: "GEMINI_API_KEY not configured" }
+      })
+    }
+
+    // Check Supabase credentials
+    if (!supabaseUrl || !supabaseKey || supabaseUrl === 'your-supabase-url') {
+      return NextResponse.json({
+        section_title: "Productos populares",
+        products: [],
+        _meta: { fallback: true, reason: "Supabase not configured" }
+      })
+    }
 
     const body = await req.json()
     const { userId, viewedProducts, searchHistory, currentProductId } = body
