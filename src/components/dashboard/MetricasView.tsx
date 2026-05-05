@@ -8,7 +8,7 @@ import {
 import {
   Info, Download, Filter, ChevronDown, ChevronRight, ChevronLeft,
   Eye, TrendingUp, TrendingDown, Minus, Search, FileText, MoreVertical,
-  Calendar, X
+  Calendar, X, Check
 } from 'lucide-react';
 
 // --- DATA DEMO ---
@@ -496,6 +496,162 @@ export default function MetricasView() {
                 <ChevronRight size={16} />
               </button>
             </div>
+          </div>
+        </>
+      )}
+
+      {/* === PUBLICACIONES (sub-tab de Negocio) === */}
+      {activeTab === 'negocio' && activeSubTab === 'publicaciones' && (
+        <>
+          {/* Filters */}
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <button
+                  onClick={() => setShowPeriodDropdown(!showPeriodDropdown)}
+                  className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  {period}
+                  <ChevronDown size={16} />
+                </button>
+                {showPeriodDropdown && (
+                  <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 w-48">
+                    {periods.map(p => (
+                      <button
+                        key={p}
+                        onClick={() => { setPeriod(p); setShowPeriodDropdown(false); }}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg"
+                      >
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">
+                Período anterior
+                <ChevronDown size={16} />
+              </button>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-gray-500">816 publicaciones</span>
+              <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
+                Descargar reporte
+                <ChevronDown size={16} />
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1 max-w-md">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Título o #"
+                className="w-full pl-9 pr-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            <button className="flex items-center gap-2 px-3 py-2 text-gray-600 text-sm hover:bg-gray-100 rounded-lg">
+              <Filter size={16} />
+              Filtrar
+            </button>
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-6 bg-gray-300 rounded-full relative cursor-pointer">
+                <div className="w-4 h-4 bg-white rounded-full absolute left-1 top-1 shadow"></div>
+              </div>
+              <span className="text-sm text-gray-600">Con caída en el rendimiento</span>
+              <Info size={14} className="text-gray-400" />
+            </div>
+          </div>
+
+          {/* Publicaciones Table */}
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="text-left p-3 text-[10px] font-semibold text-gray-500 uppercase">Publicación</th>
+                  <th className="text-center p-3 text-[10px] font-semibold text-gray-500 uppercase">Ventas brutas</th>
+                  <th className="text-center p-3 text-[10px] font-semibold text-gray-500 uppercase">Visitas</th>
+                  <th className="text-center p-3 text-[10px] font-semibold text-gray-500 uppercase">Conversión</th>
+                  <th className="text-center p-3 text-[10px] font-semibold text-gray-500 uppercase">Cantidad de ventas</th>
+                  <th className="text-center p-3 text-[10px] font-semibold text-gray-500 uppercase">Compradores</th>
+                  <th className="text-center p-3 text-[10px] font-semibold text-gray-500 uppercase">Unidades vendidas</th>
+                  <th className="text-center p-3 text-[10px] font-semibold text-gray-500 uppercase">% de participación</th>
+                  <th className="text-center p-3 text-[10px] font-semibold text-gray-500 uppercase">Opiniones negativas</th>
+                  <th className="text-center p-3 text-[10px] font-semibold text-gray-500 uppercase">Condiciones de venta</th>
+                  <th className="text-center p-3 text-[10px] font-semibold text-gray-500 uppercase">Competitividad</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { sku: '#15369785723', title: 'Tapa Arranque Facil + Carcaza Desmalezadora Chinas 43-52cc', price: '$ 39.999', sales: '$ 119.997', visits: 63, conv: '4.8%', qty: 3, buyers: 3, units: 3, part: '6.9%', neg: 'Sin opiniones', conditions: ['Envío gratis', 'Full', 'Flex', 'Cuotas'], comp1: 'Básica', comp2: 'Buena', img: '/placeholder.svg' },
+                  { sku: '#2340560972', title: 'Motor Completo Para Desmalezadora 52cc Tipo Niu...', price: '$ 89.999', sales: '$ 89.999', visits: 106, conv: '0.9%', qty: 1, buyers: 1, units: 1, part: '5.2%', neg: 'Sin opiniones', conditions: ['Envío gratis', 'Full', 'Flex', 'Cuotas'], comp1: 'Básica', comp2: 'Buena', img: '/placeholder.svg' },
+                  { sku: '#1684159073', title: 'Tapa De Arranque Facil Motosierra 45cc 52cc Chines...', price: '$ 39.999', sales: '$ 79.998', visits: 56, conv: '5.5%', qty: 2, buyers: 2, units: 2, part: '4.6%', neg: 'Sin opiniones', conditions: ['Envío gratis', 'Flex', 'Cuotas'], comp1: 'Básica', comp2: 'Buena', img: '/placeholder.svg' },
+                  { sku: '#3100740105', title: 'Filtro De Aire Desmalezadora Lusqtoff 52cc X5...', price: '$ 75.543', sales: '$ 75.543', visits: 13, conv: '7.7%', qty: 1, buyers: 1, units: 1, part: '4.4%', neg: 'Sin opiniones', conditions: ['Envío gratis', 'Flex', 'Cuotas'], comp1: 'Básica', comp2: 'Buena', img: '/placeholder.svg' },
+                  { sku: '#2762315998', title: 'Amoladora Angular Gamma 850w - G1917ar Celeste...', price: '$ 103.515,50', sales: '$ 83.093', visits: 7, conv: '14.3%', qty: 1, buyers: 1, units: 1, part: '3.8%', neg: 'Sin opiniones', conditions: ['Envío gratis', 'Full', 'Flex', 'Cuotas'], comp1: 'Básica', comp2: 'Buena', img: '/placeholder.svg' },
+                ].map((pub, i) => (
+                  <tr key={i} className="border-b border-gray-100 hover:bg-gray-50">
+                    <td className="p-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden">
+                          <img src={pub.img} alt="" className="w-full h-full object-cover" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-[10px] text-gray-400">{pub.sku} <Info size={10} className="inline" /></div>
+                          <div className="text-xs font-medium text-gray-800 truncate max-w-[180px]">{pub.title}</div>
+                          <div className="text-[10px] text-gray-500">{pub.price} | 3 cuot... | Envío gr...</div>
+                          <div className="text-[9px] text-gray-400">$ FULL | MERCADO ENVÍOS FLEX</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-3 text-center">
+                      <div className="text-xs text-gray-800 font-medium">{pub.sales}</div>
+                      <div className="text-[10px] text-green-600">▲ 200%</div>
+                    </td>
+                    <td className="p-3 text-center">
+                      <div className="text-xs text-gray-800">{pub.visits}</div>
+                      <div className="text-[10px] text-red-500">▼ 12.5%</div>
+                    </td>
+                    <td className="p-3 text-center">
+                      <div className="text-xs text-gray-800">{pub.conv}</div>
+                      <div className="text-[10px] text-green-600">▲ 3.4 puntos</div>
+                    </td>
+                    <td className="p-3 text-center">
+                      <div className="text-xs text-gray-800">{pub.qty}</div>
+                      <div className="text-[10px] text-green-600">▲ 200%</div>
+                    </td>
+                    <td className="p-3 text-center">
+                      <div className="text-xs text-gray-800">{pub.buyers}</div>
+                      <div className="text-[10px] text-gray-400">—%</div>
+                    </td>
+                    <td className="p-3 text-center">
+                      <div className="text-xs text-gray-800">{pub.units}</div>
+                      <div className="text-[10px] text-green-600">▲ 200%</div>
+                    </td>
+                    <td className="p-3 text-center">
+                      <div className="text-xs text-gray-800">{pub.part}</div>
+                      <div className="text-[10px] text-green-600">▲ 6.9 puntos</div>
+                    </td>
+                    <td className="p-3 text-center text-xs text-gray-500">{pub.neg}</td>
+                    <td className="p-3 text-center">
+                      <div className="flex flex-col gap-0.5">
+                        {pub.conditions.map((c, j) => (
+                          <div key={j} className="flex items-center gap-1 text-[10px] text-gray-600">
+                            <Check size={10} className="text-green-500" /> {c}
+                          </div>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="p-3 text-center">
+                      <div className="text-[10px] text-gray-600">Calidad de la publicación</div>
+                      <div className="text-[10px] text-red-500 font-medium">{pub.comp1}</div>
+                      <div className="text-[10px] text-gray-600 mt-1">Experiencia de compra</div>
+                      <div className="text-[10px] text-green-600 font-medium">{pub.comp2}</div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </>
       )}
