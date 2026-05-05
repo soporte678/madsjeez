@@ -1,7 +1,31 @@
 import { NextResponse } from "next/server"
+import { prisma } from "@/lib/prisma"
+
+type PublicCoupon = {
+  id: string
+  code: string
+  title: string
+  description: string
+  discountType: "percentage" | "fixed"
+  discountValue: number
+  minPurchase: number
+  maxDiscount: number
+  expiresAt: string
+  store: {
+    name: string
+    logo: string
+    reputation: string
+  }
+  category: string
+  categorySlug: string
+  productCount: number
+  isDemo?: boolean
+  isEnding?: boolean
+  isUrgent?: boolean
+}
 
 // Cupones de DEMO organizados por categoría
-const DEMO_COUPONS = [
+const DEMO_COUPONS: PublicCoupon[] = [
   // Electrónica, Audio y Video
   {
     id: "coupon-1",
@@ -637,7 +661,67 @@ export async function GET(req: Request) {
     const endingSoon = searchParams.get("endingSoon") === "true"
     const tab = searchParams.get("tab") || "all" // all, categories, ending, most-used, new
 
-    let coupons = [...DEMO_COUPONS]
+    const now = new Date()
+    const realCoupons = await prisma.coupon.findMany({
+      where: {
+        startsAt: { lte: now },
+        expiresAt: { gte: now },
+      },
+      orderBy: [{ isBoosted: "desc" }, { expiresAt: "asc" }],
+      take: 100,
+      include: {
+        seller: {
+          select: {
+            sellerName: true,
+            name: true,
+            image: true,
+            reputationLevel: true,
+            products: {
+              where: { isActive: true },
+              take: 1,
+              select: {
+                category: { select: { name: true, slug: true } },
+              },
+            },
+            _count: {
+              select: { products: { where: { isActive: true } } },
+            },
+          },
+        },
+      },
+    })
+
+    const usableRealCoupons = realCoupons.filter((coupon) => coupon.maxUses === null || coupon.usedCount < coupon.maxUses)
+
+    let coupons: PublicCoupon[] = usableRealCoupons.length > 0
+      ? usableRealCoupons.map((coupon) => {
+        const firstCategory = coupon.seller.products[0]?.category
+        const expiresAt = coupon.expiresAt.toISOString()
+        const daysToExpire = Math.ceil((coupon.expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+        return {
+          id: coupon.id,
+          code: coupon.code,
+          title: coupon.description || `${coupon.discountValue}${coupon.discountType === "percentage" ? "%" : "$"} OFF`,
+          description: coupon.description || "Cupón activo del vendedor",
+          discountType: coupon.discountType as "percentage" | "fixed",
+          discountValue: coupon.discountValue,
+          minPurchase: coupon.minPurchase || 0,
+          maxDiscount: coupon.maxDiscount || coupon.discountValue,
+          expiresAt,
+          store: {
+            name: coupon.seller.sellerName || coupon.seller.name || "Tienda MadsJeez",
+            logo: coupon.seller.image || "https://placehold.co/50x50/FF6B4A/white?text=M",
+            reputation: coupon.seller.reputationLevel || "VENDEDOR NUEVO",
+          },
+          category: firstCategory?.name || "Cupones de vendedores",
+          categorySlug: firstCategory?.slug || "vendedores",
+          productCount: coupon.seller._count.products,
+          isDemo: false,
+          isEnding: daysToExpire <= 3,
+          isUrgent: daysToExpire <= 1,
+        }
+      })
+      : [...DEMO_COUPONS]
 
     // Filtrar por búsqueda
     if (search) {
@@ -706,10 +790,10 @@ export async function GET(req: Request) {
 
     // Calcular estadísticas
     const stats = {
-      total: DEMO_COUPONS.length,
+      total: realCoupons.length > 0 ? usableRealCoupons.length : DEMO_COUPONS.length,
       filtered: coupons.length,
       byCategory: Object.keys(groupedByCategory).length,
-      endingSoon: DEMO_COUPONS.filter(c => c.isEnding).length,
+      endingSoon: coupons.filter(c => c.isEnding).length,
       categories: Object.values(groupedByCategory).map(cat => ({
         name: cat.name,
         slug: cat.slug,

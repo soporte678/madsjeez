@@ -56,34 +56,41 @@ export async function GET(request: NextRequest) {
       score: number;
     }> = [];
 
-    // 1. BUSCAR PRODUCTOS (máximo 5 resultados)
+    // 1. BUSCAR PUBLICACIONES ACTIVAS (máximo 10 resultados)
     const products = await prisma.product.findMany({
       where: {
         OR: [
-          { name: { contains: normalizedQuery, mode: "insensitive" } },
+          { title: { contains: normalizedQuery, mode: "insensitive" } },
           { description: { contains: normalizedQuery, mode: "insensitive" } },
+          { sku: { contains: normalizedQuery, mode: "insensitive" } },
         ],
-        status: "ACTIVE",
+        isActive: true,
+        stock: { gt: 0 },
       },
       take: 10,
       select: {
         id: true,
-        name: true,
-        images: true,
+        title: true,
+        images: {
+          orderBy: { order: "asc" },
+          take: 1,
+          select: { url: true },
+        },
       },
     });
 
     // Filtrar y scorear productos
     products.forEach((product) => {
-      const nameScore = similarityScore(normalizedQuery, product.name.toLowerCase());
-      if (nameScore > 0.3 || product.name.toLowerCase().includes(normalizedQuery)) {
+      const productTitle = product.title.toLowerCase();
+      const nameScore = similarityScore(normalizedQuery, productTitle);
+      if (nameScore > 0.3 || productTitle.includes(normalizedQuery)) {
         suggestions.push({
           id: `p-${product.id}`,
-          title: product.name,
+          title: product.title,
           type: "product",
-          image: product.images?.[0] || undefined,
+          image: product.images?.[0]?.url || undefined,
           url: `/product/${product.id}`,
-          score: nameScore + (product.name.toLowerCase().startsWith(normalizedQuery) ? 0.3 : 0),
+          score: nameScore + (productTitle.startsWith(normalizedQuery) ? 0.3 : 0),
         });
       }
     });
@@ -114,31 +121,32 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // 3. BUSCAR MARCAS (brands) desde productos
-    const brands = await prisma.product.groupBy({
-      by: ["brand"],
+    // 3. BUSCAR COINCIDENCIAS POR SKU desde publicaciones activas
+    const skuGroups = await prisma.product.groupBy({
+      by: ["sku"],
       where: {
-        brand: { not: null },
-        status: "ACTIVE",
+        sku: { not: null },
+        isActive: true,
+        stock: { gt: 0 },
       },
       _count: {
-        brand: true,
+        sku: true,
       },
     });
 
-    const matchingBrands = brands.filter(
+    const matchingSkus = skuGroups.filter(
       (b) =>
-        b.brand &&
-        (b.brand.toLowerCase().includes(normalizedQuery) ||
-          similarityScore(normalizedQuery, b.brand.toLowerCase()) > 0.5)
+        b.sku &&
+        (b.sku.toLowerCase().includes(normalizedQuery) ||
+          similarityScore(normalizedQuery, b.sku.toLowerCase()) > 0.5)
     );
 
-    matchingBrands.slice(0, 3).forEach((brand) => {
+    matchingSkus.slice(0, 3).forEach((brand) => {
       suggestions.push({
-        id: `b-${brand.brand}`,
-        title: brand.brand!,
+        id: `b-${brand.sku}`,
+        title: brand.sku!,
         type: "brand",
-        url: `/search?q=${encodeURIComponent(brand.brand!)}&filter=brand`,
+        url: `/search?q=${encodeURIComponent(brand.sku!)}`,
         score: 0.8,
       });
     });

@@ -45,14 +45,14 @@ export default function PublicCouponsPage() {
   const [copiedCode, setCopiedCode] = useState<string | null>(null)
 
   useEffect(() => {
-    loadCoupons()
+    loadCoupons(searchQuery)
   }, [activeTab])
 
-  const loadCoupons = async () => {
+  const loadCoupons = async (query = searchQuery) => {
     setLoading(true)
     try {
       const params = new URLSearchParams()
-      if (searchQuery) params.set("search", searchQuery)
+      if (query.trim()) params.set("search", query.trim())
       params.set("tab", activeTab)
       
       const response = await fetch(`/api/coupons/public?${params.toString()}`)
@@ -71,7 +71,13 @@ export default function PublicCouponsPage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    loadCoupons()
+    loadCoupons(searchQuery)
+  }
+
+  const resetSearch = () => {
+    setShowSearch(false)
+    setSearchQuery("")
+    loadCoupons("")
   }
 
   const copyCode = (code: string) => {
@@ -119,7 +125,7 @@ export default function PublicCouponsPage() {
               <button type="submit" className="bg-[#3483FA] text-white px-4 py-2 rounded-lg font-medium hover:bg-[#2968C8] transition-colors">
                 Buscar
               </button>
-              <button type="button" onClick={() => { setShowSearch(false); setSearchQuery(""); loadCoupons(); }} className="px-4 py-2 text-slate-600">
+              <button type="button" onClick={resetSearch} className="px-4 py-2 text-slate-600">
                 Cancelar
               </button>
             </form>
@@ -141,7 +147,7 @@ export default function PublicCouponsPage() {
           </div>
           <div className="flex items-center gap-2">
             <button onClick={() => setShowSearch(!showSearch)} className="text-[#3483FA] text-sm hover:underline">
-              {showSearch ? "Ocultar búsqueda" : "Ingresar código"}
+              {showSearch ? "Ocultar búsqueda" : "Buscar cupón"}
             </button>
             <span className="text-slate-300">|</span>
             <button className="text-[#3483FA] text-sm hover:underline">Cómo usar cupones</button>

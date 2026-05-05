@@ -142,6 +142,10 @@ export default function AIChatBot() {
     await sendChatRequest(newMessages)
   }
 
+  const minimizeChat = () => {
+    setIsMinimized((prev) => !prev)
+  }
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
@@ -185,7 +189,7 @@ export default function AIChatBot() {
             <div className="flex items-center gap-1">
               {/* Botón Minimizar */}
               <button 
-                onClick={() => { toggleBot('chatbot'); setIsMinimized(!isMinimized); }}
+                onClick={minimizeChat}
                 className="p-1.5 hover:bg-white/20 rounded-full transition-colors text-white/80 hover:text-white"
                 title={isMinimized ? "Maximizar" : "Minimizar"}
               >
@@ -322,7 +326,13 @@ export default function AIChatBot() {
               <button className="p-1 text-gray-500 hover:text-[#FF6B4A] transition-colors">
                 <Camera className="w-5 h-5" />
               </button>
-              <button className="p-2 bg-gradient-to-r from-[#FF6B4A] to-[#FF8C42] text-white rounded-full hover:from-[#FF8C42] hover:to-[#FFC107] transition-all duration-300 shadow-md shadow-orange-500/30 hover:shadow-lg hover:shadow-orange-500/40 hover:scale-105">
+              <button
+                type="button"
+                onClick={sendMessage}
+                disabled={loading || !input.trim()}
+                className="p-2 bg-gradient-to-r from-[#FF6B4A] to-[#FF8C42] text-white rounded-full hover:from-[#FF8C42] hover:to-[#FFC107] transition-all duration-300 shadow-md shadow-orange-500/30 hover:shadow-lg hover:shadow-orange-500/40 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                aria-label="Enviar mensaje"
+              >
                 <Send className="w-4 h-4" />
               </button>
             </div>
