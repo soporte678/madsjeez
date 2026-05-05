@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useEffect, useState } from "react"
-import { Search, Ticket, Clock, ChevronDown, Filter, Tag, Percent, Sparkles, Copy, Check, Store } from "lucide-react"
+import { Search, Ticket, Clock, ChevronDown, Filter, Tag, Percent, DollarSign, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface Coupon {
@@ -42,8 +42,8 @@ export default function PublicCouponsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState("all")
   const [showSearch, setShowSearch] = useState(false)
-  const [copiedCode, setCopiedCode] = useState<string | null>(null)
 
+  // Load coupons
   useEffect(() => {
     loadCoupons()
   }, [activeTab])
@@ -72,12 +72,6 @@ export default function PublicCouponsPage() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     loadCoupons()
-  }
-
-  const copyCode = (code: string) => {
-    navigator.clipboard.writeText(code)
-    setCopiedCode(code)
-    setTimeout(() => setCopiedCode(null), 2000)
   }
 
   return (
@@ -133,7 +127,7 @@ export default function PublicCouponsPage() {
 
       {/* Main content */}
       <main className="max-w-[1200px] mx-auto px-4 py-6">
-        {/* Title */}
+        {/* Title and search */}
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold text-slate-800">Cupones</h2>
@@ -218,7 +212,7 @@ export default function PublicCouponsPage() {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {group.coupons.slice(0, 3).map((coupon) => (
-                      <CouponCard key={coupon.id} coupon={coupon} copiedCode={copiedCode} onCopy={copyCode} />
+                      <CouponCard key={coupon.id} coupon={coupon} />
                     ))}
                   </div>
                 </section>
@@ -268,9 +262,12 @@ export default function PublicCouponsPage() {
   )
 }
 
-function CouponCard({ coupon, copiedCode, onCopy }: { coupon: Coupon; copiedCode: string | null; onCopy: (code: string) => void }) {
-  const formatCurrency = (amount: number) => "$" + amount.toLocaleString("es-AR")
-  
+// Coupon card component
+function CouponCard({ coupon }: { coupon: Coupon }) {
+  const formatCurrency = (amount: number) => {
+    return "$" + amount.toLocaleString("es-AR")
+  }
+
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr)
     const today = new Date()
@@ -283,36 +280,29 @@ function CouponCard({ coupon, copiedCode, onCopy }: { coupon: Coupon; copiedCode
     return `Vence el ${date.toLocaleDateString("es-AR")}`
   }
 
-  const displayValue = coupon.discountType === "percentage" 
-    ? `${coupon.discountValue}% OFF`
-    : `${formatCurrency(coupon.discountValue)} OFF`
-
   return (
-    <div className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-white relative overflow-hidden">
-      {/* Decorative notches */}
-      <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 bg-[#EBEBEB] rounded-full" />
-      <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-4 h-4 bg-[#EBEBEB] rounded-full" />
-      
+    <div className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-white">
       <div className="flex items-start gap-3 mb-3">
         <img 
           src={coupon.store.logo} 
           alt={coupon.store.name}
-          className="w-12 h-12 rounded-lg object-cover border border-slate-200"
+          className="w-12 h-12 rounded-lg object-cover"
         />
         <div className="flex-1 min-w-0">
           <h4 className="font-semibold text-slate-800 text-sm truncate">
-            {displayValue} {coupon.store.name}
+            {coupon.discountType === "percentage" ? `${coupon.discountValue}% OFF` : formatCurrency(coupon.discountValue) + " OFF"}
+            {" "}{coupon.store.name}
           </h4>
-          <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{coupon.description}</p>
+          <p className="text-xs text-slate-500 mt-0.5">{coupon.description}</p>
         </div>
       </div>
 
-      <div className="space-y-1 text-xs text-slate-600 mb-3 bg-slate-50 p-2 rounded">
+      <div className="space-y-1 text-xs text-slate-600 mb-3">
         <p>Compra mínima {formatCurrency(coupon.minPurchase)}</p>
         <p>Tope de {formatCurrency(coupon.maxDiscount)}</p>
       </div>
 
-      <div className="flex items-center justify-between pt-2 border-t border-dashed border-slate-200">
+      <div className="flex items-center justify-between pt-2 border-t border-slate-100">
         <div className="flex items-center gap-1 text-xs text-slate-500">
           <Clock className="w-3 h-3" />
           <span className={cn(
@@ -322,24 +312,13 @@ function CouponCard({ coupon, copiedCode, onCopy }: { coupon: Coupon; copiedCode
             {formatDate(coupon.expiresAt)}
           </span>
         </div>
-        
-        {/* Code display with copy */}
-        <div className="flex items-center gap-2">
-          <code className="text-xs bg-slate-100 px-2 py-1 rounded font-mono text-slate-700">
-            {coupon.code}
-          </code>
-          <button 
-            onClick={() => onCopy(coupon.code)}
-            className="p-1.5 text-[#3483FA] hover:bg-[#3483FA]/10 rounded transition-colors"
-            title="Copiar código"
-          >
-            {copiedCode === coupon.code ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-          </button>
-        </div>
+        <button className="bg-[#3483FA] text-white px-4 py-1.5 rounded text-sm font-medium hover:bg-[#2968C8] transition-colors">
+          Aplicar
+        </button>
       </div>
 
       {coupon.isEnding && (
-        <p className="text-xs text-orange-500 mt-2 font-medium">¡Por agotarse!</p>
+        <p className="text-xs text-orange-500 mt-2">¡Por agotarse!</p>
       )}
     </div>
   )
