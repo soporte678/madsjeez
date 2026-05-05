@@ -1417,14 +1417,155 @@ export default function MetricasView() {
 
       {/* === ANÁLISIS DE MERCADO === */}
       {activeTab === 'mercado' && (
-        <div className="bg-white rounded-xl border border-gray-200 p-20 text-center">
-          <div className="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-4">
-            <TrendingUp size={32} className="text-purple-500" />
+        <>
+          {/* Sub-tabs */}
+          <div className="flex gap-4 border-b border-gray-200">
+            <button className="pb-2 text-sm font-semibold text-blue-600 border-b-2 border-blue-600">Competencia</button>
+            <button className="pb-2 text-sm text-gray-500 hover:text-gray-700">Tendencias por categoría</button>
           </div>
-          <h3 className="text-lg font-semibold text-gray-800 mb-2">Análisis de mercado</h3>
-          <p className="text-sm text-gray-500 mb-1">Próximamente</p>
-          <p className="text-xs text-gray-400 max-w-md mx-auto">Tendencias, precios competitivos y oportunidades de mercado.</p>
-        </div>
+
+          {/* Header */}
+          <div>
+            <h2 className="text-lg font-semibold text-gray-800 mb-1">Ranking de competidores de tus categorías</h2>
+            <p className="text-xs text-gray-500 mb-4">Las categorías y los competidores están ordenados de mayor a menor según el monto de ventas brutas.</p>
+          </div>
+
+          {/* Filters */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-gray-500">Período</span>
+              <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">
+                Mes en curso
+                <ChevronDown size={16} />
+              </button>
+            </div>
+            <button className="text-blue-600 text-sm font-medium hover:underline">Necesito ayuda</button>
+          </div>
+
+          {/* Category cards */}
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs text-gray-500">2 categorías</span>
+              <button className="flex items-center gap-2 text-blue-600 text-xs font-medium hover:underline">
+                <Download size={14} />
+                Descargar reporte
+              </button>
+            </div>
+            <div className="flex gap-3">
+              <div className="flex-1 bg-gray-50 rounded-lg p-4 border border-gray-100 cursor-pointer hover:border-blue-300 transition-colors">
+                <div className="text-sm font-semibold text-gray-800 mb-1">Hogar, Muebles y Jardín</div>
+                <div className="text-xs text-gray-500">Ventas brutas totales</div>
+                <div className="text-sm font-bold text-gray-800">$ 284.970,54</div>
+                <div className="text-xs text-gray-500 mt-1">Cantidad de ventas: <span className="font-medium text-gray-700">9</span></div>
+              </div>
+              <div className="flex-1 bg-white rounded-lg p-4 border border-gray-100 cursor-pointer hover:border-blue-300 transition-colors">
+                <div className="text-sm font-semibold text-gray-800 mb-1">Herramientas</div>
+                <div className="text-xs text-gray-500">Ventas brutas totales</div>
+                <div className="text-sm font-bold text-gray-800">$ 101.293,2</div>
+                <div className="text-xs text-gray-500 mt-1">Cantidad de ventas: <span className="font-medium text-gray-700">3</span></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Subcategory filter */}
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-gray-500">Filtrar subcategorías</span>
+            <button className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs text-gray-700 hover:bg-gray-50">
+              Tu subcategoría
+              <ChevronDown size={14} />
+            </button>
+          </div>
+
+          {/* Position tabs */}
+          <div className="flex gap-4 border-b border-gray-200">
+            <button className="pb-2 text-sm font-semibold text-blue-600 border-b-2 border-blue-600">Tu posición</button>
+            <button className="pb-2 text-sm text-gray-500 hover:text-gray-700">Mejores vendedores</button>
+          </div>
+
+          <div className="flex justify-end">
+            <button className="text-blue-600 text-xs font-medium hover:underline">Ir a tendencias de búsqueda</button>
+          </div>
+
+          {/* Competitor Table */}
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="text-left p-3 text-[10px] font-semibold text-gray-500 uppercase w-16">Posición</th>
+                  <th className="text-left p-3 text-[10px] font-semibold text-gray-500 uppercase">
+                    Vendedor <Info size={12} className="inline ml-1 text-gray-400" />
+                  </th>
+                  <th className="text-right p-3 text-[10px] font-semibold text-gray-500 uppercase">Ventas brutas</th>
+                  <th className="text-right p-3 text-[10px] font-semibold text-gray-500 uppercase">Cantidad de ventas</th>
+                  <th className="text-right p-3 text-[10px] font-semibold text-gray-500 uppercase">Visitas</th>
+                  <th className="text-right p-3 text-[10px] font-semibold text-gray-500 uppercase">Conversión</th>
+                  <th className="text-right p-3 text-[10px] font-semibold text-gray-500 uppercase"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { pos: 491, change: 86, changeUp: true, name: 'BRONCE.HURON.MITICO', level: 'MercadoLider Platinum', official: false, sales: '$ 6.200.000', salesChange: 22.9, salesUp: true, qty: 70, qtyChange: 9.4, qtyUp: true, visits: 2100, visitsChange: 10.5, visitsUp: false, conv: '3.3%' },
+                  { pos: 492, change: 108, changeUp: true, name: 'LILA.ASCIDIAS.ARENOSO', level: 'MercadoLider Platinum', official: true, sales: '$ 6.200.000', salesChange: 21.0, salesUp: true, qty: 120, qtyChange: 11.6, qtyUp: true, visits: 5900, visitsChange: 16.2, visitsUp: true, conv: '2.1%' },
+                  { pos: 493, change: 9, changeUp: true, name: 'PORRACO.SALAMANDRA.NOCTUR...', level: 'MercadoLider Platinum', official: true, sales: '$ 6.200.000', salesChange: 2.2, salesUp: true, qty: 170, qtyChange: 20.6, qtyUp: true, visits: 7800, visitsChange: 32.7, visitsUp: true, conv: '2.2%' },
+                  { pos: 494, change: 243, changeUp: true, name: 'AMARILLO.CIVETA.PRECISO', level: 'MercadoLider Platinum', official: true, sales: '$ 6.100.000', salesChange: 47.8, salesUp: true, qty: 330, qtyChange: 88.2, qtyUp: true, visits: 5400, visitsChange: 17.6, visitsUp: true, conv: '6.2%' },
+                  { pos: 495, change: 64, changeUp: true, name: 'CARMESI.PAVO.MEDIAS', level: 'MercadoLider Platinum', official: true, sales: '$ 6.100.000', salesChange: 12.4, salesUp: true, qty: 240, qtyChange: 20.4, qtyUp: true, visits: 4300, visitsChange: 26.6, visitsUp: true, conv: '5.6%' },
+                  { pos: 496, change: 79, changeUp: true, name: 'GRANATE.CABALLO.DORADO', level: 'MercadoLider Platinum', official: true, sales: '$ 6.100.000', salesChange: 15.7, salesUp: true, qty: 40, qtyChange: 21.7, qtyUp: true, visits: 6100, visitsChange: 26.0, visitsUp: true, conv: '0.6%' },
+                  { pos: 497, change: 38, changeUp: true, name: 'ARENA.ZARIGUEYA.CASUAL', level: 'MercadoLider Platinum', official: false, sales: '$ 6.100.000', salesChange: 8.2, salesUp: true, qty: 110, qtyChange: 14.3, qtyUp: true, visits: 1400, visitsChange: 48.8, visitsUp: true, conv: '7.5%' },
+                  { pos: 498, change: 400, changeUp: false, name: 'RUFO.TIBURON.INNATO', level: 'MercadoLider Platinum', official: true, sales: '$ 6.100.000', salesChange: 71.8, salesUp: true, qty: 20, qtyChange: 66.2, qtyUp: true, visits: 1300, visitsChange: 40.6, visitsUp: true, conv: '1.6%' },
+                  { pos: 499, change: 56, changeUp: false, name: 'MORADO.JIRAFA.BIOLOGICO', level: 'MercadoLider Platinum', official: true, sales: '$ 6.100.000', salesChange: 7.1, salesUp: true, qty: 60, qtyChange: 0.0, qtyUp: false, visits: 6100, visitsChange: 48.9, visitsUp: true, conv: '1.0%' },
+                  { pos: 500, change: 500, changeUp: true, isMe: true, name: 'MAQJEEZ_J', level: 'MercadoLider Platinum', official: false, sales: '$ 284.970,54', salesChange: 41.7, salesUp: true, qty: 9, qtyChange: 28.6, qtyUp: true, visits: 443, visitsChange: 18.4, visitsUp: true, conv: '2.0%' },
+                ].map((row, i) => (
+                  <tr key={i} className={`border-b border-gray-100 hover:bg-gray-50 ${row.isMe ? 'bg-purple-50' : ''}`}>
+                    <td className="p-3 text-center">
+                      <div className="text-sm font-bold text-gray-800">{row.pos}</div>
+                      <div className={`text-[10px] font-semibold flex items-center justify-center gap-0.5 ${row.changeUp ? 'text-green-600' : 'text-red-500'}`}>
+                        {row.changeUp ? '▲' : '▼'} {row.change}
+                      </div>
+                    </td>
+                    <td className="p-3">
+                      <div className="text-xs font-semibold text-gray-800">{row.name}</div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[10px] text-gray-500">{row.level}</span>
+                        {row.official && (
+                          <span className="text-[10px] text-green-600 font-medium">Tienda oficial</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="p-3 text-right">
+                      <div className="text-xs text-gray-800 font-medium">+ {row.sales}</div>
+                      <div className={`text-[10px] font-semibold ${row.salesUp ? 'text-green-600' : 'text-red-500'}`}>
+                        {row.salesUp ? '▲' : '▼'} {row.salesChange}%
+                      </div>
+                    </td>
+                    <td className="p-3 text-right">
+                      <div className="text-xs text-gray-800 font-medium">+ {row.qty}</div>
+                      <div className={`text-[10px] font-semibold ${row.qtyUp ? 'text-green-600' : 'text-red-500'}`}>
+                        {row.qtyUp ? '▲' : '▼'} {row.qtyChange}%
+                      </div>
+                    </td>
+                    <td className="p-3 text-right">
+                      <div className="text-xs text-gray-800 font-medium">+ {row.visits.toLocaleString()}</div>
+                      <div className={`text-[10px] font-semibold ${row.visitsUp ? 'text-green-600' : 'text-red-500'}`}>
+                        {row.visitsUp ? '▲' : '▼'} {row.visitsChange}%
+                      </div>
+                    </td>
+                    <td className="p-3 text-right">
+                      <div className="text-xs text-gray-800 font-medium">{row.conv}</div>
+                    </td>
+                    <td className="p-3 text-right">
+                      {!row.isMe && (
+                        <button className="text-blue-600 text-xs font-medium hover:underline">Compararme</button>
+                      )}
+                      {row.isMe && (
+                        <span className="text-xs text-gray-400">—</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       {/* === MI PÁGINA === */}
