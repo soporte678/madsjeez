@@ -1,33 +1,157 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { 
-  Search, Bell, ShoppingCart, MapPin, User, ChevronDown
+  Search, Bell, ShoppingCart, MapPin, User, ChevronDown, X, Mic, Camera,
+  Sparkles, TrendingUp, History, ArrowRight, Zap
 } from 'lucide-react';
+import { cn } from "@/lib/utils";
+
+interface SearchSuggestion {
+  id: string;
+  title: string;
+  type: 'product' | 'category' | 'brand' | 'trending' | 'history';
+  image?: string;
+  url: string;
+}
 
 export default function Navbar() {
   const { data: session } = useSession();
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [searchHistory, setSearchHistory] = useState<string[]>([]);
+
+  // Cargar historial de búsqueda desde localStorage
+  useEffect(() => {
+    const history = localStorage.getItem('madsjeez_search_history');
+    if (history) {
+      setSearchHistory(JSON.parse(history));
+    }
+  }, []);
+
+  // Guardar búsqueda en historial
+  const saveToHistory = useCallback((query: string) => {
+    if (!query.trim()) return;
+    const newHistory = [query, ...searchHistory.filter(h => h !== query)].slice(0, 10);
+    setSearchHistory(newHistory);
+    localStorage.setItem('madsjeez_search_history', JSON.stringify(newHistory));
+  }, [searchHistory]);
+
+  // Buscar sugerencias con debounce
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      // Mostrar historial y tendencias cuando no hay query
+      const trending: SearchSuggestion[] = [
+        { id: 't1', title: 'iPhone 15 Pro', type: 'trending', url: '/search?q=iPhone+15+Pro' },
+        { id: 't2', title: 'Zapatillas Nike', type: 'trending', url: '/search?q=Zapatillas+Nike' },
+        { id: 't3', title: 'Notebook Gamer', type: 'trending', url: '/search?q=Notebook+Gamer' },
+        { id: 't4', title: 'Aire Acondicionado', type: 'trending', url: '/search?q=Aire+Acondicionado' },
+      ];
+      const historyItems: SearchSuggestion[] = searchHistory.slice(0, 5).map((h, i) => ({
+        id: `h${i}`,
+        title: h,
+        type: 'history',
+        url: `/search?q=${encodeURIComponent(h)}`
+      }));
+      setSuggestions([...historyItems, ...trending]);
+      return;
+    }
+
+    const timeoutId = setTimeout(async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch(`/api/search/suggestions?q=${encodeURIComponent(searchQuery)}`);
+        if (response.ok) {
+          const data = await response.json();
+          setSuggestions(data.suggestions || []);
+        }
+      } catch (error) {
+        console.error('Error fetching suggestions:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 150);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, searchHistory]);
+
+  // Cerrar sugerencias al hacer click fuera
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setIsSearchOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      window.location.href = `/search?q=${encodeURIComponent(searchQuery)}`;
+      saveToHistory(searchQuery);
+      setIsSearchOpen(false);
+      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
     }
   };
 
-  // Efecto de desarmado/armado del logo MADSJEEZ
+  const handleSuggestionClick = (suggestion: SearchSuggestion) => {
+    if (suggestion.type === 'history' || suggestion.type === 'trending') {
+      setSearchQuery(suggestion.title);
+    }
+    saveToHistory(suggestion.title);
+    setIsSearchOpen(false);
+    router.push(suggestion.url);
+  };
+
+  const clearSearch = () => {
+    setSearchQuery('');
+    setSuggestions([]);
+    inputRef.current?.focus();
+  };
+
+  const removeFromHistory = (e: React.MouseEvent, title: string) => {
+    e.stopPropagation();
+    const newHistory = searchHistory.filter(h => h !== title);
+    setSearchHistory(newHistory);
+    localStorage.setItem('madsjeez_search_history', JSON.stringify(newHistory));
+  };
+
+  // Navegación con teclado
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedIndex(prev => (prev < suggestions.length - 1 ? prev + 1 : prev));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedIndex(prev => (prev > 0 ? prev - 1 : -1));
+    } else if (e.key === 'Enter' && selectedIndex >= 0) {
+      e.preventDefault();
+      handleSuggestionClick(suggestions[selectedIndex]);
+    } else if (e.key === 'Escape') {
+      setIsSearchOpen(false);
+    }
+  };
+
+  // Efecto de desarmado/armado del logo MADSJEEZ - NUEVA PALETA
   const logoLetters = [
-    { char: 'M', dx: '-10px', dy: '-12px', rot: '-15deg', delay: '0s' },
-    { char: 'A', dx: '-5px', dy: '10px', rot: '10deg', delay: '0.05s' },
-    { char: 'D', dx: '8px', dy: '-10px', rot: '-8deg', delay: '0.1s' },
-    { char: 'S', dx: '15px', dy: '12px', rot: '12deg', delay: '0.15s' },
-    { char: 'J', dx: '-10px', dy: '15px', rot: '-10deg', delay: '0.2s', isBlue: true },
-    { char: 'E', dx: '5px', dy: '-15px', rot: '20deg', delay: '0.25s', isBlue: true },
-    { char: 'E', dx: '12px', dy: '8px', rot: '-5deg', delay: '0.3s', isBlue: true },
-    { char: 'Z', dx: '20px', dy: '-8px', rot: '15deg', delay: '0.35s', isBlue: true },
+    { char: 'M', dx: '-10px', dy: '-12px', rot: '-15deg', delay: '0s', color: '#FF6B4A' },
+    { char: 'A', dx: '-5px', dy: '10px', rot: '10deg', delay: '0.05s', color: '#FF8C42' },
+    { char: 'D', dx: '8px', dy: '-10px', rot: '-8deg', delay: '0.1s', color: '#FFC107' },
+    { char: 'S', dx: '15px', dy: '12px', rot: '12deg', delay: '0.15s', color: '#FFD700' },
+    { char: 'J', dx: '-10px', dy: '15px', rot: '-10deg', delay: '0.2s', color: '#00D4FF' },
+    { char: 'E', dx: '5px', dy: '-15px', rot: '20deg', delay: '0.25s', color: '#00B4E6' },
+    { char: 'E', dx: '12px', dy: '8px', rot: '-5deg', delay: '0.3s', color: '#7CFC00' },
+    { char: 'Z', dx: '20px', dy: '-8px', rot: '15deg', delay: '0.35s', color: '#32CD32' },
   ];
 
   return (
@@ -103,32 +227,70 @@ export default function Navbar() {
         .animate-wipe-in { animation: wipeIn2 8s infinite cubic-bezier(0.64, 0, 0.36, 1); }
 
         .search-shadow { box-shadow: 0 1px 2px 0 rgba(0,0,0,0.2); }
-        .nav-link { cursor: pointer; color: rgba(51, 51, 51, 0.8); transition: color 0.15s ease; }
-        .nav-link:hover { color: #3483fa; }
+        .nav-link { cursor: pointer; color: rgba(45, 50, 119, 0.8); transition: all 0.2s ease; }
+        .nav-link:hover { color: #FF6B4A; transform: translateY(-1px); }
+        
+        .search-glow:focus-within { 
+          box-shadow: 0 0 0 3px rgba(255, 107, 74, 0.15), 0 4px 20px rgba(255, 107, 74, 0.1); 
+        }
+        
+        .suggestion-item { 
+          transition: all 0.15s ease; 
+        }
+        .suggestion-item:hover, .suggestion-item.selected {
+          background: linear-gradient(90deg, rgba(255, 107, 74, 0.08), rgba(255, 193, 7, 0.05));
+          transform: translateX(4px);
+        }
+        
+        @keyframes shimmer {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+        
+        .gradient-text {
+          background: linear-gradient(90deg, #FF6B4A, #FFC107, #00D4FF, #FF6B4A);
+          background-size: 200% auto;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          animation: shimmer 3s linear infinite;
+        }
+        
+        .mads-pro-gradient {
+          background: linear-gradient(90deg, #FF2E8C, #FF6B9D, #FF2E8C);
+          background-size: 200% auto;
+          animation: shimmer 3s linear infinite;
+        }
       `}</style>
 
-      {/* NAVBAR MADSJEEZ */}
-      <header className="bg-[#FFF159] w-full sticky top-0 z-[100] border-b border-black/5 h-[100px] flex flex-col justify-center font-outfit">
+      {/* NAVBAR MADSJEEZ - NUEVA PALETA ENERGÉTICA */}
+      <header className="bg-gradient-to-r from-[#FFC107] via-[#FFD700] to-[#FFC107] w-full sticky top-0 z-[100] border-b border-[#FF6B4A]/20 h-[100px] flex flex-col justify-center font-outfit shadow-lg shadow-orange-500/10">
         <div className="max-w-[1200px] mx-auto px-4 lg:px-0 w-full">
           
           {/* --- FILA 1: LOGO | BÚSQUEDA | BOTÓN MADS PRO ANIMADO --- */}
           <div className="flex items-center h-12">
             
-            {/* LOGO */}
+            {/* LOGO - NUEVA PALETA */}
             <Link href="/" className="flex items-center gap-2 cursor-pointer group w-[160px] flex-shrink-0">
-              <div className="relative w-9 h-9 bg-slate-900 rounded-lg flex items-center justify-center shadow-md overflow-hidden">
+              <div className="relative w-9 h-9 bg-gradient-to-br from-[#1a1a2e] to-[#16213e] rounded-lg flex items-center justify-center shadow-lg shadow-orange-500/30 overflow-hidden group-hover:shadow-xl group-hover:shadow-orange-500/40 transition-all duration-300">
                  <svg viewBox="0 0 100 100" className="w-6 h-6">
-                    <path d="M 15 80 L 35 30 L 55 55" stroke="#3483fa" fill="none" strokeWidth="15" strokeLinecap="round"/>
-                    <path d="M 85 80 L 65 30 L 45 65" stroke="#FACC15" fill="none" strokeWidth="15" strokeLinecap="round"/>
+                    <path d="M 15 80 L 35 30 L 55 55" stroke="#FF6B4A" fill="none" strokeWidth="15" strokeLinecap="round"/>
+                    <path d="M 85 80 L 65 30 L 45 65" stroke="#00D4FF" fill="none" strokeWidth="15" strokeLinecap="round"/>
                  </svg>
+                 <div className="absolute inset-0 bg-gradient-to-tr from-[#FF6B4A]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
               <div className="flex flex-col justify-center leading-none">
-                <span className="font-montserrat font-black text-[20px] tracking-tighter uppercase text-[#2d3277]">
+                <span className="font-montserrat font-black text-[20px] tracking-tighter uppercase">
                   {logoLetters.map((letter, i) => (
                     <span 
                       key={i} 
-                      className={`letter-piece ${letter.isBlue ? 'text-[#3483fa]' : ''}`}
-                      style={{'--dx': letter.dx, '--dy': letter.dy, '--rot': letter.rot, animationDelay: letter.delay} as any}
+                      className="letter-piece"
+                      style={{
+                        '--dx': letter.dx, 
+                        '--dy': letter.dy, 
+                        '--rot': letter.rot, 
+                        animationDelay: letter.delay,
+                        color: letter.color
+                      } as any}
                     >
                       {letter.char}
                     </span>
@@ -137,22 +299,192 @@ export default function Navbar() {
               </div>
             </Link>
 
-            {/* BARRA DE BÚSQUEDA (600px con ml-8 para eje central perfecto) */}
-            <form onSubmit={handleSearch} className="w-[600px] flex-shrink-0 ml-8">
-              <div className="flex items-center bg-white rounded-[2px] search-shadow h-10 px-4">
-                <input 
-                  type="text" 
-                  placeholder="Buscar productos, marcas y más..." 
-                  className="flex-1 outline-none text-[16px] text-slate-800 placeholder-slate-400 font-light"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <div className="h-6 w-[1px] bg-slate-200 mx-2"></div>
-                <button type="submit" className="text-slate-500 hover:text-slate-800 transition-colors">
-                  <Search size={19} strokeWidth={2.5} />
-                </button>
-              </div>
-            </form>
+            {/* BARRA DE BÚSQUEDA INTELIGENTE */}
+            <div ref={searchRef} className="w-[600px] flex-shrink-0 ml-8 relative">
+              <form onSubmit={handleSearch}>
+                <div 
+                  className={cn(
+                    "flex items-center bg-white rounded-xl h-11 px-4 transition-all duration-300 search-glow border-2",
+                    isSearchOpen ? "border-[#FF6B4A] shadow-lg shadow-orange-500/20" : "border-transparent"
+                  )}
+                >
+                  <input 
+                    ref={inputRef}
+                    type="text" 
+                    placeholder="Buscar productos, marcas y más..." 
+                    className="flex-1 outline-none text-[16px] text-slate-800 placeholder-slate-400 font-light bg-transparent"
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setIsSearchOpen(true);
+                      setSelectedIndex(-1);
+                    }}
+                    onFocus={() => setIsSearchOpen(true)}
+                    onKeyDown={handleKeyDown}
+                    autoComplete="off"
+                  />
+                  {searchQuery && (
+                    <button 
+                      type="button"
+                      onClick={clearSearch}
+                      className="p-1 hover:bg-slate-100 rounded-full transition-colors mr-1"
+                    >
+                      <X size={16} className="text-slate-400" />
+                    </button>
+                  )}
+                  <div className="h-6 w-[1px] bg-slate-200 mx-2"></div>
+                  <button 
+                    type="button" 
+                    className="p-1.5 text-slate-400 hover:text-[#FF6B4A] transition-colors"
+                    title="Búsqueda por voz"
+                  >
+                    <Mic size={18} />
+                  </button>
+                  <button 
+                    type="button" 
+                    className="p-1.5 text-slate-400 hover:text-[#00D4FF] transition-colors mr-1"
+                    title="Búsqueda por imagen"
+                  >
+                    <Camera size={18} />
+                  </button>
+                  <button 
+                    type="submit" 
+                    className="bg-gradient-to-r from-[#FF6B4A] to-[#FF8C42] text-white p-2 rounded-lg hover:from-[#FF8C42] hover:to-[#FFC107] transition-all duration-300 shadow-md shadow-orange-500/30 hover:shadow-lg hover:shadow-orange-500/40 hover:scale-105"
+                  >
+                    <Search size={18} strokeWidth={2.5} />
+                  </button>
+                </div>
+              </form>
+
+              {/* DROPDOWN DE SUGERENCIAS INTELIGENTES */}
+              {isSearchOpen && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl shadow-orange-500/10 border border-slate-100 overflow-hidden z-50">
+                  {/* Loading state */}
+                  {isLoading && (
+                    <div className="p-4 flex items-center justify-center gap-2 text-slate-400">
+                      <div className="w-5 h-5 border-2 border-[#FF6B4A] border-t-transparent rounded-full animate-spin" />
+                      <span className="text-sm">Buscando...</span>
+                    </div>
+                  )}
+                  
+                  {/* Sugerencias */}
+                  {!isLoading && suggestions.length > 0 && (
+                    <div className="max-h-[400px] overflow-y-auto">
+                      {/* Título de sección */}
+                      {searchQuery && (
+                        <div className="px-4 py-2 bg-gradient-to-r from-[#FF6B4A]/5 to-[#FFC107]/5 border-b border-slate-100">
+                          <span className="text-xs font-bold text-[#FF6B4A] uppercase tracking-wider flex items-center gap-1">
+                            <Sparkles size={12} />
+                            Sugerencias inteligentes
+                          </span>
+                        </div>
+                      )}
+                      
+                      {/* Historial */}
+                      {!searchQuery && searchHistory.length > 0 && (
+                        <div className="px-4 py-2 bg-slate-50 border-b border-slate-100">
+                          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                            <History size={12} />
+                            Búsquedas recientes
+                          </span>
+                        </div>
+                      )}
+                      
+                      {/* Tendencias */}
+                      {!searchQuery && (
+                        <div className="px-4 py-2 bg-gradient-to-r from-[#FFC107]/10 to-[#FF6B4A]/5 border-b border-slate-100">
+                          <span className="text-xs font-bold text-[#FFC107] uppercase tracking-wider flex items-center gap-1">
+                            <TrendingUp size={12} />
+                            Tendencias
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="py-2">
+                        {suggestions.map((suggestion, index) => (
+                          <button
+                            key={suggestion.id}
+                            onClick={() => handleSuggestionClick(suggestion)}
+                            className={cn(
+                              "suggestion-item w-full px-4 py-2.5 flex items-center gap-3 text-left",
+                              selectedIndex === index && "selected"
+                            )}
+                          >
+                            {/* Icono según tipo */}
+                            {suggestion.type === 'history' && (
+                              <History size={16} className="text-slate-400 flex-shrink-0" />
+                            )}
+                            {suggestion.type === 'trending' && (
+                              <TrendingUp size={16} className="text-[#FF6B4A] flex-shrink-0" />
+                            )}
+                            {suggestion.type === 'product' && (
+                              <div className="w-8 h-8 rounded bg-slate-100 flex items-center justify-center flex-shrink-0">
+                                {suggestion.image ? (
+                                  <img src={suggestion.image} alt="" className="w-6 h-6 object-cover rounded" />
+                                ) : (
+                                  <Search size={14} className="text-slate-400" />
+                                )}
+                              </div>
+                            )}
+                            {suggestion.type === 'category' && (
+                              <div className="w-8 h-8 rounded bg-gradient-to-br from-[#FF6B4A]/10 to-[#FFC107]/10 flex items-center justify-center flex-shrink-0">
+                                <ArrowRight size={14} className="text-[#FF6B4A]" />
+                              </div>
+                            )}
+                            {suggestion.type === 'brand' && (
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#00D4FF]/10 to-[#FF6B4A]/10 flex items-center justify-center flex-shrink-0">
+                                <Zap size={14} className="text-[#00D4FF]" />
+                              </div>
+                            )}
+                            
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-slate-800 truncate">
+                                {suggestion.title}
+                              </p>
+                              <p className="text-xs text-slate-400 capitalize">
+                                {suggestion.type === 'history' && 'Búsqueda reciente'}
+                                {suggestion.type === 'trending' && 'Tendencia'}
+                                {suggestion.type === 'product' && 'Producto'}
+                                {suggestion.type === 'category' && 'Categoría'}
+                                {suggestion.type === 'brand' && 'Marca'}
+                              </p>
+                            </div>
+                            
+                            {suggestion.type === 'history' && (
+                              <button
+                                onClick={(e) => removeFromHistory(e, suggestion.title)}
+                                className="p-1 hover:bg-slate-100 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                title="Eliminar del historial"
+                              >
+                                <X size={14} className="text-slate-400" />
+                              </button>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                      
+                      {/* Footer */}
+                      <div className="px-4 py-2 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                        <span className="text-xs text-slate-400">
+                          Usa ↑↓ para navegar, ↵ para seleccionar
+                        </span>
+                        {searchHistory.length > 0 && !searchQuery && (
+                          <button
+                            onClick={() => {
+                              setSearchHistory([]);
+                              localStorage.removeItem('madsjeez_search_history');
+                            }}
+                            className="text-xs text-[#FF6B4A] hover:text-[#FF8C42] font-medium"
+                          >
+                            Borrar historial
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* BOTÓN DESLIZANTE MADS PRO (Efecto Borrador) */}
             <div className="flex-1 flex items-center justify-end">
@@ -203,8 +535,8 @@ export default function Navbar() {
                     </div>
                  </div>
 
-                 {/* 3. LA INSIGNIA MADS PRO (El Borrador Animado) */}
-                 <div className="absolute left-[6px] mads-pro-badge rounded-full px-3 py-[5px] flex items-center shadow-sm animate-slide-badge z-20">
+                 {/* 3. LA INSIGNIA MADS PRO (El Borrador Animado) - NUEVA PALETA FUCSIA */}
+                 <div className="absolute left-[6px] bg-gradient-to-r from-[#FF2E8C] via-[#FF6B9D] to-[#FF2E8C] rounded-full px-3 py-[5px] flex items-center shadow-lg shadow-fuchsia-500/30 animate-slide-badge z-20 mads-pro-badge">
                     <span className="font-montserrat font-black text-white text-[11px] italic tracking-tight">MADS PRO</span>
                  </div>
 
