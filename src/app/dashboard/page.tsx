@@ -8,8 +8,12 @@ import {
   Info, CheckCircle2, ChevronUp, Download, Filter, PieChart, BarChart2,
   MoreVertical, Activity, Clock, Box, ShieldAlert, XCircle, RefreshCcw,
   ThumbsUp, Users, Target, LayoutGrid, Zap, Plus, X, Maximize2, MessageSquare, Calendar,
-  ClipboardList, Bookmark, Store, Car, Home, SearchCode
+  ClipboardList, Bookmark, Store, Car, Home, SearchCode,
+  Eye, Package, DollarSign
 } from 'lucide-react';
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+} from 'recharts';
 import { UserMenu } from '@/components/dashboard/UserMenu';
 import ReputacionView from "@/components/dashboard/ReputacionView";
 import ResumenView from "@/components/dashboard/ResumenView";
@@ -353,16 +357,134 @@ export default function App() {
   );
 
 
-  const renderLiveMonitor = () => (
-    <div className="fixed inset-0 bg-gray-100 z-50 overflow-y-auto">
-      <div className="bg-[#fff159] py-8 text-center relative border-b border-yellow-400">
-        <button onClick={() => setShowLiveMonitor(false)} className="absolute left-6 top-6 flex items-center gap-1 text-blue-900 font-bold hover:underline"><ChevronDown className="rotate-90" size={16}/> Volver a Métricas</button>
-        <h1 className="text-2xl font-black text-gray-800">Ventas de hoy en vivo</h1>
-        <div className="absolute left-1/2 -translate-x-1/2 -bottom-10 w-[500px] bg-white rounded-xl shadow-lg p-6 text-center border border-gray-100"><div className="text-5xl font-black text-gray-800">$ 0</div></div>
+  const renderLiveMonitor = () => {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const dateStr = now.toLocaleDateString('es-AR', { day: 'numeric', month: 'long' });
+
+    const hourlyData = [
+      { hour: '00', hoy: 0, ayer: 0 },
+      { hour: '02', hoy: 0, ayer: 0 },
+      { hour: '04', hoy: 0, ayer: 0 },
+      { hour: '06', hoy: 0, ayer: 0 },
+      { hour: '08', hoy: 15000, ayer: 0 },
+      { hour: '10', hoy: 45000, ayer: 80000 },
+      { hour: '12', hoy: 120000, ayer: 30000 },
+      { hour: '14', hoy: 60000, ayer: 0 },
+      { hour: '16', hoy: 25000, ayer: 100000 },
+      { hour: '18', hoy: 50000, ayer: 150000 },
+      { hour: '20', hoy: 220000, ayer: 80000 },
+      { hour: '22', hoy: 45000, ayer: 20000 },
+    ];
+
+    const topProducts = [
+      { rank: 1, title: 'Motor Completo Para Des...', price: '$ 89.999', stock: 4, stockLabel: '🔴', exp: '75 - Buena', img: '/placeholder.svg', highlighted: true },
+      { rank: 2, title: 'Combo 40 Unidades Cuell...', price: '$ 73.359', stock: 145, exp: 'Sin calcular', img: '/placeholder.svg' },
+      { rank: 3, title: 'Bomba Sin Fin Aceite Man...', price: '$ 67.998', stock: 0, exp: '100 - Buena', img: '/placeholder.svg' },
+      { rank: 4, title: 'Caja Engranajes Desmalez...', price: '$ 49.699', stock: 5, exp: '100 - Buena', img: '/placeholder.svg' },
+      { rank: 5, title: 'Tapa Arranque Cilambre ...', price: '$ 38.999', stock: 5, exp: '100 - Buena', img: '/placeholder.svg' },
+    ];
+
+    return (
+      <div className="fixed inset-0 bg-gray-100 z-50 overflow-y-auto">
+        {/* Header amarillo */}
+        <div className="bg-[#fff159] py-10 text-center relative border-b border-yellow-400">
+          <button onClick={() => setShowLiveMonitor(false)} className="absolute left-6 top-6 flex items-center gap-1 text-blue-900 font-bold hover:underline text-sm">
+            <ChevronDown className="rotate-90" size={16}/> Volver a Métricas
+          </button>
+          <button onClick={() => setShowLiveMonitor(false)} className="absolute right-6 top-6 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow hover:bg-gray-50">
+            <X size={20} className="text-gray-700" />
+          </button>
+          <h1 className="text-2xl font-black text-gray-800 mb-8">Ventas de hoy en vivo</h1>
+          <div className="bg-white rounded-full px-4 py-1.5 text-xs text-gray-600 font-medium inline-flex items-center gap-1.5 shadow-sm mb-4">
+            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+            {dateStr}, {timeStr}
+          </div>
+          <div className="text-6xl font-black text-gray-800">$ 570.803<span className="text-4xl">,20</span></div>
+        </div>
+
+        {/* Content */}
+        <div className="max-w-[1200px] mx-auto pt-8 px-4 pb-12">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Métricas clave */}
+            <div className="lg:col-span-3 bg-white rounded-xl border border-gray-200 p-5">
+              <h3 className="text-sm font-semibold text-gray-800 mb-4 text-center">Métricas clave</h3>
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { icon: <Eye size={18} className="text-blue-500" />, label: 'Visitas únicas', value: '789' },
+                  { icon: <Users size={18} className="text-blue-500" />, label: 'Total de compradores', value: '14' },
+                  { icon: <ShoppingBag size={18} className="text-blue-500" />, label: 'Cantidad de ventas', value: '16' },
+                  { icon: <TrendingUp size={18} className="text-blue-500" />, label: 'Conversión', value: '2,03%' },
+                  { icon: <Package size={18} className="text-blue-500" />, label: 'Unidades vendidas', value: '17 u.' },
+                  { icon: <DollarSign size={18} className="text-blue-500" />, label: 'Precio promedio', value: '$ 33.576' },
+                ].map((m, i) => (
+                  <div key={i} className="text-center">
+                    <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-2">{m.icon}</div>
+                    <div className="text-lg font-black text-gray-800">{m.value}</div>
+                    <div className="text-[10px] text-gray-500 mt-0.5">{m.label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Tendencias en ventas brutas */}
+            <div className="lg:col-span-5 bg-white rounded-xl border border-gray-200 p-5">
+              <h3 className="text-sm font-semibold text-gray-800 mb-4 text-center">Tendencias en ventas brutas</h3>
+              <ResponsiveContainer width="100%" height={280}>
+                <LineChart data={hourlyData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="hour" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9CA3AF' }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9CA3AF' }} tickFormatter={(v) => `${(v/1000).toFixed(0)} mil`} />
+                  <Tooltip formatter={(value: any) => [`$${Number(value).toLocaleString()}`, '']} />
+                  <Line type="monotone" dataKey="hoy" stroke="#3B82F6" strokeWidth={2} dot={{ r: 3, fill: '#3B82F6' }} name="Hoy" />
+                  <Line type="monotone" dataKey="ayer" stroke="#EC4899" strokeWidth={2} dot={{ r: 3, fill: '#EC4899' }} name="Ayer" />
+                </LineChart>
+              </ResponsiveContainer>
+              <div className="flex items-center justify-center gap-6 mt-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                  <span className="text-xs text-gray-500">Hoy</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-pink-500"></span>
+                  <span className="text-xs text-gray-500">Ayer</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Productos más vendidos */}
+            <div className="lg:col-span-4 bg-white rounded-xl border border-gray-200 p-5">
+              <h3 className="text-sm font-semibold text-gray-800 mb-4 text-center">Productos más vendidos</h3>
+              <div className="space-y-3">
+                {topProducts.map((p) => (
+                  <div key={p.rank} className={`flex items-center gap-3 p-2.5 rounded-lg ${p.highlighted ? 'bg-yellow-50 border border-yellow-200' : 'hover:bg-gray-50'}`}>
+                    <div className={`text-sm font-bold ${p.rank === 1 ? 'text-yellow-600' : 'text-gray-500'} w-5 text-center`}>{p.rank}</div>
+                    <div className="w-12 h-12 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden">
+                      <img src={p.img} alt="" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-gray-800 truncate">{p.title}</div>
+                      <div className="text-xs text-gray-500 mt-0.5">Ventas del día: {p.price}</div>
+                      <div className="flex items-center gap-2 text-[11px] text-gray-500 mt-0.5">
+                        <span>Stock: {p.stock} {p.stockLabel || ''}</span>
+                        <span>unidades</span>
+                      </div>
+                      <div className="text-[11px] text-gray-500">Experiencia de compra: {p.exp}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Floating help button */}
+        <button className="fixed bottom-6 right-6 w-12 h-12 bg-blue-500 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-600 transition-colors z-50">
+          <span className="text-lg font-bold">?</span>
+        </button>
       </div>
-      <div className="max-w-[1200px] mx-auto pt-20 px-4 text-center py-20 text-gray-400 font-medium">Esperando datos reales...</div>
-    </div>
-  );
+    );
+  };
 
   // VISTAS RAÍZ
   if (showLiveMonitor) return renderLiveMonitor();
