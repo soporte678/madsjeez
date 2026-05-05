@@ -3,7 +3,8 @@
 import React, { useState, useMemo } from 'react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  AreaChart, Area, FunnelChart, Funnel, LabelList, Cell
+  AreaChart, Area, FunnelChart, Funnel, LabelList, Cell,
+  BarChart, Bar
 } from 'recharts';
 import {
   Info, Download, Filter, ChevronDown, ChevronRight, ChevronLeft,
@@ -1257,35 +1258,35 @@ export default function MetricasView() {
             <button className="text-blue-600 text-sm font-medium hover:underline">Necesito ayuda</button>
           </div>
 
-          {/* Coverage cards */}
+          {/* Exposure cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Radio de cobertura actual */}
+            {/* Exposición actual */}
             <div className="bg-white rounded-xl border border-gray-200 p-6">
               <div className="flex items-center gap-1 text-sm font-semibold text-gray-800 mb-4">
-                Radio de cobertura actual <Info size={14} className="text-gray-400" />
+                Exposición actual <Info size={14} className="text-gray-400" />
               </div>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center">
                   <Check size={12} className="text-white" />
                 </div>
-                <span className="text-lg font-bold text-gray-800">Ajustable</span>
+                <span className="text-lg font-bold text-gray-800">Excelente</span>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                  <span className="text-xs text-gray-600">Ofrezco. Llego en 24 hs</span>
+                  <span className="text-xs text-gray-600">Envíos Flex</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                  <span className="text-xs text-gray-600">Podés modificar el radio de cobertura</span>
+                  <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                  <span className="text-xs text-gray-600">Tenés la exposición</span>
                 </div>
               </div>
             </div>
 
-            {/* Radio de cobertura previsto */}
+            {/* Exposición previsto */}
             <div className="bg-white rounded-xl border border-gray-200 p-6">
               <div className="flex items-center gap-1 text-sm font-semibold text-gray-800 mb-4">
-                Radio de cobertura previsto para la próxima semana <Info size={14} className="text-gray-400" />
+                Exposición previsto para la próxima semana <Info size={14} className="text-gray-400" />
               </div>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-4 h-4 rounded-full bg-gray-400 flex items-center justify-center">
@@ -1295,14 +1296,60 @@ export default function MetricasView() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <div className="text-xs text-gray-500 mb-1">Entregas a tiempo</div>
+                  <div className="text-xs text-gray-500 mb-1">Envío correcto</div>
                   <div className="text-xs text-gray-800 font-medium">Esta semana</div>
                 </div>
                 <div>
-                  <div className="text-xs text-gray-500 mb-1">Entregas a tiempo</div>
+                  <div className="text-xs text-gray-500 mb-1">Envío correcto</div>
                   <div className="text-xs text-gray-400">— %</div>
                 </div>
               </div>
+              <button className="text-blue-600 text-xs font-medium hover:underline mt-4">Recibir estas notificaciones de tu exposición</button>
+            </div>
+          </div>
+
+          {/* Detalle por zona */}
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-1 text-sm font-semibold text-gray-800">
+                Detalle por zona con ventas <Info size={14} className="text-gray-400" />
+              </div>
+              <button className="text-blue-600 text-xs font-medium hover:underline">Editar</button>
+            </div>
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    <th className="text-left p-3 text-[10px] font-semibold text-gray-500 uppercase">Zona</th>
+                    <th className="text-left p-3 text-[10px] font-semibold text-gray-500 uppercase">Exposición actual</th>
+                    <th className="text-left p-3 text-[10px] font-semibold text-gray-500 uppercase">Envíos correctos esta semana</th>
+                    <th className="text-left p-3 text-[10px] font-semibold text-gray-500 uppercase">Exposición prevista</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { zone: 'Mar', exposure: 'Llego hoy', correct: 'Sin calcular', forecast: 'Sin calcular' },
+                    { zone: 'San Vicente', exposure: 'Llego hoy', correct: 'Sin calcular', forecast: 'Sin calcular' },
+                    { zone: 'Cañas', exposure: 'Llego hoy', correct: 'Sin calcular', forecast: 'Sin calcular' },
+                    { zone: 'Gascon Balcarce', exposure: 'Llego hoy', correct: 'Sin calcular', forecast: 'Sin calcular' },
+                    { zone: 'Holmes', exposure: 'Llego hoy', correct: 'Sin calcular', forecast: 'Sin calcular' },
+                    { zone: 'Fortín Mercedes', exposure: 'Llego hoy', correct: 'Sin calcular', forecast: 'Sin calcular' },
+                    { zone: 'Alegre', exposure: 'Llego hoy', correct: 'Sin calcular', forecast: 'Sin calcular' },
+                    { zone: 'Real', exposure: 'Llego hoy', correct: 'Sin calcular', forecast: 'Sin calcular' },
+                  ].map((row, i) => (
+                    <tr key={i} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="p-3 text-xs text-gray-700">{row.zone}</td>
+                      <td className="p-3 text-xs text-gray-700">{row.exposure}</td>
+                      <td className="p-3 text-xs text-gray-500">{row.correct}</td>
+                      <td className="p-3 text-xs text-gray-500">{row.forecast}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="mt-3 flex items-center justify-between">
+              <button className="text-blue-600 text-xs font-medium hover:underline">Revisar la configuración de mis zonas</button>
+              <ChevronRight size={16} className="text-blue-600" />
             </div>
           </div>
 
@@ -1311,26 +1358,28 @@ export default function MetricasView() {
             <div className="flex items-center gap-1 text-sm font-semibold text-gray-800 mb-6">
               Historial de tus envíos en las últimas semanas <Info size={14} className="text-gray-400" />
             </div>
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={[
-                { week: '15 abr - 18 abr', turbo: 95, flex: 88, demoraSafe: 2, demoraBad: 3 },
-                { week: '20 abr - 24 abr', turbo: 92, flex: 85, demoraSafe: 3, demoraBad: 2 },
-                { week: '27 abr - 1 may', turbo: 94, flex: 90, demoraSafe: 1, demoraBad: 2 },
-              ]}>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={[
+                { week: '15 abr - 18 abr', correct: 95, anticipados: 3, incSafe: 1, incBad: 1 },
+                { week: '20 abr - 24 abr', correct: 88, anticipados: 5, incSafe: 4, incBad: 3 },
+                { week: '27 abr - 1 may', correct: 91, anticipados: 2, incSafe: 2, incBad: 5 },
+              ]} barCategoryGap="20%">
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
                 <XAxis dataKey="week" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9CA3AF' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9CA3AF' }} domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9CA3AF' }} />
                 <Tooltip formatter={(value: any, name: any) => [`${value}%`, name]} />
-                <Line type="monotone" dataKey="turbo" stroke="#10B981" strokeWidth={3} dot={{ r: 4, fill: '#10B981' }} name="Envíos Turbo" />
-                <Line type="monotone" dataKey="flex" stroke="#3B82F6" strokeWidth={3} dot={{ r: 4, fill: '#3B82F6' }} name="Envíos Flex" />
-              </LineChart>
+                <Bar dataKey="correct" stackId="a" fill="#10B981" name="Envío correcto" radius={[0,0,0,0]} />
+                <Bar dataKey="anticipados" stackId="a" fill="#FBBF24" name="Anticipados" radius={[0,0,0,0]} />
+                <Bar dataKey="incSafe" stackId="a" fill="#9CA3AF" name="Incompletos sin afectar reputación" radius={[0,0,0,0]} />
+                <Bar dataKey="incBad" stackId="a" fill="#EF4444" name="Incompletos que afectan reputación" radius={[2,2,0,0]} />
+              </BarChart>
             </ResponsiveContainer>
 
             {/* Legend */}
             <div className="flex items-center gap-6 mt-4 pt-4 border-t border-gray-100">
               <div className="flex items-center gap-2">
                 <span className="w-3 h-1.5 rounded-full bg-green-500"></span>
-                <span className="text-xs text-gray-600">A tiempo (0%)</span>
+                <span className="text-xs text-gray-600">Envío correcto (0%)</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-3 h-1.5 rounded-full bg-yellow-400"></span>
@@ -1338,11 +1387,11 @@ export default function MetricasView() {
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-3 h-1.5 rounded-full bg-gray-400"></span>
-                <span className="text-xs text-gray-600">Demorados que no afectan tu reputación (0,0%)</span>
+                <span className="text-xs text-gray-600">Incompletos que no afectan tu reputación (0,0%)</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-3 h-1.5 rounded-full bg-red-500"></span>
-                <span className="text-xs text-gray-600">Demorados que afectan tu reputación (0,0%)</span>
+                <span className="text-xs text-gray-600">Incompletos que afectan tu reputación (0,0%)</span>
               </div>
             </div>
           </div>
