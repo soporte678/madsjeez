@@ -2,8 +2,10 @@
 
 import { useState, useRef, useEffect } from "react"
 import { usePathname } from "next/navigation"
-import { MessageCircle, X, Send, Bot, User, Loader2, Edit3, Clock, Maximize2, Plus, Camera, Mic, HelpCircle } from "lucide-react"
+import { MessageCircle, X, Send, Bot, User, Loader2, Edit3, Clock, Maximize2, Plus, Camera, Mic, HelpCircle, ChevronDown } from "lucide-react"
 import { useChat, type ChatMode } from "./ChatContext"
+import { useFloatingBots } from "@/contexts/FloatingBotsContext"
+import { cn } from "@/lib/utils"
 
 interface Message {
   role: "user" | "assistant"
@@ -43,7 +45,9 @@ const modeConfig: Record<ChatMode, { welcome: string; title: string; quick: stri
 
 export default function AIChatBot() {
   const pathname = usePathname()
-  const [isOpen, setIsOpen] = useState(false)
+  const { activeBot, closeBot, toggleBot } = useFloatingBots()
+  const isOpen = activeBot === 'chatbot'
+  const [isMinimized, setIsMinimized] = useState(false)
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
@@ -59,10 +63,13 @@ export default function AIChatBot() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Hide on dashboard pages
-  if (pathname?.startsWith("/dashboard")) {
+  // Don't show on certain pages
+  if (pathname?.startsWith('/admin') || pathname?.startsWith('/dashboard')) {
     return null
   }
+
+  // Si WhatsApp está abierto, ocultar el botón del chatbot
+  const isHidden = activeBot === 'whatsapp'
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -78,13 +85,6 @@ export default function AIChatBot() {
     }
   }, [isOpen])
 
-  const openChat = () => {
-    setIsOpen(true)
-  }
-
-  const closeChat = () => {
-    setIsOpen(false)
-  }
 
   const sendChatRequest = async (currentMessages: Message[]) => {
     setLoading(true)
@@ -154,9 +154,9 @@ export default function AIChatBot() {
   return (
     <>
       {/* Chat Button */}
-      {!isOpen && (
+      {!isOpen && !isHidden && (
         <button
-          onClick={() => openChat()}
+          onClick={() => { toggleBot('chatbot'); setIsMinimized(false); }}
           className="fixed bottom-6 right-6 z-[10000] bg-gradient-to-r from-[#FF6B4A] to-[#FF8C42] text-white rounded-full p-4 shadow-xl shadow-orange-500/40 hover:shadow-2xl hover:shadow-orange-500/60 hover:scale-110 transition-all duration-300 group animate-pulse-glow"
           aria-label="Abrir chat de ayuda"
         >
@@ -167,7 +167,10 @@ export default function AIChatBot() {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-[10000] w-[380px] max-w-[calc(100vw-2rem)] h-[600px] max-h-[calc(100vh-8rem)] bg-white rounded-2xl shadow-2xl shadow-orange-500/20 border-2 border-[#FF6B4A]/20 flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+        <div className={cn(
+          "fixed right-6 z-[10000] w-[380px] max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl shadow-orange-500/20 border-2 border-[#FF6B4A]/20 flex flex-col overflow-hidden transition-all duration-300",
+          isMinimized ? "bottom-6 h-16" : "bottom-24 h-[600px] max-h-[calc(100vh-8rem)]"
+        )}>
           {/* Header — MadsJeez Style */}
           <div className="bg-gradient-to-r from-[#FF6B4A] to-[#FF8C42] p-3 flex items-center justify-between flex-shrink-0">
             <div className="flex items-center gap-2">
@@ -180,15 +183,20 @@ export default function AIChatBot() {
             </div>
             <p className="font-bold text-sm text-white absolute left-1/2 -translate-x-1/2">Asistente</p>
             <div className="flex items-center gap-1">
-              <button className="p-1.5 hover:bg-white/20 rounded-full transition-colors text-white/80 hover:text-white">
-                <Maximize2 className="w-4 h-4" />
-              </button>
-              <button
-                disabled={loading || !input.trim()}
-                onClick={sendMessage}
-                className="p-2 bg-gradient-to-r from-[#FF6B4A] to-[#FF8C42] text-white rounded-full hover:from-[#FF8C42] hover:to-[#FFC107] transition-all duration-300 disabled:opacity-50 shadow-md shadow-orange-500/30 hover:shadow-lg hover:shadow-orange-500/40 hover:scale-105"
+              {/* Botón Minimizar */}
+              <button 
+                onClick={() => { toggleBot('chatbot'); setIsMinimized(!isMinimized); }}
+                className="p-1.5 hover:bg-white/20 rounded-full transition-colors text-white/80 hover:text-white"
+                title={isMinimized ? "Maximizar" : "Minimizar"}
               >
-                <Send className="w-4 h-4" />
+                <ChevronDown className={cn("w-5 h-5 transition-transform", isMinimized && "rotate-180")} />
+              </button>
+              <button 
+                onClick={closeBot}
+                className="p-1.5 hover:bg-white/20 rounded-full transition-colors text-white/80 hover:text-white"
+                title="Cerrar"
+              >
+                <X className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -200,7 +208,9 @@ export default function AIChatBot() {
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#FF6B4A]/30 to-transparent" />
           </div>
 
-          {/* Messages */}
+          {/* Messages - Solo si no está minimizado */}
+          {!isMinimized && (
+            <>
           <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white">
             {messages.map((msg, i) => (
               <div key={i} className={`flex gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
@@ -254,7 +264,7 @@ export default function AIChatBot() {
           </div>
 
           {/* Action Buttons */}
-          {messages.length <= 1 && (
+          {!isMinimized && messages.length <= 1 && (
             <div className="px-4 py-3 bg-white flex-shrink-0 space-y-2">
               <button className="w-full text-sm text-gray-700 border border-gray-200 rounded-full px-4 py-2.5 hover:bg-gradient-to-r hover:from-[#FF6B4A]/10 hover:to-[#FF8C42]/10 hover:border-[#FF6B4A]/30 transition-all duration-300">
                 Quiero otra recomendación
@@ -269,7 +279,7 @@ export default function AIChatBot() {
           )}
 
           {/* Quick Questions (only show at start) */}
-          {messages.length <= 1 && (
+          {!isMinimized && messages.length <= 1 && (
             <div className="px-4 py-2 bg-white border-t border-gray-100 flex-shrink-0">
               <p className="text-xs text-gray-500 mb-2">Preguntas frecuentes:</p>
               <div className="flex flex-wrap gap-1.5">
@@ -292,7 +302,8 @@ export default function AIChatBot() {
             </div>
           )}
 
-          {/* Input — MadsJeez Style */}
+          {/* Input — MadsJeez Style (solo si no está minimizado) */}
+          {!isMinimized && (
           <div className="p-3 bg-white border-t border-gray-200 flex-shrink-0">
             <div className="flex items-center gap-2 bg-gradient-to-r from-gray-50 to-gray-100 rounded-full px-3 py-2 border border-gray-200 focus-within:border-[#FF6B4A]/50 focus-within:shadow-md focus-within:shadow-orange-500/10 transition-all duration-300">
               <button className="p-1 text-gray-500 hover:text-gray-700 transition-colors">
@@ -317,6 +328,9 @@ export default function AIChatBot() {
             </div>
             <p className="text-[10px] text-gray-400 text-center mt-2">Este asistente usa inteligencia artificial para responderte.</p>
           </div>
+          )}
+          </>
+          )}
         </div>
       )}
     </>

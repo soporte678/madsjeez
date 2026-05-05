@@ -3,7 +3,7 @@ import { Outfit, Montserrat } from "next/font/google"
 import "./globals.css"
 import { Providers } from "@/components/providers"
 import { ChatProvider } from "@/components/ChatContext"
-import FloatingButtons from "@/components/FloatingButtons"
+import FloatingBots from "@/components/FloatingBots"
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -91,7 +91,7 @@ export default function RootLayout({
         <ChatProvider>
           <Providers>
             {children}
-            <FloatingButtons />
+            <FloatingBots />
           </Providers>
         </ChatProvider>
       </body>
