@@ -621,8 +621,183 @@ export default function MetricasView() {
         </>
       )}
 
+      {/* === COSTOS === */}
+      {activeTab === 'costos' && (
+        <>
+          {/* Resumen circular */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center gap-8">
+              <div className="relative w-32 h-32">
+                <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="#E5E7EB" strokeWidth="12" />
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="#8B5CF6" strokeWidth="12" strokeDasharray="188.5 62.8" strokeLinecap="round" />
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="#10B981" strokeWidth="12" strokeDasharray="62.8 188.5" strokeDashoffset="-188.5" strokeLinecap="round" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-1 text-xs font-semibold text-gray-500 mb-1">
+                  Ventas concretadas <Info size={12} className="text-gray-400" />
+                </div>
+                <div className="text-2xl font-black text-gray-800">$ 5.614.345 <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">+ 51.9%</span></div>
+                <button className="text-blue-600 text-xs font-medium hover:underline mt-1">Ir a detalle</button>
+              </div>
+              <div className="flex gap-8">
+                <div>
+                  <div className="flex items-center gap-1 text-xs text-gray-500 mb-1"><span className="w-2 h-2 rounded-full bg-purple-500"></span> Cargos e inversiones <Info size={12} className="text-gray-400" /></div>
+                  <div className="text-lg font-bold text-gray-800">- $ 3.336.520 <span className="text-xs text-gray-400">59.4%</span></div>
+                </div>
+                <div>
+                  <div className="flex items-center gap-1 text-xs text-gray-500 mb-1"><span className="w-2 h-2 rounded-full bg-blue-500"></span> Impuestos <Info size={12} className="text-gray-400" /></div>
+                  <div className="text-lg font-bold text-gray-800">- $ 264.161 <span className="text-xs text-gray-400">4.7%</span></div>
+                </div>
+                <div>
+                  <div className="flex items-center gap-1 text-xs text-gray-500 mb-1"><span className="w-2 h-2 rounded-full bg-green-500"></span> Recibiste <Info size={12} className="text-gray-400" /></div>
+                  <div className="text-lg font-bold text-gray-800">$ 2.013.664 <span className="text-xs text-gray-400">35.9%</span></div>
+                </div>
+              </div>
+            </div>
+            <div className="mt-4 p-3 bg-green-50 rounded-lg">
+              <span className="text-xs text-green-700 font-medium">Beneficios:</span>
+              <span className="text-xs text-green-700"> Durante este período tuviste descuentos y/o bonificaciones. </span>
+              <button className="text-blue-600 text-xs font-medium hover:underline">Revisar</button>
+            </div>
+          </div>
+
+          {/* Distribución de costos */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-800 mb-4">Distribución de tus costos</h3>
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <div className="flex items-center gap-1 text-xs font-semibold text-gray-500 mb-2">
+                Cargos, inversiones e impuestos <Info size={12} className="text-gray-400" />
+              </div>
+              <div className="text-2xl font-black text-gray-800 mb-6">$ 3.600.680</div>
+              <div className="space-y-3">
+                {[
+                  { label: 'Cargos por venta totales', pct: '42.5%', color: 'bg-purple-500', width: '42.5%' },
+                  { label: 'Inversión en Publicidad', pct: '37.2%', color: 'bg-purple-400', width: '37.2%' },
+                  { label: 'Percepciones', pct: '6.6%', color: 'bg-orange-400', width: '6.6%' },
+                  { label: 'Costos de envío', pct: '9.9%', color: 'bg-purple-300', width: '9.9%' },
+                  { label: 'Cargos por envíos Full', pct: '1.5%', color: 'bg-purple-200', width: '1.5%' },
+                  { label: 'Otros cargos', pct: '0.9%', color: 'bg-purple-200', width: '0.9%' },
+                  { label: 'Retenciones', pct: '0.7%', color: 'bg-orange-300', width: '0.7%' },
+                  { label: 'Cargos por devolución', pct: '0.6%', color: 'bg-purple-200', width: '0.6%' },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className="w-48 text-xs text-gray-600 text-right truncate">{item.label}</div>
+                    <div className="flex-1 h-6 bg-gray-100 rounded overflow-hidden">
+                      <div className={`h-full ${item.color} rounded`} style={{ width: item.width }}></div>
+                    </div>
+                    <div className="w-12 text-xs font-semibold text-gray-700">{item.pct}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center gap-4 mt-6 pt-4 border-t border-gray-100">
+                {[
+                  { label: 'Cargos por venta', color: 'bg-purple-500' },
+                  { label: 'Costos de envío', color: 'bg-purple-300' },
+                  { label: 'Cargos por otros servicios', color: 'bg-purple-200' },
+                  { label: 'Inversión en Publicidad', color: 'bg-purple-400' },
+                  { label: 'Impuestos', color: 'bg-orange-400' },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-1">
+                    <span className={`w-3 h-3 rounded-full ${item.color}`}></span>
+                    <span className="text-[10px] text-gray-500">{item.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Costos por publicación */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-800 mb-4">Costos por publicación</h3>
+            <div className="flex gap-4 border-b border-gray-200 mb-4">
+              <button className="pb-2 text-sm font-semibold text-blue-600 border-b-2 border-blue-600">Rendimiento</button>
+              <button className="pb-2 text-sm text-gray-500 hover:text-gray-700">Cargos por devolución</button>
+              <button className="pb-2 text-sm text-gray-500 hover:text-gray-700">Cargos por envíos Full</button>
+            </div>
+            <div className="flex items-center justify-between mb-4">
+              <div className="relative">
+                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Título o #"
+                  className="pl-9 pr-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 w-64 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <span className="text-xs text-gray-500">266 publicaciones</span>
+            </div>
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    <th className="text-left p-3 text-xs font-semibold text-gray-500 uppercase">Publicación</th>
+                    <th className="text-center p-3 text-xs font-semibold text-gray-500 uppercase">Ventas concretadas</th>
+                    <th className="text-center p-3 text-xs font-semibold text-gray-500 uppercase">Cargos e inversiones</th>
+                    <th className="text-center p-3 text-xs font-semibold text-gray-500 uppercase">Impuestos</th>
+                    <th className="text-center p-3 text-xs font-semibold text-gray-500 uppercase">Recibiste</th>
+                    <th className="text-center p-3 text-xs font-semibold text-gray-500 uppercase">Rentabilidad</th>
+                    <th className="text-right p-3 text-xs font-semibold text-gray-500 uppercase"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { sku: '#3112842870', title: 'Tapa De Arranque Cortacesped 3.5 Hp 4...', price: '$33.000', sales: '$ 33.849', qty: '1 u.', costs: '- $ 7.689', tax: '$ 0', received: '$ 26.160', rent: '77.3%', img: '/placeholder.svg' },
+                    { sku: '#2762315998', title: 'Amoladora Angular Gamma 850w - G1917ar Celeste 50...', price: '$103.515,50', sales: '$ 83.093', qty: '1 u.', costs: '- $ 19.210', tax: '$ 0', received: '$ 63.884', rent: '76.9%', img: '/placeholder.svg', catalog: true },
+                    { sku: '#2708560344', title: 'Tapa Arranque Fácil Desmalezadora Chines...', price: '$35.999', sales: '$ 36.848', qty: '1 u.', costs: '- $ 8.388', tax: '- $ 728', received: '$ 27.732', rent: '75.3%', img: '/placeholder.svg', full: true },
+                    { sku: '#1684180971', title: 'Arco Sierra Mini 300mm 12 Pulgadas Premium Alta...', price: '$33.000', sales: '$ 33.849', qty: '1 u.', costs: '- $ 7.755', tax: '- $ 673', received: '$ 25.421', rent: '75.1%', img: '/placeholder.svg' },
+                    { sku: '#2378214276', title: 'Tapa Arranque Moño Desmalezadora...', price: '$14.999', sales: '$ 38.498', qty: '2 u.', costs: '- $ 9.500', tax: '- $ 157', received: '$ 28.841', rent: '74.9%', img: '/placeholder.svg', full: true },
+                    { sku: '#2747600680', title: '50 Bolsas De Consorcio Residuos 80x110 Reforzade...', price: '$49.699', sales: '$ 140.846', qty: '5 u.', costs: '- $ 36.819', tax: '- $ 525', received: '$ 103.502', rent: '73.5%', img: '/placeholder.svg' },
+                  ].map((pub, i) => (
+                    <tr key={i} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="p-3">
+                        <div className="flex items-center gap-3">
+                          {pub.catalog && <span className="px-1.5 py-0.5 bg-blue-600 text-white text-[10px] font-bold rounded">CATÁLOGO</span>}
+                          <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                            <img src={pub.img} alt="" className="w-full h-full object-cover" />
+                          </div>
+                          <div>
+                            <div className="text-xs text-gray-400 flex items-center gap-1">{pub.sku} <Info size={10} /></div>
+                            <div className="text-sm font-medium text-gray-800 max-w-[200px] truncate">{pub.title}</div>
+                            <div className="text-xs text-gray-500">{pub.price} | 3 cuo... | Envío gr...</div>
+                            <div className="text-[10px] text-gray-400">{pub.full ? '$ FULL | ' : ''}MERCADO ENVÍOS FLEX</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-3 text-center text-sm text-gray-800">{pub.sales}<div className="text-xs text-gray-400">{pub.qty}</div></td>
+                      <td className="p-3 text-center text-sm text-gray-800">{pub.costs}</td>
+                      <td className="p-3 text-center text-sm text-gray-800">{pub.tax}</td>
+                      <td className="p-3 text-center text-sm text-gray-800 font-medium">{pub.received}</td>
+                      <td className="p-3 text-center text-sm text-gray-800">{pub.rent}</td>
+                      <td className="p-3 text-right">
+                        <div className="flex items-center gap-2 justify-end">
+                          <button className="text-blue-600 text-xs font-medium hover:underline">Ir a detalle</button>
+                          <button className="text-gray-400 hover:text-gray-600"><MoreVertical size={16} /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {/* Pagination */}
+            <div className="p-4 flex items-center justify-center gap-1">
+              <button className="w-8 h-8 flex items-center justify-center bg-blue-600 text-white text-sm font-semibold rounded-lg">1</button>
+              {[2,3,4,5,6,7,8,9].map(n => (
+                <button key={n} className="w-8 h-8 flex items-center justify-center text-gray-500 text-sm hover:bg-gray-100 rounded-lg">{n}</button>
+              ))}
+              <span className="text-gray-400 px-2">...</span>
+              <button className="w-8 h-8 flex items-center justify-center text-gray-500 text-sm hover:bg-gray-100 rounded-lg">27</button>
+              <button className="flex items-center gap-1 px-3 py-1.5 text-gray-500 text-sm hover:bg-gray-100 rounded-lg">
+                Siguiente <ChevronRight size={14} />
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
       {/* Other tabs placeholder */}
-      {activeTab !== 'negocio' && activeTab !== 'promociones' && (
+      {activeTab !== 'negocio' && activeTab !== 'promociones' && activeTab !== 'costos' && (
         <div className="bg-white rounded-xl border border-gray-200 p-20 text-center text-gray-400 italic">
           Panel de {tabs.find(t => t.id === activeTab)?.label} en preparación...
         </div>
