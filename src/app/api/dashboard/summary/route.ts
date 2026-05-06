@@ -250,15 +250,20 @@ export async function GET(request: NextRequest) {
         billingBalance += activeSubscriptionAmount;
       }
 
-      // Costo de boosts activos
-      const activeBoosts = await prisma.productBoost.findMany({
-        where: {
-          sellerId: userId,
-          endDate: { gte: now },
-        }
-      });
-      const boostCost = activeBoosts.reduce((sum: number, b: any) => sum + (b.cost || 0), 0);
-      billingBalance += boostCost;
+      // Costo de boosts activos (ProductBoost no tiene campo status en schema: activo = endDate >= ahora)
+      try {
+        const activeBoosts = await prisma.productBoost.findMany({
+          where: {
+            sellerId: userId,
+            endDate: { gte: now },
+          },
+          select: { cost: true },
+        });
+        const boostCost = activeBoosts.reduce((sum: number, b) => sum + (b.cost || 0), 0);
+        billingBalance += boostCost;
+      } catch (boostErr) {
+        console.error('Error fetching boosts for billing:', boostErr);
+      }
 
       // Si hay balance > 0, está vencido (simplificado)
       hasOverdueBilling = billingBalance > 0;
