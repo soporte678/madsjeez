@@ -17,11 +17,18 @@ if [ "$SKIP_DB_MIGRATIONS_ON_BOOT" = "true" ]; then
 elif [ -n "$DATABASE_URL" ]; then
     echo "=== DATABASE_URL configurada (runtime) ==="
     echo "=== Ejecutando migraciones de Prisma ==="
-    # Prisma 7 lee DATABASE_URL desde prisma.config.ts (datasource.url). No ignorar fallos.
     export DATABASE_URL
-    if ! npx prisma migrate deploy; then
-        echo "ERROR: prisma migrate deploy falló — revisá logs y _prisma_migrations"
-        exit 1
+    set +e
+    npx prisma migrate deploy
+    mig_exit=$?
+    set -e
+    if [ "$mig_exit" -ne 0 ]; then
+        echo "ERROR: prisma migrate deploy falló (código $mig_exit) — revisá DATABASE_URL y _prisma_migrations"
+        if [ "${BOOT_CONTINUE_ON_MIGRATE_FAIL:-}" = "true" ]; then
+            echo "WARNING: BOOT_CONTINUE_ON_MIGRATE_FAIL=true — arrancando Next igual (corregí migraciones cuanto antes)"
+        else
+            exit 1
+        fi
     fi
 
     echo "=== Verificando/creado columna access_key via fallback SQL ==="
@@ -36,8 +43,14 @@ else
     echo "WARNING: DATABASE_URL no configurada en runtime, saltando migraciones"
 fi
 
-# Iniciar Next.js (siempre el puerto que Railway inyecta en PORT)
 PORT="${PORT:-3000}"
 export PORT
-echo "=== Iniciando Next.js en 0.0.0.0:${PORT} (healthcheck /api/health) ==="
-exec ./node_modules/.bin/next start -H 0.0.0.0 -p "$PORT"
+
+NEXT_CLI="./node_modules/next/dist/bin/next"
+if [ ! -f "$NEXT_CLI" ]; then
+    echo "ERROR: No se encuentra Next en $NEXT_CLI"
+    exit 1
+fi
+
+echo "=== Iniciando Next.js en 0.0.0.0:${PORT} (healthcheck: GET /railway-health.txt) ==="
+exec node "$NEXT_CLI" start -H 0.0.0.0 -p "$PORT"

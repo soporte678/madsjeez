@@ -3,7 +3,8 @@ builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
 
 [deploy]
-healthcheckPath = "/api/health"
+# Archivo estático en /public: no pasa por API/RSC; útil si hay incidentes en rutas app.
+healthcheckPath = "/railway-health.txt"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
@@ -13,11 +14,13 @@ restartPolicyMaxRetries = 3
 numReplicas = 1
 
 [environments.production.deploy]
-healthcheckPath = "/api/health"
+healthcheckPath = "/railway-health.txt"
 healthcheckTimeout = 300
 
 [environments.production.env]
 # Secrets (Supabase URL/keys, DATABASE_URL, MERCADOPAGO_*, MP_OAUTH_STATE_SECRET, etc.) must be set in the Railway dashboard — do not commit them here.
 NEXTAUTH_URL = "https://www.madsjeez.com.ar"
 NODE_ENV = "production"
+# Si migrate deploy falla en el entrypoint, igual arranca Next (evita deploy roto + healthcheck KO). Corregí la DB y quitá esto cuando migre bien.
+BOOT_CONTINUE_ON_MIGRATE_FAIL = "true"
 # Nunca sobreescribir PORT acá: Railway lo define para healthcheck y el proxy. La app usa process.env.PORT.
