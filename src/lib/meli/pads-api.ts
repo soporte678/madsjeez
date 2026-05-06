@@ -147,3 +147,22 @@ export async function meliPadsPutCampaign(
     body: JSON.stringify(body),
   });
 }
+
+/** Detalle de una campaña con métricas (fallback cuando search no devuelve KPIs). */
+export async function meliPadsGetCampaignWithMetrics(
+  accessToken: string,
+  siteId: string,
+  campaignId: number,
+  dateFrom: string,
+  dateTo: string
+) {
+  const qs = new URLSearchParams({
+    date_from: dateFrom,
+    date_to: dateTo,
+    metrics: PADS_METRICS,
+  });
+  const path = `/marketplace/advertising/${encodeURIComponent(siteId)}/product_ads/campaigns/${campaignId}?${qs.toString()}`;
+  return meliApi<MeliPadsCampaignRow>(accessToken, path, {
+    headers: { "api-version": "2" },
+  });
+}

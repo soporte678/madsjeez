@@ -8,6 +8,7 @@ import {
   meliPadsSearchCampaignsBasic,
   meliPadsSearchCampaignsWithMetrics,
   meliPadsSearchCampaignsWithMetricsRange,
+  meliPadsGetCampaignWithMetrics,
   type MeliPadsCampaignRow,
   type MeliPadsCampaignMetrics,
 } from "@/lib/meli/pads-api";
@@ -95,7 +96,20 @@ function normalizeMetrics(raw?: Record<string, unknown>) {
     lost_impression_share_by_budget: pickMetric(raw, ["lost_impression_share_by_budget"]),
     lost_impression_share_by_ad_rank: pickMetric(raw, ["lost_impression_share_by_ad_rank"]),
     acos_benchmark: pickMetric(raw, ["acos_benchmark"]),
+    total_amount: pickMetric(raw, ["total_amount", "amount", "revenue", "sales"]),
+    direct_amount: pickMetric(raw, ["direct_amount"]),
+    indirect_amount: pickMetric(raw, ["indirect_amount"]),
   };
+}
+
+function metricsCoreScore(metrics?: Record<string, unknown>) {
+  if (!metrics) return 0;
+  const prints = pickMetric(metrics, ["prints", "impressions"]);
+  const clicks = pickMetric(metrics, ["clicks"]);
+  const cost = pickMetric(metrics, ["cost", "spend", "amount_spent"]);
+  const roas = pickMetric(metrics, ["roas", "return_on_ad_spend"]);
+  const totalAmount = pickMetric(metrics, ["total_amount", "amount", "revenue", "sales"]);
+  return prints + clicks + cost + roas + totalAmount;
 }
 
 function sumMetrics(rows: CampaignEnriched[]) {
@@ -103,7 +117,11 @@ function sumMetrics(rows: CampaignEnriched[]) {
   const totalPrints = rows.reduce((acc, r) => acc + n(r.metrics?.prints), 0);
   const totalClicks = rows.reduce((acc, r) => acc + n(r.metrics?.clicks), 0);
   const totalCost = rows.reduce((acc, r) => acc + n(r.metrics?.cost), 0);
-  const totalRevenue = rows.reduce((acc, r) => acc + n(r.metrics?.roas) * n(r.metrics?.cost), 0);
+  const totalRevenue = rows.reduce((acc, r) => {
+    const explicitRevenue = n((r.metrics as Record<string, unknown> | undefined)?.total_amount);
+    if (explicitRevenue > 0) return acc + explicitRevenue;
+    return acc + n(r.metrics?.roas) * n(r.metrics?.cost);
+  }, 0);
   const totalProfit = totalRevenue - totalCost;
   return {
     campaigns: rows.length,
@@ -146,6 +164,7 @@ export async function GET(req: Request) {
 
     const campaigns: CampaignEnriched[] = [];
     const metricsSummaryByAdvertiser: Record<string, unknown> = {};
+    const diagnosticsByAdvertiser: Record<string, unknown> = {};
 
     for (const adv of advertisers) {
       let camp = await meliPadsSearchCampaignsWithMetrics(
@@ -173,7 +192,7 @@ export async function GET(req: Request) {
         }
       }
 
-      const prevCamp = await meliPadsSearchCampaignsWithMetricsRange(
+      let prevCamp = await meliPadsSearchCampaignsWithMetricsRange(
         meli.accessToken,
         adv.site_id,
         adv.advertiser_id,
@@ -185,10 +204,76 @@ export async function GET(req: Request) {
       if (!prevCamp.ok) {
         errors.push(`Campañas período previo (${adv.advertiser_id}): HTTP ${prevCamp.status}`);
       }
+      let currentRows = (camp.data.results ?? []).map((r) => ({
+        row: r as MeliPadsCampaignRow,
+        metrics: normalizeMetrics((r as MeliPadsCampaignRow).metrics as Record<string, unknown>),
+      }));
+
+      const currentAllZero =
+        currentRows.length > 0 &&
+        currentRows.every((x) => metricsCoreScore(x.metrics as Record<string, unknown>) <= 0);
+
+      let currentFallbackHits = 0;
+      if (currentAllZero) {
+        const fallbackRows = await Promise.all(
+          currentRows.map(async (x) => {
+            const detail = await meliPadsGetCampaignWithMetrics(
+              meli.accessToken,
+              adv.site_id,
+              Number(x.row.id),
+              currentWindow.start,
+              currentWindow.end
+            );
+            if (detail.ok && detail.data) {
+              const metrics = normalizeMetrics(detail.data.metrics as Record<string, unknown>);
+              if (metricsCoreScore(metrics as Record<string, unknown>) > 0) {
+                currentFallbackHits += 1;
+              }
+              return { row: { ...x.row, ...detail.data }, metrics };
+            }
+            return x;
+          })
+        );
+        currentRows = fallbackRows;
+      }
+
+      let prevRows = (prevCamp.data?.results ?? []).map((r) => ({
+        row: r as MeliPadsCampaignRow,
+        metrics: normalizeMetrics((r as MeliPadsCampaignRow).metrics as Record<string, unknown>),
+      }));
+
+      const prevAllZero =
+        prevRows.length > 0 &&
+        prevRows.every((x) => metricsCoreScore(x.metrics as Record<string, unknown>) <= 0);
+
+      let prevFallbackHits = 0;
+      if (prevAllZero) {
+        const fallbackPrev = await Promise.all(
+          prevRows.map(async (x) => {
+            const detail = await meliPadsGetCampaignWithMetrics(
+              meli.accessToken,
+              adv.site_id,
+              Number(x.row.id),
+              previousWindow.start,
+              previousWindow.end
+            );
+            if (detail.ok && detail.data) {
+              const metrics = normalizeMetrics(detail.data.metrics as Record<string, unknown>);
+              if (metricsCoreScore(metrics as Record<string, unknown>) > 0) {
+                prevFallbackHits += 1;
+              }
+              return { row: { ...x.row, ...detail.data }, metrics };
+            }
+            return x;
+          })
+        );
+        prevRows = fallbackPrev;
+      }
+
       const prevByCampaignId = new Map<number, MeliPadsCampaignMetrics>();
-      for (const p of prevCamp.data?.results ?? []) {
-        if (p.id != null && p.metrics) {
-          prevByCampaignId.set(Number(p.id), normalizeMetrics(p.metrics as Record<string, unknown>));
+      for (const p of prevRows) {
+        if (p.row.id != null && p.metrics) {
+          prevByCampaignId.set(Number(p.row.id), p.metrics);
         }
       }
 
@@ -196,11 +281,19 @@ export async function GET(req: Request) {
         metricsSummaryByAdvertiser[String(adv.advertiser_id)] = camp.data.metrics_summary;
       }
 
-      for (const row of camp.data.results ?? []) {
-        const r = row as MeliPadsCampaignRow;
+      diagnosticsByAdvertiser[String(adv.advertiser_id)] = {
+        campaignCount: currentRows.length,
+        currentAllZeroBeforeFallback: currentAllZero,
+        currentFallbackHits,
+        previousAllZeroBeforeFallback: prevAllZero,
+        previousFallbackHits,
+      };
+
+      for (const row of currentRows) {
+        const r = row.row as MeliPadsCampaignRow;
         campaigns.push({
           ...r,
-          metrics: normalizeMetrics(r.metrics as Record<string, unknown>),
+          metrics: row.metrics,
           site_id: adv.site_id,
           advertiser_id: adv.advertiser_id,
           metrics_prev: prevByCampaignId.get(Number(r.id)),
@@ -244,6 +337,7 @@ export async function GET(req: Request) {
       advertisers,
       campaigns,
       metricsSummaryByAdvertiser,
+      diagnosticsByAdvertiser,
       totals,
       previousTotals,
       deltas: {
