@@ -346,13 +346,13 @@ export default function Home() {
 
       {/* MADS PRO BANNER */}
       <section className="max-w-[1184px] mx-auto px-4 mb-10">
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <div className="flex flex-col sm:flex-row justify-between items-center px-6 py-4 border-b border-gray-100 gap-4">
+        <div className="bg-card rounded-lg shadow-sm overflow-hidden border border-border">
+          <div className="flex flex-col sm:flex-row justify-between items-center px-6 py-4 border-b border-border gap-4">
             <div className="flex items-center gap-3">
               <div className="bg-gradient-to-r from-[#db2777] to-[#ec4899] text-white px-4 py-1.5 rounded-full font-black italic text-lg tracking-tight shadow-lg shadow-pink-500/30 animate-pulse-glow">
                 mads+
               </div>
-              <span className="font-bold text-gradient text-[15px]">VIVÍ MADSJEEZ COMO UN EXPERTO</span>
+              <span className="font-bold text-[15px] text-card-foreground">VIVÍ MADSJEEZ COMO UN EXPERTO</span>
             </div>
             <Link href="/subscriptions" className="bg-gradient-to-r from-[#ff4d2e] to-[#ff9100] hover:from-[#ff9100] hover:to-[#ffb703] text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/50 transition-all duration-300 hover:-translate-y-1 btn-shine">
               Suscribirme desde $ 3.490
@@ -365,12 +365,12 @@ export default function Home() {
               { Icon: CreditCard, color: 'text-[#a90f90]', bg: 'bg-purple-50', text: 'Hasta 3 cuotas extra en tus compras' },
               { Icon: Utensils, color: 'text-orange-500', bg: 'bg-orange-50', text: 'Envíos gratis en pedidos de Restaurantes' },
             ].map((item, idx) => (
-              <div key={idx} className={`flex flex-col items-center text-center group cursor-pointer ${idx > 0 ? 'border-l border-gray-100' : ''}`}>
+              <div key={idx} className={`flex flex-col items-center text-center group cursor-pointer ${idx > 0 ? 'border-l border-border' : ''}`}>
                 <div className="w-24 h-24 mb-4 relative flex justify-center items-center">
                   <div className={`absolute inset-0 ${item.bg} rounded-full scale-0 group-hover:scale-100 transition-transform duration-300`}></div>
                   <item.Icon className={`w-12 h-12 ${item.color} relative z-10`} />
                 </div>
-                <p className="text-[13px] text-[#333] font-medium px-4">{item.text}</p>
+                <p className="text-[13px] text-card-foreground font-medium px-4 leading-snug">{item.text}</p>
               </div>
             ))}
           </div>
@@ -442,23 +442,23 @@ export default function Home() {
       {/* BANNERS PROMOCIONALES */}
       <section className="max-w-[1184px] mx-auto px-4 mb-10">
         <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1 bg-white rounded shadow-sm flex overflow-hidden cursor-pointer group hover:shadow-md transition-shadow h-[250px]">
+          <div className="flex-1 bg-card rounded shadow-sm flex overflow-hidden cursor-pointer group hover:shadow-md transition-shadow h-[250px] border border-border">
             <div className="w-1/2 p-8 flex flex-col justify-center">
-              <span className="text-[10px] font-bold tracking-[2px] text-[#666] mb-2 uppercase">Organizá mejor</span>
-              <h3 className="text-[22px] font-bold text-[#333] leading-tight mb-4">MÁS ESPACIO Y<br/>ORDEN PRÁCTICO</h3>
+              <span className="text-[10px] font-bold tracking-[2px] text-muted-foreground mb-2 uppercase">Organizá mejor</span>
+              <h3 className="text-[22px] font-bold text-foreground leading-tight mb-4">MÁS ESPACIO Y<br/>ORDEN PRÁCTICO</h3>
               <Link href="/search" className="bg-gradient-to-r from-[#ff4d2e] to-[#ff9100] hover:from-[#ff9100] hover:to-[#ffb703] text-white px-5 py-2 rounded-lg font-bold text-[14px] w-fit shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/50 transition-all duration-300 hover:-translate-y-0.5 btn-shine">Ver ofertas</Link>
             </div>
-            <div className="w-1/2 bg-gray-100 overflow-hidden relative">
+            <div className="w-1/2 bg-muted overflow-hidden relative">
               <img src="https://images.unsplash.com/photo-1595515106969-1ce29566ff1c?auto=format&fit=crop&q=80&w=400" alt="Mueble" className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" />
             </div>
           </div>
-          <div className="flex-1 bg-white rounded shadow-sm flex overflow-hidden cursor-pointer group hover:shadow-md transition-shadow h-[250px]">
+          <div className="flex-1 bg-card rounded shadow-sm flex overflow-hidden cursor-pointer group hover:shadow-md transition-shadow h-[250px] border border-border">
             <div className="w-1/2 p-8 flex flex-col justify-center">
-              <span className="text-[10px] font-bold tracking-[2px] text-[#666] mb-2 uppercase">Renová tu hogar</span>
-              <h3 className="text-[22px] font-bold text-[#333] leading-tight mb-4">¡HOGAR Y MUEBLES!<br/>HASTA 35% OFF</h3>
+              <span className="text-[10px] font-bold tracking-[2px] text-muted-foreground mb-2 uppercase">Renová tu hogar</span>
+              <h3 className="text-[22px] font-bold text-foreground leading-tight mb-4">¡HOGAR Y MUEBLES!<br/>HASTA 35% OFF</h3>
               <Link href="/search" className="bg-gradient-to-r from-[#ff4d2e] to-[#ff9100] hover:from-[#ff9100] hover:to-[#ffb703] text-white px-5 py-2 rounded-lg font-bold text-[14px] w-fit shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/50 transition-all duration-300 hover:-translate-y-0.5 btn-shine">Ver ofertas</Link>
             </div>
-            <div className="w-1/2 bg-gray-100 overflow-hidden relative">
+            <div className="w-1/2 bg-muted overflow-hidden relative">
               <img src="https://images.unsplash.com/photo-1505843490538-5133c6c7d0e1?auto=format&fit=crop&q=80&w=400" alt="Silla" className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" />
             </div>
           </div>
