@@ -14,8 +14,8 @@ const fmt = (v: number) => `$ ${v.toLocaleString("es-AR")}`
 const COMMISSION = 0.13
 
 const getRecommendation = (p: P) => {
-  if (!p.isActive) return { badge: "PERDIENDO", badgeColor: "bg-[#cc0000] text-white", tip: "Reactivá tu publicación para no perder ventas.", action: "Reactivar" }
-  if (p.stock <= 0) return { badge: "SIN STOCK", badgeColor: "bg-[#cc0000] text-white", tip: "Agregá stock para volver a vender.", action: "Agregar stock" }
+  if (!p.isActive) return { badge: "PERDIENDO", badgeColor: "bg-destructive text-destructive-foreground", tip: "Reactivá tu publicación para no perder ventas.", action: "Reactivar" }
+  if (p.stock <= 0) return { badge: "SIN STOCK", badgeColor: "bg-destructive text-destructive-foreground", tip: "Agregá stock para volver a vender.", action: "Agregar stock" }
   if (p.stock <= 5) return { badge: "ATENCIÓN", badgeColor: "bg-primary/10 text-primary", tip: "Stock bajo. Reponé para no perder ventas.", action: "Reponer stock" }
   if (!p.freeShipping) return { badge: "", badgeColor: "", tip: "Ofrecé envío gratis. Atraé compradores con el beneficio que más valoran.", action: "Ofrecer envío" }
   if (p.sales === 0 && p.views > 50) return { badge: "PERDIENDO", badgeColor: "bg-[#cc0000] text-white", tip: "Otros vendedores ofrecen mejores condiciones.", action: "Mejorar condiciones" }
@@ -66,7 +66,10 @@ export default function PublicacionesView() {
     setLoading(false)
   }, [filter, page])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    const t = setTimeout(() => load(), 0)
+    return () => clearTimeout(t)
+  }, [load])
 
   const filtered = products.filter(p => {
     const q = search.toLowerCase()
@@ -91,8 +94,16 @@ export default function PublicacionesView() {
     requestAnimationFrame(() => window.scrollTo(0, scrollY))
   }
 
-  const toggleSelect = (id: string) => { const s = new Set(selected); s.has(id) ? s.delete(id) : s.add(id); setSelected(s) }
-  const toggleAll = () => { selected.size === filtered.length ? setSelected(new Set()) : setSelected(new Set(filtered.map(p => p.id))) }
+  const toggleSelect = (id: string) => {
+    const s = new Set(selected)
+    if (s.has(id)) s.delete(id)
+    else s.add(id)
+    setSelected(s)
+  }
+  const toggleAll = () => {
+    if (selected.size === filtered.length) setSelected(new Set())
+    else setSelected(new Set(filtered.map(p => p.id)))
+  }
   const bulkPause = async () => { for (const id of selected) await toggle(id, false); setSelected(new Set()) }
   const bulkActivate = async () => { for (const id of selected) await toggle(id, true); setSelected(new Set()) }
   const bulkDelete = async () => {
@@ -110,7 +121,7 @@ export default function PublicacionesView() {
   if (loading) return <div className="flex items-center justify-center h-96"><div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full" /></div>
 
   return (
-    <div className="text-[#333] w-full px-6 lg:px-8">
+    <div className="text-foreground w-full px-6 lg:px-8">
       <style>{`
         .pub-grid {
           display: grid;
@@ -120,37 +131,38 @@ export default function PublicacionesView() {
         }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .quality-circle {
-          width: 34px; height: 34px; border-radius: 50%; border: 2px solid #00a650;
+          width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--success);
           display: flex; align-items: center; justify-content: center;
-          font-size: 14px; font-weight: 700; color: #00a650;
+          font-size: 14px; font-weight: 700; color: var(--success);
         }
-        .quality-circle.low { border-color: #cc0000; color: #cc0000; }
-        .quality-circle.mid { border-color: #3483fa; color: #3483fa; }
+        .quality-circle.low { border-color: var(--destructive); color: var(--destructive); }
+        .quality-circle.mid { border-color: var(--primary); color: var(--primary); }
         .pub-row-card {
-          border: 1px solid #e2e8f0;
+          border: 1px solid var(--border);
           border-radius: 6px;
           margin: 4px 8px;
-          background: white;
+          background: var(--card);
+          color: var(--card-foreground);
           transition: box-shadow 0.15s;
           position: relative;
           overflow: visible;
         }
         .pub-row-card:hover {
           box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-          background: #fafbfc;
+          background: color-mix(in srgb, var(--card) 88%, var(--muted));
         }
       `}</style>
 
       {/* TABS */}
       <div className="flex items-center gap-8 border-b border-slate-200 mb-6 bg-white rounded-t-lg px-4">
         {TABS.map((tab, i) => (
-          <button key={i} onClick={() => setActiveTab(i)} className={`pb-3 pt-4 text-[14px] font-medium cursor-pointer relative ${i === activeTab ? "text-[#3483fa]" : "text-slate-500 hover:text-slate-800"}`}>
+          <button key={i} onClick={() => setActiveTab(i)} className={`pb-3 pt-4 text-[14px] font-medium cursor-pointer relative ${i === activeTab ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}>
             {tab}
-            {i === activeTab && <div className="absolute bottom-[-1px] left-0 w-full h-[3px] bg-[#3483fa] rounded-t-sm" />}
+            {i === activeTab && <div className="absolute bottom-[-1px] left-0 w-full h-[3px] bg-primary rounded-t-sm" />}
           </button>
         ))}
         <div className="ml-auto pb-3 pt-4">
-          <button onClick={openCreate} className="bg-[#3483fa] hover:bg-[#2968c8] text-white font-medium text-[13px] h-9 px-4 rounded-md flex items-center gap-1.5 transition-colors">
+          <button onClick={openCreate} className="bg-primary hover:bg-primary-hover text-primary-foreground font-medium text-[13px] h-9 px-4 rounded-md flex items-center gap-1.5 transition-colors">
             <Plus size={16} /> Nueva publicación
           </button>
         </div>
@@ -172,7 +184,7 @@ export default function PublicacionesView() {
               <p className="text-[11px] text-slate-500 leading-tight truncate">{card.desc}</p>
             </button>
           ))}
-          <button onClick={() => { setFilter("all"); setPage(1) }} className="w-9 h-9 rounded-full bg-white shadow-sm border border-slate-200 flex items-center justify-center flex-shrink-0 text-[#3483fa] hover:bg-slate-50 transition-all -ml-4 relative z-10">
+          <button onClick={() => { setFilter("all"); setPage(1) }} className="w-9 h-9 rounded-full bg-card shadow-sm border border-border flex items-center justify-center flex-shrink-0 text-primary hover:bg-muted transition-all -ml-4 relative z-10">
             <ChevronRight size={18} />
           </button>
         </div>
@@ -183,7 +195,7 @@ export default function PublicacionesView() {
         <div className="flex items-center gap-3">
           <div className="relative w-[340px]">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input type="text" placeholder="Buscar por título, código o SKU" value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-full text-[13px] text-slate-700 outline-none focus:border-[#3483fa] focus:ring-1 focus:ring-[#3483fa] transition-all" />
+            <input type="text" placeholder="Buscar por título, código o SKU" value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-9 pr-4 py-2 bg-card border border-border rounded-full text-[13px] text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" />
           </div>
           <button className="flex items-center gap-2 text-[13px] font-medium text-slate-700 hover:bg-slate-50 px-3 py-1.5 rounded transition-all">
             <Filter size={14} /> Filtrar y ordenar
@@ -193,21 +205,21 @@ export default function PublicacionesView() {
       </div>
 
       {/* TABLE CONTAINER */}
-      <div className="border border-slate-200 rounded-lg flex flex-col w-full bg-[#f4f5f7]">
+      <div className="border border-border rounded-lg flex flex-col w-full bg-muted/60">
 
         {/* TOOLBAR */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 w-full bg-[#f8f9fa]">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border w-full bg-muted/50">
           <div className="flex items-center gap-3">
             <input type="checkbox" checked={selected.size === filtered.length && filtered.length > 0} onChange={toggleAll} className="w-4 h-4 rounded border-slate-300 text-[#3483fa] focus:ring-[#3483fa] cursor-pointer" />
             <ChevronDown size={14} className="text-[#3483fa] -ml-1 cursor-pointer" />
             <span className="text-[14px] text-slate-800 font-medium">{filtered.length} publicaciones</span>
           </div>
           <div className="flex items-center gap-5 text-[13px] font-medium">
-            <button onClick={bulkPause} className="text-[#3483fa] hover:underline">Pausar</button>
-            <button onClick={bulkActivate} className="text-[#3483fa] hover:underline">Reactivar</button>
-            <button onClick={bulkDelete} className="text-[#3483fa] hover:underline">Eliminar</button>
+            <button onClick={bulkPause} className="text-primary hover:underline">Pausar</button>
+            <button onClick={bulkActivate} className="text-primary hover:underline">Reactivar</button>
+            <button onClick={bulkDelete} className="text-primary hover:underline">Eliminar</button>
             <div className="w-px h-4 bg-slate-300" />
-            <button className="bg-[#e4edfa] text-[#3483fa] flex items-center gap-1.5 px-3 py-1.5 rounded text-[13px] font-medium hover:bg-[#d0e1f9] transition-colors">
+            <button className="bg-primary/10 text-primary flex items-center gap-1.5 px-3 py-1.5 rounded text-[13px] font-medium hover:bg-primary/20 transition-colors">
               Modificar en Editor masivo <ChevronDown size={14} />
             </button>
           </div>
@@ -218,7 +230,7 @@ export default function PublicacionesView() {
           <div className="flex flex-col w-full">
 
             {/* HEADER */}
-            <div className="pub-grid px-4 py-3 border-b border-slate-200 bg-[#ebebeb]/50">
+            <div className="pub-grid px-4 py-3 border-b border-border bg-muted/60">
               {["Publicación", "Precio", "Condiciones", "Recibís", "Métricas últ. 7 días", "Calidad", "Experiencia", "Estado y recomendaciones"].map((h, i) => (
                 <div key={i} className="text-[11px] font-bold text-slate-700">{h}</div>
               ))}
@@ -256,12 +268,12 @@ export default function PublicacionesView() {
                           <div className="flex items-center gap-1 text-[11px] text-slate-400 mt-1">
                             {p.sku && <span>#{p.sku}</span>}
                             {p.sku && <Copy size={12} className="cursor-pointer hover:text-slate-600" onClick={() => navigator.clipboard.writeText(p.sku || "")} />}
-                            {p.category && <span className="text-[#3483fa] ml-1">{p.category.name}</span>}
+                            {p.category && <span className="text-primary ml-1">{p.category.name}</span>}
                           </div>
                           <div className="text-[11px] text-slate-700 mt-1.5 flex items-center flex-wrap gap-x-2 font-medium">
                             <span>Depósito: {p.stock} u.</span>
-                            {p.stock <= 5 && p.stock > 0 && <AlertCircle size={11} className="text-[#cc0000]" />}
-                            {p.stock <= 0 && <span className="text-[#cc0000] font-bold">Sin stock</span>}
+                            {p.stock <= 5 && p.stock > 0 && <AlertCircle size={11} className="text-destructive" />}
+                            {p.stock <= 0 && <span className="text-destructive font-bold">Sin stock</span>}
                           </div>
                         </div>
                       </div>
@@ -269,12 +281,12 @@ export default function PublicacionesView() {
 
                     {/* 2. PRECIO */}
                     <div className="flex flex-col gap-0.5 pt-0.5">
-                      <span className="text-[13px] font-bold text-slate-800">{fmt(p.price)}</span>
+                        <span className="text-[13px] font-bold text-foreground">{fmt(p.price)}</span>
                       {p.originalPrice && p.originalPrice > p.price && (
                         <span className="text-[11px] text-slate-500">{fmt(p.originalPrice)}</span>
                       )}
                       {p.originalPrice && p.originalPrice > p.price && (
-                        <span className="text-[10px] text-[#3483fa] mt-1 flex items-center gap-1 leading-tight">
+                        <span className="text-[10px] text-primary mt-1 flex items-center gap-1 leading-tight">
                           Con 1 precio mayorista <Info size={11} className="flex-shrink-0" />
                         </span>
                       )}
@@ -291,7 +303,7 @@ export default function PublicacionesView() {
                       <div className="flex flex-col leading-tight">
                         {p.freeShipping ? (
                           <>
-                            <span className="text-[12px] font-bold text-slate-800">Ofrecés envío gratis</span>
+                            <span className="text-[12px] font-bold text-foreground">Ofrecés envío gratis</span>
                             {p.shippingCost > 0 && <span className="text-[10px] text-slate-500 mt-[2px]">Pagás {fmt(p.shippingCost)}</span>}
                           </>
                         ) : (
@@ -302,7 +314,7 @@ export default function PublicacionesView() {
 
                     {/* 4. RECIBÍS */}
                     <div className="flex flex-col gap-0.5 pt-0.5">
-                      <span className="text-[13px] font-bold text-slate-800">{fmt(Math.max(0, receives))}</span>
+                      <span className="text-[13px] font-bold text-foreground">{fmt(Math.max(0, receives))}</span>
                       <span className="text-[11px] text-slate-500">Pagás {fmt(comission)}</span>
                       {p.freeShipping && p.shippingCost > 0 && (
                         <span className="text-[11px] text-slate-500">Pagás {fmt(p.shippingCost)}</span>
@@ -315,8 +327,8 @@ export default function PublicacionesView() {
                         <Eye size={13} className="text-slate-400" />
                         <span className="font-bold flex-1 text-center">{p.views}</span>
                         <div className="w-[12px]">
-                          {p.views > 10 && <TrendingUp size={12} className="text-[#00a650]" />}
-                          {p.views > 0 && p.views <= 10 && <TrendingDown size={12} className="text-[#cc0000]" />}
+                          {p.views > 10 && <TrendingUp size={12} className="text-success" />}
+                          {p.views > 0 && p.views <= 10 && <TrendingDown size={12} className="text-destructive" />}
                         </div>
                       </div>
                       <div className="flex items-center justify-between text-[11px] text-slate-600">
@@ -335,12 +347,12 @@ export default function PublicacionesView() {
                       ) : (
                         <div className="w-7 h-7 rounded-full bg-[#e4edfa] flex items-center justify-center"><Info size={16} className="text-[#3483fa]" /></div>
                       )}
-                      <span className="text-[11px] text-[#3483fa] font-medium hover:underline cursor-pointer">{objectives} objetivo{objectives > 1 ? "s" : ""}</span>
+                        <span className="text-[11px] text-primary font-medium hover:underline cursor-pointer">{objectives} objetivo{objectives > 1 ? "s" : ""}</span>
                     </div>
 
                     {/* 7. EXPERIENCIA */}
                     <div className="flex flex-col items-center justify-start gap-1 pt-0.5 text-center">
-                      <CheckCircle2 size={16} className="text-[#00a650] fill-[#e6f6ec]" />
+                      <CheckCircle2 size={16} className="text-success fill-success/20" />
                       <span className="text-[10px] text-slate-500 mt-0.5">¡Bien hecho!</span>
                     </div>
 
@@ -351,7 +363,7 @@ export default function PublicacionesView() {
                           <div className={`text-[9px] font-bold px-1.5 py-[2px] rounded-[3px] uppercase tracking-wider ${rec.badgeColor}`}>{rec.badge}</div>
                         ) : <div />}
                         <div className="flex items-center gap-3">
-                          <button onClick={() => toggle(p.id, !p.isActive)} className={`relative w-[32px] h-[18px] rounded-full transition-colors ${p.isActive ? "bg-[#3483fa]" : "bg-slate-300"}`}>
+                        <button onClick={() => toggle(p.id, !p.isActive)} className={`relative w-[32px] h-[18px] rounded-full transition-colors ${p.isActive ? "bg-primary" : "bg-slate-300"}`}>
                             <span className={`absolute top-[2px] w-[14px] h-[14px] bg-white rounded-full shadow transition-all ${p.isActive ? "right-[2px]" : "left-[2px]"}`} />
                           </button>
                           <div className="relative">
@@ -361,7 +373,7 @@ export default function PublicacionesView() {
                             {openMenu === p.id && (
                               <div ref={menuRef} className="absolute right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-50 w-52 py-1">
                                 <a href={`/product/${p.id}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-4 py-2.5 text-[13px] text-slate-700 hover:bg-slate-50" onClick={() => setOpenMenu(null)}>
-                                  <Eye size={15} className="text-[#3483fa]" /> Ver publicación
+                                  <Eye size={15} className="text-primary" /> Ver publicación
                                 </a>
                                 <button onClick={() => { openEdit(p); setOpenMenu(null) }} className="flex items-center gap-3 px-4 py-2.5 text-[13px] text-slate-700 hover:bg-slate-50 w-full text-left">
                                   <Edit size={15} className="text-slate-400" /> Editar publicación
@@ -384,7 +396,7 @@ export default function PublicacionesView() {
                       </div>
                       {rec.tip && <p className="text-[12px] text-slate-800 font-semibold leading-[1.3] mb-1">{rec.tip}</p>}
                       {rec.action && (
-                        <button className="text-[12px] text-[#3483fa] bg-[#e4edfa] px-3 py-1.5 rounded self-start font-medium hover:bg-[#d0e1f9] transition-colors mt-1">
+                        <button className="text-[12px] text-primary bg-primary/10 px-3 py-1.5 rounded self-start font-medium hover:bg-primary/20 transition-colors mt-1">
                           {rec.action}
                         </button>
                       )}
@@ -395,7 +407,7 @@ export default function PublicacionesView() {
 
               {filtered.length === 0 && (
                 <div className="p-12 text-center text-slate-500 bg-white rounded-lg mx-2 my-2 border border-slate-200">
-                  No hay publicaciones. <button onClick={openCreate} className="text-[#3483fa] font-medium hover:underline">Crear una</button>
+                  No hay publicaciones. <button onClick={openCreate} className="text-primary font-medium hover:underline">Crear una</button>
                 </div>
               )}
             </div>
@@ -403,7 +415,7 @@ export default function PublicacionesView() {
         </div>
 
         {/* PAGINATION */}
-        <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 bg-[#f8f9fa] mt-auto">
+        <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-muted/50 mt-auto">
           <span className="text-[12px] text-slate-500">
             {filtered.length} de {totalCount} publicaciones · Página {page} de {totalPages}
           </span>
@@ -414,7 +426,7 @@ export default function PublicacionesView() {
                 const pg = page <= 3 ? i + 1 : page + i - 2
                 if (pg < 1 || pg > totalPages) return null
                 return (
-                  <button key={pg} onClick={() => setPage(pg)} className={`w-8 h-8 flex items-center justify-center rounded text-[12px] font-medium transition-colors ${pg === page ? "bg-[#3483fa] text-white" : "border border-slate-200 text-slate-600 hover:bg-slate-50"}`}>{pg}</button>
+                  <button key={pg} onClick={() => setPage(pg)} className={`w-8 h-8 flex items-center justify-center rounded text-[12px] font-medium transition-colors ${pg === page ? "bg-primary text-primary-foreground" : "border border-slate-200 text-slate-600 hover:bg-slate-50"}`}>{pg}</button>
                 )
               })}
               <button disabled={page >= totalPages} onClick={() => setPage(page + 1)} className="w-8 h-8 flex items-center justify-center rounded border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30"><ChevronRight size={16} /></button>

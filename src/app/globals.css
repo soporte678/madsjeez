@@ -87,25 +87,25 @@
 
 /* Tema suave (tono intermedio frío) */
 :root[data-theme="soft"] {
-  --background: #eaf4ff;
-  --foreground: #10243d;
-  --primary: #2563eb;
-  --primary-hover: #1d4ed8;
-  --secondary: #dff0ff;
-  --secondary-hover: #d1e8ff;
-  --accent: #0ea5e9;
-  --accent-hover: #0284c7;
-  --muted: #e6f2ff;
-  --muted-foreground: #47607a;
-  --card: #f6fbff;
-  --card-foreground: #10243d;
-  --popover: #f6fbff;
-  --popover-foreground: #10243d;
-  --border: #c8ddf5;
-  --input: #c8ddf5;
-  --ring: #38bdf8;
-  --shell-header-bg: #edf6ff;
-  --shell-header-border: #c8ddf5;
+  --background: #f6f2ff;
+  --foreground: #2a1f3d;
+  --primary: #7c3aed;
+  --primary-hover: #6d28d9;
+  --secondary: #efe7ff;
+  --secondary-hover: #e7ddff;
+  --accent: #a855f7;
+  --accent-hover: #9333ea;
+  --muted: #f1e9ff;
+  --muted-foreground: #6b5a86;
+  --card: #fbf8ff;
+  --card-foreground: #2a1f3d;
+  --popover: #fbf8ff;
+  --popover-foreground: #2a1f3d;
+  --border: #ddcff8;
+  --input: #ddcff8;
+  --ring: #a855f7;
+  --shell-header-bg: #f5efff;
+  --shell-header-border: #ddcff8;
   --shell-sidebar-active-bg: color-mix(in srgb, var(--primary) 18%, white);
 }
 
@@ -684,7 +684,7 @@ body {
 
 :root[data-theme="soft"] .bg-gray-200,
 :root[data-theme="soft"] .bg-slate-200 {
-  background-color: #d7ebff !important;
+  background-color: #e6dbfb !important;
 }
 
 :root[data-theme="soft"] .text-black,
@@ -692,19 +692,19 @@ body {
 :root[data-theme="soft"] .text-slate-900,
 :root[data-theme="soft"] .text-gray-800,
 :root[data-theme="soft"] .text-slate-800 {
-  color: #10243d !important;
+  color: #2a1f3d !important;
 }
 
 :root[data-theme="soft"] .text-gray-700,
 :root[data-theme="soft"] .text-slate-700 {
-  color: #2f4a67 !important;
+  color: #4a3b63 !important;
 }
 
 :root[data-theme="soft"] .text-gray-600,
 :root[data-theme="soft"] .text-slate-600,
 :root[data-theme="soft"] .text-gray-500,
 :root[data-theme="soft"] .text-slate-500 {
-  color: #47607a !important;
+  color: #6b5a86 !important;
 }
 
 :root[data-theme="soft"] .border-gray-50,
@@ -721,5 +721,5 @@ body {
 :root[data-theme="soft"] .hover\:bg-gray-100:hover,
 :root[data-theme="soft"] .hover\:bg-slate-50:hover,
 :root[data-theme="soft"] .hover\:bg-slate-100:hover {
-  background-color: #ebf5ff !important;
+  background-color: #f1e9ff !important;
 }
