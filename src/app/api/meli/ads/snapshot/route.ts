@@ -182,6 +182,33 @@ function evaluateChangeOutcome(current?: Record<string, unknown>, previous?: Rec
   return { outcome: "NEUTRAL" as const, score: rounded, summary: "Variación marginal; mantener observación en próximas ventanas." };
 }
 
+function parseCompareDaysParam(raw: string | null): number[] {
+  const defaults = [1, 7, 15, 20];
+  if (!raw || !raw.trim()) return defaults;
+  const parsed = raw
+    .split(",")
+    .map((x) => Number(x.trim()))
+    .filter((n) => Number.isFinite(n) && n >= 1 && n <= 365)
+    .map((n) => Math.floor(n));
+  const unique = Array.from(new Set(parsed));
+  return unique.length > 0 ? unique.slice(0, 8) : defaults;
+}
+
+function nearestSnapshotByDays<T extends { createdAt: Date }>(rows: T[], daysAgo: number): T | null {
+  if (rows.length === 0) return null;
+  const target = Date.now() - daysAgo * 86_400_000;
+  let best: T | null = null;
+  let bestDiff = Number.POSITIVE_INFINITY;
+  for (const r of rows) {
+    const diff = Math.abs(r.createdAt.getTime() - target);
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      best = r;
+    }
+  }
+  return best;
+}
+
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -197,6 +224,7 @@ export async function GET(req: Request) {
     const url = new URL(req.url);
     const analyze = url.searchParams.get("analyze") === "1";
     const days = Math.min(90, Math.max(7, Number(url.searchParams.get("days")) || 14));
+    const compareDays = parseCompareDaysParam(url.searchParams.get("compare_days"));
     const currentWindow = getWindow(days);
     const previousWindow = getPreviousWindow(days);
 
@@ -465,6 +493,12 @@ export async function GET(req: Request) {
     let createdSnapshot: { id: string; createdAt: Date } | null = null;
     let dailyStats: Array<{ day: string; snapshots: number; avgCost: number; avgRevenue: number; avgProfit: number }> = [];
     let changeSummary = { positive: 0, negative: 0, neutral: 0, pending: 0 };
+    let comparisons: Array<{
+      daysAgo: number;
+      snapshotAt: string | null;
+      metrics: Record<string, number>;
+      deltasVsNow: Record<string, number>;
+    }> = [];
     try {
       // Persistencia histórica cada sincronización (base para evolución diaria y control de impacto).
       createdSnapshot = await prisma.meliAdsSnapshot.create({
@@ -585,6 +619,49 @@ export async function GET(req: Request) {
         neutral: changeSummaryRows.find((r) => r.outcome === "NEUTRAL")?._count._all ?? 0,
         pending: changeSummaryRows.find((r) => r.outcome === "PENDING")?._count._all ?? 0,
       };
+
+      const totalsNow = {
+        prints: totals.prints,
+        clicks: totals.clicks,
+        ctr: totals.ctr,
+        cost: totals.cost,
+        acos: totals.acos,
+        roas: totals.roas,
+        budget: totals.budget,
+        revenue: totals.revenue,
+        profit: totals.profit,
+      };
+      comparisons = compareDays.map((d) => {
+        const near = nearestSnapshotByDays(recentSnapshots, d);
+        const nearTotals = (near?.totals ?? {}) as Record<string, unknown>;
+        const base = {
+          prints: n(nearTotals.prints),
+          clicks: n(nearTotals.clicks),
+          ctr: n(nearTotals.ctr),
+          cost: n(nearTotals.cost),
+          acos: n(nearTotals.acos),
+          roas: n(nearTotals.roas),
+          budget: n(nearTotals.budget),
+          revenue: n(nearTotals.revenue),
+          profit: n(nearTotals.profit),
+        };
+        return {
+          daysAgo: d,
+          snapshotAt: near?.createdAt ? near.createdAt.toISOString() : null,
+          metrics: base,
+          deltasVsNow: {
+            prints: totalsNow.prints - base.prints,
+            clicks: totalsNow.clicks - base.clicks,
+            ctr: totalsNow.ctr - base.ctr,
+            cost: totalsNow.cost - base.cost,
+            acos: totalsNow.acos - base.acos,
+            roas: totalsNow.roas - base.roas,
+            budget: totalsNow.budget - base.budget,
+            revenue: totalsNow.revenue - base.revenue,
+            profit: totalsNow.profit - base.profit,
+          },
+        };
+      });
     } catch (persistErr) {
       errors.push(
         `Persistencia Ads no disponible: ${
@@ -623,6 +700,7 @@ export async function GET(req: Request) {
       },
       dailyStats,
       changeSummary,
+      comparisons,
       promotions,
       recommendations,
       errors,

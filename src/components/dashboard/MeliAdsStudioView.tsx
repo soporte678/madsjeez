@@ -86,6 +86,12 @@ export default function MeliAdsStudioView() {
     recommendations?: Recommendation[];
     dailyStats?: Array<{ day: string; snapshots: number; avgCost: number; avgRevenue: number; avgProfit: number }>;
     changeSummary?: { positive: number; negative: number; neutral: number; pending: number };
+    comparisons?: Array<{
+      daysAgo: number;
+      snapshotAt: string | null;
+      metrics: Record<string, number>;
+      deltasVsNow: Record<string, number>;
+    }>;
     errors?: string[];
   } | null>(() => {
     if (typeof window === "undefined") return null;
@@ -107,6 +113,12 @@ export default function MeliAdsStudioView() {
         recommendations?: Recommendation[];
         dailyStats?: Array<{ day: string; snapshots: number; avgCost: number; avgRevenue: number; avgProfit: number }>;
         changeSummary?: { positive: number; negative: number; neutral: number; pending: number };
+        comparisons?: Array<{
+          daysAgo: number;
+          snapshotAt: string | null;
+          metrics: Record<string, number>;
+          deltasVsNow: Record<string, number>;
+        }>;
         errors?: string[];
       }) ?? null;
     } catch {
@@ -115,12 +127,14 @@ export default function MeliAdsStudioView() {
   });
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [compareDaysCsv, setCompareDaysCsv] = useState("1,7,15,20");
+  const [customDays, setCustomDays] = useState("3");
 
   const load = useCallback(async (opts?: { silent?: boolean }) => {
     const silent = Boolean(opts?.silent);
     setLoading(true);
     try {
-      const res = await fetch(`/api/meli/ads/snapshot?analyze=1&days=14&t=${Date.now()}`, {
+      const res = await fetch(`/api/meli/ads/snapshot?analyze=1&days=14&compare_days=${encodeURIComponent(compareDaysCsv)}&t=${Date.now()}`, {
         cache: "no-store",
       });
       const data = await res.json();
@@ -148,7 +162,7 @@ export default function MeliAdsStudioView() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [compareDaysCsv]);
 
   useEffect(() => {
     // Primer pull para traer estado actual y luego refresco periódico.
@@ -226,6 +240,7 @@ export default function MeliAdsStudioView() {
   const finance = snapshot?.finance ?? {};
   const dailyStats = snapshot?.dailyStats ?? [];
   const changeSummary = snapshot?.changeSummary ?? { positive: 0, negative: 0, neutral: 0, pending: 0 };
+  const comparisons = snapshot?.comparisons ?? [];
 
   const num = (v: unknown) => {
     const n = Number(v);
@@ -236,6 +251,21 @@ export default function MeliAdsStudioView() {
   const count = (v: unknown) => new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 }).format(num(v));
   const pct = (v: unknown, digits = 2) => `${num(v).toFixed(digits)}%`;
   const ratio = (v: unknown, digits = 2) => num(v).toFixed(digits);
+  const addCustomWindow = () => {
+    const d = Number(customDays);
+    if (!Number.isFinite(d) || d < 1 || d > 365) {
+      toast.error("Ingresá un número de días válido (1-365)");
+      return;
+    }
+    const current = compareDaysCsv
+      .split(",")
+      .map((x) => Number(x.trim()))
+      .filter((x) => Number.isFinite(x) && x > 0)
+      .map((x) => Math.floor(x));
+    const next = Array.from(new Set([...current, Math.floor(d)])).sort((a, b) => a - b);
+    setCompareDaysCsv(next.join(","));
+    setTimeout(() => load(), 0);
+  };
 
   return (
     <div className="space-y-8 max-w-6xl">
@@ -269,6 +299,36 @@ export default function MeliAdsStudioView() {
             {snapshot.metricsDays ?? 14} días
           </span>
         )}
+      </div>
+      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2">
+        <span className="text-xs font-medium text-gray-600">Comparar contra:</span>
+        <input
+          value={compareDaysCsv}
+          onChange={(e) => setCompareDaysCsv(e.target.value)}
+          className="h-8 w-40 rounded border border-gray-300 px-2 text-xs"
+          placeholder="1,7,15,20"
+        />
+        <button
+          type="button"
+          onClick={() => load()}
+          className="h-8 rounded bg-slate-700 text-white text-xs px-3 hover:bg-slate-800"
+        >
+          Aplicar
+        </button>
+        <span className="text-xs text-gray-500 ml-2">Agregar días:</span>
+        <input
+          value={customDays}
+          onChange={(e) => setCustomDays(e.target.value)}
+          className="h-8 w-16 rounded border border-gray-300 px-2 text-xs"
+          placeholder="3"
+        />
+        <button
+          type="button"
+          onClick={addCustomWindow}
+          className="h-8 rounded bg-primary text-primary-foreground text-xs px-3 hover:bg-primary-hover"
+        >
+          + ventana
+        </button>
       </div>
 
       {snapshot?.advertisers?.length === 0 && !loading && snapshot && (
@@ -335,6 +395,78 @@ export default function MeliAdsStudioView() {
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+      )}
+
+      {comparisons.length > 0 && (
+        <section className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-100 bg-slate-50">
+            <h3 className="font-semibold text-gray-900">Informe comparativo del ecosistema de marketing</h3>
+            <p className="text-xs text-gray-600 mt-1">
+              Estado actual vs 24h, 7d, 15d, 20d y ventanas personalizadas.
+            </p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-xs">
+              <thead className="bg-gray-50 text-gray-600">
+                <tr>
+                  <th className="text-left px-3 py-2">Métrica</th>
+                  <th className="text-right px-3 py-2">Ahora</th>
+                  {comparisons.map((c) => (
+                    <th key={c.daysAgo} className="text-right px-3 py-2">
+                      Hace {c.daysAgo}d
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { key: "cost", label: "Costo", fmt: "money" as const },
+                  { key: "revenue", label: "Revenue", fmt: "money" as const },
+                  { key: "profit", label: "Profit", fmt: "money" as const },
+                  { key: "roas", label: "ROAS", fmt: "ratio" as const },
+                  { key: "acos", label: "ACOS", fmt: "pct" as const },
+                  { key: "ctr", label: "CTR", fmt: "pct" as const },
+                  { key: "clicks", label: "Clicks", fmt: "count" as const },
+                  { key: "prints", label: "Impresiones", fmt: "count" as const },
+                ].map((row) => {
+                  const nowVal = num(totals[row.key as keyof typeof totals]);
+                  const format = (v: number) =>
+                    row.fmt === "money"
+                      ? money(v)
+                      : row.fmt === "pct"
+                        ? `${v.toFixed(2)}%`
+                        : row.fmt === "ratio"
+                          ? `${v.toFixed(2)}x`
+                          : count(v);
+                  return (
+                    <tr key={row.key} className="border-t border-gray-100">
+                      <td className="px-3 py-2 font-medium text-gray-800">{row.label}</td>
+                      <td className="px-3 py-2 text-right font-semibold">{format(nowVal)}</td>
+                      {comparisons.map((c) => {
+                        const old = num(c.metrics[row.key] ?? 0);
+                        const delta = num(c.deltasVsNow[row.key] ?? 0);
+                        const direction: "up_good" | "down_good" =
+                          row.key === "cost" || row.key === "acos" ? "down_good" : "up_good";
+                        return (
+                          <td key={`${row.key}-${c.daysAgo}`} className="px-3 py-2 text-right">
+                            <div>{format(old)}</div>
+                            {renderDelta(
+                              delta,
+                              row.fmt === "money" ? "money" : row.fmt === "pct" ? "pct" : "number",
+                              direction,
+                              money,
+                              count
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </section>
       )}
