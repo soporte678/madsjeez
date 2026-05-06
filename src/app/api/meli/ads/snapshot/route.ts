@@ -80,11 +80,20 @@ function pickMetric(obj: Record<string, unknown> | undefined, keys: string[]): n
 }
 
 function padsSearchResults(data: unknown): MeliPadsCampaignRow[] {
+  if (Array.isArray(data)) return data as MeliPadsCampaignRow[];
   if (!data || typeof data !== "object") return [];
   const o = data as Record<string, unknown>;
-  for (const key of ["results", "campaigns", "elements"]) {
+  for (const key of ["results", "campaigns", "elements", "items"]) {
     const arr = o[key];
     if (Array.isArray(arr) && arr.length > 0) return arr as MeliPadsCampaignRow[];
+  }
+  const nested = o.data;
+  if (nested && typeof nested === "object") {
+    const inner = nested as Record<string, unknown>;
+    for (const key of ["results", "campaigns", "elements"]) {
+      const arr = inner[key];
+      if (Array.isArray(arr) && arr.length > 0) return arr as MeliPadsCampaignRow[];
+    }
   }
   const fallback = o.results;
   return Array.isArray(fallback) ? (fallback as MeliPadsCampaignRow[]) : [];

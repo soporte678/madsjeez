@@ -44,6 +44,30 @@ type Recommendation = {
   applyPayload: Record<string, unknown>;
 };
 
+/** Payload de GET `/api/meli/ads/snapshot` (estado de pantalla + cache localStorage). */
+type MeliAdsStudioSnapshot = {
+  fetchedAt?: string;
+  metricsDays?: number;
+  advertisers?: { advertiser_id: number; site_id: string; account_name?: string }[];
+  campaigns?: SnapshotCampaign[];
+  totals?: Record<string, number>;
+  previousTotals?: Record<string, number>;
+  deltas?: Record<string, number>;
+  finance?: Record<string, number>;
+  currentWindow?: { start: string; end: string };
+  previousWindow?: { start: string; end: string };
+  recommendations?: Recommendation[];
+  dailyStats?: Array<{ day: string; snapshots: number; avgCost: number; avgRevenue: number; avgProfit: number }>;
+  changeSummary?: { positive: number; negative: number; neutral: number; pending: number };
+  comparisons?: Array<{
+    daysAgo: number;
+    snapshotAt: string | null;
+    metrics: Record<string, number>;
+    deltasVsNow: Record<string, number>;
+  }>;
+  errors?: string[];
+};
+
 const SNAPSHOT_CACHE_KEY = "meli_ads_snapshot_v1";
 const AUTO_REFRESH_MS = 10 * 60 * 1000;
 
@@ -75,55 +99,13 @@ export default function MeliAdsStudioView() {
   const { status: sess } = useSession();
   const [loading, setLoading] = useState(false);
   const [applying, setApplying] = useState(false);
-  const [snapshot, setSnapshot] = useState<{
-    fetchedAt?: string;
-    metricsDays?: number;
-    advertisers?: { advertiser_id: number; site_id: string; account_name?: string }[];
-    campaigns?: SnapshotCampaign[];
-    totals?: Record<string, number>;
-    previousTotals?: Record<string, number>;
-    deltas?: Record<string, number>;
-    finance?: Record<string, number>;
-    currentWindow?: { start: string; end: string };
-    previousWindow?: { start: string; end: string };
-    recommendations?: Recommendation[];
-    dailyStats?: Array<{ day: string; snapshots: number; avgCost: number; avgRevenue: number; avgProfit: number }>;
-    changeSummary?: { positive: number; negative: number; neutral: number; pending: number };
-    comparisons?: Array<{
-      daysAgo: number;
-      snapshotAt: string | null;
-      metrics: Record<string, number>;
-      deltasVsNow: Record<string, number>;
-    }>;
-    errors?: string[];
-  } | null>(() => {
+  const [snapshot, setSnapshot] = useState<MeliAdsStudioSnapshot | null>(() => {
     if (typeof window === "undefined") return null;
     try {
       const raw = localStorage.getItem(SNAPSHOT_CACHE_KEY);
       if (!raw) return null;
       const parsed = JSON.parse(raw) as { data?: unknown };
-      return (parsed?.data as {
-        fetchedAt?: string;
-        metricsDays?: number;
-        advertisers?: { advertiser_id: number; site_id: string; account_name?: string }[];
-        campaigns?: SnapshotCampaign[];
-        totals?: Record<string, number>;
-        previousTotals?: Record<string, number>;
-        deltas?: Record<string, number>;
-        finance?: Record<string, number>;
-        currentWindow?: { start: string; end: string };
-        previousWindow?: { start: string; end: string };
-        recommendations?: Recommendation[];
-        dailyStats?: Array<{ day: string; snapshots: number; avgCost: number; avgRevenue: number; avgProfit: number }>;
-        changeSummary?: { positive: number; negative: number; neutral: number; pending: number };
-        comparisons?: Array<{
-          daysAgo: number;
-          snapshotAt: string | null;
-          metrics: Record<string, number>;
-          deltasVsNow: Record<string, number>;
-        }>;
-        errors?: string[];
-      }) ?? null;
+      return (parsed?.data as MeliAdsStudioSnapshot) ?? null;
     } catch {
       return null;
     }
@@ -146,13 +128,29 @@ export default function MeliAdsStudioView() {
       const res = await fetch(`/api/meli/ads/snapshot?analyze=1&days=14&compare_days=${compareDays}&t=${Date.now()}`, {
         cache: "no-store",
       });
-      const data = await res.json();
-      if (!res.ok) {
-        if (!silent) toast.error(data.error || "No se pudo cargar Product Ads");
-        setSnapshot(null);
+      let data: Record<string, unknown>;
+      try {
+        data = (await res.json()) as Record<string, unknown>;
+      } catch {
+        if (!silent) toast.error("Respuesta inválida del servidor");
         return;
       }
-      setSnapshot(data);
+      if (!res.ok) {
+        const msg = typeof data.error === "string" ? data.error : "No se pudo cargar Product Ads";
+        if (!silent) toast.error(msg);
+        // Sesión cerrada: limpiar cache. Cualquier otro fallo (502, timeout ML, etc.) no debe vaciar
+        // la UI en refrescos silenciosos — antes borrábamos todo y parecía “sin datos”.
+        if (res.status === 401) {
+          setSnapshot(null);
+          try {
+            localStorage.removeItem(SNAPSHOT_CACHE_KEY);
+          } catch {
+            /* ignore */
+          }
+        }
+        return;
+      }
+      setSnapshot(data as MeliAdsStudioSnapshot);
       localStorage.setItem(
         SNAPSHOT_CACHE_KEY,
         JSON.stringify({
