@@ -37,6 +37,7 @@ import AdvertisingView from "@/components/dashboard/AdvertisingView";
 import MeliIntegrationView from "@/components/dashboard/MeliIntegrationView";
 import MeliAdsStudioView from "@/components/dashboard/MeliAdsStudioView";
 import ThemeToneSwitcher from "@/components/theme/ThemeToneSwitcher";
+import RainbowLogo from "@/components/brand/RainbowLogo";
 
 export default function App() {
   // Siempre igual en servidor y primer cliente (evita hydration mismatch). El hash se aplica en cliente.
@@ -516,20 +517,7 @@ export default function App() {
     <div className="min-h-screen bg-background font-sans text-foreground flex flex-col relative">
       <header className="bg-[var(--shell-header-bg)] border-b border-[var(--shell-header-border)] py-2 px-4 shadow-sm z-50 relative flex-shrink-0 backdrop-blur supports-[backdrop-filter]:bg-[color-mix(in_srgb,var(--shell-header-bg)_88%,transparent)]">
         <div className="max-w-[1200px] mx-auto flex items-center justify-between">
-          <a href="/" className="flex items-center gap-2 group cursor-pointer">
-            <div className="relative w-10 h-10 bg-primary/15 rounded-xl flex items-center justify-center shadow-lg border border-primary/30 overflow-hidden group-hover:shadow-primary/25 transition-all">
-              <div className="absolute inset-0 bg-gradient-to-tr from-primary/30 to-transparent"></div>
-              <svg viewBox="0 0 100 100" className="w-7 h-7 overflow-visible">
-                <polygon points="15,80 35,30 55,55 35,80" fill="currentColor" className="opacity-90 text-primary" />
-                <polygon points="55,55 75,30 95,80 75,80" fill="currentColor" className="opacity-90 text-primary" />
-                <path d="M 85 80 L 65 30 L 45 65" fill="none" stroke="currentColor" className="text-accent" strokeWidth="14" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-            <span className="font-black text-[22px] tracking-tighter leading-none flex items-center uppercase">
-              <span className="text-foreground">MADS</span>
-              <span className="text-primary">JEEZ</span>
-            </span>
-          </a>
+          <RainbowLogo />
           <div className="flex items-center gap-4 text-[13px] text-muted-foreground font-light bg-card/70 border border-border/60 rounded-full px-3 py-1.5">
             <div className="relative">
               <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="flex items-center gap-1 hover:text-foreground transition-colors">

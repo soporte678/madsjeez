@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Search, ChevronDown, Tag } from "lucide-react";
 import ReputacionView from "@/components/dashboard/ReputacionView";
+import RainbowLogo from "@/components/brand/RainbowLogo";
 
 export default function ReputacionPage() {
   const { status } = useSession();
@@ -34,28 +35,7 @@ export default function ReputacionPage() {
       <header className="bg-[#FEE500] pt-3 pb-2 px-4 shadow-md sticky top-0 z-[100]">
         <div className="max-w-7xl mx-auto flex flex-col gap-3">
           <div className="flex items-center justify-between gap-6 md:gap-12">
-            <Link href="/" className="flex items-center gap-4 cursor-pointer group flex-shrink-0">
-              <div className="relative w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center shadow-2xl border border-white/10 overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/30 to-transparent" />
-                <svg viewBox="0 0 100 100" className="w-8 h-8 overflow-visible">
-                  <path
-                    d="M 15 80 L 35 30 L 55 55"
-                    stroke="#2563EB"
-                    fill="none"
-                    strokeWidth="15"
-                    strokeLinecap="round"
-                  />
-                  <path
-                    d="M 85 80 L 65 30 L 45 65"
-                    stroke="#FACC15"
-                    fill="none"
-                    strokeWidth="15"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </div>
-              <span className="font-black text-[22px] tracking-tighter leading-none uppercase text-slate-900">MADSJEEZ</span>
-            </Link>
+            <RainbowLogo textSizeClassName="text-[22px]" iconSizeClassName="w-12 h-12" />
 
             <div className="flex-1 max-w-3xl relative group">
               <input

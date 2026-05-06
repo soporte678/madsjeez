@@ -58,7 +58,11 @@ function renderDelta(
   const up = value > 0;
   const isGood = direction === "up_good" ? up : !up;
   const text =
-    kind === "money" ? money(Math.abs(value)) : kind === "pct" ? `${Math.abs(value).toFixed(2)} pp` : count(Math.abs(value));
+    kind === "money"
+      ? money(Math.abs(value))
+      : kind === "pct"
+        ? `${Math.abs(value).toFixed(2)} pts. porcentuales`
+        : count(Math.abs(value));
   return (
     <span className={`inline-flex items-center gap-1 text-xs font-semibold ${isGood ? "text-emerald-600" : "text-red-600"}`}>
       {up ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
@@ -133,14 +137,13 @@ export default function MeliAdsStudioView() {
   const [expandedCampaignRows, setExpandedCampaignRows] = useState<Record<string, boolean>>({});
   const [campaignItems, setCampaignItems] = useState<Record<string, Array<{ item_id?: string; title?: string; status?: string; metrics?: Record<string, unknown> }>>>({});
   const [loadingItems, setLoadingItems] = useState<Record<string, boolean>>({});
-  const [compareDaysCsv, setCompareDaysCsv] = useState("1,7,15,20");
-  const [customDays, setCustomDays] = useState("3");
+  const [compareDays, setCompareDays] = useState(7);
 
   const load = useCallback(async (opts?: { silent?: boolean }) => {
     const silent = Boolean(opts?.silent);
     setLoading(true);
     try {
-      const res = await fetch(`/api/meli/ads/snapshot?analyze=1&days=14&compare_days=${encodeURIComponent(compareDaysCsv)}&t=${Date.now()}`, {
+      const res = await fetch(`/api/meli/ads/snapshot?analyze=1&days=14&compare_days=${compareDays}&t=${Date.now()}`, {
         cache: "no-store",
       });
       const data = await res.json();
@@ -168,7 +171,7 @@ export default function MeliAdsStudioView() {
     } finally {
       setLoading(false);
     }
-  }, [compareDaysCsv]);
+  }, [compareDays]);
 
   useEffect(() => {
     // Primer pull para traer estado actual y luego refresco periódico.
@@ -345,20 +348,9 @@ export default function MeliAdsStudioView() {
       setLoadingItems((s) => ({ ...s, [rowKey]: false }));
     }
   };
-  const addCustomWindow = () => {
-    const d = Number(customDays);
-    if (!Number.isFinite(d) || d < 1 || d > 365) {
-      toast.error("Ingresá un número de días válido (1-365)");
-      return;
-    }
-    const current = compareDaysCsv
-      .split(",")
-      .map((x) => Number(x.trim()))
-      .filter((x) => Number.isFinite(x) && x > 0)
-      .map((x) => Math.floor(x));
-    const next = Array.from(new Set([...current, Math.floor(d)])).sort((a, b) => a - b);
-    setCompareDaysCsv(next.join(","));
-    setTimeout(() => load(), 0);
+  const onChangeCompareDays = (days: number) => {
+    setCompareDays(days);
+    setTimeout(() => load({ silent: true }), 0);
   };
   const severityLabel = (s: Recommendation["severity"]) =>
     s === "critical" ? "Crítico" : s === "warning" ? "Advertencia" : "Informativo";
@@ -413,36 +405,63 @@ export default function MeliAdsStudioView() {
           </span>
         )}
       </div>
-      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2">
-        <span className="text-xs font-medium text-gray-600">Comparar contra:</span>
-        <input
-          value={compareDaysCsv}
-          onChange={(e) => setCompareDaysCsv(e.target.value)}
-          className="h-8 w-40 rounded border border-gray-300 px-2 text-xs"
-          placeholder="1,7,15,20"
-        />
-        <button
-          type="button"
-          onClick={() => load()}
-          className="h-8 rounded bg-slate-700 text-white text-xs px-3 hover:bg-slate-800"
-        >
-          Aplicar
-        </button>
-        <span className="text-xs text-gray-500 ml-2">Agregar días:</span>
-        <input
-          value={customDays}
-          onChange={(e) => setCustomDays(e.target.value)}
-          className="h-8 w-16 rounded border border-gray-300 px-2 text-xs"
-          placeholder="3"
-        />
-        <button
-          type="button"
-          onClick={addCustomWindow}
-          className="h-8 rounded bg-primary text-primary-foreground text-xs px-3 hover:bg-primary-hover"
-        >
-          + ventana
-        </button>
+      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
+        <span className="text-xs font-medium text-muted-foreground">Comparar contra:</span>
+        {[1, 2, 3, 5, 7, 15, 20, 30].map((days) => {
+          const active = compareDays === days;
+          return (
+            <button
+              key={days}
+              type="button"
+              onClick={() => onChangeCompareDays(days)}
+              className={`h-8 rounded-md border px-3 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 ${
+                active
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border bg-card text-foreground hover:bg-muted"
+              }`}
+              aria-pressed={active}
+            >
+              {days === 1 ? "24h" : `${days}d`}
+            </button>
+          );
+        })}
       </div>
+      <section className="rounded-xl border border-border bg-card p-4">
+        <h3 className="text-sm font-semibold text-foreground mb-2">Glosario rápido (acrónimos)</h3>
+        <ul className="list-disc pl-5 space-y-1 text-xs text-muted-foreground">
+          <li>
+            <span className="font-semibold text-foreground">PADS:</span> Product Ads de Mercado Libre; campañas de
+            publicidad sobre publicaciones.
+          </li>
+          <li>
+            <span className="font-semibold text-foreground">CTR:</span> porcentaje de clics sobre impresiones. Fórmula:
+            clicks / impresiones.
+          </li>
+          <li>
+            <span className="font-semibold text-foreground">ACOS:</span> porcentaje del costo publicitario sobre ventas
+            atribuidas. Fórmula: costo / ingresos Ads.
+          </li>
+          <li>
+            <span className="font-semibold text-foreground">ROAS:</span> retorno de la inversión publicitaria. Fórmula:
+            ingresos Ads / costo.
+          </li>
+          <li>
+            <span className="font-semibold text-foreground">API:</span> conexión automática entre sistemas para leer
+            datos y aplicar cambios.
+          </li>
+          <li>
+            <span className="font-semibold text-foreground">ML:</span> abreviatura de Mercado Libre.
+          </li>
+          <li>
+            <span className="font-semibold text-foreground">OAuth:</span> autorización segura para dar permisos sin
+            compartir contraseña.
+          </li>
+          <li>
+            <span className="font-semibold text-foreground">Pts. porcentuales:</span> diferencia entre dos porcentajes
+            (ejemplo: 2.0% a 2.5% = +0.5 pts. porcentuales).
+          </li>
+        </ul>
+      </section>
 
       {snapshot?.advertisers?.length === 0 && !loading && snapshot && (
         <div className="rounded-xl border border-primary/20 bg-primary/10 p-4 text-sm text-primary flex gap-2">
@@ -524,9 +543,7 @@ export default function MeliAdsStudioView() {
         <section className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-100 bg-slate-50">
             <h3 className="font-semibold text-gray-900">Informe comparativo del ecosistema de marketing</h3>
-            <p className="text-xs text-gray-600 mt-1">
-              Estado actual vs 24h, 7d, 15d, 20d y ventanas personalizadas.
-            </p>
+            <p className="text-xs text-gray-600 mt-1">Estado actual vs el rango seleccionado.</p>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full text-xs">
@@ -600,28 +617,54 @@ export default function MeliAdsStudioView() {
           </div>
           <div className="px-4 py-2 border-b border-gray-100 bg-slate-50 flex flex-wrap items-center gap-2 text-xs">
             <span className="text-gray-600 font-medium">Ordenar por:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-              className="h-8 rounded border border-border bg-card text-foreground px-2"
+            {[
+              { id: "name", label: "Nombre" },
+              { id: "clicks", label: "Clicks" },
+              { id: "prints", label: "Impresiones" },
+              { id: "ctr", label: "CTR" },
+              { id: "cost", label: "Costo" },
+              { id: "acos", label: "ACOS" },
+              { id: "roas", label: "ROAS" },
+              { id: "budget", label: "Presupuesto" },
+            ].map((opt) => {
+              const active = sortBy === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => setSortBy(opt.id as typeof sortBy)}
+                  className={`h-8 rounded-md border px-2.5 font-medium transition-colors ${
+                    active
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border bg-card text-foreground hover:bg-muted"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => setSortDir("asc")}
+              className={`h-8 rounded-md border px-2.5 font-medium transition-colors ${
+                sortDir === "asc"
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border bg-card text-foreground hover:bg-muted"
+              }`}
             >
-              <option value="name">Nombre (A-Z)</option>
-              <option value="clicks">Clicks</option>
-              <option value="prints">Impresiones</option>
-              <option value="ctr">CTR</option>
-              <option value="cost">Costo</option>
-              <option value="acos">ACOS</option>
-              <option value="roas">ROAS</option>
-              <option value="budget">Presupuesto</option>
-            </select>
-            <select
-              value={sortDir}
-              onChange={(e) => setSortDir(e.target.value as "asc" | "desc")}
-              className="h-8 rounded border border-border bg-card text-foreground px-2"
+              Ascendente
+            </button>
+            <button
+              type="button"
+              onClick={() => setSortDir("desc")}
+              className={`h-8 rounded-md border px-2.5 font-medium transition-colors ${
+                sortDir === "desc"
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border bg-card text-foreground hover:bg-muted"
+              }`}
             >
-              <option value="asc">Ascendente</option>
-              <option value="desc">Descendente</option>
-            </select>
+              Descendente
+            </button>
             <button type="button" onClick={() => { setSortBy("clicks"); setSortDir("desc"); }} className="h-8 rounded bg-blue-600 text-white px-2.5">
               Más clicks
             </button>
@@ -826,11 +869,23 @@ export default function MeliAdsStudioView() {
               Aplicar seleccionadas en ML
             </button>
           </div>
-          <div className="px-4 py-2 text-xs bg-muted/70 border-b border-border flex flex-wrap gap-2">
-            <span className="rounded bg-emerald-100 text-emerald-700 px-2 py-0.5">Positivas: {positiveRecs.length}</span>
-            <span className="rounded bg-red-100 text-red-700 px-2 py-0.5">Riesgos: {negativeRecs.length}</span>
-            <span className="rounded bg-amber-100 text-amber-700 px-2 py-0.5">Advertencias: {recs.filter((r) => r.severity === "warning").length}</span>
-            <span className="rounded bg-blue-100 text-blue-700 px-2 py-0.5">Total: {recs.length}</span>
+          <div className="px-4 py-3 text-xs bg-muted/70 border-b border-border grid grid-cols-1 md:grid-cols-4 gap-2">
+            <div className="rounded-lg border border-emerald-300 bg-emerald-50 px-2 py-1.5">
+              <p className="text-[10px] uppercase tracking-wide text-emerald-700 font-semibold">Virtudes</p>
+              <p className="text-emerald-900 font-bold text-sm">{positiveRecs.length}</p>
+            </div>
+            <div className="rounded-lg border border-red-300 bg-red-50 px-2 py-1.5">
+              <p className="text-[10px] uppercase tracking-wide text-red-700 font-semibold">Riesgos</p>
+              <p className="text-red-900 font-bold text-sm">{negativeRecs.length}</p>
+            </div>
+            <div className="rounded-lg border border-amber-300 bg-amber-50 px-2 py-1.5">
+              <p className="text-[10px] uppercase tracking-wide text-amber-700 font-semibold">Advertencias</p>
+              <p className="text-amber-900 font-bold text-sm">{recs.filter((r) => r.severity === "warning").length}</p>
+            </div>
+            <div className="rounded-lg border border-indigo-300 bg-indigo-50 px-2 py-1.5">
+              <p className="text-[10px] uppercase tracking-wide text-indigo-700 font-semibold">Total acciones</p>
+              <p className="text-indigo-900 font-bold text-sm">{recs.length}</p>
+            </div>
           </div>
           <div className="px-4 py-2 border-b border-border text-[11px] text-muted-foreground flex flex-wrap gap-2">
             <span className="px-2 py-0.5 rounded bg-red-100 text-red-700">Crítico = actuar primero</span>
@@ -855,12 +910,18 @@ export default function MeliAdsStudioView() {
                       : "text-blue-700 bg-blue-50 border-blue-100";
               const rowTint =
                 r.severity === "critical"
-                  ? "bg-red-500/10 border-red-400/30"
+                  ? "bg-gradient-to-r from-red-500/20 to-red-500/5 border-red-400/50 shadow-[0_0_0_1px_rgba(248,113,113,0.35),0_8px_20px_rgba(127,29,29,0.25)]"
                   : r.severity === "warning"
-                    ? "bg-amber-500/10 border-amber-400/30"
+                    ? "bg-gradient-to-r from-amber-500/15 to-amber-500/5 border-amber-400/45 shadow-[0_0_0_1px_rgba(251,191,36,0.25)]"
                     : r.expectedImpact === "positive"
-                      ? "bg-emerald-500/10 border-emerald-400/30"
+                      ? "bg-gradient-to-r from-emerald-500/15 to-emerald-500/5 border-emerald-400/45 shadow-[0_0_0_1px_rgba(52,211,153,0.25)]"
                       : "bg-card border-border";
+              const actionLabel =
+                r.severity === "critical"
+                  ? "Acción urgente: revisar y aplicar hoy"
+                  : r.severity === "warning"
+                    ? "Acción recomendada: optimizar esta campaña"
+                    : "Virtud detectada: escalar sin perder rentabilidad";
               return (
                 <li key={r.id} className={`p-4 rounded-xl border shadow-sm ${rowTint}`}>
                   <div className="flex gap-3 items-start">
@@ -874,6 +935,17 @@ export default function MeliAdsStudioView() {
                       <Icon className="w-5 h-5" />
                     </div>
                     <div className="flex-1 min-w-0 space-y-2">
+                      <div
+                        className={`rounded-md px-2.5 py-1 text-[11px] font-semibold tracking-wide ${
+                          r.severity === "critical"
+                            ? "bg-red-950/70 text-red-100 border border-red-400/35"
+                            : r.severity === "warning"
+                              ? "bg-amber-950/60 text-amber-100 border border-amber-400/35"
+                              : "bg-emerald-950/50 text-emerald-100 border border-emerald-400/35"
+                        }`}
+                      >
+                        {actionLabel}
+                      </div>
                       <div className="flex flex-wrap items-center gap-1.5">
                         <span className="font-semibold text-foreground text-sm md:text-base">{r.title}</span>
                         <span className="text-[10px] uppercase tracking-wide text-foreground/80 bg-card border border-border px-2 py-0.5 rounded">
@@ -891,7 +963,7 @@ export default function MeliAdsStudioView() {
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-foreground/90 leading-relaxed">{r.rationale}</p>
+                      <p className="text-sm text-foreground leading-relaxed font-medium">{r.rationale}</p>
                       <p className="text-xs text-muted-foreground">Campaña #{r.campaignId}</p>
                       <p className="text-xs text-muted-foreground">Configuración lista para aplicar en Mercado Libre.</p>
                     </div>

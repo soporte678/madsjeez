@@ -369,12 +369,12 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
 
               {/* OPINIONES Y CALIFICACIONES */}
               <div className="px-4 lg:px-0 mb-10">
-                <h2 className="text-[24px] font-semibold text-gray-800 mb-6">Opiniones del producto</h2>
+                <h2 className="text-[24px] font-semibold text-foreground mb-6">Opiniones del producto</h2>
                 <div className="bg-card p-6 rounded-lg border border-border flex flex-col md:flex-row gap-12">
                   {/* Rating General */}
                   <div className="flex flex-col w-full md:w-64 shrink-0">
                     <div className="flex items-end gap-3 mb-3">
-                      <span className="text-[54px] font-semibold leading-none text-blue-900 tracking-tight">
+                      <span className="text-[54px] font-semibold leading-none text-foreground tracking-tight">
                         {totalReviews > 0 ? avgRating.toFixed(1) : '—'}
                       </span>
                       <div className="flex flex-col mb-1.5">
@@ -399,18 +399,18 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                             );
                           })}
                         </div>
-                        <span className="text-[12px] text-gray-500 font-medium">{totalReviews} calificaciones</span>
+                        <span className="text-[12px] text-muted-foreground font-medium">{totalReviews} calificaciones</span>
                       </div>
                     </div>
 
                     {/* Barras de progreso */}
                     <div className="flex flex-col gap-1.5 mt-2">
                       {[5, 4, 3, 2, 1].map((s) => (
-                        <div key={s} className="flex items-center gap-3 text-[13px] text-gray-500">
+                        <div key={s} className="flex items-center gap-3 text-[13px] text-muted-foreground">
                           <span className="w-2 text-right">{s}</span>
-                          <Star size={12} fill="currentColor" className="text-gray-400" />
-                          <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                            <div className="h-full bg-blue-500 rounded-full" style={{ width: `${ratingPercents[s - 1]}%` }}></div>
+                          <Star size={12} fill="currentColor" className="text-muted-foreground/60" />
+                          <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                            <div className="h-full bg-primary rounded-full" style={{ width: `${ratingPercents[s - 1]}%` }}></div>
                           </div>
                         </div>
                       ))}
@@ -419,25 +419,25 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
 
                   {/* Opiniones con comentarios */}
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-gray-800 mb-5 text-[15px]">Opiniones destacadas</h3>
+                    <h3 className="font-semibold text-foreground mb-5 text-[15px]">Opiniones destacadas</h3>
                     {totalReviews === 0 ? (
-                      <p className="text-gray-400 text-[14px]">Este producto aún no tiene opiniones. ¡Sé el primero en opinar!</p>
+                      <p className="text-muted-foreground text-[14px]">Este producto aún no tiene opiniones. ¡Sé el primero en opinar!</p>
                     ) : (
                       <div className="flex flex-col gap-4 max-h-[300px] overflow-y-auto pr-2" style={{ scrollbarWidth: 'thin' }}>
                         {productReviews.slice(0, 5).map((review: any) => (
-                          <div key={review.id} className="border-b border-gray-100 pb-4 last:border-b-0">
+                          <div key={review.id} className="border-b border-border pb-4 last:border-b-0">
                             <div className="flex items-center gap-2 mb-2">
                               <div className="flex text-blue-600">
                                 {[1, 2, 3, 4, 5].map((s) => (
-                                  <Star key={s} size={12} fill="currentColor" className={s <= review.rating ? "text-blue-600" : "text-gray-200"} />
+                                  <Star key={s} size={12} fill="currentColor" className={s <= review.rating ? "text-primary" : "text-muted-foreground/30"} />
                                 ))}
                               </div>
-                              <span className="text-[11px] text-gray-400">
+                              <span className="text-[11px] text-muted-foreground">
                                 {new Date(review.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' })}
                               </span>
                             </div>
                             {review.comment && (
-                              <p className="text-[13px] text-gray-600 leading-relaxed">{review.comment}</p>
+                              <p className="text-[13px] text-foreground/90 leading-relaxed">{review.comment}</p>
                             )}
                           </div>
                         ))}

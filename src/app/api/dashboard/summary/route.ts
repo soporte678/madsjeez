@@ -108,6 +108,28 @@ export async function GET(request: NextRequest) {
       console.error('Error fetching orders:', e);
     }
 
+    // ===== SHIPMENTS DEL VENDEDOR =====
+    let sellerShipments: any[] = [];
+    try {
+      sellerShipments = await prisma.shipment.findMany({
+        where: {
+          order: {
+            items: {
+              some: { product: { sellerId: userId } }
+            }
+          }
+        },
+        select: {
+          status: true,
+          estimatedDelivery: true,
+          actualDelivery: true,
+          createdAt: true,
+        }
+      });
+    } catch (e) {
+      console.error('Error fetching seller shipments:', e);
+    }
+
     // Calcular growth percent
     let growthPercent = 0;
     if (salesPrevious7Days > 0) {
@@ -318,6 +340,21 @@ export async function GET(request: NextRequest) {
     const mediationsRate = 0; // No hay tabla de mediaciones todavía
     const wrongShippingRate = totalCompleted > 0 ? ((user?.delayRate || 0) * 100) : 0;
 
+    // ===== LOGÍSTICA REAL DEL VENDEDOR =====
+    const activeProducts = products.filter(p => p.isActive);
+    const activeCount = activeProducts.length;
+    const freeShippingCount = activeProducts.filter(p => p.freeShipping).length;
+    const flashExposurePct = activeCount > 0 ? Math.round((freeShippingCount / activeCount) * 100) : 0;
+    const avgShippingDays = Number(user?.averageShippingTime || 0);
+    const deliveredShipments = sellerShipments.filter((s: any) => s.status === 'delivered' || s.status === 'DELIVERED');
+    const onTimeDelivered = deliveredShipments.filter((s: any) => {
+      if (!s.actualDelivery || !s.estimatedDelivery) return false;
+      return new Date(s.actualDelivery).getTime() <= new Date(s.estimatedDelivery).getTime();
+    }).length;
+    const onTimePct = deliveredShipments.length > 0 ? Math.round((onTimeDelivered / deliveredShipments.length) * 100) : 0;
+    const fullLikeCount = activeProducts.filter(p => p.stock > 0 && p.freeShipping).length;
+    const fulfillmentPct = activeCount > 0 ? Math.round((fullLikeCount / activeCount) * 100) : 0;
+
     // ===== RESPUESTA CONSOLIDADA =====
     const summaryData = {
       accountStatus: {
@@ -362,13 +399,30 @@ export async function GET(request: NextRequest) {
         questionsAvailable: unansweredQuestions !== null,
       },
       logistics: {
-        flex: { exposure: 'Sin calcular', metric: '- %' },
-        turbo: { exposure: 'No disponible', metric: '- %' },
-        full: { exposure: 'Espacio disponible', metric: 'Disponible' },
+        flex: {
+          exposure: `${flashExposurePct}% del catálogo activo`,
+          metric: `${freeShippingCount} publicaciones`,
+        },
+        turbo: {
+          exposure: deliveredShipments.length > 0 ? `${onTimePct}% entregado a tiempo` : 'Sin envíos entregados',
+          metric: avgShippingDays > 0 ? `${avgShippingDays.toFixed(1)} días promedio` : 'Sin dato de tiempo promedio',
+        },
+        full: {
+          exposure: `${fulfillmentPct}% del catálogo con stock y envío`,
+          metric: `${fullLikeCount} publicaciones`,
+        },
       },
       storage: {
-        small: { used: Math.min(totalPublications ?? 0, 1000), total: 1000, percent: Math.min(Math.round(((totalPublications ?? 0) / 1000) * 100), 100) },
-        large: { used: 0, total: 300, percent: 0 },
+        small: {
+          used: activeProducts.filter(p => p.stock > 0).length,
+          total: activeCount,
+          percent: activeCount > 0 ? Math.round((activeProducts.filter(p => p.stock > 0).length / activeCount) * 100) : 0,
+        },
+        large: {
+          used: activeProducts.filter(p => p.stock <= 0).length,
+          total: activeCount,
+          percent: activeCount > 0 ? Math.round((activeProducts.filter(p => p.stock <= 0).length / activeCount) * 100) : 0,
+        },
       },
       advertising: {
         sales: adSales,
@@ -413,7 +467,11 @@ export async function GET(request: NextRequest) {
       sales: { grossLast7Days: 0, grossTotal: 0, growthPercent: 0, totalCompleted: 0 },
       money: { available: 0, toSettle: 0, advanceAvailable: 0 },
       pending: { shipmentsToday: 0, shipmentsAvailable: false, postSale: 0, claimsAvailable: false, publicationsToImprove: 0, totalPublications: 0, productsAvailable: false, questions: 0, questionsAvailable: false },
-      logistics: { flex: { exposure: 'Sin calcular', metric: '- %' }, turbo: { exposure: 'No disponible', metric: '- %' }, full: { exposure: 'Disponible', metric: 'Disponible' } },
+      logistics: {
+        flex: { exposure: 'Sin datos', metric: '0 publicaciones' },
+        turbo: { exposure: 'Sin datos', metric: 'Sin dato de tiempo promedio' },
+        full: { exposure: 'Sin datos', metric: '0 publicaciones' },
+      },
       storage: { small: { used: 0, total: 1000, percent: 0 }, large: { used: 0, total: 300, percent: 0 } },
       advertising: { sales: 0, salesGrowth: 0, clicks: 0, clicksGrowth: 0, hasCampaigns: false },
       page: { visits: 0, visitsGrowth: 0, followers: 0, followersGrowth: 0 },

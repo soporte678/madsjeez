@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import ThemeToneSwitcher from "@/components/theme/ThemeToneSwitcher"
+import RainbowLogo from "@/components/brand/RainbowLogo"
 
 export function Header() {
   const { data: session } = useSession()
@@ -14,14 +15,7 @@ export function Header() {
         {/* Top bar */}
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-4">
-            <Link href="/" className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
-                <span className="text-white font-black text-xl">M</span>
-              </div>
-              <span className="text-2xl font-black text-[var(--foreground)]">
-                MADSJEEZ
-              </span>
-            </Link>
+            <RainbowLogo textSizeClassName="text-2xl" />
           </div>
 
           <nav className="hidden md:flex items-center gap-6">

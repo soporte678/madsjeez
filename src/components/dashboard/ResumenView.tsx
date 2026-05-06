@@ -228,7 +228,7 @@ export default function ResumenView() {
           <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Desempeño en tus logísticas esta semana</p>
           <div className="flex gap-4">
             <div>
-              <div className="flex items-center gap-1 mb-1"><Zap className="w-3 h-3 text-success fill-current"/><span className="text-[13px] font-semibold text-foreground">Envíos Flex</span></div>
+              <div className="flex items-center gap-1 mb-1"><Zap className="w-3 h-3 text-success fill-current"/><span className="text-[13px] font-semibold text-foreground">Envíos Flash</span></div>
               <p className="text-[11px] text-muted-foreground">{d.logistics.flex.exposure}</p>
             </div>
             <div>
@@ -236,7 +236,7 @@ export default function ResumenView() {
               <p className="text-[11px] text-muted-foreground">{d.logistics.turbo.exposure}</p>
             </div>
             <div>
-              <div className="flex items-center gap-1 mb-1"><Zap className="w-3 h-3 text-success fill-current"/><span className="text-[13px] font-semibold text-foreground">Envíos Full</span></div>
+              <div className="flex items-center gap-1 mb-1"><Zap className="w-3 h-3 text-success fill-current"/><span className="text-[13px] font-semibold text-foreground">Envíos Fulfillment</span></div>
               <p className="text-[11px] text-muted-foreground">{d.logistics.full.exposure}</p>
             </div>
           </div>
@@ -274,32 +274,32 @@ export default function ResumenView() {
         {/* --- COLUMNA 1 --- */}
         <div className="space-y-4">
           <MeliCard title="Pendientes en tus publicaciones" className="h-auto">
-            <MeliListItem label="Preguntas" value={!d.pending.questionsAvailable ? "Próximamente" : d.pending.questions > 0 ? `${d.pending.questions} sin responder` : "No tenés pendientes"} />
-            <MeliListItem label="Publicaciones" value={!d.pending.productsAvailable ? "Próximamente" : `${d.pending.publicationsToImprove} por mejorar`} alert={d.pending.productsAvailable && d.pending.publicationsToImprove > 0} alertType="red" actionText={d.pending.productsAvailable && d.pending.publicationsToImprove > 0 ? "Ver más" : undefined} />
-            <MeliListItem label="Productos" value={!d.pending.productsAvailable ? "Próximamente" : `${d.pending.totalPublications} activas`} />
-            <MeliListItem label="Envíos de hoy" value={!d.pending.shipmentsAvailable ? "Próximamente" : d.pending.shipmentsToday > 0 ? `${d.pending.shipmentsToday} por despachar` : "Sin envíos pendientes"} alert={d.pending.shipmentsAvailable && d.pending.shipmentsToday > 0} alertType="red" />
-            <MeliListItem label="Posventa" value={!d.pending.claimsAvailable ? "Próximamente" : d.pending.postSale > 0 ? `${d.pending.postSale} pendientes` : "No tenés pendientes"} isLast />
+            <MeliListItem label="Preguntas" value={!d.pending.questionsAvailable ? "Sin datos del vendedor" : d.pending.questions > 0 ? `${d.pending.questions} sin responder` : "No tenés pendientes"} />
+            <MeliListItem label="Publicaciones" value={!d.pending.productsAvailable ? "Sin datos del vendedor" : `${d.pending.publicationsToImprove} por mejorar`} alert={d.pending.productsAvailable && d.pending.publicationsToImprove > 0} alertType="red" actionText={d.pending.productsAvailable && d.pending.publicationsToImprove > 0 ? "Ver más" : undefined} />
+            <MeliListItem label="Productos" value={!d.pending.productsAvailable ? "Sin datos del vendedor" : `${d.pending.totalPublications} activas`} />
+            <MeliListItem label="Envíos de hoy" value={!d.pending.shipmentsAvailable ? "Sin datos del vendedor" : d.pending.shipmentsToday > 0 ? `${d.pending.shipmentsToday} por despachar` : "Sin envíos pendientes"} alert={d.pending.shipmentsAvailable && d.pending.shipmentsToday > 0} alertType="red" />
+            <MeliListItem label="Posventa" value={!d.pending.claimsAvailable ? "Sin datos del vendedor" : d.pending.postSale > 0 ? `${d.pending.postSale} pendientes` : "No tenés pendientes"} isLast />
           </MeliCard>
 
-          <MeliCard title="Uso de tus espacios en Full" actionText="Ir a métricas de Stock Full">
+          <MeliCard title="Uso de tu capacidad en Fulfillment" actionText="Ir a métricas de Fulfillment">
             <div className="mb-4">
-              <div className="flex justify-between text-[13px] text-foreground mb-1"><span>Pequeños y medianos</span><span className="font-semibold">{d.storage.small.percent}%</span></div>
+              <div className="flex justify-between text-[13px] text-foreground mb-1"><span>Publicaciones con stock</span><span className="font-semibold">{d.storage.small.percent}%</span></div>
               <div className="h-1.5 w-full bg-muted rounded-full"><div className="h-full bg-primary rounded-full transition-all" style={{width: `${d.storage.small.percent}%`}}></div></div>
-              <p className="text-[11px] text-muted-foreground mt-1">{d.storage.small.used} u. de {d.storage.small.total} u.</p>
+              <p className="text-[11px] text-muted-foreground mt-1">{d.storage.small.used} de {d.storage.small.total} publicaciones activas</p>
             </div>
             <div>
-              <div className="flex justify-between text-[13px] text-foreground mb-1"><span>Grandes y extragrandes</span><span className="font-semibold">{d.storage.large.percent}%</span></div>
+              <div className="flex justify-between text-[13px] text-foreground mb-1"><span>Publicaciones sin stock</span><span className="font-semibold">{d.storage.large.percent}%</span></div>
               <div className="h-1.5 w-full bg-muted rounded-full"><div className="h-full bg-primary rounded-full transition-all" style={{width: `${d.storage.large.percent}%`}}></div></div>
-              <p className="text-[11px] text-muted-foreground mt-1">{d.storage.large.used} u. de {d.storage.large.total} u.</p>
+              <p className="text-[11px] text-muted-foreground mt-1">{d.storage.large.used} de {d.storage.large.total} publicaciones activas</p>
             </div>
           </MeliCard>
 
-          <MeliCard title="Envíos Flex" actionText="Próximamente">
+          <MeliCard title="Envíos Flash" actionText="Ir a gestión logística">
             <div className="flex items-center gap-2 mb-2">
-              <Info className="w-5 h-5 text-muted-foreground" />
-              <span className="text-[13px] text-muted-foreground font-semibold">No disponible</span>
+              <Zap className="w-5 h-5 text-primary" />
+              <span className="text-[13px] text-foreground font-semibold">{d.logistics.flex.exposure}</span>
             </div>
-            <p className="text-[12px] text-muted-foreground">Esta funcionalidad estará disponible próximamente.</p>
+            <p className="text-[12px] text-muted-foreground">{d.logistics.flex.metric}</p>
           </MeliCard>
 
           <MeliCard title="Mi página">
@@ -345,12 +345,12 @@ export default function ResumenView() {
           </MeliCard>
 
           {/* TURBO - NO DISPONIBLE */}
-          <MeliCard title="Envíos Turbo" actionText="Próximamente">
+          <MeliCard title="Envíos Turbo" actionText="Ir a gestión logística">
             <div className="flex items-center gap-2 mb-2">
-              <Info className="w-5 h-5 text-muted-foreground" />
-              <span className="text-[13px] text-muted-foreground font-semibold">No disponible</span>
+              <Zap className="w-5 h-5 text-primary" />
+              <span className="text-[13px] text-foreground font-semibold">{d.logistics.turbo.exposure}</span>
             </div>
-            <p className="text-[12px] text-muted-foreground">Esta funcionalidad estará disponible próximamente para vendedores con nivel Oro o superior.</p>
+            <p className="text-[12px] text-muted-foreground">{d.logistics.turbo.metric}</p>
           </MeliCard>
 
           <MeliCard noPadding>
