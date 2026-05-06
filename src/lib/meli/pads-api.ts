@@ -53,6 +53,19 @@ export type MeliPadsCampaignSearchResponse = {
   metrics_summary?: MeliPadsCampaignMetrics;
 };
 
+export type MeliPadsAdRow = {
+  item_id?: string;
+  title?: string;
+  campaign_id?: number;
+  status?: string;
+  metrics?: Record<string, unknown>;
+};
+
+export type MeliPadsAdsSearchResponse = {
+  paging?: { offset?: number; total?: number; limit?: number };
+  results?: MeliPadsAdRow[];
+};
+
 /** Lista alineada a ML Product Ads (2026): incluye sov y montos/cantidades por canal evita rechazos parciales del endpoint search. */
 const PADS_METRICS =
   "clicks,prints,ctr,cost,cpc,acos,organic_units_quantity,organic_units_amount,organic_items_quantity,direct_items_quantity,indirect_items_quantity,advertising_items_quantity,cvr,roas,sov,direct_units_quantity,indirect_units_quantity,units_quantity,direct_amount,indirect_amount,total_amount,impression_share,top_impression_share,lost_impression_share_by_budget,lost_impression_share_by_ad_rank,acos_benchmark";
@@ -256,6 +269,34 @@ export async function meliPadsGetCampaignWithMetrics(
   });
   const path = `/marketplace/advertising/${encodeURIComponent(siteId)}/product_ads/campaigns/${campaignId}?${qs.toString()}`;
   return meliApi<MeliPadsCampaignRow>(accessToken, path, {
+    headers: { "api-version": "2" },
+  });
+}
+
+/** Items/anuncios de una campaña (o advertiser) con métricas. */
+export async function meliPadsSearchAds(
+  accessToken: string,
+  siteId: string,
+  advertiserId: number,
+  dateFrom: string,
+  dateTo: string,
+  campaignId?: number,
+  offset = 0,
+  limit = 50
+) {
+  const qs = new URLSearchParams({
+    limit: String(limit),
+    offset: String(offset),
+    date_from: dateFrom,
+    date_to: dateTo,
+    metrics: PADS_METRICS,
+    channel: "marketplace",
+  });
+  if (campaignId && Number.isFinite(campaignId)) {
+    qs.set("campaign_id", String(campaignId));
+  }
+  const path = `/marketplace/advertising/${encodeURIComponent(siteId)}/advertisers/${advertiserId}/product_ads/ads/search?${qs.toString()}`;
+  return meliApi<MeliPadsAdsSearchResponse>(accessToken, path, {
     headers: { "api-version": "2" },
   });
 }

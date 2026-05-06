@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import {
   Loader2,
@@ -127,6 +127,13 @@ export default function MeliAdsStudioView() {
   });
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [sortBy, setSortBy] = useState<"name" | "clicks" | "prints" | "ctr" | "cost" | "acos" | "roas" | "budget">("name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [editingNames, setEditingNames] = useState<Record<string, string>>({});
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [expandedCampaignRows, setExpandedCampaignRows] = useState<Record<string, boolean>>({});
+  const [campaignItems, setCampaignItems] = useState<Record<string, Array<{ item_id?: string; title?: string; status?: string; metrics?: Record<string, unknown> }>>>({});
+  const [loadingItems, setLoadingItems] = useState<Record<string, boolean>>({});
   const [compareDaysCsv, setCompareDaysCsv] = useState("1,7,15,20");
   const [customDays, setCustomDays] = useState("3");
 
@@ -251,6 +258,94 @@ export default function MeliAdsStudioView() {
   const count = (v: unknown) => new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 }).format(num(v));
   const pct = (v: unknown, digits = 2) => `${num(v).toFixed(digits)}%`;
   const ratio = (v: unknown, digits = 2) => num(v).toFixed(digits);
+  const sortedCamps = (() => {
+    const arr = [...camps];
+    const read = (c: SnapshotCampaign) => {
+      const m = c.metrics || {};
+      if (sortBy === "name") return (c.name || "").toLowerCase();
+      if (sortBy === "budget") return num(c.budget);
+      return num(m[sortBy]);
+    };
+    arr.sort((a, b) => {
+      const va = read(a);
+      const vb = read(b);
+      const cmp = typeof va === "string" && typeof vb === "string" ? va.localeCompare(vb) : Number(va) - Number(vb);
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+    return arr;
+  })();
+
+  const renameCampaign = async (c: SnapshotCampaign) => {
+    const rowKey = `${c.site_id}-${c.id}`;
+    const newName = (editingNames[rowKey] ?? "").trim();
+    if (!newName) {
+      toast.error("Ingresá un nombre válido");
+      return;
+    }
+    setRenamingId(rowKey);
+    try {
+      const res = await fetch("/api/meli/ads/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          actions: [
+            {
+              siteId: c.site_id,
+              advertiserId: c.advertiser_id,
+              campaignId: c.id,
+              recommendationTitle: "Renombrar campaña",
+              applyPayload: {
+                name: newName,
+                status: (c.status || "active").toLowerCase(),
+                budget: num(c.budget) || 1,
+                strategy: (c.strategy || "profitability").toLowerCase(),
+                channel: "marketplace",
+                roas_target: num(c.roas_target) || 5,
+              },
+            },
+          ],
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "No se pudo renombrar");
+      } else {
+        toast.success("Campaña renombrada");
+        await load({ silent: true });
+      }
+    } catch {
+      toast.error("Error de red al renombrar");
+    } finally {
+      setRenamingId(null);
+    }
+  };
+
+  const toggleCampaignItems = async (c: SnapshotCampaign) => {
+    const rowKey = `${c.site_id}-${c.id}`;
+    const currentlyOpen = Boolean(expandedCampaignRows[rowKey]);
+    setExpandedCampaignRows((s) => ({ ...s, [rowKey]: !currentlyOpen }));
+    if (currentlyOpen || campaignItems[rowKey]) return;
+    setLoadingItems((s) => ({ ...s, [rowKey]: true }));
+    try {
+      const qs = new URLSearchParams({
+        siteId: c.site_id,
+        advertiserId: String(c.advertiser_id),
+        campaignId: String(c.id),
+        days: String(snapshot?.metricsDays ?? 14),
+      });
+      const res = await fetch(`/api/meli/ads/campaign-items?${qs.toString()}`, { cache: "no-store" });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "No se pudieron cargar artículos");
+        return;
+      }
+      setCampaignItems((s) => ({ ...s, [rowKey]: data.items || [] }));
+    } catch {
+      toast.error("Error de red al cargar artículos");
+    } finally {
+      setLoadingItems((s) => ({ ...s, [rowKey]: false }));
+    }
+  };
   const addCustomWindow = () => {
     const d = Number(customDays);
     if (!Number.isFinite(d) || d < 1 || d > 365) {
@@ -477,6 +572,37 @@ export default function MeliAdsStudioView() {
             <Zap className="w-5 h-5 text-primary" />
             <h3 className="font-semibold text-gray-900">Campañas y métricas (ML)</h3>
           </div>
+          <div className="px-4 py-2 border-b border-gray-100 bg-slate-50 flex flex-wrap items-center gap-2 text-xs">
+            <span className="text-gray-600 font-medium">Ordenar por:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+              className="h-8 rounded border border-gray-300 px-2"
+            >
+              <option value="name">Nombre (A-Z)</option>
+              <option value="clicks">Clicks</option>
+              <option value="prints">Impresiones</option>
+              <option value="ctr">CTR</option>
+              <option value="cost">Costo</option>
+              <option value="acos">ACOS</option>
+              <option value="roas">ROAS</option>
+              <option value="budget">Presupuesto</option>
+            </select>
+            <select
+              value={sortDir}
+              onChange={(e) => setSortDir(e.target.value as "asc" | "desc")}
+              className="h-8 rounded border border-gray-300 px-2"
+            >
+              <option value="asc">Ascendente</option>
+              <option value="desc">Descendente</option>
+            </select>
+            <button type="button" onClick={() => { setSortBy("clicks"); setSortDir("desc"); }} className="h-8 rounded bg-blue-600 text-white px-2.5">
+              Más clicks
+            </button>
+            <button type="button" onClick={() => { setSortBy("clicks"); setSortDir("asc"); }} className="h-8 rounded bg-slate-700 text-white px-2.5">
+              Menos clicks
+            </button>
+          </div>
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead className="bg-gray-50 text-gray-600">
@@ -494,7 +620,7 @@ export default function MeliAdsStudioView() {
                 </tr>
               </thead>
               <tbody>
-                {camps.map((c) => {
+                {sortedCamps.map((c) => {
                   const m = c.metrics || {};
                   const p = c.metrics_prev || {};
                   const prints = m.prints ?? 0;
@@ -510,10 +636,38 @@ export default function MeliAdsStudioView() {
                   const cost = num(m.cost);
                   const acos = num(m.acos);
                   const roas = num(m.roas);
+                  const rowKey = `${c.site_id}-${c.id}`;
+                  const isExpanded = Boolean(expandedCampaignRows[rowKey]);
                   return (
-                    <tr key={`${c.site_id}-${c.id}`} className="border-t border-gray-100 hover:bg-gray-50/80">
-                      <td className="px-3 py-2 text-gray-900 font-medium max-w-[220px] truncate">
-                        {c.name || c.id}
+                    <Fragment key={rowKey}>
+                    <tr className="border-t border-gray-100 hover:bg-gray-50/80">
+                      <td className="px-3 py-2 text-gray-900 font-medium max-w-[300px]">
+                        <div className="space-y-1">
+                          <div className="truncate">{c.name || c.id}</div>
+                          <div className="flex items-center gap-2">
+                            <input
+                              value={editingNames[rowKey] ?? c.name ?? ""}
+                              onChange={(e) => setEditingNames((s) => ({ ...s, [rowKey]: e.target.value }))}
+                              className="h-7 w-44 rounded border border-gray-300 px-2 text-xs"
+                              placeholder="Nuevo nombre"
+                            />
+                            <button
+                              type="button"
+                              disabled={renamingId === rowKey}
+                              onClick={() => renameCampaign(c)}
+                              className="h-7 rounded bg-primary text-primary-foreground px-2 text-xs disabled:opacity-50"
+                            >
+                              {renamingId === rowKey ? "Guardando..." : "Renombrar"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => toggleCampaignItems(c)}
+                              className="h-7 rounded bg-slate-700 text-white px-2 text-xs"
+                            >
+                              {isExpanded ? "Ocultar artículos" : "Ver artículos"}
+                            </button>
+                          </div>
+                        </div>
                       </td>
                       <td className="px-3 py-2 text-gray-700">{c.status}</td>
                       <td className="px-3 py-2 text-gray-700">{c.strategy}</td>
@@ -546,6 +700,35 @@ export default function MeliAdsStudioView() {
                         {renderDelta(roas - num(p.roas), "number", "up_good", money, count)}
                       </td>
                     </tr>
+                    {isExpanded && (
+                      <tr className="bg-slate-50">
+                        <td colSpan={10} className="px-3 py-3">
+                          {loadingItems[rowKey] ? (
+                            <p className="text-xs text-gray-600">Cargando artículos...</p>
+                          ) : (campaignItems[rowKey] ?? []).length === 0 ? (
+                            <p className="text-xs text-gray-600">Sin artículos reportados para esta campaña.</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {(campaignItems[rowKey] ?? []).slice(0, 30).map((it, idx) => {
+                                const mm = (it.metrics || {}) as Record<string, unknown>;
+                                return (
+                                  <div key={`${it.item_id ?? idx}`} className="text-xs border border-gray-200 rounded px-2 py-1.5 bg-white flex flex-wrap gap-3">
+                                    <span className="font-medium text-gray-900">{it.title || it.item_id || "Ítem"}</span>
+                                    <span className="text-gray-600">ID: {it.item_id || "-"}</span>
+                                    <span className="text-gray-600">Estado: {it.status || "-"}</span>
+                                    <span className="text-gray-700">Clicks: {count(mm.clicks ?? 0)}</span>
+                                    <span className="text-gray-700">Impresiones: {count(mm.prints ?? 0)}</span>
+                                    <span className="text-gray-700">Costo: {money(mm.cost ?? 0)}</span>
+                                    <span className="text-gray-700">ROAS: {ratio(mm.roas ?? 0)}x</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    )}
+                    </Fragment>
                   );
                 })}
               </tbody>
