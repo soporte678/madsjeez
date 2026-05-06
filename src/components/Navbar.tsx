@@ -185,9 +185,14 @@ export default function Navbar() {
         }
 
         .mads-pro-badge {
-          background: linear-gradient(90deg, #6b1076, #9b20b0);
+          background: linear-gradient(90deg, var(--primary), var(--accent));
           position: relative;
           overflow: hidden;
+        }
+
+        .mads-pro-shell {
+          background: var(--card);
+          border: 1px solid var(--border);
         }
 
         .mads-pro-badge::after {
@@ -489,16 +494,16 @@ export default function Navbar() {
 
             {/* BOTÓN DESLIZANTE MADS PRO (Efecto Borrador) */}
             <div className="flex-1 flex items-center justify-end">
-              <div className="relative overflow-hidden w-[340px] h-[36px] bg-white hover:shadow-md transition-shadow rounded-full shadow-sm border border-black/5 cursor-pointer flex items-center px-1.5">
+              <div className="mads-pro-shell relative overflow-hidden w-[340px] h-[36px] hover:shadow-md transition-shadow rounded-full shadow-sm cursor-pointer flex items-center px-1.5">
                  
                  {/* 1. TEXTO DE LA IZQUIERDA (Aparece cuando el botón está a la derecha) */}
                  <div className="absolute left-6 w-[230px] flex items-center justify-center animate-wipe-out">
-                    <span className="text-[#2d3277] font-black text-[19px] tracking-tight drop-shadow-sm">Suscribite a</span>
+                    <span className="text-[var(--foreground)] font-black text-[19px] tracking-tight drop-shadow-sm">Suscribite a</span>
                  </div>
 
                  {/* 2. TEXTOS DE LA DERECHA (Aparecen cuando el botón está a la izquierda) */}
                  <div className="absolute left-[92px] w-auto flex items-center gap-1.5 animate-wipe-in">
-                    <span className="text-[#2d3277] font-semibold text-[12px] whitespace-nowrap">y disfrutá</span>
+                    <span className="text-[var(--foreground)] font-semibold text-[12px] whitespace-nowrap">y disfrutá</span>
                     
                     {/* Contenedor Caja + Envíos Reparado (Sin superposición) */}
                     <div className="flex items-center gap-1">
@@ -530,14 +535,14 @@ export default function Navbar() {
                        
                        {/* Texto de envíos (Separado y legible) */}
                        <div className="flex flex-col leading-[1.05] justify-center border-l border-slate-200 pl-1.5 py-0.5">
-                          <span className="text-[#2d3277] font-black text-[8.5px] uppercase tracking-wider">Envíos gratis</span>
-                          <span className="text-[#2d3277] font-black text-[8.5px] uppercase tracking-wider mt-[1px]">en tus compras</span>
+                          <span className="text-[var(--foreground)] font-black text-[8.5px] uppercase tracking-wider">Envíos gratis</span>
+                          <span className="text-[var(--foreground)] font-black text-[8.5px] uppercase tracking-wider mt-[1px]">en tus compras</span>
                        </div>
                     </div>
                  </div>
 
                  {/* 3. LA INSIGNIA MADS PRO (El Borrador Animado) - NUEVA PALETA FUCSIA */}
-                 <div className="absolute left-[6px] bg-gradient-to-r from-[#db2777] via-[#ec4899] to-[#db2777] rounded-full px-3 py-[5px] flex items-center shadow-lg shadow-fuchsia-500/30 animate-slide-badge z-20 mads-pro-badge">
+                 <div className="absolute left-[6px] rounded-full px-3 py-[5px] flex items-center shadow-lg shadow-primary/30 animate-slide-badge z-20 mads-pro-badge">
                     <span className="font-montserrat font-black text-white text-[11px] italic tracking-tight">MADS PRO</span>
                  </div>
 
