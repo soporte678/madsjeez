@@ -709,8 +709,8 @@ export default function MeliAdsStudioView() {
                   const isExpanded = Boolean(expandedCampaignRows[rowKey]);
                   return (
                     <Fragment key={rowKey}>
-                    <tr className="border-t border-gray-100 hover:bg-gray-50/80">
-                      <td className="px-3 py-2 text-gray-900 font-medium max-w-[300px]">
+                    <tr className="border-t border-border transition-colors hover:bg-muted/70 focus-within:bg-muted/70">
+                      <td className="px-3 py-2 text-foreground font-medium max-w-[300px]">
                         <div className="space-y-1">
                           <div className="truncate">{c.name || c.id}</div>
                           <div className="flex items-center gap-2">
@@ -770,11 +770,11 @@ export default function MeliAdsStudioView() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-3 py-2 text-gray-700">{statusLabel(c.status)}</td>
-                      <td className="px-3 py-2 text-gray-700">{strategyLabel(c.strategy)}</td>
+                      <td className="px-3 py-2 text-muted-foreground">{statusLabel(c.status)}</td>
+                      <td className="px-3 py-2 text-muted-foreground">{strategyLabel(c.strategy)}</td>
                       <td className="px-3 py-2 text-right text-emerald-700 font-semibold">
                         <div>{money(c.budget)}</div>
-                        <span className="text-xs text-gray-400">diario</span>
+                        <span className="text-xs text-muted-foreground">diario</span>
                       </td>
                       <td className="px-3 py-2 text-right">
                         <div>{count(prints)}</div>

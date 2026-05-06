@@ -246,6 +246,8 @@ model SellerMeliOAuth {
   accessToken  String   @db.Text @map("access_token")
   refreshToken String?  @db.Text @map("refresh_token")
   expiresAt    DateTime @map("expires_at")
+  /// Última importación exitosa del catálogo ML → MADSJEEZ (para UI de sincronización)
+  lastCatalogImportAt DateTime? @map("last_catalog_import_at")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 

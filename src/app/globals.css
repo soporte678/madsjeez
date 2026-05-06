@@ -656,6 +656,20 @@ body {
   background-color: #18243a !important;
 }
 
+/* Misma corrección para hovers con opacidad (ej. hover:bg-gray-50/80): sin esto queda gris claro y tapa textos claros */
+:root[data-theme="dark"] .hover\:bg-gray-50\/50:hover,
+:root[data-theme="dark"] .hover\:bg-gray-50\/60:hover,
+:root[data-theme="dark"] .hover\:bg-gray-50\/70:hover,
+:root[data-theme="dark"] .hover\:bg-gray-50\/75:hover,
+:root[data-theme="dark"] .hover\:bg-gray-50\/80:hover,
+:root[data-theme="dark"] .hover\:bg-gray-50\/90:hover,
+:root[data-theme="dark"] .hover\:bg-gray-100\/50:hover,
+:root[data-theme="dark"] .hover\:bg-gray-100\/80:hover,
+:root[data-theme="dark"] .hover\:bg-slate-50\/80:hover,
+:root[data-theme="dark"] .hover\:bg-slate-100\/80:hover {
+  background-color: #18243a !important;
+}
+
 :root[data-theme="dark"] .hover\:text-gray-900:hover,
 :root[data-theme="dark"] .hover\:text-slate-900:hover,
 :root[data-theme="dark"] .hover\:text-gray-800:hover {
@@ -722,4 +736,16 @@ body {
 :root[data-theme="soft"] .hover\:bg-slate-50:hover,
 :root[data-theme="soft"] .hover\:bg-slate-100:hover {
   background-color: #f1e9ff !important;
+}
+
+:root[data-theme="soft"] .hover\:bg-gray-50\/50:hover,
+:root[data-theme="soft"] .hover\:bg-gray-50\/60:hover,
+:root[data-theme="soft"] .hover\:bg-gray-50\/70:hover,
+:root[data-theme="soft"] .hover\:bg-gray-50\/75:hover,
+:root[data-theme="soft"] .hover\:bg-gray-50\/80:hover,
+:root[data-theme="soft"] .hover\:bg-gray-50\/90:hover,
+:root[data-theme="soft"] .hover\:bg-gray-100\/80:hover,
+:root[data-theme="soft"] .hover\:bg-slate-50\/80:hover,
+:root[data-theme="soft"] .hover\:bg-slate-100\/80:hover {
+  background-color: #ebf5ff !important;
 }

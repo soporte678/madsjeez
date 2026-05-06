@@ -70,6 +70,19 @@ export async function meliGetItem(accessToken: string, itemId: string) {
   return meliApi<MeliItemDetail>(accessToken, `/items/${itemId}`);
 }
 
+/** Actualiza campos permitidos de una publicación propia (precio, stock, etc.). */
+export async function meliPutItem(
+  accessToken: string,
+  itemId: string,
+  body: Record<string, unknown>
+) {
+  return meliApi<unknown>(accessToken, `/items/${itemId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
 export type MeliDescriptionResponse = { plain_text?: string; text?: string };
 
 export async function meliGetItemDescription(accessToken: string, itemId: string) {
