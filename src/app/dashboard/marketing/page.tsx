@@ -67,7 +67,7 @@ export default function MarketingPage() {
     setLoading(false)
   }
 
-  if (status === "loading") return <div className="flex items-center justify-center h-96"><div className="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full" /></div>
+  if (status === "loading") return <div className="flex items-center justify-center h-96"><div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full" /></div>
 
   const tabs: { id: Tab; label: string; icon: any; color: string }[] = [
     { id: "social", label: "Redes Sociales", icon: Share2, color: "from-pink-500 to-purple-500" },
@@ -229,7 +229,7 @@ export default function MarketingPage() {
         {/* ═══ RIGHT: Results ═══ */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Zap size={20} className="text-yellow-500" /> Resultados
+            <Zap size={20} className="text-primary" /> Resultados
           </h2>
 
           {loading && (
@@ -371,7 +371,7 @@ export default function MarketingPage() {
               {activeTab === "seo" && result.optimized_title && (
                 <>
                   {result.seo_score !== undefined && (
-                    <div className={`rounded-lg p-4 ${result.seo_score >= 70 ? "bg-green-50 border border-green-200" : result.seo_score >= 40 ? "bg-yellow-50 border border-yellow-200" : "bg-red-50 border border-red-200"}`}>
+                    <div className={`rounded-lg p-4 ${result.seo_score >= 70 ? "bg-green-50 border border-green-200" : result.seo_score >= 40 ? "bg-primary/10 border border-primary/20" : "bg-red-50 border border-red-200"}`}>
                       <p className="text-2xl font-bold">{result.seo_score}/100</p>
                       <p className="text-xs text-slate-500">Score SEO</p>
                     </div>

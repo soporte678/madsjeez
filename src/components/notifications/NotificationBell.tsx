@@ -33,7 +33,7 @@ const colorMap: Record<string, string> = {
   question: "bg-purple-100 text-purple-600",
   claim: "bg-red-100 text-red-600",
   message: "bg-green-100 text-green-600",
-  promotion: "bg-yellow-100 text-yellow-600",
+  promotion: "bg-primary/10 text-primary",
   default: "bg-gray-100 text-gray-600"
 }
 

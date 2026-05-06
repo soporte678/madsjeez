@@ -16,7 +16,7 @@ const COMMISSION = 0.13
 const getRecommendation = (p: P) => {
   if (!p.isActive) return { badge: "PERDIENDO", badgeColor: "bg-[#cc0000] text-white", tip: "Reactivá tu publicación para no perder ventas.", action: "Reactivar" }
   if (p.stock <= 0) return { badge: "SIN STOCK", badgeColor: "bg-[#cc0000] text-white", tip: "Agregá stock para volver a vender.", action: "Agregar stock" }
-  if (p.stock <= 5) return { badge: "ATENCIÓN", badgeColor: "bg-yellow-100 text-yellow-700", tip: "Stock bajo. Reponé para no perder ventas.", action: "Reponer stock" }
+  if (p.stock <= 5) return { badge: "ATENCIÓN", badgeColor: "bg-primary/10 text-primary", tip: "Stock bajo. Reponé para no perder ventas.", action: "Reponer stock" }
   if (!p.freeShipping) return { badge: "", badgeColor: "", tip: "Ofrecé envío gratis. Atraé compradores con el beneficio que más valoran.", action: "Ofrecer envío" }
   if (p.sales === 0 && p.views > 50) return { badge: "PERDIENDO", badgeColor: "bg-[#cc0000] text-white", tip: "Otros vendedores ofrecen mejores condiciones.", action: "Mejorar condiciones" }
   if (p.originalPrice && p.originalPrice > p.price) return { badge: "", badgeColor: "", tip: "Participá de una promoción en 2 variantes. Ofrecé descuentos para recibir más visitas.", action: "Participar" }
@@ -107,7 +107,7 @@ export default function PublicacionesView() {
     return <PublicarFlow onClose={() => { setShowFlow(false); setEditingProduct(null) }} onPublished={handlePublished} editProduct={editingProduct || undefined} />
   }
 
-  if (loading) return <div className="flex items-center justify-center h-96"><div className="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full" /></div>
+  if (loading) return <div className="flex items-center justify-center h-96"><div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full" /></div>
 
   return (
     <div className="text-[#333] w-full px-6 lg:px-8">
@@ -370,7 +370,7 @@ export default function PublicacionesView() {
                                   <Copy size={15} className="text-slate-400" /> Copiar enlace
                                 </button>
                                 <button onClick={() => { toggle(p.id, !p.isActive); setOpenMenu(null) }} className="flex items-center gap-3 px-4 py-2.5 text-[13px] text-slate-700 hover:bg-slate-50 w-full text-left">
-                                  {p.isActive ? <Pause size={15} className="text-yellow-500" /> : <Play size={15} className="text-green-500" />}
+                                  {p.isActive ? <Pause size={15} className="text-primary" /> : <Play size={15} className="text-green-500" />}
                                   {p.isActive ? "Pausar" : "Activar"}
                                 </button>
                                 <div className="border-t border-slate-100 my-1" />

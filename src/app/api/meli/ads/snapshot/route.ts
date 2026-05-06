@@ -45,6 +45,59 @@ function n(v: unknown): number {
   return Number.isFinite(x) ? x : 0;
 }
 
+function metricValue(raw: unknown): number | undefined {
+  if (raw == null) return undefined;
+  if (typeof raw === "number") return Number.isFinite(raw) ? raw : undefined;
+  if (typeof raw === "string") {
+    const parsed = Number(raw.replace(",", "."));
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  if (typeof raw === "object") {
+    const obj = raw as Record<string, unknown>;
+    const nested =
+      metricValue(obj.value) ??
+      metricValue(obj.amount) ??
+      metricValue(obj.total) ??
+      metricValue(obj.metric_value);
+    if (nested != null) return nested;
+  }
+  return undefined;
+}
+
+function pickMetric(obj: Record<string, unknown> | undefined, keys: string[]): number {
+  if (!obj) return 0;
+  for (const k of keys) {
+    const val = metricValue(obj[k]);
+    if (val != null) return val;
+  }
+  return 0;
+}
+
+function normalizeMetrics(raw?: Record<string, unknown>) {
+  if (!raw) return undefined;
+  const prints = pickMetric(raw, ["prints", "impressions", "impression", "views"]);
+  const clicks = pickMetric(raw, ["clicks", "click"]);
+  const cost = pickMetric(raw, ["cost", "spend", "amount_spent"]);
+  let ctr = pickMetric(raw, ["ctr", "click_through_rate"]);
+  if (ctr > 1) ctr = ctr / 100;
+  return {
+    ...raw,
+    prints,
+    clicks,
+    cost,
+    ctr,
+    cpc: pickMetric(raw, ["cpc", "cost_per_click"]),
+    acos: pickMetric(raw, ["acos", "acos_percent"]),
+    cvr: pickMetric(raw, ["cvr", "conversion_rate"]),
+    roas: pickMetric(raw, ["roas", "return_on_ad_spend"]),
+    impression_share: pickMetric(raw, ["impression_share"]),
+    top_impression_share: pickMetric(raw, ["top_impression_share"]),
+    lost_impression_share_by_budget: pickMetric(raw, ["lost_impression_share_by_budget"]),
+    lost_impression_share_by_ad_rank: pickMetric(raw, ["lost_impression_share_by_ad_rank"]),
+    acos_benchmark: pickMetric(raw, ["acos_benchmark"]),
+  };
+}
+
 function sumMetrics(rows: CampaignEnriched[]) {
   const totalBudget = rows.reduce((acc, r) => acc + n(r.budget), 0);
   const totalPrints = rows.reduce((acc, r) => acc + n(r.metrics?.prints), 0);
@@ -135,7 +188,7 @@ export async function GET(req: Request) {
       const prevByCampaignId = new Map<number, MeliPadsCampaignMetrics>();
       for (const p of prevCamp.data?.results ?? []) {
         if (p.id != null && p.metrics) {
-          prevByCampaignId.set(Number(p.id), p.metrics);
+          prevByCampaignId.set(Number(p.id), normalizeMetrics(p.metrics as Record<string, unknown>));
         }
       }
 
@@ -147,6 +200,7 @@ export async function GET(req: Request) {
         const r = row as MeliPadsCampaignRow;
         campaigns.push({
           ...r,
+          metrics: normalizeMetrics(r.metrics as Record<string, unknown>),
           site_id: adv.site_id,
           advertiser_id: adv.advertiser_id,
           metrics_prev: prevByCampaignId.get(Number(r.id)),

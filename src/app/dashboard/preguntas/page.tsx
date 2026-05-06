@@ -121,7 +121,7 @@ export default function PreguntasPage() {
   if (status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F5F5F5]">
-        <div className="animate-spin h-8 w-8 border-4 border-[#3483FA] border-t-transparent rounded-full" />
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
       </div>
     )
   }
@@ -158,7 +158,7 @@ export default function PreguntasPage() {
   return (
     <div className="min-h-screen bg-[#F5F5F5]">
       {/* Header - Igual que otras páginas */}
-      <header className="bg-[#FEE500] pt-3 pb-2 px-4 shadow-md sticky top-0 z-[100]">
+      <header className="bg-white border-b border-border pt-3 pb-2 px-4 shadow-md sticky top-0 z-[100]">
         <div className="max-w-7xl mx-auto flex flex-col gap-3">
           <div className="flex items-center justify-between gap-6 md:gap-12">
             <Link href="/" className="flex items-center gap-4 cursor-pointer group flex-shrink-0">
@@ -166,7 +166,7 @@ export default function PreguntasPage() {
                 <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/30 to-transparent"></div>
                 <svg viewBox="0 0 100 100" className="w-8 h-8 overflow-visible">
                   <path d="M 15 80 L 35 30 L 55 55" stroke="#2563EB" fill="none" strokeWidth="15" strokeLinecap="round"/>
-                  <path d="M 85 80 L 65 30 L 45 65" stroke="#FACC15" fill="none" strokeWidth="15" strokeLinecap="round"/>
+                  <path d="M 85 80 L 65 30 L 45 65" stroke="#3B82F6" fill="none" strokeWidth="15" strokeLinecap="round"/>
                 </svg>
               </div>
               <span className="font-black text-[22px] tracking-tighter leading-none uppercase text-slate-900">
@@ -326,7 +326,7 @@ export default function PreguntasPage() {
                               <Star
                                 key={i}
                                 size={14}
-                                className={i < Math.floor(pregunta.producto.rating) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}
+                                className={i < Math.floor(pregunta.producto.rating) ? "text-primary fill-primary" : "text-gray-300"}
                               />
                             ))}
                             <span className="ml-1 text-sm text-gray-600">({pregunta.producto.rating})</span>
@@ -368,10 +368,10 @@ export default function PreguntasPage() {
                         </div>
                       </div>
                     ) : (
-                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                      <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 mb-4">
                         <div className="flex items-center gap-3">
-                          <AlertCircle size={20} className="text-yellow-600" />
-                          <span className="text-yellow-800 font-medium">Esperando respuesta del vendedor</span>
+                          <AlertCircle size={20} className="text-primary" />
+                          <span className="text-primary font-medium">Esperando respuesta del vendedor</span>
                         </div>
                       </div>
                     )}
@@ -394,7 +394,7 @@ export default function PreguntasPage() {
                       </div>
                       
                       {pregunta.respondida && !pregunta.calificacion && (
-                        <button className="flex items-center gap-2 px-4 py-2 bg-yellow-400 text-gray-900 rounded-lg font-medium hover:bg-yellow-300 transition-colors">
+                        <button className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary-hover transition-colors">
                           <Star size={16} />
                           Calificar respuesta
                         </button>
@@ -408,7 +408,7 @@ export default function PreguntasPage() {
                               <Star
                                 key={i}
                                 size={16}
-                                className={i < pregunta.calificacion ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}
+                                className={i < pregunta.calificacion ? "text-primary fill-primary" : "text-gray-300"}
                               />
                             ))}
                           </div>
@@ -452,8 +452,8 @@ export default function PreguntasPage() {
               <p className="text-2xl font-bold text-gray-900">{preguntasData.length}</p>
             </div>
             <div className="bg-white rounded-lg shadow-sm p-6 text-center">
-              <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                <Clock className="w-6 h-6 text-yellow-600" />
+              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-3">
+                <Clock className="w-6 h-6 text-primary" />
               </div>
               <h3 className="font-medium text-gray-900 mb-1">Pendientes</h3>
               <p className="text-2xl font-bold text-gray-900">{preguntasData.filter(p => !p.respondida).length}</p>

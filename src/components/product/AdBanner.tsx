@@ -18,7 +18,7 @@ const ADS = [
     subtitle: "Potenciá tus ventas con publicidad",
     cta: "Empezar ahora",
     link: "/ads",
-    accent: "text-yellow-400",
+    accent: "text-primary",
   },
   {
     id: "ad-3",

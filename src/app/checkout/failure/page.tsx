@@ -33,15 +33,15 @@ function FailureContent() {
             </div>
           )}
 
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 text-left">
-            <p className="text-sm text-yellow-800">
+          <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 mb-6 text-left">
+            <p className="text-sm text-primary">
               <strong>Posibles causas:</strong> fondos insuficientes, tarjeta bloqueada, o límite de cuotas superado.
             </p>
           </div>
 
           <div className="flex flex-col gap-3">
             <Link href="/checkout">
-              <Button className="w-full bg-[#3483FA] hover:bg-[#2968c8]">
+              <Button className="w-full bg-primary hover:bg-primary-hover">
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Intentar de nuevo
               </Button>
@@ -63,7 +63,7 @@ export default function CheckoutFailurePage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-[#EBEBEB] flex items-center justify-center">
-        <div className="animate-spin h-8 w-8 border-2 border-[#3483FA] border-t-transparent rounded-full" />
+        <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
       </div>
     }>
       <FailureContent />

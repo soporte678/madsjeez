@@ -143,7 +143,7 @@ export default function ProductsPage() {
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin h-8 w-8 border-2 border-[#3483FA] border-t-transparent rounded-full"></div>
+        <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
       </div>
     );
   }
@@ -161,7 +161,7 @@ export default function ProductsPage() {
               <p className="text-gray-600">Gestiona tus publicaciones</p>
             </div>
             <Link href="/sell">
-              <Button className="bg-[#3483FA]">
+              <Button className="bg-primary hover:bg-primary-hover">
                 <Plus className="h-4 w-4 mr-2" />
                 Publicar nuevo
               </Button>
@@ -229,7 +229,7 @@ export default function ProductsPage() {
           {/* Products List */}
           {loading ? (
             <div className="text-center py-12">
-              <div className="animate-spin h-8 w-8 border-2 border-[#3483FA] border-t-transparent rounded-full mx-auto"></div>
+              <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mx-auto"></div>
             </div>
           ) : filteredProducts.length > 0 ? (
             <div className="space-y-4">
@@ -257,7 +257,7 @@ export default function ProductsPage() {
                         <div className="flex items-center gap-2 mb-1">
                           <h3 className="font-medium truncate">{product.title}</h3>
                           {product.is_promoted && (
-                            <Badge className="bg-yellow-100 text-yellow-800">Destacado</Badge>
+                            <Badge className="bg-primary/10 text-primary">Destacado</Badge>
                           )}
                         </div>
                         <div className="flex items-center gap-4 text-sm text-gray-500">
@@ -312,7 +312,7 @@ export default function ProductsPage() {
                 <h2 className="text-xl font-semibold mb-2">No tienes productos</h2>
                 <p className="text-gray-500 mb-6">Comienza publicando tu primer producto</p>
                 <Link href="/sell">
-                  <Button className="bg-[#3483FA]">
+                  <Button className="bg-primary hover:bg-primary-hover">
                     <Plus className="h-4 w-4 mr-2" />
                     Publicar producto
                   </Button>

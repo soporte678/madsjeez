@@ -105,7 +105,7 @@ export function ProductCard({
                 key={i}
                 className={`w-3 h-3 ${
                   i < Math.floor(rating) 
-                    ? 'text-yellow-400 fill-yellow-400' 
+                    ? 'text-primary fill-primary' 
                     : 'text-gray-300'
                 }`}
               />
@@ -144,7 +144,7 @@ export function ProductCard({
         )}
         
         {/* Botón de compra */}
-        <Button className="w-full bg-blue-600 hover:bg-blue-700 text-sm py-2">
+        <Button className="w-full bg-primary hover:bg-primary-hover text-sm py-2">
           Comprar ahora
         </Button>
       </div>

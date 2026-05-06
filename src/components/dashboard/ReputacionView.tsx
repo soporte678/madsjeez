@@ -34,7 +34,7 @@ type ReputationStats = {
 const LEVELS = [
   { name: "VENDEDOR NUEVO", color: "gray", minSales: 0, minRevenue: 0, order: 1 },
   { name: "BRONCE", color: "orange", minSales: 5, minRevenue: 25000, order: 2 },
-  { name: "PLATA", color: "yellow", minSales: 25, minRevenue: 150000, order: 3 },
+  { name: "PLATA", color: "blue", minSales: 25, minRevenue: 150000, order: 3 },
   { name: "ORO", color: "emerald", minSales: 100, minRevenue: 750000, order: 4 },
   { name: "PLATINUM", color: "blue", minSales: 300, minRevenue: 2500000, order: 5 },
   { name: "MadsLíder Platinum", color: "darkEmerald", minSales: 750, minRevenue: 8000000, order: 6 },
@@ -43,7 +43,6 @@ const LEVELS = [
 const COLOR_CLASSES: Record<string, { text: string; bg: string; border: string; bar: string }> = {
   gray: { text: "text-gray-500", bg: "bg-gray-500", border: "border-gray-500", bar: "bg-gray-400" },
   orange: { text: "text-orange-500", bg: "bg-orange-500", border: "border-orange-500", bar: "bg-orange-400" },
-  yellow: { text: "text-yellow-500", bg: "bg-yellow-500", border: "border-yellow-500", bar: "bg-yellow-400" },
   emerald: { text: "text-emerald-500", bg: "bg-emerald-500", border: "border-emerald-500", bar: "bg-emerald-400" },
   blue: { text: "text-blue-500", bg: "bg-blue-500", border: "border-blue-500", bar: "bg-blue-400" },
   darkEmerald: { text: "text-emerald-700", bg: "bg-emerald-700", border: "border-emerald-700", bar: "bg-emerald-600" },

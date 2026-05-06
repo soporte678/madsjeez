@@ -10,13 +10,13 @@ const badgeVariants = cva(
         default:
           "border-transparent bg-gradient-to-r from-primary via-brand-flare to-secondary text-primary-foreground shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/35",
         secondary:
-          "border-transparent bg-gradient-to-r from-secondary to-secondary-hover text-secondary-foreground shadow-md shadow-amber-500/35 hover:shadow-lg hover:shadow-amber-500/45",
+          "border-transparent bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary-hover hover:shadow-md",
         accent:
           "border-transparent bg-gradient-to-r from-accent to-accent-hover text-accent-foreground shadow-md shadow-cyan-500/35 hover:shadow-lg hover:shadow-cyan-500/45",
         success:
           "border-transparent bg-gradient-to-r from-success to-success-hover text-success-foreground shadow-md shadow-emerald-500/35 hover:shadow-lg hover:shadow-emerald-500/45",
         warning:
-          "border-transparent bg-gradient-to-r from-warning via-pink-500 to-pink-400 text-warning-foreground shadow-md shadow-pink-500/35 hover:shadow-lg hover:shadow-pink-500/45",
+          "border-transparent bg-warning text-warning-foreground shadow-md shadow-warning/30 hover:bg-warning-hover hover:shadow-lg hover:shadow-warning/40",
         destructive:
           "border-transparent bg-gradient-to-r from-destructive to-destructive-hover text-destructive-foreground shadow-md shadow-red-500/30 hover:shadow-lg hover:shadow-red-500/40",
         outline:

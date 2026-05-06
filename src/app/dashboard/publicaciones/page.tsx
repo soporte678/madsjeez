@@ -12,7 +12,7 @@ interface S { active: number; paused: number; lowStock: number; noSales: number 
 
 const fmt = (v: number) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(v)
 const ql = (s: number) => s >= 80 ? "Excelente" : s >= 60 ? "Buena" : s >= 40 ? "Regular" : "Mala"
-const qc: Record<string, string> = { Excelente: "text-green-600 bg-green-50", Buena: "text-blue-600 bg-blue-50", Regular: "text-yellow-600 bg-yellow-50", Mala: "text-red-600 bg-red-50" }
+const qc: Record<string, string> = { Excelente: "text-green-600 bg-green-50", Buena: "text-blue-600 bg-blue-50", Regular: "text-primary bg-primary/10", Mala: "text-red-600 bg-red-50" }
 const el = (sales: number, views: number) => views === 0 ? "Neutral" : sales / views >= 0.1 ? "Muy positiva" : sales / views >= 0.05 ? "Positiva" : sales / views >= 0.02 ? "Mejorar" : "Negativa"
 const rc = (p: P) => !p.isActive ? "PAUSADA" : p.stock <= 0 ? "Sin stock" : p.qualityScore < 40 ? "Mejorar fotos" : p.sales === 0 && p.views > 100 ? "Ajustar precio" : "Bien hecho"
 
@@ -53,7 +53,7 @@ export default function Page() {
     if (status === "unauthenticated") router.push("/auth/login?redirect=/dashboard/publicaciones")
   }, [status, router])
 
-  if (status === "loading" || loading) return <div className="flex items-center justify-center h-96"><div className="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full" /></div>
+  if (status === "loading" || loading) return <div className="flex items-center justify-center h-96"><div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full" /></div>
   if (status === "unauthenticated") return null
 
   const filtered = products.filter(p => {
@@ -96,13 +96,13 @@ export default function Page() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-slate-900">Publicaciones</h1>
-        <Button onClick={openCreate} className="bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-semibold"><Plus size={18} className="mr-1" />Nueva</Button>
+        <Button onClick={openCreate} className="bg-primary hover:bg-primary-hover text-primary-foreground font-semibold"><Plus size={18} className="mr-1" />Nueva</Button>
       </div>
 
       {summary && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <button onClick={() => { setFilter("active"); setPage(1) }} className={`bg-white p-4 rounded-xl shadow-sm border text-left transition-all ${filter === "active" ? "ring-2 ring-green-500" : "hover:shadow-md"}`}><div className="text-2xl font-bold text-green-600">{summary.active}</div><div className="text-sm text-gray-500">Activas</div></button>
-          <button onClick={() => { setFilter("paused"); setPage(1) }} className={`bg-white p-4 rounded-xl shadow-sm border text-left transition-all ${filter === "paused" ? "ring-2 ring-yellow-500" : "hover:shadow-md"}`}><div className="text-2xl font-bold text-yellow-600">{summary.paused}</div><div className="text-sm text-gray-500">Pausadas</div></button>
+          <button onClick={() => { setFilter("paused"); setPage(1) }} className={`bg-white p-4 rounded-xl shadow-sm border text-left transition-all ${filter === "paused" ? "ring-2 ring-primary" : "hover:shadow-md"}`}><div className="text-2xl font-bold text-primary">{summary.paused}</div><div className="text-sm text-gray-500">Pausadas</div></button>
           <button onClick={() => { setFilter("low_stock"); setPage(1) }} className={`bg-white p-4 rounded-xl shadow-sm border text-left transition-all ${filter === "low_stock" ? "ring-2 ring-orange-500" : "hover:shadow-md"}`}><div className="text-2xl font-bold text-orange-600">{summary.lowStock}</div><div className="text-sm text-gray-500">Stock bajo</div></button>
           <button onClick={() => { setFilter("no_sales"); setPage(1) }} className={`bg-white p-4 rounded-xl shadow-sm border text-left transition-all ${filter === "no_sales" ? "ring-2 ring-blue-500" : "hover:shadow-md"}`}><div className="text-2xl font-bold text-blue-600">{summary.noSales}</div><div className="text-sm text-gray-500">Sin ventas</div></button>
         </div>
@@ -154,7 +154,7 @@ export default function Page() {
                   <td className="p-4"><div className="text-sm">{p.stock}</div><div className={`text-xs ${p.stock <= 5 ? "text-red-500" : "text-gray-400"}`}>{p.stock <= 5 ? "Bajo" : "OK"}</div></td>
                   <td className="p-4"><div className="text-sm text-gray-600"><div>👁 {p.views}</div><div>🛒 {p.sales} vendidos</div></div></td>
                   <td className="p-4"><Badge className={qc[ql(p.qualityScore)]}>{ql(p.qualityScore)}</Badge><div className="text-xs mt-1">{el(p.sales, p.views)}</div></td>
-                  <td className="p-4"><Badge className={p.isActive ? "text-green-600 bg-green-50" : "text-yellow-600 bg-yellow-50"}>{p.isActive ? "Activo" : "Pausado"}</Badge><div className="text-xs text-gray-500 mt-1">{rc(p)}</div></td>
+                  <td className="p-4"><Badge className={p.isActive ? "text-green-600 bg-green-50" : "text-primary bg-primary/10"}>{p.isActive ? "Activo" : "Pausado"}</Badge><div className="text-xs text-gray-500 mt-1">{rc(p)}</div></td>
                   <td className="p-4">
                     <div className="flex items-center gap-2">
                       <button onClick={() => toggle(p.id, !p.isActive)} className="p-1.5 hover:bg-gray-100 rounded" title={p.isActive ? "Pausar" : "Activar"}>{p.isActive ? <Pause size={16} /> : <Play size={16} />}</button>

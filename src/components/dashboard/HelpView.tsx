@@ -65,14 +65,14 @@ const statusLabel: Record<string, string> = {
 
 const statusColor: Record<string, string> = {
   OPEN: "text-blue-600 bg-blue-50",
-  IN_PROGRESS: "text-yellow-600 bg-yellow-50",
+  IN_PROGRESS: "text-primary bg-primary/10",
   WAITING_USER: "text-orange-600 bg-orange-50",
   RESOLVED: "text-green-600 bg-green-50",
   CLOSED: "text-gray-500 bg-gray-100",
 };
 
 const orderStatusLabel: Record<string, { text: string; color: string }> = {
-  PENDING: { text: "Pendiente", color: "text-yellow-600" },
+  PENDING: { text: "Pendiente", color: "text-primary" },
   CONFIRMED: { text: "Confirmado", color: "text-blue-600" },
   SHIPPED: { text: "Enviado", color: "text-blue-600" },
   DELIVERED: { text: "Entregado", color: "text-[#00a650]" },

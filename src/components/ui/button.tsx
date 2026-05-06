@@ -15,13 +15,13 @@ const buttonVariants = cva(
         outline:
           "border-2 border-primary bg-transparent text-primary hover:bg-gradient-to-r hover:from-primary hover:via-brand-flare hover:to-secondary-hover hover:text-primary-foreground hover:border-transparent hover:shadow-lg hover:shadow-primary/25 transition-all duration-300",
         secondary:
-          "bg-gradient-to-r from-secondary to-secondary-hover text-secondary-foreground shadow-lg shadow-amber-500/35 hover:shadow-xl hover:shadow-amber-500/45 hover:-translate-y-0.5",
+          "bg-secondary text-secondary-foreground shadow-md hover:bg-secondary-hover hover:shadow-lg hover:-translate-y-0.5",
         accent:
           "bg-gradient-to-r from-accent to-accent-hover text-accent-foreground shadow-lg shadow-cyan-500/35 hover:shadow-xl hover:shadow-cyan-500/45 hover:-translate-y-0.5 btn-shine",
         success:
           "bg-gradient-to-r from-success to-success-hover text-success-foreground shadow-lg shadow-emerald-500/35 hover:shadow-xl hover:shadow-emerald-500/45 hover:-translate-y-0.5",
         warning:
-          "bg-gradient-to-r from-warning via-pink-500 to-pink-400 text-warning-foreground shadow-lg shadow-pink-500/35 hover:shadow-xl hover:shadow-pink-500/45 hover:-translate-y-0.5",
+          "bg-warning text-warning-foreground shadow-lg shadow-warning/30 hover:bg-warning-hover hover:shadow-xl hover:shadow-warning/40 hover:-translate-y-0.5",
         ghost: "hover:bg-primary/10 hover:text-primary transition-colors duration-300",
         link: "text-primary underline-offset-4 hover:underline font-semibold hover:text-primary-hover transition-colors",
         glow:

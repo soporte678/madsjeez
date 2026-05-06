@@ -273,7 +273,7 @@ export function BuyBox({
             <div className="flex items-center gap-2 mt-1">
               <span className={`text-[11px] font-semibold px-2 py-0.5 rounded ${
                 sellerRepColor === "VERDE" ? "bg-green-100 text-green-700" :
-                sellerRepColor === "AMARILLO" ? "bg-yellow-100 text-yellow-700" :
+                sellerRepColor === "AMARILLO" ? "bg-primary/10 text-primary" :
                 sellerRepColor === "ROJO" ? "bg-red-100 text-red-700" :
                 "bg-green-100 text-green-700"
               }`}>

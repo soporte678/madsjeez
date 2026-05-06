@@ -110,7 +110,7 @@ export default function OrdersPage() {
   if (status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F5F5F5]">
-        <div className="animate-spin h-8 w-8 border-4 border-[#3483FA] border-t-transparent rounded-full" />
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
       </div>
     )
   }
@@ -127,9 +127,9 @@ export default function OrdersPage() {
   ]
 
   const estadoColors: Record<string, string> = {
-    PENDING: "text-amber-600 bg-amber-50",
+    PENDING: "text-primary bg-primary/10",
     PAID: "text-blue-600 bg-blue-50",
-    PROCESSING: "text-yellow-600 bg-yellow-50",
+    PROCESSING: "text-primary bg-primary/10",
     SHIPPED: "text-blue-600 bg-blue-50",
     DELIVERED: "text-green-600 bg-green-50",
     CANCELLED: "text-red-600 bg-red-50",
@@ -153,7 +153,7 @@ export default function OrdersPage() {
   return (
     <div className="min-h-screen bg-[#F5F5F5]">
       {/* Header - Igual que otras páginas */}
-      <header className="bg-[#FEE500] pt-3 pb-2 px-4 shadow-md sticky top-0 z-[100]">
+      <header className="bg-white border-b border-border pt-3 pb-2 px-4 shadow-md sticky top-0 z-[100]">
         <div className="max-w-7xl mx-auto flex flex-col gap-3">
           <div className="flex items-center justify-between gap-6 md:gap-12">
             <Link href="/" className="flex items-center gap-4 cursor-pointer group flex-shrink-0">
@@ -161,7 +161,7 @@ export default function OrdersPage() {
                 <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/30 to-transparent"></div>
                 <svg viewBox="0 0 100 100" className="w-8 h-8 overflow-visible">
                   <path d="M 15 80 L 35 30 L 55 55" stroke="#2563EB" fill="none" strokeWidth="15" strokeLinecap="round"/>
-                  <path d="M 85 80 L 65 30 L 45 65" stroke="#FACC15" fill="none" strokeWidth="15" strokeLinecap="round"/>
+                  <path d="M 85 80 L 65 30 L 45 65" stroke="#3B82F6" fill="none" strokeWidth="15" strokeLinecap="round"/>
                 </svg>
               </div>
               <span className="font-black text-[22px] tracking-tighter leading-none uppercase text-slate-900">
@@ -306,7 +306,7 @@ export default function OrdersPage() {
           {/* Lista de Compras */}
           {loadingOrders ? (
             <div className="flex justify-center py-16">
-              <div className="animate-spin h-10 w-10 border-4 border-[#3483FA] border-t-transparent rounded-full" />
+              <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full" />
             </div>
           ) : filteredCompras.length > 0 ? (
             <div className="space-y-6">
@@ -447,8 +447,8 @@ export default function OrdersPage() {
           {/* Info de estados */}
           <div className="mt-12 grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-white rounded-lg shadow-sm p-6 text-center">
-              <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                <Clock className="w-6 h-6 text-yellow-600" />
+              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-3">
+                <Clock className="w-6 h-6 text-primary" />
               </div>
               <h3 className="font-medium text-gray-900 mb-1">En preparación</h3>
               <p className="text-sm text-gray-500">El vendedor está preparando tu pedido</p>

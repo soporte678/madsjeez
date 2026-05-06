@@ -4,6 +4,7 @@ import "./globals.css"
 import { Providers } from "@/components/providers"
 import { ChatProvider } from "@/components/ChatContext"
 import FloatingBots from "@/components/FloatingBots"
+import ThemeToneInit from "@/components/theme/ThemeToneInit"
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -88,6 +89,7 @@ export default function RootLayout({
         `}</style>
       </head>
       <body className="min-h-full flex flex-col font-outfit">
+        <ThemeToneInit />
         <ChatProvider>
           <Providers>
             {children}

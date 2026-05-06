@@ -202,7 +202,7 @@ function CheckoutContent() {
   if (loading || status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin h-8 w-8 border-2 border-[#3483FA] border-t-transparent rounded-full"></div>
+        <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
       </div>
     );
   }
@@ -224,7 +224,7 @@ function CheckoutContent() {
               <h2 className="text-xl font-semibold mb-2">Tu carrito está vacío</h2>
               <p className="text-gray-500 mb-4">Agrega productos para continuar</p>
               <Link href="/search">
-                <Button className="bg-[#3483FA]">Explorar productos</Button>
+              <Button className="bg-primary hover:bg-primary-hover">Explorar productos</Button>
               </Link>
             </CardContent>
           </Card>
@@ -241,7 +241,7 @@ function CheckoutContent() {
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-4xl mx-auto">
             {multiSeller && (
-              <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              <div className="mb-6 rounded-lg border border-primary/20 bg-primary/10 px-4 py-3 text-sm text-primary">
                 Tu carrito tiene productos de más de un vendedor. Para pagar con Mercado Pago solo podés
                 incluir un vendedor por compra. Eliminá ítems hasta dejar un solo vendedor o hacé pedidos
                 por separado.
@@ -258,7 +258,7 @@ function CheckoutContent() {
                   <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
                       step >= s.num
-                        ? "bg-[#3483FA] text-white"
+                        ? "bg-primary text-white"
                         : "bg-gray-200 text-gray-500"
                     }`}
                   >
@@ -372,7 +372,7 @@ function CheckoutContent() {
                         </div>
 
                         <Button
-                          className="w-full mt-6 bg-[#3483FA]"
+                          className="w-full mt-6 bg-primary hover:bg-primary-hover"
                           onClick={() => setStep(2)}
                           disabled={
                             !shippingAddress.recipient ||
@@ -408,7 +408,7 @@ function CheckoutContent() {
                         <Button variant="outline" onClick={() => setStep(1)}>
                           Volver
                         </Button>
-                        <Button className="flex-1 bg-[#3483FA]" onClick={() => setStep(3)}>
+                        <Button className="flex-1 bg-primary hover:bg-primary-hover" onClick={() => setStep(3)}>
                           Continuar
                         </Button>
                       </div>
@@ -449,7 +449,7 @@ function CheckoutContent() {
                           Volver
                         </Button>
                         <Button
-                          className="flex-1 bg-[#3483FA]"
+                          className="flex-1 bg-primary hover:bg-primary-hover"
                           onClick={handleSubmitOrder}
                           disabled={processing || multiSeller}
                         >
@@ -544,7 +544,7 @@ export default function CheckoutPage() {
           <Header user={null} />
           <div className="flex-1 bg-[#EBEBEB] flex items-center justify-center">
             <div className="text-center">
-              <div className="animate-spin h-8 w-8 border-2 border-[#3483FA] border-t-transparent rounded-full mx-auto mb-4"></div>
+              <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
               <p>Cargando...</p>
             </div>
           </div>

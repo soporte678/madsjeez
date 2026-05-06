@@ -9,7 +9,7 @@ import {
   MoreVertical, Activity, Clock, Box, ShieldAlert, XCircle, RefreshCcw,
   ThumbsUp, Users, Target, LayoutGrid, Zap, Plus, X, Maximize2, MessageSquare, Calendar,
   ClipboardList, Bookmark, Store, Car, Home, SearchCode,
-  Eye, Package, DollarSign
+  Eye, Package, DollarSign, Palette
 } from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -38,16 +38,31 @@ import MeliIntegrationView from "@/components/dashboard/MeliIntegrationView";
 import MeliAdsStudioView from "@/components/dashboard/MeliAdsStudioView";
 
 export default function App() {
+  type ThemeTone = "light" | "soft" | "dark";
+  const THEME_KEY = "madsjeez-theme-tone";
+
   // Siempre igual en servidor y primer cliente (evita hydration mismatch). El hash se aplica en cliente.
   const [activeMenu, setActiveMenu] = useState('resumen');
   const [hashReady, setHashReady] = useState(false);
+  const [themeTone, setThemeTone] = useState<ThemeTone>("light");
 
   // Leer #fragmento inicial (ej. OAuth redirige a #meli-sync)
   useEffect(() => {
     const hash = window.location.hash.replace('#', '');
     if (hash) setActiveMenu(hash);
     setHashReady(true);
+
+    const saved = localStorage.getItem(THEME_KEY) as ThemeTone | null;
+    const nextTone: ThemeTone = saved === "soft" || saved === "dark" ? saved : "light";
+    setThemeTone(nextTone);
+    document.documentElement.setAttribute("data-theme", nextTone);
   }, []);
+
+  const applyThemeTone = (tone: ThemeTone) => {
+    setThemeTone(tone);
+    localStorage.setItem(THEME_KEY, tone);
+    document.documentElement.setAttribute("data-theme", tone);
+  };
 
   // Sync activeMenu to URL hash so refresh keeps the selected section
   useEffect(() => {
@@ -548,6 +563,18 @@ export default function App() {
             </div>
             <button onClick={() => setActiveMenu('publicaciones')} className="hover:text-gray-900">Vender</button>
             <button onClick={() => setActiveMenu('ayuda')} className="hover:text-gray-900">Ayuda</button>
+            <label className="inline-flex items-center gap-1.5 text-xs text-slate-600">
+              <Palette size={14} />
+              <select
+                value={themeTone}
+                onChange={(e) => applyThemeTone(e.target.value as ThemeTone)}
+                className="bg-white border border-gray-200 rounded-md px-2 py-1 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20"
+              >
+                <option value="light">Claro</option>
+                <option value="soft">Suave</option>
+                <option value="dark">Oscuro</option>
+              </select>
+            </label>
             <div className="relative">
               <button onClick={() => setNotifOpen(!notifOpen)} className="relative hover:text-gray-900 p-0.5 transition-colors">
                 <Bell size={18} />
