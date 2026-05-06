@@ -2,7 +2,10 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Truck, ShieldCheck, Award, Star, ChevronDown, MapPin, MessageCircle, Package } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
+import { Truck, ShieldCheck, Award, MapPin, MessageCircle, Package } from "lucide-react"
+import { toast } from "sonner"
 import { WholesalePriceDisplay } from "./WholesalePriceDisplay"
 
 interface BuyBoxProps {
@@ -24,13 +27,64 @@ interface BuyBoxProps {
   cuotas6: number
 }
 
+function upsertGuestCartItem(params: {
+  productId: string
+  productTitle: string
+  unitPrice: number
+  quantity: number
+  freeShipping: boolean
+  sellerId: string
+  sellerName: string
+  maxStock: number
+}) {
+  const key = "guestCart"
+  const raw = typeof window !== "undefined" ? localStorage.getItem(key) : null
+  const list = raw ? (JSON.parse(raw) as GuestCartLine[]) : []
+  const idx = list.findIndex((l) => l.productId === params.productId)
+  const desired =
+    idx >= 0 ? list[idx].quantity + params.quantity : params.quantity
+  const qty = Math.min(desired, params.maxStock)
+  const line: GuestCartLine = {
+    id: idx >= 0 ? list[idx].id : `guest-${params.productId}-${Date.now()}`,
+    productId: params.productId,
+    quantity: qty,
+    product: {
+      id: params.productId,
+      title: params.productTitle,
+      price: params.unitPrice,
+      shipping_free: params.freeShipping,
+      seller_id: params.sellerId,
+      primary_image: null,
+      seller_name: params.sellerName,
+    },
+  }
+  if (idx >= 0) list[idx] = line
+  else list.push(line)
+  localStorage.setItem(key, JSON.stringify(list))
+}
+
+type GuestCartLine = {
+  id: string
+  productId: string
+  quantity: number
+  product: {
+    id: string
+    title: string
+    price: number
+    shipping_free: boolean
+    seller_id: string
+    primary_image: string | null
+    seller_name: string
+  }
+}
+
 export function BuyBox({
   productId,
   productTitle,
   basePrice,
   originalPrice,
   freeShipping,
-  shippingCost,
+  shippingCost: _shippingCost,
   stock,
   sellerId,
   sellerName,
@@ -38,12 +92,15 @@ export function BuyBox({
   sellerRepColor,
   sellerTotalSales,
   isNewSeller,
-  salesCount,
+  salesCount: _salesCount,
   discount,
   cuotas6,
 }: BuyBoxProps) {
+  const router = useRouter()
+  const { status } = useSession()
   const [quantity, setQuantity] = useState(1)
   const [unitPrice, setUnitPrice] = useState(basePrice)
+  const [busy, setBusy] = useState<null | "cart" | "buy">(null)
 
   const handleQuantityChange = (qty: number, price: number) => {
     setQuantity(qty)
@@ -51,7 +108,89 @@ export function BuyBox({
   }
 
   const totalPrice = unitPrice * quantity
-  const checkoutUrl = `/checkout?product=${productId}&quantity=${quantity}`
+
+  const addViaApi = async (qty: number) => {
+    const res = await fetch("/api/cart", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ productId, quantity: qty }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      throw new Error(data.error || "No se pudo agregar al carrito")
+    }
+  }
+
+  const handleAddToCart = async () => {
+    if (stock < 1) {
+      toast.error("Sin stock")
+      return
+    }
+    if (quantity > stock) {
+      toast.error("Cantidad mayor al stock disponible")
+      return
+    }
+
+    setBusy("cart")
+    try {
+      if (status === "authenticated") {
+        await addViaApi(quantity)
+        toast.success("Agregado al carrito")
+      } else {
+        upsertGuestCartItem({
+          productId,
+          productTitle,
+          unitPrice,
+          quantity,
+          freeShipping,
+          sellerId,
+          sellerName,
+          maxStock: stock,
+        })
+        toast.success("Agregado al carrito")
+      }
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Error al agregar")
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const handleBuyNow = async () => {
+    if (stock < 1) {
+      toast.error("Sin stock")
+      return
+    }
+    if (quantity > stock) {
+      toast.error("Cantidad mayor al stock disponible")
+      return
+    }
+
+    setBusy("buy")
+    try {
+      if (status === "authenticated") {
+        await addViaApi(quantity)
+        router.push("/checkout")
+      } else {
+        upsertGuestCartItem({
+          productId,
+          productTitle,
+          unitPrice,
+          quantity,
+          freeShipping,
+          sellerId,
+          sellerName,
+          maxStock: stock,
+        })
+        router.push("/auth/login?redirect=/checkout")
+      }
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Error")
+    } finally {
+      setBusy(null)
+    }
+  }
 
   return (
     <div className="border border-gray-200 rounded-lg p-5">
@@ -97,11 +236,21 @@ export function BuyBox({
       </div>
 
       <div className="flex flex-col gap-2 mb-6">
-        <Link href={checkoutUrl} className="w-full bg-[#3483fa] text-white font-semibold py-3.5 rounded-md hover:bg-[#2968c8] transition-colors text-center text-[16px]">
-          Comprar ahora
-        </Link>
-        <button className="w-full bg-[#d7e7ff] text-[#3483fa] font-semibold py-3.5 rounded-md hover:bg-[#c5dcfa] transition-colors text-[16px]">
-          Agregar al carrito
+        <button
+          type="button"
+          disabled={busy !== null || stock < 1}
+          onClick={handleBuyNow}
+          className="w-full bg-[#3483fa] text-white font-semibold py-3.5 rounded-md hover:bg-[#2968c8] transition-colors text-center text-[16px] disabled:opacity-60"
+        >
+          {busy === "buy" ? "Procesando…" : "Comprar ahora"}
+        </button>
+        <button
+          type="button"
+          disabled={busy !== null || stock < 1}
+          onClick={handleAddToCart}
+          className="w-full bg-[#d7e7ff] text-[#3483fa] font-semibold py-3.5 rounded-md hover:bg-[#c5dcfa] transition-colors text-[16px] disabled:opacity-60"
+        >
+          {busy === "cart" ? "Agregando…" : "Agregar al carrito"}
         </button>
       </div>
 

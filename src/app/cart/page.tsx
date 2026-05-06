@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,7 +18,6 @@ import {
   Truck,
   Shield,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 
 interface CartItem {
@@ -36,150 +35,255 @@ interface CartItem {
   };
 }
 
-export default function CartPage() {
-  const router = useRouter();
+type GuestCartLine = {
+  id: string;
+  productId: string;
+  quantity: number;
+  product: CartItem["product"];
+};
 
-  const [user, setUser] = useState<any>(null);
+function mapApiCartToItems(cart: {
+  items: Array<{
+    id: string;
+    productId: string;
+    quantity: number;
+    price: number;
+    product: {
+      id: string;
+      title: string;
+      price: number;
+      freeShipping: boolean;
+      seller: { id: string; name: string };
+      images: Array<{ url: string }>;
+    };
+  }>;
+}): CartItem[] {
+  return cart.items.map((item) => ({
+    id: item.id,
+    product_id: item.productId,
+    quantity: item.quantity,
+    product: {
+      id: item.product.id,
+      title: item.product.title,
+      price: item.price,
+      shipping_free: item.product.freeShipping,
+      seller_id: item.product.seller.id,
+      primary_image: item.product.images?.[0]?.url ?? null,
+      seller_name: item.product.seller.name,
+    },
+  }));
+}
+
+export default function CartPage() {
+  const { status } = useSession();
+
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const guestMergedRef = useRef(false);
 
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
-    const supabase = createClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      setUser(session.user);
-      fetchCart(session.user.id);
-    } else {
-      // Load from localStorage for guests
-      loadGuestCart();
-    }
-  };
-
-  const fetchCart = async (userId: string) => {
-    const supabase = createClient();
-    setLoading(true);
-    const { data } = await supabase
-      .from("cart_items")
-      .select(`
-        *,
-        product:products(
-          id, title, price, shipping_free, seller_id,
-          product_images(url, is_primary),
-          seller:profiles(full_name)
-        )
-      `)
-      .eq("user_id", userId);
-
-    if (data) {
-      const mappedItems = data.map((item: any) => ({
-        ...item,
-        product: {
-          ...item.product,
-          primary_image: item.product?.product_images?.[0]?.url,
-          seller_name: item.product?.seller?.full_name,
-        },
-      }));
-      setCartItems(mappedItems);
-    }
-    setLoading(false);
-  };
-
-  const loadGuestCart = () => {
+  const loadGuestCart = useCallback(() => {
     const guestCart = localStorage.getItem("guestCart");
     if (guestCart) {
-      setCartItems(JSON.parse(guestCart));
+      const parsed = JSON.parse(guestCart) as GuestCartLine[];
+      setCartItems(
+        parsed.map((line) => ({
+          id: line.id,
+          product_id: line.productId,
+          quantity: line.quantity,
+          product: line.product,
+        }))
+      );
+    } else {
+      setCartItems([]);
     }
     setLoading(false);
-  };
+  }, []);
+
+  const fetchCartApi = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/cart", { credentials: "include" });
+      const data = await res.json();
+      if (!res.ok || !data.cart) {
+        setCartItems([]);
+        return;
+      }
+      setCartItems(mapApiCartToItems(data.cart));
+    } catch {
+      toast.error("No se pudo cargar el carrito");
+      setCartItems([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (status === "loading") return;
+
+    if (status === "unauthenticated") {
+      guestMergedRef.current = false;
+      loadGuestCart();
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      if (!guestMergedRef.current) {
+        guestMergedRef.current = true;
+        const raw = localStorage.getItem("guestCart");
+        if (raw) {
+          setLoading(true);
+          try {
+            const guestItems = JSON.parse(raw) as GuestCartLine[];
+            for (const line of guestItems) {
+              await fetch("/api/cart", {
+                method: "POST",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  productId: line.productId,
+                  quantity: line.quantity,
+                }),
+              });
+            }
+            localStorage.removeItem("guestCart");
+          } catch {
+            toast.error("No se pudieron migrar los productos del carrito invitado");
+          }
+        }
+      }
+
+      if (!cancelled) await fetchCartApi();
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [status, fetchCartApi, loadGuestCart]);
 
   const updateQuantity = async (itemId: string, newQuantity: number) => {
     if (newQuantity < 1) return;
 
-    if (user) {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from("cart_items")
-        .update({ quantity: newQuantity })
-        .eq("id", itemId);
-
-      if (error) {
-        toast.error("Error al actualizar cantidad");
-        return;
-      }
-
-      fetchCart(user.id);
-    } else {
-      // Update localStorage
+    if (status === "unauthenticated") {
       const updatedItems = cartItems.map((item) =>
         item.id === itemId ? { ...item, quantity: newQuantity } : item
       );
       setCartItems(updatedItems);
-      localStorage.setItem("guestCart", JSON.stringify(updatedItems));
+      localStorage.setItem(
+        "guestCart",
+        JSON.stringify(
+          updatedItems.map((i) => ({
+            id: i.id,
+            productId: i.product_id,
+            quantity: i.quantity,
+            product: i.product,
+          }))
+        )
+      );
+      return;
     }
+
+    const res = await fetch("/api/cart", {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ itemId, quantity: newQuantity }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      toast.error(err.error || "Error al actualizar cantidad");
+      return;
+    }
+    fetchCartApi();
   };
 
   const removeItem = async (itemId: string) => {
-    if (user) {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from("cart_items")
-        .delete()
-        .eq("id", itemId);
-
-      if (error) {
-        toast.error("Error al eliminar producto");
-        return;
-      }
-
-      fetchCart(user.id);
-    } else {
+    if (status === "unauthenticated") {
       const updatedItems = cartItems.filter((item) => item.id !== itemId);
       setCartItems(updatedItems);
-      localStorage.setItem("guestCart", JSON.stringify(updatedItems));
+      if (updatedItems.length === 0) {
+        localStorage.removeItem("guestCart");
+      } else {
+        localStorage.setItem(
+          "guestCart",
+          JSON.stringify(
+            updatedItems.map((i) => ({
+              id: i.id,
+              productId: i.product_id,
+              quantity: i.quantity,
+              product: i.product,
+            }))
+          )
+        );
+      }
+      toast.success("Producto eliminado del carrito");
+      return;
     }
 
+    const res = await fetch(`/api/cart?itemId=${encodeURIComponent(itemId)}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+    if (!res.ok) {
+      toast.error("Error al eliminar producto");
+      return;
+    }
     toast.success("Producto eliminado del carrito");
+    fetchCartApi();
   };
 
   const clearCart = async () => {
-    if (user) {
-      const supabase = createClient();
-      await supabase.from("cart_items").delete().eq("user_id", user.id);
-      fetchCart(user.id);
-    } else {
+    if (status === "unauthenticated") {
       setCartItems([]);
       localStorage.removeItem("guestCart");
+      return;
     }
+
+    const res = await fetch("/api/cart?clearAll=true", {
+      method: "DELETE",
+      credentials: "include",
+    });
+    if (!res.ok) {
+      toast.error("No se pudo vaciar el carrito");
+      return;
+    }
+    fetchCartApi();
   };
 
-  // Group items by seller
-  const itemsBySeller = cartItems.reduce((acc, item) => {
-    const sellerId = item.product.seller_id;
-    if (!acc[sellerId]) {
-      acc[sellerId] = {
-        sellerName: item.product.seller_name,
-        items: [],
-      };
-    }
-    acc[sellerId].items.push(item);
-    return acc;
-  }, {} as Record<string, { sellerName: string; items: CartItem[] }>);
+  const itemsBySeller = cartItems.reduce(
+    (acc, item) => {
+      const sellerId = item.product.seller_id;
+      if (!acc[sellerId]) {
+        acc[sellerId] = {
+          sellerName: item.product.seller_name,
+          items: [],
+        };
+      }
+      acc[sellerId].items.push(item);
+      return acc;
+    },
+    {} as Record<string, { sellerName: string; items: CartItem[] }>
+  );
 
-  const subtotal = cartItems.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
-  const shipping = cartItems.some((item) => !item.product.shipping_free) ? 2500 : 0;
+  const subtotal = cartItems.reduce(
+    (acc, item) => acc + item.product.price * item.quantity,
+    0
+  );
+  const shipping = cartItems.some((item) => !item.product.shipping_free)
+    ? 2500
+    : 0;
   const total = subtotal + shipping;
 
-  if (loading) {
+  if (loading || status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin h-8 w-8 border-2 border-[#3483FA] border-t-transparent rounded-full"></div>
       </div>
     );
   }
+
+  const isLoggedIn = status === "authenticated";
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -191,7 +295,6 @@ export default function CartPage() {
 
           {cartItems.length > 0 ? (
             <div className="grid lg:grid-cols-3 gap-6">
-              {/* Cart Items */}
               <div className="lg:col-span-2 space-y-4">
                 {Object.entries(itemsBySeller).map(([sellerId, { sellerName, items }]) => (
                   <Card key={sellerId}>
@@ -277,7 +380,6 @@ export default function CartPage() {
                 </Button>
               </div>
 
-              {/* Summary */}
               <div>
                 <Card className="sticky top-4">
                   <CardContent className="p-6">
@@ -301,7 +403,7 @@ export default function CartPage() {
                       <span>${total.toLocaleString()}</span>
                     </div>
 
-                    <Link href={user ? "/checkout" : "/auth/login?redirect=/checkout"}>
+                    <Link href={isLoggedIn ? "/checkout" : "/auth/login?redirect=/checkout"}>
                       <Button className="w-full h-12 bg-[#3483FA] hover:bg-[#2968C8]">
                         Continuar compra
                         <ArrowRight className="h-4 w-4 ml-2" />

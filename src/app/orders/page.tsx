@@ -5,82 +5,35 @@ import { useSession } from "next-auth/react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { 
-  Package, ChevronLeft, Clock, CheckCircle, Truck, Search,
-  ShoppingCart, MessageSquare, Star, HelpCircle, User,
-  LayoutGrid, CreditCard, FileText, Settings, Heart,
-  ChevronRight, MapPin, Filter, Calendar, Download
+  Package, Clock, CheckCircle, Truck, Search,
+  ShoppingCart, MessageSquare, User,
+  LayoutGrid, Settings,
+  ChevronRight, Filter, Download
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { toast } from "sonner"
 
-// Datos de ejemplo de compras
-const comprasData = [
-  {
-    id: "ORD-2024-001",
-    fecha: new Date("2024-04-15"),
-    productos: [
-      {
-        id: 1,
-        titulo: "Kit de pistón de cilindro de 32mm for cortasetos Shindaiwa",
-        imagen: "https://images.unsplash.com/photo-1586671263448-b3a8228f1a7b?auto=format&fit=crop&w=100&q=80",
-        precio: 45999,
-        cantidad: 1,
-        vendedor: "HerramientasPro SA",
-        estado: "entregado"
-      }
-    ],
-    total: 45999,
-    estado: "Entregado",
-    tracking: "ARG123456789",
-    calificacion: 5
-  },
-  {
-    id: "ORD-2024-002", 
-    fecha: new Date("2024-04-20"),
-    productos: [
-      {
-        id: 2,
-        titulo: "Smartphone 128GB 5G Cámara Dual",
-        imagen: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=100&q=80",
-        precio: 320000,
-        cantidad: 1,
-        vendedor: "TechStore Official",
-        estado: "en_camino"
-      },
-      {
-        id: 3,
-        titulo: "Funda protectora silicon TPU",
-        imagen: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=100&q=80",
-        precio: 8999,
-        cantidad: 2,
-        vendedor: "TechStore Official",
-        estado: "en_camino"
-      }
-    ],
-    total: 337998,
-    estado: "En camino",
-    tracking: "ARG987654321",
-    calificacion: null
-  },
-  {
-    id: "ORD-2024-003",
-    fecha: new Date("2024-04-22"),
-    productos: [
-      {
-        id: 4,
-        titulo: "Zapatillas Running Pro Aerodinámicas",
-        imagen: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=100&q=80",
-        precio: 85000,
-        cantidad: 1,
-        vendedor: "SportLife Store",
-        estado: "en_preparacion"
-      }
-    ],
-    total: 85000,
-    estado: "En preparación",
-    tracking: null,
-    calificacion: null
-  }
-]
+type ApiOrder = {
+  id: string
+  orderNumber: string
+  status: string
+  total: number
+  createdAt: string
+  items: Array<{
+    id: string
+    quantity: number
+    price: number
+    product: {
+      title: string
+      images: Array<{ url: string }>
+      seller?: { name: string } | null
+    }
+  }>
+  shipment?: {
+    trackingNumber: string | null
+    status: string
+  } | null
+}
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('es-AR', {
@@ -90,6 +43,23 @@ const formatCurrency = (value: number) => {
   }).format(value)
 }
 
+function mapOrderStatus(status: string): string {
+  const m: Record<string, string> = {
+    PENDING: "Pendiente",
+    PAID: "Pagado",
+    PROCESSING: "En preparación",
+    SHIPPED: "En camino",
+    DELIVERED: "Entregado",
+    CANCELLED: "Cancelado",
+    REFUNDED: "Reembolsado",
+  }
+  return m[status] ?? status
+}
+
+function isActiveOrderStatus(status: string): boolean {
+  return !["DELIVERED", "CANCELLED", "REFUNDED"].includes(status)
+}
+
 const sidebarMenu = [
   { id: "compras", label: "Compras", icon: ShoppingCart, sub: ["Compras", "Preguntas", "Opiniones", "Favoritos"] },
   { id: "perfil", label: "Mi perfil", icon: User, sub: ["Mis datos", "Seguridad"] },
@@ -97,18 +67,45 @@ const sidebarMenu = [
 ]
 
 export default function OrdersPage() {
-  const { data: session, status } = useSession()
+  const { status } = useSession()
   const router = useRouter()
   const [activeMenu, setActiveMenu] = useState("compras")
   const [activeTab, setActiveTab] = useState("todas")
   const [searchQuery, setSearchQuery] = useState("")
-  const [compras, setCompras] = useState(comprasData)
+  const [orders, setOrders] = useState<ApiOrder[]>([])
+  const [loadingOrders, setLoadingOrders] = useState(true)
 
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/auth/login?redirect=/orders")
     }
   }, [status, router])
+
+  useEffect(() => {
+    if (status !== "authenticated") return
+
+    let cancelled = false
+    ;(async () => {
+      setLoadingOrders(true)
+      try {
+        const res = await fetch("/api/orders", { credentials: "include" })
+        const data = await res.json().catch(() => [])
+        if (!res.ok) {
+          toast.error(data.error || "No se pudieron cargar las compras")
+          return
+        }
+        if (!cancelled) setOrders(Array.isArray(data) ? data : [])
+      } catch {
+        toast.error("No se pudieron cargar las compras")
+      } finally {
+        if (!cancelled) setLoadingOrders(false)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [status])
 
   if (status === "loading") {
     return (
@@ -130,18 +127,28 @@ export default function OrdersPage() {
   ]
 
   const estadoColors: Record<string, string> = {
-    "En preparación": "text-yellow-600 bg-yellow-50",
-    "En camino": "text-blue-600 bg-blue-50", 
-    "Entregado": "text-green-600 bg-green-50",
-    "Cancelado": "text-red-600 bg-red-50"
+    PENDING: "text-amber-600 bg-amber-50",
+    PAID: "text-blue-600 bg-blue-50",
+    PROCESSING: "text-yellow-600 bg-yellow-50",
+    SHIPPED: "text-blue-600 bg-blue-50",
+    DELIVERED: "text-green-600 bg-green-50",
+    CANCELLED: "text-red-600 bg-red-50",
+    REFUNDED: "text-gray-600 bg-gray-50",
   }
 
-  const filteredCompras = compras.filter(compra => {
-    if (activeTab === "activas") return !["Entregado", "Cancelado"].includes(compra.estado)
-    if (activeTab === "finalizadas") return compra.estado === "Entregado"
-    if (activeTab === "canceladas") return compra.estado === "Cancelado"
-    return true
-  })
+  const filteredCompras = orders
+    .filter((order) => {
+      if (activeTab === "activas") return isActiveOrderStatus(order.status)
+      if (activeTab === "finalizadas") return order.status === "DELIVERED"
+      if (activeTab === "canceladas") return ["CANCELLED", "REFUNDED"].includes(order.status)
+      return true
+    })
+    .filter((order) => {
+      const q = searchQuery.trim().toLowerCase()
+      if (!q) return true
+      if (order.orderNumber.toLowerCase().includes(q)) return true
+      return order.items.some((it) => it.product.title.toLowerCase().includes(q))
+    })
 
   return (
     <div className="min-h-screen bg-[#F5F5F5]">
@@ -297,95 +304,115 @@ export default function OrdersPage() {
           </div>
 
           {/* Lista de Compras */}
-          {filteredCompras.length > 0 ? (
+          {loadingOrders ? (
+            <div className="flex justify-center py-16">
+              <div className="animate-spin h-10 w-10 border-4 border-[#3483FA] border-t-transparent rounded-full" />
+            </div>
+          ) : filteredCompras.length > 0 ? (
             <div className="space-y-6">
-              {filteredCompras.map((compra) => (
-                <div key={compra.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                  {/* Header de la orden */}
+              {filteredCompras.map((order) => (
+                <div key={order.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                   <div className="p-6 border-b border-gray-100 bg-gray-50/50">
                     <div className="flex items-center justify-between mb-4">
                       <div>
-                        <h3 className="text-lg font-bold text-gray-900">{compra.id}</h3>
+                        <h3 className="text-lg font-bold text-gray-900">{order.orderNumber}</h3>
                         <p className="text-sm text-gray-500">
-                          {compra.fecha.toLocaleDateString('es-AR', { 
-                            day: 'numeric', 
-                            month: 'long', 
-                            year: 'numeric' 
+                          {new Date(order.createdAt).toLocaleDateString("es-AR", {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
                           })}
                         </p>
                       </div>
-                      <Badge className={estadoColors[compra.estado]}>
-                        {compra.estado}
+                      <Badge className={estadoColors[order.status] ?? "text-gray-600 bg-gray-50"}>
+                        {mapOrderStatus(order.status)}
                       </Badge>
                     </div>
-                    
-                    {compra.tracking && (
+
+                    {order.shipment?.trackingNumber && (
                       <div className="flex items-center gap-4 text-sm">
                         <div className="flex items-center gap-2">
                           <Package size={16} className="text-gray-400" />
-                          <span className="text-gray-600">Seguimiento: <strong>{compra.tracking}</strong></span>
+                          <span className="text-gray-600">
+                            Seguimiento: <strong>{order.shipment.trackingNumber}</strong>
+                          </span>
                         </div>
-                        <button className="text-blue-600 hover:underline font-medium">
-                          Ver detalle del envío
-                        </button>
                       </div>
                     )}
                   </div>
 
-                  {/* Productos */}
                   <div className="p-6">
                     <div className="space-y-4">
-                      {compra.productos.map((producto) => (
-                        <div key={producto.id} className="flex items-center gap-4">
-                          <img
-                            src={producto.imagen}
-                            alt={producto.titulo}
-                            className="w-20 h-20 rounded-lg object-cover"
-                          />
-                          <div className="flex-1">
-                            <h4 className="font-medium text-gray-900 line-clamp-2">
-                              {producto.titulo}
-                            </h4>
-                            <p className="text-sm text-gray-500">Vendido por: {producto.vendedor}</p>
-                            <p className="text-sm text-gray-500">Cantidad: {producto.cantidad}</p>
+                      {order.items.map((item) => {
+                        const img = item.product.images?.[0]?.url
+                        const sellerName = item.product.seller?.name ?? "Vendedor"
+                        const lineTotal = item.price * item.quantity
+                        return (
+                          <div key={item.id} className="flex items-center gap-4">
+                            <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                              {img ? (
+                                <img
+                                  src={img}
+                                  alt={item.product.title}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                  <Package className="w-8 h-8" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-medium text-gray-900 line-clamp-2">
+                                {item.product.title}
+                              </h4>
+                              <p className="text-sm text-gray-500">Vendido por: {sellerName}</p>
+                              <p className="text-sm text-gray-500">Cantidad: {item.quantity}</p>
+                            </div>
+                            <div className="text-right flex-shrink-0">
+                              <p className="font-bold text-gray-900">{formatCurrency(lineTotal)}</p>
+                              <Badge className={estadoColors[order.status] ?? ""} variant="outline">
+                                {mapOrderStatus(order.status)}
+                              </Badge>
+                            </div>
                           </div>
-                          <div className="text-right">
-                            <p className="font-bold text-gray-900">
-                              {formatCurrency(producto.precio)}
-                            </p>
-                            <Badge className={estadoColors[producto.estado]} variant="outline">
-                              {producto.estado.replace('_', ' ')}
-                            </Badge>
-                          </div>
-                        </div>
-                      ))}
+                        )
+                      })}
                     </div>
 
-                    {/* Total y Acciones */}
                     <div className="mt-6 pt-6 border-t border-gray-100">
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                         <div>
-                          <p className="text-sm text-gray-500">Total ({compra.productos.reduce((acc, p) => acc + p.cantidad, 0)} productos)</p>
-                          <p className="text-2xl font-bold text-gray-900">{formatCurrency(compra.total)}</p>
+                          <p className="text-sm text-gray-500">
+                            Total (
+                            {order.items.reduce((acc, p) => acc + p.quantity, 0)}{" "}
+                            productos)
+                          </p>
+                          <p className="text-2xl font-bold text-gray-900">
+                            {formatCurrency(order.total)}
+                          </p>
                         </div>
-                        <div className="flex items-center gap-3">
-                          {compra.estado === "Entregado" && !compra.calificacion && (
-                            <button className="flex items-center gap-2 px-4 py-2 bg-yellow-400 text-gray-900 rounded-lg font-medium hover:bg-yellow-300 transition-colors">
-                              <Star size={16} />
-                              Calificar
-                            </button>
-                          )}
-                          {compra.estado === "En camino" && (
-                            <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors">
+                        <div className="flex flex-wrap items-center gap-3">
+                          {order.status === "SHIPPED" && (
+                            <button
+                              type="button"
+                              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                            >
                               <Truck size={16} />
                               Seguir envío
                             </button>
                           )}
-                          <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50">
+                          <button
+                            type="button"
+                            className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
+                          >
                             <MessageSquare size={16} />
                             Contactar vendedor
                           </button>
-                          <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50">
+                          <button
+                            type="button"
+                            className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
+                          >
                             <Download size={16} />
                             Descargar factura
                           </button>
@@ -397,7 +424,6 @@ export default function OrdersPage() {
               ))}
             </div>
           ) : (
-            // Estado vacío
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
               <Package className="w-16 h-16 mx-auto mb-4 text-gray-300" />
               <h2 className="text-xl font-semibold text-gray-900 mb-2">

@@ -49,11 +49,17 @@ export async function GET() {
       });
     }
 
-    // Calcular totales
-    const subtotal = cart.items.reduce((sum: number, item: { price: number; quantity: number }) => sum + item.price * item.quantity, 0);
-    const shippingCost = subtotal > 100000 ? 0 : 26086.91; // Envío gratis sobre $100.000
-    const tax = subtotal * 0.21; // IVA 21%
-    const total = subtotal + shippingCost + tax;
+    // Totales alineados con checkout Mercado Pago (mismo vendedor / envío fijo si no hay free shipping)
+    const subtotal = cart.items.reduce(
+      (sum: number, item: { price: number; quantity: number }) => sum + item.price * item.quantity,
+      0
+    );
+    const shippingCost = cart.items.some(
+      (item: { product: { freeShipping: boolean } }) => !item.product.freeShipping
+    )
+      ? 2500
+      : 0;
+    const total = subtotal + shippingCost;
 
     return NextResponse.json({
       cart,
@@ -61,7 +67,7 @@ export async function GET() {
         itemCount: cart.items.reduce((sum: number, item: { quantity: number }) => sum + item.quantity, 0),
         subtotal,
         shippingCost,
-        tax,
+        tax: 0,
         total,
       },
     });

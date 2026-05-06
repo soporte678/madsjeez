@@ -1,18 +1,17 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import {
   CreditCard,
-  Truck,
   MapPin,
   Shield,
   Check,
@@ -20,7 +19,6 @@ import {
   Package,
   Lock,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 
 interface CartItem {
@@ -38,25 +36,48 @@ interface CartItem {
   };
 }
 
-const paymentMethods = [
-  { id: "mercadopago", name: "MercadoPago", icon: "💳" },
-  { id: "card", name: "Tarjeta de crédito/débito", icon: "💳" },
-  { id: "transfer", name: "Transferencia bancaria", icon: "🏦" },
-  { id: "cash", name: "Efectivo en puntos de pago", icon: "💵" },
-];
+function mapApiCartToItems(cart: {
+  items: Array<{
+    id: string;
+    productId: string;
+    quantity: number;
+    price: number;
+    product: {
+      id: string;
+      title: string;
+      price: number;
+      freeShipping: boolean;
+      seller: { id: string; name: string };
+      images: Array<{ url: string }>;
+    };
+  }>;
+}): CartItem[] {
+  return cart.items.map((item) => ({
+    id: item.id,
+    product_id: item.productId,
+    quantity: item.quantity,
+    product: {
+      id: item.product.id,
+      title: item.product.title,
+      price: item.price,
+      shipping_free: item.product.freeShipping,
+      seller_id: item.product.seller.id,
+      primary_image: item.product.images?.[0]?.url ?? null,
+      seller_name: item.product.seller.name,
+    },
+  }));
+}
 
 function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const supabase = createClient();
+  const { data: session, status } = useSession();
 
-  const [user, setUser] = useState<any>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
-  // Form states
   const [shippingAddress, setShippingAddress] = useState({
     street: "",
     number: "",
@@ -67,160 +88,118 @@ function CheckoutContent() {
     phone: "",
     recipient: "",
   });
-  const [paymentMethod, setPaymentMethod] = useState("mercadopago");
 
-  useEffect(() => {
-    checkAuth();
+  const fetchCart = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/cart", { credentials: "include" });
+      const data = await res.json();
+      if (!res.ok || !data.cart) {
+        setCartItems([]);
+        return;
+      }
+      setCartItems(mapApiCartToItems(data.cart));
+    } catch {
+      toast.error("No se pudo cargar el carrito");
+      setCartItems([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+  const qpProduct = searchParams.get("product");
+  const qpQty = searchParams.get("quantity");
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
       router.push("/auth/login?redirect=/checkout");
       return;
     }
-    setUser(session.user);
-    fetchCart(session.user.id);
-  };
+    if (status === "loading") return;
 
-  const fetchCart = async (userId: string) => {
-    setLoading(true);
-    const { data } = await supabase
-      .from("cart_items")
-      .select(`
-        *,
-        product:products(
-          id, title, price, shipping_free, seller_id,
-          product_images(url, is_primary),
-          seller:profiles(full_name)
-        )
-      `)
-      .eq("user_id", userId);
+    if (qpProduct && qpQty) {
+      const qty = Math.max(1, parseInt(qpQty, 10) || 1);
+      let cancelled = false;
 
-    if (data) {
-      const mappedItems = data.map((item: any) => ({
-        ...item,
-        product: {
-          ...item.product,
-          primary_image: item.product?.product_images?.[0]?.url,
-          seller_name: item.product?.seller?.full_name,
-        },
-      }));
-      setCartItems(mappedItems);
+      (async () => {
+        setLoading(true);
+        try {
+          const res = await fetch("/api/cart", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ productId: qpProduct, quantity: qty }),
+          });
+          const errBody = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            toast.error(errBody.error || "No se pudo agregar el producto");
+          }
+        } finally {
+          if (!cancelled) {
+            router.replace("/checkout");
+            await fetchCart();
+          }
+        }
+      })();
+
+      return () => {
+        cancelled = true;
+      };
     }
-    setLoading(false);
-  };
 
-  const subtotal = cartItems.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
-  const shipping = cartItems.some((item) => !item.product.shipping_free) ? 2500 : 0;
+    fetchCart();
+  }, [status, qpProduct, qpQty, router, fetchCart]);
+
+  const subtotal = cartItems.reduce(
+    (acc, item) => acc + item.product.price * item.quantity,
+    0
+  );
+  const shipping = cartItems.some((item) => !item.product.shipping_free)
+    ? 2500
+    : 0;
   const total = subtotal + shipping;
 
+  const sellerIds = new Set(cartItems.map((i) => i.product.seller_id));
+  const multiSeller = sellerIds.size > 1;
+
   const handleSubmitOrder = async () => {
-    if (!user || cartItems.length === 0) return;
+    if (!session?.user || cartItems.length === 0) return;
 
     setProcessing(true);
 
     try {
-      // Group items by seller
-      const itemsBySeller = cartItems.reduce((acc, item) => {
-        const sellerId = item.product.seller_id;
-        if (!acc[sellerId]) acc[sellerId] = [];
-        acc[sellerId].push(item);
-        return acc;
-      }, {} as Record<string, CartItem[]>);
+      const res = await fetch("/api/checkout/mp", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          shipping: shippingAddress,
+          buyer_email: session.user.email ?? undefined,
+        }),
+      });
 
-      // Create orders for each seller and collect order IDs
-      const createdOrders: { orderId: string; sellerId: string; items: CartItem[]; orderShipping: number }[] = [];
+      const data = await res.json().catch(() => ({}));
 
-      for (const [sellerId, items] of Object.entries(itemsBySeller)) {
-        const orderTotal = items.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
-        const orderShipping = items.some((item) => !item.product.shipping_free) ? 2500 : 0;
-
-        const { data: order, error: orderError } = await supabase
-          .from("orders")
-          .insert({
-            buyer_id: user.id,
-            seller_id: sellerId,
-            status: "pending",
-            total_amount: orderTotal,
-            shipping_cost: orderShipping,
-            discount_amount: 0,
-            commission_amount: orderTotal * 0.1,
-            shipping_address: shippingAddress,
-            notes: null,
-          })
-          .select()
-          .single();
-
-        if (orderError) throw orderError;
-
-        // Create order items
-        for (const item of items) {
-          await supabase.from("order_items").insert({
-            order_id: order.id,
-            product_id: item.product.id,
-            quantity: item.quantity,
-            unit_price: item.product.price,
-            total_price: item.product.price * item.quantity,
-            commission_rate: 10,
-            commission_amount: item.product.price * item.quantity * 0.1,
-          });
-        }
-
-        createdOrders.push({ orderId: order.id, sellerId, items, orderShipping });
-      }
-
-      // MercadoPago: create preference and redirect
-      if (paymentMethod === "mercadopago") {
-        // Use the first order (single seller flow for now)
-        const { orderId, sellerId, items: orderItems, orderShipping } = createdOrders[0];
-
-        const { data: authSession } = await supabase.auth.getSession();
-        const accessToken = authSession?.session?.access_token;
-        if (!accessToken) {
-          throw new Error("Sesión expirada. Iniciá sesión nuevamente.");
-        }
-
-        const prefResponse = await fetch("/api/seller/payment-gateway/mercadopago/create-preference", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify({
-            order_id: orderId,
-            buyer_email: user.email,
-          }),
-        });
-
-        if (!prefResponse.ok) {
-          const err = await prefResponse.json();
-          throw new Error(err.error || "Error al crear preferencia de pago");
-        }
-
-        const prefData = await prefResponse.json();
-
-        // Clear cart before redirecting
-        await supabase.from("cart_items").delete().eq("user_id", user.id);
-
-        // Redirect to MercadoPago checkout
-        window.location.href = prefData.init_point;
+      if (!res.ok) {
+        toast.error(data.error || "No se pudo iniciar el pago");
         return;
       }
 
-      // Other payment methods: clear cart and redirect
-      await supabase.from("cart_items").delete().eq("user_id", user.id);
+      const url = data.init_point || data.sandbox_init_point;
+      if (url) {
+        window.location.href = url;
+        return;
+      }
 
-      toast.success("¡Pedido realizado con éxito!");
-      router.push("/orders?status=success");
-    } catch (error: any) {
-      toast.error(error.message || "Error al procesar el pedido");
+      toast.error("Respuesta de pago incompleta");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Error al procesar el pedido");
     } finally {
       setProcessing(false);
     }
   };
 
-  if (loading) {
+  if (loading || status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin h-8 w-8 border-2 border-[#3483FA] border-t-transparent rounded-full"></div>
@@ -228,10 +207,16 @@ function CheckoutContent() {
     );
   }
 
+  if (status === "unauthenticated") {
+    return null;
+  }
+
+  const user = session!.user as { id?: string; email?: string | null };
+
   if (cartItems.length === 0) {
     return (
       <div className="min-h-screen flex flex-col">
-        <Header user={user ? { id: user.id, email: user.email } : null} />
+        <Header user={user.id ? { id: user.id, email: user.email ?? undefined } : null} />
         <main className="flex-1 bg-[#EBEBEB] flex items-center justify-center">
           <Card>
             <CardContent className="p-8 text-center">
@@ -250,12 +235,19 @@ function CheckoutContent() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header user={{ id: user.id, email: user.email }} />
+      <Header user={{ id: user.id!, email: user.email ?? undefined }} />
 
       <main className="flex-1 bg-[#EBEBEB]">
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-4xl mx-auto">
-            {/* Progress */}
+            {multiSeller && (
+              <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                Tu carrito tiene productos de más de un vendedor. Para pagar con Mercado Pago solo podés
+                incluir un vendedor por compra. Eliminá ítems hasta dejar un solo vendedor o hacé pedidos
+                por separado.
+              </div>
+            )}
+
             <div className="flex items-center justify-center mb-8">
               {[
                 { num: 1, label: "Envío" },
@@ -279,7 +271,6 @@ function CheckoutContent() {
             </div>
 
             <div className="grid lg:grid-cols-3 gap-6">
-              {/* Main Content */}
               <div className="lg:col-span-2">
                 {step === 1 && (
                   <Card>
@@ -405,35 +396,13 @@ function CheckoutContent() {
                     <CardContent className="p-6">
                       <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
                         <CreditCard className="h-5 w-5" />
-                        Método de pago
+                        Pago con Mercado Pago
                       </h2>
 
-                      <div className="space-y-3">
-                        {paymentMethods.map((method) => (
-                          <div
-                            key={method.id}
-                            className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-colors ${
-                              paymentMethod === method.id
-                                ? "border-[#3483FA] bg-blue-50"
-                                : "hover:bg-gray-50"
-                            }`}
-                            onClick={() => setPaymentMethod(method.id)}
-                          >
-                            <input
-                              type="radio"
-                              name="payment"
-                              value={method.id}
-                              checked={paymentMethod === method.id}
-                              onChange={() => setPaymentMethod(method.id)}
-                              className="h-4 w-4 text-[#3483FA]"
-                            />
-                            <Label className="flex-1 cursor-pointer">
-                              <span className="mr-2">{method.icon}</span>
-                              {method.name}
-                            </Label>
-                          </div>
-                        ))}
-                      </div>
+                      <p className="text-sm text-gray-600 mb-4">
+                        Al confirmar serás redirigido a Mercado Pago para abonar con tarjeta, efectivo u otros medios
+                        disponibles.
+                      </p>
 
                       <div className="flex gap-3 mt-6">
                         <Button variant="outline" onClick={() => setStep(1)}>
@@ -470,10 +439,8 @@ function CheckoutContent() {
                         </div>
 
                         <div className="bg-gray-50 p-4 rounded-lg">
-                          <p className="font-medium mb-2">Método de pago</p>
-                          <p className="text-sm text-gray-600">
-                            {paymentMethods.find((m) => m.id === paymentMethod)?.name}
-                          </p>
+                          <p className="font-medium mb-2">Pago</p>
+                          <p className="text-sm text-gray-600">Mercado Pago (redirección segura)</p>
                         </div>
                       </div>
 
@@ -484,7 +451,7 @@ function CheckoutContent() {
                         <Button
                           className="flex-1 bg-[#3483FA]"
                           onClick={handleSubmitOrder}
-                          disabled={processing}
+                          disabled={processing || multiSeller}
                         >
                           {processing ? (
                             <>
@@ -494,7 +461,7 @@ function CheckoutContent() {
                           ) : (
                             <>
                               <Lock className="h-4 w-4 mr-2" />
-                              Confirmar compra
+                              Pagar con Mercado Pago
                             </>
                           )}
                         </Button>
@@ -504,7 +471,6 @@ function CheckoutContent() {
                 )}
               </div>
 
-              {/* Summary */}
               <div>
                 <Card className="sticky top-4">
                   <CardContent className="p-6">
@@ -572,17 +538,19 @@ function CheckoutContent() {
 
 export default function CheckoutPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex flex-col">
-        <Header user={null} />
-        <div className="flex-1 bg-[#EBEBEB] flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin h-8 w-8 border-2 border-[#3483FA] border-t-transparent rounded-full mx-auto mb-4"></div>
-            <p>Cargando...</p>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex flex-col">
+          <Header user={null} />
+          <div className="flex-1 bg-[#EBEBEB] flex items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin h-8 w-8 border-2 border-[#3483FA] border-t-transparent rounded-full mx-auto mb-4"></div>
+              <p>Cargando...</p>
+            </div>
           </div>
         </div>
-      </div>
-    }>
+      }
+    >
       <CheckoutContent />
     </Suspense>
   );
