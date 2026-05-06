@@ -1,7 +1,7 @@
 # Dockerfile para Railway - MADSJEEZ Marketplace
 FROM node:22-alpine AS base
 
-# Forzar rebuild limpio - cambiar este número para invalidar cache: 14
+# Forzar rebuild limpio - cambiar este número para invalidar cache: 15
 
 # Instalar dependencias necesarias
 RUN apk add --no-cache libc6-compat
@@ -47,11 +47,10 @@ RUN echo "=== Iniciando build de Next.js ===" && \
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN chmod +x /app/docker-entrypoint.sh
 
-# Exponer puerto
+# Railway inyecta PORT en runtime (p. ej. 8080). No fijar HOSTNAME: puede interferir con Next.
 EXPOSE 3000
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
 
-# Usar entrypoint para ejecutar migraciones antes de iniciar
+# Usar entrypoint para migraciones y arranque.
+# Importante: `npm run start` no siempre expande ${PORT} igual en Alpine; arrancamos Next con `sh -c` para que escuche en $PORT.
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
-CMD ["npm", "run", "start"]
+CMD ["sh", "-c", "exec ./node_modules/.bin/next start -H 0.0.0.0 -p \"${PORT:-3000}\""]
