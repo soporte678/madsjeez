@@ -514,15 +514,15 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-background font-sans text-foreground flex flex-col relative">
-      <header className="bg-[var(--shell-header-bg)] border-b border-[var(--shell-header-border)] py-2 px-4 shadow-sm z-50 relative flex-shrink-0">
+      <header className="bg-[var(--shell-header-bg)] border-b border-[var(--shell-header-border)] py-2 px-4 shadow-sm z-50 relative flex-shrink-0 backdrop-blur supports-[backdrop-filter]:bg-[color-mix(in_srgb,var(--shell-header-bg)_88%,transparent)]">
         <div className="max-w-[1200px] mx-auto flex items-center justify-between">
           <a href="/" className="flex items-center gap-2 group cursor-pointer">
-            <div className="relative w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center shadow-lg border border-white/10 overflow-hidden group-hover:shadow-primary/20 transition-all">
+            <div className="relative w-10 h-10 bg-primary/15 rounded-xl flex items-center justify-center shadow-lg border border-primary/30 overflow-hidden group-hover:shadow-primary/25 transition-all">
               <div className="absolute inset-0 bg-gradient-to-tr from-primary/30 to-transparent"></div>
               <svg viewBox="0 0 100 100" className="w-7 h-7 overflow-visible">
-                <polygon points="15,80 35,30 55,55 35,80" fill="#2563EB" className="opacity-90" />
-                <polygon points="55,55 75,30 95,80 75,80" fill="#2563EB" className="opacity-90" />
-                <path d="M 85 80 L 65 30 L 45 65" fill="none" stroke="#3b82f6" strokeWidth="14" strokeLinecap="round" strokeLinejoin="round" />
+                <polygon points="15,80 35,30 55,55 35,80" fill="currentColor" className="opacity-90 text-primary" />
+                <polygon points="55,55 75,30 95,80 75,80" fill="currentColor" className="opacity-90 text-primary" />
+                <path d="M 85 80 L 65 30 L 45 65" fill="none" stroke="currentColor" className="text-accent" strokeWidth="14" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
             <span className="font-black text-[22px] tracking-tighter leading-none flex items-center uppercase">
@@ -530,9 +530,9 @@ export default function App() {
               <span className="text-primary">JEEZ</span>
             </span>
           </a>
-          <div className="flex items-center gap-4 text-[13px] text-muted-foreground font-light">
+          <div className="flex items-center gap-4 text-[13px] text-muted-foreground font-light bg-card/70 border border-border/60 rounded-full px-3 py-1.5">
             <div className="relative">
-              <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="flex items-center gap-1 hover:text-foreground">
+              <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="flex items-center gap-1 hover:text-foreground transition-colors">
                 {currentUser?.image ? (
                   <img src={currentUser.image} alt={userData.name} className="w-5 h-5 rounded-full object-cover border border-border" />
                 ) : (
@@ -555,8 +555,8 @@ export default function App() {
                 }}
               />
             </div>
-            <button onClick={() => setActiveMenu('publicaciones')} className="hover:text-foreground">Vender</button>
-            <button onClick={() => setActiveMenu('ayuda')} className="hover:text-foreground">Ayuda</button>
+            <button onClick={() => setActiveMenu('publicaciones')} className="hover:text-foreground transition-colors">Vender</button>
+            <button onClick={() => setActiveMenu('ayuda')} className="hover:text-foreground transition-colors">Ayuda</button>
             <ThemeToneSwitcher compact />
             <div className="relative">
               <button onClick={() => setNotifOpen(!notifOpen)} className="relative hover:text-foreground p-0.5 transition-colors">
@@ -578,9 +578,9 @@ export default function App() {
       {/* CONTENIDO PRINCIPAL: sidebar pegado al borde izquierdo */}
       <div className="flex-1 flex">
         {/* SIDEBAR IZQUIERDO: pegado al borde, sin margen */}
-        <aside className="w-56 flex-shrink-0 bg-card border-r border-border">
+        <aside className="w-56 flex-shrink-0 bg-card/95 border-r border-border shadow-[inset_-1px_0_0_var(--border)]">
           <div className="py-6 px-0">
-            <h2 className="font-bold text-lg mb-4 flex items-center gap-2 px-4">
+            <h2 className="font-bold text-lg mb-4 flex items-center gap-2 px-4 text-foreground">
               <span className="grid grid-cols-2 gap-0.5"><span className="w-2 h-2 bg-primary rounded-sm"></span><span className="w-2 h-2 bg-primary rounded-sm"></span><span className="w-2 h-2 bg-primary rounded-sm"></span><span className="w-2 h-2 bg-primary rounded-sm"></span></span>
               MI CUENTA
             </h2>
@@ -589,14 +589,14 @@ export default function App() {
                 <div key={item.id}>
                   {item.isParent ? (
                     <>
-                      <button onClick={() => item.setIsOpen(!item.isOpen)} className="w-full flex items-center justify-between py-2 px-4 hover:bg-primary/10 text-primary font-semibold transition-colors text-sm">
+                      <button onClick={() => item.setIsOpen(!item.isOpen)} className="w-full flex items-center justify-between py-2 px-4 hover:bg-primary/10 text-primary font-semibold transition-colors text-sm rounded-md">
                         <div className="flex items-center gap-3">{item.icon} {item.label}</div>
                         <ChevronDown size={16} className={`transform transition-transform ${item.isOpen ? 'rotate-180' : ''}`} />
                       </button>
                       {item.isOpen && (
-                        <div className="flex flex-col ml-4 mt-1 border-l-2 border-border pl-4 gap-1">
+                        <div className="flex flex-col ml-4 mt-1 border-l-2 border-border/80 pl-4 gap-1">
                           {item.subItems.map(sub => (
-                            <button key={sub.id} onClick={() => setActiveMenu(sub.id)} className={`text-left text-sm py-1.5 px-2 transition-colors flex items-center justify-between rounded ${activeMenu === sub.id ? 'text-primary font-bold bg-[var(--shell-sidebar-active-bg)]' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}>
+                            <button key={sub.id} onClick={() => setActiveMenu(sub.id)} className={`text-left text-sm py-1.5 px-2 transition-colors flex items-center justify-between rounded-md ${activeMenu === sub.id ? 'text-primary font-bold bg-[var(--shell-sidebar-active-bg)] shadow-sm' : 'text-muted-foreground hover:text-foreground hover:bg-muted/80'}`}>
                               <span>{sub.label}</span>
                               {(sub as any).rightIcon && (sub as any).rightIcon}
                             </button>
@@ -605,7 +605,7 @@ export default function App() {
                       )}
                     </>
                   ) : (
-                    <button onClick={() => setActiveMenu(item.id)} className={`w-full flex items-center justify-between py-2 px-4 font-medium transition-colors text-sm ${activeMenu === item.id ? 'bg-[var(--shell-sidebar-active-bg)] text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
+                    <button onClick={() => setActiveMenu(item.id)} className={`w-full flex items-center justify-between py-2 px-4 font-medium transition-colors text-sm rounded-md ${activeMenu === item.id ? 'bg-[var(--shell-sidebar-active-bg)] text-primary shadow-sm' : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground'}`}>
                       <div className="flex items-center gap-3">{item.icon || <LayoutGrid size={18}/>} {item.label}</div>
                     </button>
                   )}
