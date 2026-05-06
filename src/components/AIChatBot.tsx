@@ -70,7 +70,7 @@ function getSectionIntro(pathname: string | null, mode: ChatMode) {
 
 export default function AIChatBot() {
   const pathname = usePathname()
-  const { activeBot, closeBot, toggleBot } = useFloatingBots()
+  const { activeBot, closeBot, whatsappMinimized, setChatbotMinimized } = useFloatingBots()
   const isOpen = activeBot === 'chatbot'
   const [isMinimized, setIsMinimized] = useState(false)
   const initialMode = getModeForPath(pathname)
@@ -81,8 +81,13 @@ export default function AIChatBot() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Si WhatsApp está abierto, ocultar el botón del chatbot
-  const isHidden = activeBot === 'whatsapp'
+  useEffect(() => {
+    if (!isOpen) {
+      setChatbotMinimized(false)
+      return
+    }
+    setChatbotMinimized(isMinimized)
+  }, [isOpen, isMinimized, setChatbotMinimized])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -191,25 +196,17 @@ export default function AIChatBot() {
     return null
   }
 
+  /* WhatsApp maximizado: no mostrar panel ni CAPAs del chat (FAB va por FloatingFabDock) */
+  if (activeBot === 'whatsapp' && !whatsappMinimized) {
+    return null
+  }
+
   return (
     <>
-      {/* Chat Button */}
-      {!isOpen && !isHidden && (
-        <button
-          onClick={() => { toggleBot('chatbot'); setIsMinimized(false); }}
-          className="fixed bottom-6 right-6 z-[10000] bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-full p-4 shadow-xl shadow-indigo-500/45 hover:shadow-2xl hover:shadow-violet-500/45 hover:scale-110 transition-all duration-300 group"
-          aria-label="Abrir chat de ayuda"
-        >
-          <Bot className="w-6 h-6 group-hover:rotate-12 transition-transform" />
-          <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#10b981] rounded-full border-2 border-white animate-bounce" />
-        </button>
-      )}
-
-      {/* Chat Window */}
       {isOpen && (
         <div className={cn(
-          "fixed right-6 z-[10000] w-[380px] max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl shadow-indigo-900/20 border-2 border-indigo-200/90 flex flex-col overflow-hidden transition-all duration-300",
-          isMinimized ? "bottom-6 h-16" : "bottom-24 h-[600px] max-h-[calc(100vh-8rem)]"
+          "fixed right-6 z-[10001] w-[380px] max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl shadow-indigo-900/20 border-2 border-indigo-200/90 flex flex-col overflow-hidden transition-all duration-300",
+          isMinimized ? "bottom-[9.5rem] h-16" : "bottom-6 h-[600px] max-h-[calc(100vh-8rem)]"
         )}>
           {/* Header — MadsJeez Style */}
           <div className="bg-gradient-to-r from-slate-800 via-indigo-900 to-slate-800 p-3 flex items-center justify-between flex-shrink-0">

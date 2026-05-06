@@ -35,6 +35,7 @@ import CouponCreateView from "@/components/dashboard/CouponCreateView";
 import MarketingCentralView from "@/components/dashboard/MarketingCentralView";
 import AdvertisingView from "@/components/dashboard/AdvertisingView";
 import MeliIntegrationView from "@/components/dashboard/MeliIntegrationView";
+import MeliAdsStudioView from "@/components/dashboard/MeliAdsStudioView";
 
 export default function App() {
   // Siempre igual en servidor y primer cliente (evita hydration mismatch). El hash se aplica en cliente.
@@ -72,6 +73,10 @@ export default function App() {
 
   useEffect(() => {
     if (activeMenu === "meli-sync") setVentasOpen(true);
+  }, [activeMenu]);
+
+  useEffect(() => {
+    if (activeMenu === "meli-ads-studio") setMarketingOpen(true);
   }, [activeMenu]);
   const [marketingOpen, setMarketingOpen] = useState(false);
   const [facturacionOpen, setFacturacionOpen] = useState(false);
@@ -188,6 +193,7 @@ export default function App() {
       setIsOpen: setMarketingOpen,
       subItems: [
         { id: 'marketing-ia', label: '✨ Marketing IA' },
+        { id: 'meli-ads-studio', label: 'Mercado Libre Ads' },
         { id: 'central-marketing', label: 'Central de marketing' },
         { id: 'publicidad', label: 'Publicidad' },
         { id: 'promociones', label: 'Promociones' },
@@ -632,6 +638,17 @@ export default function App() {
               </Suspense>
             )}
             {activeMenu === 'marketing-ia' && <MarketingIAPage />}
+            {activeMenu === 'meli-ads-studio' && (
+              <Suspense
+                fallback={
+                  <div className="flex items-center justify-center py-16 text-gray-500 text-sm">
+                    Cargando Mercado Libre Ads…
+                  </div>
+                }
+              >
+                <MeliAdsStudioView />
+              </Suspense>
+            )}
             {activeMenu === 'central-marketing' && <MarketingCentralView />}
             {activeMenu === 'publicidad' && <AdvertisingView />}
             {activeMenu === 'clips' && <ClipsView />}

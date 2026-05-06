@@ -42,8 +42,24 @@ export default function MeliIntegrationView() {
   useEffect(() => {
     const err = searchParams.get("error");
     const ok = searchParams.get("connected");
-    if (err) toast.error(decodeURIComponent(err));
-    if (ok) toast.success("Mercado Libre conectado correctamente.");
+    const errorMessages: Record<string, string> = {
+      meli_db_schema:
+        "La base de datos no tiene la tabla de Mercado Libre. Hay que ejecutar migraciones (prisma migrate deploy) en el servidor y volver a conectar.",
+      invalid_state: "La sesión de OAuth caducó o es inválida. Probá “Conectar Mercado Libre” de nuevo.",
+      meli_not_configured: "Faltan variables MELI_APP_ID / MELI_CLIENT_SECRET / MELI_REDIRECT_URI en el servidor.",
+      users_me_failed: "Mercado Libre no devolvió tu usuario. Reintentá o revisá permisos de la app.",
+      no_meli_user: "No se pudo leer tu ID de usuario en Mercado Libre.",
+      oauth_error: "Error al guardar la conexión. Revisá logs del servidor.",
+    };
+    if (err) {
+      const decoded = decodeURIComponent(err).replace(/\s+/g, " ").trim();
+      toast.error(errorMessages[decoded] || errorMessages[err] || decoded.slice(0, 280));
+      window.history.replaceState({}, "", `${window.location.pathname}${window.location.hash}`);
+    }
+    if (ok) {
+      toast.success("Mercado Libre conectado correctamente.");
+      window.history.replaceState({}, "", `${window.location.pathname}${window.location.hash}`);
+    }
   }, [searchParams]);
 
   const connectMeli = () => {
@@ -128,6 +144,15 @@ export default function MeliIntegrationView() {
         <p className="text-sm text-slate-600 mt-1">
           Conectá tu cuenta de Mercado Libre para importar tus publicaciones y traer promociones a las campañas de
           MADSJEEZ. Cualquier usuario logueado puede usar esta herramienta (tus ítems quedan asociados a tu cuenta).
+        </p>
+        <p className="text-sm mt-2">
+          <a
+            href="/dashboard#meli-ads-studio"
+            className="text-blue-600 font-medium hover:underline inline-flex items-center gap-1"
+          >
+            Mercado Libre Ads — datos en vivo, análisis automático y aplicar cambios en campañas PADS
+            <ExternalLink className="w-3 h-3 opacity-70" />
+          </a>
         </p>
       </div>
 

@@ -72,7 +72,11 @@ export async function GET(req: Request) {
 
     return NextResponse.redirect(meliDashboardReturn({ connected: "1" }));
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "oauth_error";
-    return NextResponse.redirect(meliDashboardReturn({ error: msg.slice(0, 200) }));
+    const msg = e instanceof Error ? e.message : String(e);
+    const code =
+      /seller_meli_oauth|does not exist|P2021|relation.*does not exist/i.test(msg)
+        ? "meli_db_schema"
+        : "oauth_error";
+    return NextResponse.redirect(meliDashboardReturn({ error: code }));
   }
 }
