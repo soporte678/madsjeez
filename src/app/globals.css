@@ -562,3 +562,110 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(135deg, #e63d22, #ffb703);
 }
+
+/* ============================================
+   DARK MODE GLOBAL READABILITY OVERRIDES
+   ============================================ */
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+:root[data-theme="dark"] body {
+  background: var(--background) !important;
+  color: var(--foreground) !important;
+}
+
+/* Superficies */
+:root[data-theme="dark"] .bg-white,
+:root[data-theme="dark"] .bg-gray-50,
+:root[data-theme="dark"] .bg-gray-100,
+:root[data-theme="dark"] .bg-slate-50,
+:root[data-theme="dark"] .bg-slate-100 {
+  background-color: var(--card) !important;
+}
+
+:root[data-theme="dark"] .bg-gray-200,
+:root[data-theme="dark"] .bg-slate-200 {
+  background-color: #1a2438 !important;
+}
+
+/* Textos base */
+:root[data-theme="dark"] .text-black,
+:root[data-theme="dark"] .text-gray-900,
+:root[data-theme="dark"] .text-slate-900,
+:root[data-theme="dark"] .text-gray-800,
+:root[data-theme="dark"] .text-slate-800 {
+  color: #e2e8f0 !important;
+}
+
+:root[data-theme="dark"] .text-gray-700,
+:root[data-theme="dark"] .text-slate-700,
+:root[data-theme="dark"] .text-gray-600,
+:root[data-theme="dark"] .text-slate-600 {
+  color: #cbd5e1 !important;
+}
+
+:root[data-theme="dark"] .text-gray-500,
+:root[data-theme="dark"] .text-slate-500,
+:root[data-theme="dark"] .text-gray-400,
+:root[data-theme="dark"] .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+/* Bordes */
+:root[data-theme="dark"] .border-gray-50,
+:root[data-theme="dark"] .border-gray-100,
+:root[data-theme="dark"] .border-gray-200,
+:root[data-theme="dark"] .border-gray-300,
+:root[data-theme="dark"] .border-slate-100,
+:root[data-theme="dark"] .border-slate-200,
+:root[data-theme="dark"] .border-slate-300 {
+  border-color: var(--border) !important;
+}
+
+/* Inputs y selectores */
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] textarea,
+:root[data-theme="dark"] select {
+  background-color: #0f172a !important;
+  color: #e2e8f0 !important;
+  border-color: var(--border) !important;
+}
+
+:root[data-theme="dark"] input::placeholder,
+:root[data-theme="dark"] textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Tablas */
+:root[data-theme="dark"] thead,
+:root[data-theme="dark"] tfoot {
+  background-color: #0f172a !important;
+}
+
+:root[data-theme="dark"] tr {
+  border-color: var(--border) !important;
+}
+
+/* Hover states comunes */
+:root[data-theme="dark"] .hover\:bg-gray-50:hover,
+:root[data-theme="dark"] .hover\:bg-gray-100:hover,
+:root[data-theme="dark"] .hover\:bg-slate-50:hover,
+:root[data-theme="dark"] .hover\:bg-slate-100:hover {
+  background-color: #18243a !important;
+}
+
+:root[data-theme="dark"] .hover\:text-gray-900:hover,
+:root[data-theme="dark"] .hover\:text-slate-900:hover,
+:root[data-theme="dark"] .hover\:text-gray-800:hover {
+  color: #f8fafc !important;
+}
+
+/* Sombras y bloques */
+:root[data-theme="dark"] .shadow-sm,
+:root[data-theme="dark"] .shadow,
+:root[data-theme="dark"] .shadow-md,
+:root[data-theme="dark"] .shadow-lg {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35) !important;
+}
