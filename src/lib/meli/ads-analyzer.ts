@@ -15,6 +15,7 @@ export type AdsRecommendation = {
   category: "positive" | "negative" | "efficiency" | "growth";
   expectedImpact: "positive" | "negative" | "neutral";
   confidence: number;
+  priorityScore: number;
   title: string;
   rationale: string;
   advertiserId: number;
@@ -108,6 +109,7 @@ export function analyzePadsCampaigns(input: {
         category: "negative",
         expectedImpact: "positive",
         confidence: 0.81,
+        priorityScore: 82,
         title: "CTR bajo con volumen de impresiones",
         rationale:
           `Hay exposición pero pocos clics: conviene orientar la campaña a rentabilidad y encarecer levemente el objetivo ROAS para que ML priorice intención de compra más alta.${trend}`,
@@ -133,6 +135,7 @@ export function analyzePadsCampaigns(input: {
         category: "negative",
         expectedImpact: "positive",
         confidence: 0.88,
+        priorityScore: 93,
         title: "ACOS por encima del benchmark",
         rationale:
           `El ACOS de la campaña supera ampliamente la referencia de Mercado Libre. Subir el ROAS objetivo reduce agresividad y suele bajar el ACOS efectivo.${trend}`,
@@ -159,6 +162,7 @@ export function analyzePadsCampaigns(input: {
         category: "growth",
         expectedImpact: "positive",
         confidence: 0.72,
+        priorityScore: 71,
         title: "Tráfico limitado por presupuesto",
         rationale:
           `Una parte relevante de las impresiones se pierde por presupuesto. Si la cuenta es rentable, un aumento moderado del presupuesto diario puede recuperar alcance.${trend}`,
@@ -182,6 +186,7 @@ export function analyzePadsCampaigns(input: {
         category: "growth",
         expectedImpact: "positive",
         confidence: 0.66,
+        priorityScore: 58,
         title: "Sin impresiones en el período",
         rationale:
           `Si el ítem es nuevo o tiene poca trayectoria, una estrategia visibility suele acelerar datos; cuando haya volumen, volvé a profitability.${trend}`,
@@ -213,6 +218,7 @@ export function analyzePadsCampaigns(input: {
         category: "positive",
         expectedImpact: "positive",
         confidence: 0.77,
+        priorityScore: 76,
         title: "ROAS real muy superior al objetivo",
         rationale:
           `Hay margen para captar más demanda sin tensionar el ROAS: incremento moderado de presupuesto manteniendo la estrategia actual.${trend}`,
@@ -237,6 +243,7 @@ export function analyzePadsCampaigns(input: {
         category: "negative",
         expectedImpact: "positive",
         confidence: 0.84,
+        priorityScore: 90,
         title: "Conversión baja con gasto relevante",
         rationale:
           `La campaña capta clics pero convierte poco para el gasto actual. Recomendable endurecer ROAS y pasar temporalmente a profitability para proteger margen.${trend}`,
@@ -261,6 +268,7 @@ export function analyzePadsCampaigns(input: {
         category: "positive",
         expectedImpact: "neutral",
         confidence: 0.7,
+        priorityScore: 54,
         title: "Eficiencia alta sostenida",
         rationale:
           `ROAS y ACOS muestran una campaña saludable. Sugerencia: mantener estrategia y monitorear cada 24h para evitar sobreajustes.${trend}`,
@@ -273,6 +281,58 @@ export function analyzePadsCampaigns(input: {
         },
       });
     }
+
+    // 8) Objetivo comercial: cierre 7-10% con margen bajo (volumen rentable)
+    // Si CVR < 7% y hay volumen de clics, activar estrategia de cierre.
+    if (status === "active" && clicks >= 60 && cvr > 0 && cvr < 0.07) {
+      const newRoas = Math.min(35, Math.max(3, roas * 1.15));
+      seq += 1;
+      out.push({
+        id: `pads-${row.id}-close-rate-low-${seq}`,
+        severity: "critical",
+        category: "efficiency",
+        expectedImpact: "positive",
+        confidence: 0.86,
+        priorityScore: 95,
+        title: "Cierre por debajo del 7% (objetivo 7-10%)",
+        rationale:
+          `La campaña tiene tráfico suficiente pero no convierte al nivel objetivo de cierre. Ajustar a profitability y elevar ROAS ayuda a filtrar intención y proteger margen para escalar volumen rentable.${trend}`,
+        advertiserId: advId,
+        siteId,
+        campaignId: row.id,
+        campaignName: row.name || String(row.id),
+        applyPayload: {
+          ...base,
+          strategy: "profitability",
+          roas_target: Math.round(newRoas * 100) / 100,
+        },
+      });
+    }
+
+    // Si CVR > 10% + ACOS controlado: oportunidad de escalar ventas sin romper margen.
+    if (status === "active" && clicks >= 40 && cvr >= 0.1 && acos > 0 && acos <= Math.max(bench * 1.1, 18)) {
+      const newBudget = Math.round(Math.min((Number(row.budget) || 0) * 1.18, (Number(row.budget) || 0) + 1200) * 100) / 100;
+      seq += 1;
+      out.push({
+        id: `pads-${row.id}-close-rate-high-${seq}`,
+        severity: "info",
+        category: "positive",
+        expectedImpact: "positive",
+        confidence: 0.83,
+        priorityScore: 84,
+        title: "Cierre superior al 10% con margen sano",
+        rationale:
+          `La campaña ya está cerrando ventas a nivel alto con ACOS controlado. Escalar presupuesto gradualmente es la vía más directa para vender más unidades sin deteriorar el margen.${trend}`,
+        advertiserId: advId,
+        siteId,
+        campaignId: row.id,
+        campaignName: row.name || String(row.id),
+        applyPayload: {
+          ...base,
+          budget: newBudget > 0 ? newBudget : Number(row.budget ?? 0),
+        },
+      });
+    }
   }
 
   const seen = new Set<string>();
@@ -281,5 +341,5 @@ export function analyzePadsCampaigns(input: {
     if (seen.has(k)) return false;
     seen.add(k);
     return true;
-  });
+  }).sort((a, b) => b.priorityScore - a.priorityScore);
 }

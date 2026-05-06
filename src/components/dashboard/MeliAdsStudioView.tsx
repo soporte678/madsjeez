@@ -35,6 +35,7 @@ type Recommendation = {
   category: "positive" | "negative" | "efficiency" | "growth";
   expectedImpact: "positive" | "negative" | "neutral";
   confidence: number;
+  priorityScore?: number;
   title: string;
   rationale: string;
   advertiserId?: number;
@@ -50,15 +51,17 @@ const AUTO_REFRESH_MS = 10 * 60 * 1000;
 function renderDelta(
   value: number,
   kind: "number" | "money" | "pct",
+  direction: "up_good" | "down_good",
   money: (v: unknown) => string,
   count: (v: unknown) => string
 ) {
   if (!Number.isFinite(value) || value === 0) return <span className="text-xs text-gray-400">= 0</span>;
   const up = value > 0;
+  const isGood = direction === "up_good" ? up : !up;
   const text =
     kind === "money" ? money(Math.abs(value)) : kind === "pct" ? `${Math.abs(value).toFixed(2)} pp` : count(Math.abs(value));
   return (
-    <span className={`inline-flex items-center gap-1 text-xs font-semibold ${up ? "text-emerald-600" : "text-red-600"}`}>
+    <span className={`inline-flex items-center gap-1 text-xs font-semibold ${isGood ? "text-emerald-600" : "text-red-600"}`}>
       {up ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
       {text}
     </span>
@@ -280,24 +283,24 @@ export default function MeliAdsStudioView() {
           <div className="rounded-xl border border-gray-200 bg-white p-4">
             <p className="text-xs text-gray-500">Presupuesto diario total</p>
             <p className="text-xl font-bold text-emerald-700">{money(totals.budget)}</p>
-            {renderDelta(num(deltas.budget), "money", money, count)}
+            {renderDelta(num(deltas.budget), "money", "up_good", money, count)}
           </div>
           <div className="rounded-xl border border-gray-200 bg-white p-4">
             <p className="text-xs text-gray-500">Gasto (ventana actual)</p>
             <p className="text-xl font-bold text-emerald-700">{money(totals.cost)}</p>
-            {renderDelta(num(deltas.cost), "money", money, count)}
+            {renderDelta(num(deltas.cost), "money", "down_good", money, count)}
           </div>
           <div className="rounded-xl border border-gray-200 bg-white p-4">
             <p className="text-xs text-gray-500">Ingresos estimados Ads</p>
             <p className="text-xl font-bold text-emerald-700">{money(totals.revenue)}</p>
-            {renderDelta(num(deltas.revenue), "money", money, count)}
+            {renderDelta(num(deltas.revenue), "money", "up_good", money, count)}
           </div>
           <div className="rounded-xl border border-gray-200 bg-white p-4">
             <p className="text-xs text-gray-500">Ganancia estimada</p>
             <p className={`text-xl font-bold ${num(totals.profit) >= 0 ? "text-emerald-700" : "text-red-600"}`}>
               {money(totals.profit)}
             </p>
-            {renderDelta(num(deltas.profit), "money", money, count)}
+            {renderDelta(num(deltas.profit), "money", "up_good", money, count)}
           </div>
           <div className="rounded-xl border border-gray-200 bg-white p-4">
             <p className="text-xs text-gray-500">Próxima factura (proyección)</p>
@@ -388,27 +391,27 @@ export default function MeliAdsStudioView() {
                       </td>
                       <td className="px-3 py-2 text-right">
                         <div>{count(prints)}</div>
-                        {renderDelta(num(prints) - num(p.prints), "number", money, count)}
+                        {renderDelta(num(prints) - num(p.prints), "number", "up_good", money, count)}
                       </td>
                       <td className="px-3 py-2 text-right">
                         <div>{count(clicks)}</div>
-                        {renderDelta(num(clicks) - num(p.clicks), "number", money, count)}
+                        {renderDelta(num(clicks) - num(p.clicks), "number", "up_good", money, count)}
                       </td>
                       <td className="px-3 py-2 text-right">
                         <div>{Number.isFinite(ctr) ? pct(ctr) : "—"}</div>
-                        {renderDelta(Number.isFinite(ctr) ? ctr - prevCtr : 0, "pct", money, count)}
+                        {renderDelta(Number.isFinite(ctr) ? ctr - prevCtr : 0, "pct", "up_good", money, count)}
                       </td>
                       <td className="px-3 py-2 text-right text-emerald-700 font-semibold">
                         <div>{money(cost)}</div>
-                        {renderDelta(cost - num(p.cost), "money", money, count)}
+                        {renderDelta(cost - num(p.cost), "money", "down_good", money, count)}
                       </td>
                       <td className="px-3 py-2 text-right">
                         <div>{pct(acos)}</div>
-                        {renderDelta(acos - num(p.acos), "pct", money, count)}
+                        {renderDelta(acos - num(p.acos), "pct", "down_good", money, count)}
                       </td>
                       <td className="px-3 py-2 text-right">
                         <div>{ratio(roas)}x</div>
-                        {renderDelta(roas - num(p.roas), "number", money, count)}
+                        {renderDelta(roas - num(p.roas), "number", "up_good", money, count)}
                       </td>
                     </tr>
                   );
@@ -505,6 +508,11 @@ export default function MeliAdsStudioView() {
                         <span className="text-[11px] tracking-wide text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded">
                           Confianza {(r.confidence * 100).toFixed(0)}%
                         </span>
+                        {typeof r.priorityScore === "number" && (
+                          <span className="text-[11px] tracking-wide text-fuchsia-700 bg-fuchsia-100 px-2 py-0.5 rounded">
+                            Prioridad {r.priorityScore}
+                          </span>
+                        )}
                       </div>
                       <p className="text-sm text-gray-600">{r.rationale}</p>
                       <p className="text-xs text-gray-500">
