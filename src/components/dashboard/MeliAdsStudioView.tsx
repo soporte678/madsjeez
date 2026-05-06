@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import {
   Loader2,
@@ -40,6 +40,9 @@ type Recommendation = {
   applyPayload: Record<string, unknown>;
 };
 
+const SNAPSHOT_CACHE_KEY = "meli_ads_snapshot_v1";
+const AUTO_REFRESH_MS = 10 * 60 * 1000;
+
 export default function MeliAdsStudioView() {
   const { status: sess } = useSession();
   const [loading, setLoading] = useState(false);
@@ -61,30 +64,61 @@ export default function MeliAdsStudioView() {
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (opts?: { silent?: boolean }) => {
+    const silent = Boolean(opts?.silent);
     setLoading(true);
     try {
-      const res = await fetch("/api/meli/ads/snapshot?analyze=1&days=14");
+      const res = await fetch(`/api/meli/ads/snapshot?analyze=1&days=14&t=${Date.now()}`, {
+        cache: "no-store",
+      });
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error || "No se pudo cargar Product Ads");
+        if (!silent) toast.error(data.error || "No se pudo cargar Product Ads");
         setSnapshot(null);
         return;
       }
       setSnapshot(data);
+      localStorage.setItem(
+        SNAPSHOT_CACHE_KEY,
+        JSON.stringify({
+          savedAt: new Date().toISOString(),
+          data,
+        })
+      );
       setSelected({});
-      if (Array.isArray(data.errors) && data.errors.length > 0) {
+      if (!silent && Array.isArray(data.errors) && data.errors.length > 0) {
         toast.message("Mercado Libre devolvió avisos", {
           description: data.errors.slice(0, 4).join(" · "),
         });
       }
     } catch {
-      toast.error("Error de red");
-      setSnapshot(null);
+      if (!silent) toast.error("Error de red");
     } finally {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(SNAPSHOT_CACHE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as { data?: unknown };
+      if (parsed?.data) {
+        setSnapshot(parsed.data as NonNullable<typeof snapshot>);
+      }
+    } catch {
+      // ignore corrupted local cache
+    }
+  }, []);
+
+  useEffect(() => {
+    // Primer pull para traer estado actual y luego refresco periódico.
+    load({ silent: true });
+    const timer = setInterval(() => {
+      load({ silent: true });
+    }, AUTO_REFRESH_MS);
+    return () => clearInterval(timer);
+  }, [load]);
 
   const toggleRec = (id: string) => {
     setSelected((s) => ({ ...s, [id]: !s[id] }));
@@ -187,7 +221,7 @@ export default function MeliAdsStudioView() {
         <button
           type="button"
           disabled={loading}
-          onClick={load}
+          onClick={() => load()}
           className="inline-flex items-center gap-2 rounded-lg bg-primary hover:bg-primary-hover disabled:opacity-50 text-primary-foreground font-medium px-4 py-2 text-sm shadow-sm"
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
