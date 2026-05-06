@@ -24,7 +24,17 @@ import { getPrismaProductDetailBundle } from "@/lib/product/prisma-detail-for-pa
 import { ProductDetailClient } from "@/components/product/ProductDetailClient";
 import { BuyBox } from "@/components/product/BuyBox";
 
+function hasValidSupabaseConfig() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return false;
+  if (key === "undefined" || key === "null") return false;
+  return true;
+}
+
 async function getProduct(id: string) {
+  if (!hasValidSupabaseConfig()) return null;
+
   const supabase = await createClient();
 
   const { data: product, error } = await supabase
@@ -39,7 +49,10 @@ async function getProduct(id: string) {
     .single();
 
   if (error) {
-    console.error("getProduct error:", error.message, error.details);
+    // In production, missing/invalid public key should degrade silently to Prisma fallback.
+    if (!String(error.message || "").toLowerCase().includes("invalid api key")) {
+      console.error("getProduct error:", error.message, error.details);
+    }
   }
   if (!product) return null;
 
@@ -54,6 +67,7 @@ async function getProduct(id: string) {
 
 async function getRelatedProducts(categoryId: string | null, currentProductId: string) {
   if (!categoryId) return [];
+  if (!hasValidSupabaseConfig()) return [];
 
   const supabase = await createClient();
   const { data: products } = await supabase
@@ -75,6 +89,8 @@ async function getRelatedProducts(categoryId: string | null, currentProductId: s
 }
 
 async function getSellerProducts(sellerId: string, currentProductId: string) {
+  if (!hasValidSupabaseConfig()) return [];
+
   const supabase = await createClient();
   const { data: products } = await supabase
     .from("products")
@@ -94,6 +110,8 @@ async function getSellerProducts(sellerId: string, currentProductId: string) {
 }
 
 async function getProductReviews(productId: string) {
+  if (!hasValidSupabaseConfig()) return [];
+
   const supabase = await createClient();
   const { data: reviews } = await supabase
     .from("reviews")
@@ -114,6 +132,7 @@ async function getProductReviews(productId: string) {
 
 async function getTopRatedProducts(categoryId: string | null, currentProductId: string) {
   if (!categoryId) return [];
+  if (!hasValidSupabaseConfig()) return [];
 
   const supabase = await createClient();
   const { data: products } = await supabase

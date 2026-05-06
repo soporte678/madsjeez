@@ -3,6 +3,13 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSupabaseService } from "@/lib/supabase/service"
 
 export async function POST(req: NextRequest) {
+  const fallback = (reason: string) =>
+    NextResponse.json({
+      section_title: "Productos populares",
+      products: [],
+      _meta: { fallback: true, reason },
+    });
+
   try {
     const apiKey = process.env.GEMINI_API_KEY
     if (!apiKey || apiKey.length < 10) {
@@ -125,7 +132,11 @@ Responde SOLO con JSON:
       products: enrichedProducts,
     })
   } catch (error: any) {
-    console.error("Recommendations AI error:", error)
-    return NextResponse.json({ error: error?.message || "Recommendations error" }, { status: 500 })
+    const message = String(error?.message || "");
+    if (message.includes("429") || message.toLowerCase().includes("quota")) {
+      return fallback("gemini_quota_exceeded");
+    }
+    console.error("Recommendations AI error:", error);
+    return fallback("recommendations_service_error");
   }
 }

@@ -236,6 +236,12 @@ export async function GET(request: NextRequest) {
           status: 'active',
           endDate: { gte: now }
         },
+        select: {
+          id: true,
+          price: true,
+          status: true,
+          endDate: true,
+        },
         orderBy: { endDate: 'desc' }
       });
 
