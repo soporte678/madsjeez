@@ -22,6 +22,19 @@ try {
 
 const DATABASE_URL = process.env.DATABASE_URL || process.env.SUPABASE_DATABASE_URL;
 
+const looksLikePgPooler =
+  DATABASE_URL &&
+  (DATABASE_URL.includes(":6543") ||
+    DATABASE_URL.includes(".pooler.supabase.com"));
+
+if (looksLikePgPooler && !process.env.PRISMA_MIGRATE_POOLER_OK) {
+  console.warn(
+    "[migrate] DATABASE_URL parece ser el pooler de Supabase (:6543 / pooler.*). " +
+      "`prisma migrate deploy` suele necesitar la URL directa (:5432). " +
+      "Exportá PRISMA_MIGRATE_POOLER_OK=1 para silenciar este aviso."
+  );
+}
+
 if (!DATABASE_URL) {
   console.error(
     "Falta DATABASE_URL (o SUPABASE_DATABASE_URL). Configúrala en .env.local o en variables del CI/hosting."

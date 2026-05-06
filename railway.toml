@@ -1,3 +1,4 @@
+# Config único para Railway (no mantener railway.json en paralelo: puede mezclarse mal con esto).
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
