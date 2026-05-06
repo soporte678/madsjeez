@@ -167,137 +167,152 @@ export async function GET(req: Request) {
     const diagnosticsByAdvertiser: Record<string, unknown> = {};
 
     for (const adv of advertisers) {
-      let camp = await meliPadsSearchCampaignsWithMetrics(
-        meli.accessToken,
-        adv.site_id,
-        adv.advertiser_id,
-        days,
-        0,
-        50
-      );
-      if (!camp.ok || !(camp.data.results?.length)) {
-        if (!camp.ok) {
-          errors.push(`Campañas con métricas (${adv.advertiser_id}): HTTP ${camp.status}`);
-        }
-        camp = await meliPadsSearchCampaignsBasic(
+      try {
+        let camp = await meliPadsSearchCampaignsWithMetrics(
           meli.accessToken,
           adv.site_id,
           adv.advertiser_id,
+          days,
           0,
           50
         );
-        if (!camp.ok) {
-          errors.push(`Campañas básicas (${adv.advertiser_id}): HTTP ${camp.status}`);
-          continue;
+        if (!camp.ok || !(camp.data.results?.length)) {
+          if (!camp.ok) {
+            errors.push(`Campañas con métricas (${adv.advertiser_id}): HTTP ${camp.status}`);
+          }
+          camp = await meliPadsSearchCampaignsBasic(
+            meli.accessToken,
+            adv.site_id,
+            adv.advertiser_id,
+            0,
+            50
+          );
+          if (!camp.ok) {
+            errors.push(`Campañas básicas (${adv.advertiser_id}): HTTP ${camp.status}`);
+            continue;
+          }
         }
-      }
 
-      let prevCamp = await meliPadsSearchCampaignsWithMetricsRange(
-        meli.accessToken,
-        adv.site_id,
-        adv.advertiser_id,
-        previousWindow.start,
-        previousWindow.end,
-        0,
-        50
-      );
-      if (!prevCamp.ok) {
-        errors.push(`Campañas período previo (${adv.advertiser_id}): HTTP ${prevCamp.status}`);
-      }
-      let currentRows = (camp.data.results ?? []).map((r) => ({
-        row: r as MeliPadsCampaignRow,
-        metrics: normalizeMetrics((r as MeliPadsCampaignRow).metrics as Record<string, unknown>),
-      }));
+        let prevCamp = await meliPadsSearchCampaignsWithMetricsRange(
+          meli.accessToken,
+          adv.site_id,
+          adv.advertiser_id,
+          previousWindow.start,
+          previousWindow.end,
+          0,
+          50
+        );
+        if (!prevCamp.ok) {
+          errors.push(`Campañas período previo (${adv.advertiser_id}): HTTP ${prevCamp.status}`);
+        }
+        let currentRows = (camp.data.results ?? []).map((r) => ({
+          row: r as MeliPadsCampaignRow,
+          metrics: normalizeMetrics((r as MeliPadsCampaignRow).metrics as Record<string, unknown>),
+        }));
 
       const currentAllZero =
         currentRows.length > 0 &&
         currentRows.every((x) => metricsCoreScore(x.metrics as Record<string, unknown>) <= 0);
 
-      let currentFallbackHits = 0;
-      if (currentAllZero) {
-        const fallbackRows = await Promise.all(
-          currentRows.map(async (x) => {
-            const detail = await meliPadsGetCampaignWithMetrics(
-              meli.accessToken,
-              adv.site_id,
-              Number(x.row.id),
-              currentWindow.start,
-              currentWindow.end
-            );
-            if (detail.ok && detail.data) {
-              const metrics = normalizeMetrics(detail.data.metrics as Record<string, unknown>);
-              if (metricsCoreScore(metrics as Record<string, unknown>) > 0) {
-                currentFallbackHits += 1;
+        let currentFallbackHits = 0;
+        if (currentAllZero) {
+          const fallbackRows = await Promise.allSettled(
+            currentRows.map(async (x) => {
+              const detail = await meliPadsGetCampaignWithMetrics(
+                meli.accessToken,
+                adv.site_id,
+                Number(x.row.id),
+                currentWindow.start,
+                currentWindow.end
+              );
+              if (detail.ok && detail.data) {
+                const metrics = normalizeMetrics(detail.data.metrics as Record<string, unknown>);
+                if (metricsCoreScore(metrics as Record<string, unknown>) > 0) {
+                  currentFallbackHits += 1;
+                }
+                return { row: { ...x.row, ...detail.data }, metrics };
               }
-              return { row: { ...x.row, ...detail.data }, metrics };
-            }
-            return x;
-          })
-        );
-        currentRows = fallbackRows;
-      }
-
-      let prevRows = (prevCamp.data?.results ?? []).map((r) => ({
-        row: r as MeliPadsCampaignRow,
-        metrics: normalizeMetrics((r as MeliPadsCampaignRow).metrics as Record<string, unknown>),
-      }));
-
-      const prevAllZero =
-        prevRows.length > 0 &&
-        prevRows.every((x) => metricsCoreScore(x.metrics as Record<string, unknown>) <= 0);
-
-      let prevFallbackHits = 0;
-      if (prevAllZero) {
-        const fallbackPrev = await Promise.all(
-          prevRows.map(async (x) => {
-            const detail = await meliPadsGetCampaignWithMetrics(
-              meli.accessToken,
-              adv.site_id,
-              Number(x.row.id),
-              previousWindow.start,
-              previousWindow.end
-            );
-            if (detail.ok && detail.data) {
-              const metrics = normalizeMetrics(detail.data.metrics as Record<string, unknown>);
-              if (metricsCoreScore(metrics as Record<string, unknown>) > 0) {
-                prevFallbackHits += 1;
-              }
-              return { row: { ...x.row, ...detail.data }, metrics };
-            }
-            return x;
-          })
-        );
-        prevRows = fallbackPrev;
-      }
-
-      const prevByCampaignId = new Map<number, MeliPadsCampaignMetrics>();
-      for (const p of prevRows) {
-        if (p.row.id != null && p.metrics) {
-          prevByCampaignId.set(Number(p.row.id), p.metrics);
+              return x;
+            })
+          );
+          currentRows = fallbackRows.map((r, idx) => {
+            if (r.status === "fulfilled") return r.value;
+            errors.push(`Fallback campaña actual (${adv.advertiser_id}): ${String(r.reason)}`);
+            return currentRows[idx];
+          });
         }
-      }
 
-      if (camp.data.metrics_summary != null) {
-        metricsSummaryByAdvertiser[String(adv.advertiser_id)] = camp.data.metrics_summary;
-      }
+        let prevRows = (prevCamp.data?.results ?? []).map((r) => ({
+          row: r as MeliPadsCampaignRow,
+          metrics: normalizeMetrics((r as MeliPadsCampaignRow).metrics as Record<string, unknown>),
+        }));
 
-      diagnosticsByAdvertiser[String(adv.advertiser_id)] = {
-        campaignCount: currentRows.length,
-        currentAllZeroBeforeFallback: currentAllZero,
-        currentFallbackHits,
-        previousAllZeroBeforeFallback: prevAllZero,
-        previousFallbackHits,
-      };
+        const prevAllZero =
+          prevRows.length > 0 &&
+          prevRows.every((x) => metricsCoreScore(x.metrics as Record<string, unknown>) <= 0);
 
-      for (const row of currentRows) {
-        const r = row.row as MeliPadsCampaignRow;
-        campaigns.push({
-          ...r,
-          metrics: row.metrics,
-          site_id: adv.site_id,
-          advertiser_id: adv.advertiser_id,
-          metrics_prev: prevByCampaignId.get(Number(r.id)),
-        });
+        let prevFallbackHits = 0;
+        if (prevAllZero) {
+          const fallbackPrev = await Promise.allSettled(
+            prevRows.map(async (x) => {
+              const detail = await meliPadsGetCampaignWithMetrics(
+                meli.accessToken,
+                adv.site_id,
+                Number(x.row.id),
+                previousWindow.start,
+                previousWindow.end
+              );
+              if (detail.ok && detail.data) {
+                const metrics = normalizeMetrics(detail.data.metrics as Record<string, unknown>);
+                if (metricsCoreScore(metrics as Record<string, unknown>) > 0) {
+                  prevFallbackHits += 1;
+                }
+                return { row: { ...x.row, ...detail.data }, metrics };
+              }
+              return x;
+            })
+          );
+          prevRows = fallbackPrev.map((r, idx) => {
+            if (r.status === "fulfilled") return r.value;
+            errors.push(`Fallback campaña previa (${adv.advertiser_id}): ${String(r.reason)}`);
+            return prevRows[idx];
+          });
+        }
+
+        const prevByCampaignId = new Map<number, MeliPadsCampaignMetrics>();
+        for (const p of prevRows) {
+          if (p.row.id != null && p.metrics) {
+            prevByCampaignId.set(Number(p.row.id), p.metrics);
+          }
+        }
+        if (camp.data.metrics_summary != null) {
+          metricsSummaryByAdvertiser[String(adv.advertiser_id)] = camp.data.metrics_summary;
+        }
+
+        diagnosticsByAdvertiser[String(adv.advertiser_id)] = {
+          campaignCount: currentRows.length,
+          currentAllZeroBeforeFallback: currentAllZero,
+          currentFallbackHits,
+          previousAllZeroBeforeFallback: prevAllZero,
+          previousFallbackHits,
+        };
+
+        for (const row of currentRows) {
+          const r = row.row as MeliPadsCampaignRow;
+          campaigns.push({
+            ...r,
+            metrics: row.metrics,
+            site_id: adv.site_id,
+            advertiser_id: adv.advertiser_id,
+            metrics_prev: prevByCampaignId.get(Number(r.id)),
+          });
+        }
+      } catch (e) {
+        errors.push(
+          `Advertiser ${adv.advertiser_id} (${adv.site_id}) fallo parcial: ${
+            e instanceof Error ? e.message : "unknown_error"
+          }`
+        );
       }
     }
 
