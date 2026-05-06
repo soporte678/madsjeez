@@ -76,6 +76,17 @@ function pickMetric(obj: Record<string, unknown> | undefined, keys: string[]): n
   return 0;
 }
 
+function padsSearchResults(data: unknown): MeliPadsCampaignRow[] {
+  if (!data || typeof data !== "object") return [];
+  const o = data as Record<string, unknown>;
+  for (const key of ["results", "campaigns", "elements"]) {
+    const arr = o[key];
+    if (Array.isArray(arr) && arr.length > 0) return arr as MeliPadsCampaignRow[];
+  }
+  const fallback = o.results;
+  return Array.isArray(fallback) ? (fallback as MeliPadsCampaignRow[]) : [];
+}
+
 function normalizeMetrics(raw?: Record<string, unknown>) {
   if (!raw) return undefined;
   const prints = pickMetric(raw, ["prints", "impressions", "impression", "views"]);
@@ -93,7 +104,7 @@ function normalizeMetrics(raw?: Record<string, unknown>) {
     acos: pickMetric(raw, ["acos", "acos_percent"]),
     cvr: pickMetric(raw, ["cvr", "conversion_rate"]),
     roas: pickMetric(raw, ["roas", "return_on_ad_spend"]),
-    impression_share: pickMetric(raw, ["impression_share"]),
+    impression_share: pickMetric(raw, ["impression_share", "sov"]),
     top_impression_share: pickMetric(raw, ["top_impression_share"]),
     lost_impression_share_by_budget: pickMetric(raw, ["lost_impression_share_by_budget"]),
     lost_impression_share_by_ad_rank: pickMetric(raw, ["lost_impression_share_by_ad_rank"]),
@@ -178,7 +189,7 @@ export async function GET(req: Request) {
           0,
           50
         );
-        if (!camp.ok || !(camp.data.results?.length)) {
+        if (!camp.ok || padsSearchResults(camp.data).length === 0) {
           if (!camp.ok) {
             errors.push(`Campañas con métricas (${adv.advertiser_id}): HTTP ${camp.status}`);
           }
@@ -191,12 +202,12 @@ export async function GET(req: Request) {
           );
           if (!camp.ok) {
             errors.push(`Campañas básicas (${adv.advertiser_id}): HTTP ${camp.status}`);
-            continue;
+            // No hacer continue: la ruta primaria puede fallar (4xx) y el fallback por query sigue siendo válido.
           }
         }
 
         // Fallback multi-tenant: endpoint alternativo sin segmento /advertisers/:id
-        if (!(camp.data.results?.length)) {
+        if (padsSearchResults(camp.data).length === 0) {
           const altWithMetrics = await meliPadsSearchCampaignsWithMetricsAltPath(
             meli.accessToken,
             adv.site_id,
@@ -206,7 +217,7 @@ export async function GET(req: Request) {
             0,
             50
           );
-          if (altWithMetrics.ok && (altWithMetrics.data.results?.length ?? 0) > 0) {
+          if (altWithMetrics.ok && padsSearchResults(altWithMetrics.data).length > 0) {
             camp = altWithMetrics;
             errors.push(`Fallback alt-path OK (${adv.advertiser_id})`);
           } else {
@@ -217,7 +228,7 @@ export async function GET(req: Request) {
               0,
               50
             );
-            if (altBasic.ok && (altBasic.data.results?.length ?? 0) > 0) {
+            if (altBasic.ok && padsSearchResults(altBasic.data).length > 0) {
               camp = altBasic;
               errors.push(`Fallback alt-path básico OK (${adv.advertiser_id})`);
             }
@@ -236,14 +247,28 @@ export async function GET(req: Request) {
         if (!prevCamp.ok) {
           errors.push(`Campañas período previo (${adv.advertiser_id}): HTTP ${prevCamp.status}`);
         }
-        let currentRows = (camp.data.results ?? []).map((r) => ({
+        let currentRows = padsSearchResults(camp.data).map((r) => ({
           row: r as MeliPadsCampaignRow,
           metrics: normalizeMetrics((r as MeliPadsCampaignRow).metrics as Record<string, unknown>),
         }));
 
-      const currentAllZero =
-        currentRows.length > 0 &&
-        currentRows.every((x) => metricsCoreScore(x.metrics as Record<string, unknown>) <= 0);
+        const pagingInfo = (camp.data as Record<string, unknown> | undefined)?.paging as
+          | { total?: number; offset?: number; limit?: number }
+          | undefined;
+        if (
+          currentRows.length === 0 &&
+          pagingInfo &&
+          typeof pagingInfo.total === "number" &&
+          pagingInfo.total > 0
+        ) {
+          errors.push(
+            `PADS: paging.total=${pagingInfo.total} pero lista vacía en respuesta (${adv.advertiser_id}, ${adv.site_id})`
+          );
+        }
+
+        const currentAllZero =
+          currentRows.length > 0 &&
+          currentRows.every((x) => metricsCoreScore(x.metrics as Record<string, unknown>) <= 0);
 
         let currentFallbackHits = 0;
         if (currentAllZero) {
@@ -273,7 +298,7 @@ export async function GET(req: Request) {
           });
         }
 
-        let prevRows = (prevCamp.data?.results ?? []).map((r) => ({
+        let prevRows = padsSearchResults(prevCamp.data).map((r) => ({
           row: r as MeliPadsCampaignRow,
           metrics: normalizeMetrics((r as MeliPadsCampaignRow).metrics as Record<string, unknown>),
         }));

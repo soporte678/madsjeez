@@ -415,7 +415,22 @@ export default function MeliAdsStudioView() {
       )}
 
       {!loading && snapshot && camps.length === 0 && (snapshot.advertisers?.length ?? 0) > 0 && (
-        <p className="text-sm text-gray-600">No hay campañas PADS listadas para estos anunciantes.</p>
+        <div className="space-y-3 rounded-xl border border-border bg-card p-4">
+          <p className="text-sm text-muted-foreground">
+            No hay campañas PADS listadas para estos anunciantes. Si antes veías datos, suele deberse a un rechazo del
+            endpoint de búsqueda de ML o a que la respuesta vino en otro formato; revisá los avisos abajo o en el toast.
+          </p>
+          {Array.isArray(snapshot.errors) && snapshot.errors.length > 0 && (
+            <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-foreground">
+              <p className="font-semibold text-amber-800 dark:text-amber-200 mb-1">Respuesta / rutas ML</p>
+              <ul className="list-disc pl-4 space-y-0.5 opacity-90">
+                {snapshot.errors.slice(0, 8).map((e, i) => (
+                  <li key={i}>{e}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
