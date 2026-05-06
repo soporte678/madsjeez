@@ -61,17 +61,17 @@ export function RotatingProductCarousel({ title, subtitle, offset = 0 }: Rotatin
       <div className="py-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-[22px] font-semibold text-[#333]">{title}</h2>
-            {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
+            <h2 className="text-[22px] font-semibold text-foreground">{title}</h2>
+            {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
           </div>
         </div>
         <div className="flex gap-4 overflow-hidden">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="min-w-[224px] bg-white rounded-lg shadow-sm animate-pulse">
-              <div className="h-[224px] bg-gray-200 rounded-t-lg" />
+            <div key={i} className="min-w-[224px] bg-card rounded-lg shadow-sm animate-pulse">
+              <div className="h-[224px] bg-secondary rounded-t-lg" />
               <div className="p-4 space-y-2">
-                <div className="h-4 bg-gray-200 rounded w-3/4" />
-                <div className="h-4 bg-gray-200 rounded w-1/2" />
+                <div className="h-4 bg-secondary rounded w-3/4" />
+                <div className="h-4 bg-secondary rounded w-1/2" />
               </div>
             </div>
           ))}
@@ -89,16 +89,16 @@ export function RotatingProductCarousel({ title, subtitle, offset = 0 }: Rotatin
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <div>
-            <h2 className="text-[22px] font-semibold text-[#333]">{title}</h2>
-            {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
+            <h2 className="text-[22px] font-semibold text-foreground">{title}</h2>
+            {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
           </div>
           {totalCount > 0 && (
-            <span className="text-xs text-[#3483fa] font-semibold bg-blue-50 px-3 py-1 rounded-full">
+            <span className="text-xs text-primary font-semibold bg-secondary px-3 py-1 rounded-full">
               +{Math.max(50, Math.floor(totalCount / 10000) * 10).toLocaleString('es-AR')}.000 PRODUCTOS ESTIMATIVOS EN NUESTRO MARKETPLACE
             </span>
           )}
         </div>
-        <Link href="/search" className="text-[#3483fa] text-sm font-medium hover:underline flex items-center gap-1">
+        <Link href="/search" className="text-primary text-sm font-medium hover:underline flex items-center gap-1">
           Ver más <ChevronRight size={16} />
         </Link>
       </div>
@@ -106,7 +106,7 @@ export function RotatingProductCarousel({ title, subtitle, offset = 0 }: Rotatin
       {/* Scroll Buttons */}
       <button
         onClick={() => scroll("left")}
-        className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 w-16 h-16 rounded-full bg-white/80 backdrop-blur-sm shadow-lg flex items-center justify-center text-[#3483fa] hover:bg-white transition-all duration-300 ${
+        className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 w-16 h-16 rounded-full bg-card/90 border border-border backdrop-blur-sm shadow-lg flex items-center justify-center text-primary hover:bg-card transition-all duration-300 ${
           canScrollLeft ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4 pointer-events-none"
         }`}
       >
@@ -114,7 +114,7 @@ export function RotatingProductCarousel({ title, subtitle, offset = 0 }: Rotatin
       </button>
       <button
         onClick={() => scroll("right")}
-        className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 w-16 h-16 rounded-full bg-white/80 backdrop-blur-sm shadow-lg flex items-center justify-center text-[#3483fa] hover:bg-white transition-all duration-300 ${
+        className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 w-16 h-16 rounded-full bg-card/90 border border-border backdrop-blur-sm shadow-lg flex items-center justify-center text-primary hover:bg-card transition-all duration-300 ${
           canScrollRight ? "opacity-100 translate-x-0" : "opacity-0 translate-x-4 pointer-events-none"
         }`}
       >
@@ -131,11 +131,11 @@ export function RotatingProductCarousel({ title, subtitle, offset = 0 }: Rotatin
           <Link
             key={`${product.id}-${index}`}
             href={`/product/${product.id}`}
-            className="min-w-[224px] max-w-[224px] bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer flex-shrink-0"
+            className="min-w-[224px] max-w-[224px] bg-card rounded-lg shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer flex-shrink-0"
             onMouseEnter={() => setHoveredIndex(index)}
             onMouseLeave={() => setHoveredIndex(null)}
           >
-            <div className="relative h-[224px] overflow-hidden rounded-t-lg bg-gray-50">
+            <div className="relative h-[224px] overflow-hidden rounded-t-lg bg-secondary">
               {product.image ? (
                 <Image
                   src={product.image}
@@ -146,7 +146,7 @@ export function RotatingProductCarousel({ title, subtitle, offset = 0 }: Rotatin
                   unoptimized
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-300">
+                <div className="w-full h-full flex items-center justify-center text-muted-foreground/50">
                   <span className="text-xs">Sin imagen</span>
                 </div>
               )}
@@ -157,37 +157,37 @@ export function RotatingProductCarousel({ title, subtitle, offset = 0 }: Rotatin
             </div>
 
             <div className="p-3">
-              <h3 className="text-[13px] text-[#333] font-normal leading-snug line-clamp-2 min-h-[40px] mb-2">
+              <h3 className="text-[13px] text-foreground font-normal leading-snug line-clamp-2 min-h-[40px] mb-2">
                 {product.title}
               </h3>
 
               <div className="flex items-baseline gap-2 mb-1">
-                <span className="text-[17px] font-medium text-[#333]">
+                <span className="text-[17px] font-medium text-foreground">
                   {formatPrice(product.price)}
                 </span>
                 {product.originalPrice && product.originalPrice > product.price && (
-                  <span className="text-[12px] text-[#999] line-through">
+                  <span className="text-[12px] text-muted-foreground/80 line-through">
                     {formatPrice(product.originalPrice)}
                   </span>
                 )}
               </div>
 
               {product.originalPrice && product.originalPrice > product.price && (
-                <span className="text-[11px] text-emerald-600 font-medium">
+                <span className="text-[11px] text-success font-medium">
                   {Math.round((1 - product.price / product.originalPrice) * 100)}% OFF
                 </span>
               )}
 
               {product.freeShipping && (
-                <div className="flex items-center gap-1 mt-2 text-[11px] text-emerald-600 font-medium">
+                <div className="flex items-center gap-1 mt-2 text-[11px] text-success font-medium">
                   <Truck size={12} />
                   <span>Envío gratis</span>
                 </div>
               )}
 
               {product.sellerName && (
-                <div className="mt-2 text-[11px] text-gray-400">
-                  por <span className="text-gray-500">{product.sellerName}</span>
+                <div className="mt-2 text-[11px] text-muted-foreground">
+                  por <span className="text-muted-foreground/90">{product.sellerName}</span>
                 </div>
               )}
             </div>
