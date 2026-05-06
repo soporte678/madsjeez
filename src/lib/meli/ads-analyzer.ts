@@ -55,7 +55,11 @@ function buildBasePayload(row: MeliPadsCampaignRow, channel = "marketplace"): Ad
 export function analyzePadsCampaigns(input: {
   advertisers: MeliPadsAdvertiser[];
   campaigns: Array<
-    MeliPadsCampaignRow & { site_id: string; advertiser_id: number }
+    MeliPadsCampaignRow & {
+      site_id: string;
+      advertiser_id: number;
+      metrics_prev?: Record<string, number | undefined>;
+    }
   >;
 }): AdsRecommendation[] {
   const out: AdsRecommendation[] = [];
@@ -82,6 +86,14 @@ export function analyzePadsCampaigns(input: {
     const bench = Number(m.acos_benchmark ?? 0);
     const lostBudget = Number(m.lost_impression_share_by_budget ?? 0);
     const roasActual = Number(m.roas ?? 0);
+    const prev = row.metrics_prev || {};
+    const prevCtr = Number(prev.ctr ?? 0);
+    const prevAcos = Number(prev.acos ?? 0);
+    const prevRoas = Number(prev.roas ?? 0);
+    const trend =
+      prevCtr || prevAcos || prevRoas
+        ? ` Tendencia vs período anterior: CTR ${((ctr - prevCtr) * 100).toFixed(2)} pp, ACOS ${(acos - prevAcos).toFixed(2)} pp, ROAS ${(roasActual - prevRoas).toFixed(2)}.`
+        : "";
 
     // 1) Muchas impresiones, CTR muy bajo: priorizar profitability + ROAS más exigente
     if (status === "active" && prints >= 800 && ctr > 0 && ctr < 0.004 && cost >= 5) {
@@ -92,7 +104,7 @@ export function analyzePadsCampaigns(input: {
         severity: "warning",
         title: "CTR bajo con volumen de impresiones",
         rationale:
-          "Hay exposición pero pocos clics: conviene orientar la campaña a rentabilidad y encarecer levemente el objetivo ROAS para que ML priorice intención de compra más alta.",
+          `Hay exposición pero pocos clics: conviene orientar la campaña a rentabilidad y encarecer levemente el objetivo ROAS para que ML priorice intención de compra más alta.${trend}`,
         advertiserId: advId,
         siteId,
         campaignId: row.id,
@@ -114,7 +126,7 @@ export function analyzePadsCampaigns(input: {
         severity: "critical",
         title: "ACOS por encima del benchmark",
         rationale:
-          "El ACOS de la campaña supera ampliamente la referencia de Mercado Libre. Subir el ROAS objetivo reduce agresividad y suele bajar el ACOS efectivo.",
+          `El ACOS de la campaña supera ampliamente la referencia de Mercado Libre. Subir el ROAS objetivo reduce agresividad y suele bajar el ACOS efectivo.${trend}`,
         advertiserId: advId,
         siteId,
         campaignId: row.id,
@@ -137,7 +149,7 @@ export function analyzePadsCampaigns(input: {
         severity: "info",
         title: "Tráfico limitado por presupuesto",
         rationale:
-          "Una parte relevante de las impresiones se pierde por presupuesto. Si la cuenta es rentable, un aumento moderado del presupuesto diario puede recuperar alcance.",
+          `Una parte relevante de las impresiones se pierde por presupuesto. Si la cuenta es rentable, un aumento moderado del presupuesto diario puede recuperar alcance.${trend}`,
         advertiserId: advId,
         siteId,
         campaignId: row.id,
@@ -157,7 +169,7 @@ export function analyzePadsCampaigns(input: {
         severity: "info",
         title: "Sin impresiones en el período",
         rationale:
-          "Si el ítem es nuevo o tiene poca trayectoria, una estrategia visibility suele acelerar datos; cuando haya volumen, volvé a profitability.",
+          `Si el ítem es nuevo o tiene poca trayectoria, una estrategia visibility suele acelerar datos; cuando haya volumen, volvé a profitability.${trend}`,
         advertiserId: advId,
         siteId,
         campaignId: row.id,
@@ -185,7 +197,7 @@ export function analyzePadsCampaigns(input: {
         severity: "info",
         title: "ROAS real muy superior al objetivo",
         rationale:
-          "Hay margen para captar más demanda sin tensionar el ROAS: incremento moderado de presupuesto manteniendo la estrategia actual.",
+          `Hay margen para captar más demanda sin tensionar el ROAS: incremento moderado de presupuesto manteniendo la estrategia actual.${trend}`,
         advertiserId: advId,
         siteId,
         campaignId: row.id,

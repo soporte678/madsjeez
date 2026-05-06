@@ -42,7 +42,7 @@ export default function FloatingFabDock() {
               onClick={() => {
                 toggleBot("chatbot");
               }}
-              className="relative bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-full p-4 shadow-xl shadow-indigo-500/45 hover:shadow-2xl hover:shadow-violet-500/45 hover:scale-110 transition-all duration-300 group"
+              className="relative bg-gradient-to-br from-primary to-indigo-900 text-white rounded-full p-4 shadow-xl shadow-primary/35 hover:shadow-2xl hover:shadow-primary/40 hover:scale-110 transition-all duration-300 group"
               aria-label="Abrir asistente"
             >
               <Bot className="w-6 h-6 group-hover:rotate-12 transition-transform" />

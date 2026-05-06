@@ -66,6 +66,31 @@ export function meliPadsDateRange(days: number) {
   };
 }
 
+/** Campañas con métricas agregadas en un rango explícito. */
+export async function meliPadsSearchCampaignsWithMetricsRange(
+  accessToken: string,
+  siteId: string,
+  advertiserId: number,
+  dateFrom: string,
+  dateTo: string,
+  offset = 0,
+  limit = 50
+) {
+  const qs = new URLSearchParams({
+    limit: String(limit),
+    offset: String(offset),
+    date_from: dateFrom,
+    date_to: dateTo,
+    metrics: PADS_METRICS,
+    metrics_summary: "true",
+    channel: "marketplace",
+  });
+  const path = `/marketplace/advertising/${encodeURIComponent(siteId)}/advertisers/${advertiserId}/product_ads/campaigns/search?${qs.toString()}`;
+  return meliApi<MeliPadsCampaignSearchResponse>(accessToken, path, {
+    headers: { "api-version": "2" },
+  });
+}
+
 /** Campañas con métricas agregadas en el rango (últimos N días). */
 export async function meliPadsSearchCampaignsWithMetrics(
   accessToken: string,
@@ -76,19 +101,15 @@ export async function meliPadsSearchCampaignsWithMetrics(
   limit = 50
 ) {
   const { date_from, date_to } = meliPadsDateRange(days);
-  const qs = new URLSearchParams({
-    limit: String(limit),
-    offset: String(offset),
+  return meliPadsSearchCampaignsWithMetricsRange(
+    accessToken,
+    siteId,
+    advertiserId,
     date_from,
     date_to,
-    metrics: PADS_METRICS,
-    metrics_summary: "true",
-    channel: "marketplace",
-  });
-  const path = `/marketplace/advertising/${encodeURIComponent(siteId)}/advertisers/${advertiserId}/product_ads/campaigns/search?${qs.toString()}`;
-  return meliApi<MeliPadsCampaignSearchResponse>(accessToken, path, {
-    headers: { "api-version": "2" },
-  });
+    offset,
+    limit
+  );
 }
 
 /** Lista de campañas sin métricas (respaldo si falla el endpoint con métricas). */

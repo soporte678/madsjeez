@@ -54,6 +54,8 @@ export type MeliItemDetail = {
   title: string;
   price: number;
   currency_id?: string;
+  status?: string;
+  listing_type_id?: string;
   available_quantity?: number;
   sold_quantity?: number;
   condition?: string;

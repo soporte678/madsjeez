@@ -3,6 +3,15 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
+function isMissingColumnError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: string }).code === "P2022"
+  );
+}
+
 // GET /api/cart - Obtener carrito del usuario
 export async function GET() {
   try {
@@ -73,6 +82,14 @@ export async function GET() {
     });
   } catch (error) {
     console.error("Error fetching cart:", error);
+    // Mitigacion temporal: si faltan columnas por migraciones pendientes,
+    // devolvemos carrito vacio para no romper la UX con 500.
+    if (isMissingColumnError(error)) {
+      return NextResponse.json({
+        cart: { items: [] },
+        summary: { itemCount: 0, subtotal: 0, shippingCost: 0, tax: 0, total: 0 },
+      });
+    }
     return NextResponse.json(
       { error: "Error al obtener el carrito", cart: null, summary: null },
       { status: 500 }

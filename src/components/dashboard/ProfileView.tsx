@@ -375,7 +375,7 @@ export default function ProfileView({ userData }: ProfileViewProps) {
       id: 'mads-plus',
       title: "Mads+",
       description: "Suscripción con beneficios en envíos, compras y entretenimiento.",
-      icon: <div className="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center text-white text-[10px] font-black italic">M</div>,
+      icon: <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-[10px] font-black italic">M</div>,
       status: null
     },
     {
@@ -419,7 +419,7 @@ export default function ProfileView({ userData }: ProfileViewProps) {
           ? `Conectado: ${mpStatus.email || mpStatus.nickname || 'Cuenta de MercadoPago'}`
           : "Conectá tu cuenta de MercadoPago para recibir pagos.",
       icon: mpStatus.connected 
-        ? <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-[10px] font-black">MP</div>
+        ? <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-[10px] font-black">MP</div>
         : <Wallet className="text-gray-400" size={24} />,
       status: mpStatus.connected ? null : 'warning',
       isMercadoPago: true
@@ -433,7 +433,7 @@ export default function ProfileView({ userData }: ProfileViewProps) {
           ? `Conectado · usuario ML ${meliStatus.meliUserId ?? "—"}`
           : "Importá tus publicaciones de Mercado Libre y sincronizá campañas con MADSJEEZ.",
       icon: (
-        <div className="w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center text-slate-900 text-[10px] font-black">
+        <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-[10px] font-black">
           ML
         </div>
       ),
@@ -511,7 +511,7 @@ export default function ProfileView({ userData }: ProfileViewProps) {
               setActiveSubSection(null);
               loadMeliStatus();
             }}
-            className="flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-800"
+            className="flex items-center gap-2 text-sm font-medium text-primary hover:text-primary-hover"
           >
             <ChevronRight size={18} className="rotate-180" />
             Volver al perfil
@@ -541,7 +541,7 @@ export default function ProfileView({ userData }: ProfileViewProps) {
               <User size={48} className="text-gray-400" />
             )}
           </div>
-          <div className="absolute bottom-0 right-0 bg-white p-1.5 rounded-full shadow-md border border-gray-100 text-blue-600 group-hover:scale-110 transition-transform">
+          <div className="absolute bottom-0 right-0 bg-white p-1.5 rounded-full shadow-md border border-gray-100 text-primary group-hover:scale-110 transition-transform">
              <ChevronRight size={14} className="-rotate-90" />
           </div>
         </div>
@@ -552,7 +552,7 @@ export default function ProfileView({ userData }: ProfileViewProps) {
         <p className="text-sm text-gray-500 font-medium">
           {user.email}
         </p>
-        <span className="mt-2 bg-yellow-100 text-yellow-800 text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider">
+        <span className="mt-2 bg-primary/10 text-primary text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider">
           Negocio
         </span>
       </div>
@@ -571,7 +571,7 @@ export default function ProfileView({ userData }: ProfileViewProps) {
           <div className="flex items-center gap-4">
             <button
               onClick={() => openAccessKeyModal('create')}
-              className="bg-blue-600 text-white px-6 py-2 rounded-md font-bold text-sm hover:bg-blue-700 transition-colors"
+              className="bg-primary text-primary-foreground px-6 py-2 rounded-md font-bold text-sm hover:bg-primary-hover transition-colors shadow-sm"
             >
               Crear
             </button>
@@ -600,7 +600,7 @@ export default function ProfileView({ userData }: ProfileViewProps) {
           <div className="flex items-center gap-2">
             <button
               onClick={() => openAccessKeyModal('create')}
-              className="text-blue-600 text-sm font-medium hover:underline px-3 py-1"
+              className="text-primary text-sm font-medium hover:underline px-3 py-1"
             >
               Cambiar
             </button>
@@ -644,7 +644,7 @@ export default function ProfileView({ userData }: ProfileViewProps) {
             </div>
             
             <h3 className={`text-[16px] font-bold text-gray-800 mb-2 transition-colors ${
-              card.isMercadoPago || card.isMercadoLibre ? '' : 'group-hover:text-blue-600'
+              card.isMercadoPago || card.isMercadoLibre ? '' : 'group-hover:text-primary'
             }`}>
               {card.title}
             </h3>
@@ -673,7 +673,7 @@ export default function ProfileView({ userData }: ProfileViewProps) {
                 ) : (
                   <button
                     onClick={handleConnectMercadoPago}
-                    className="w-full py-2 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                    className="w-full py-2 px-4 bg-primary hover:bg-primary-hover text-primary-foreground rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 shadow-sm"
                   >
                     <Link2 size={16} />
                     Conectar MercadoPago
@@ -697,7 +697,7 @@ export default function ProfileView({ userData }: ProfileViewProps) {
                     <button
                       type="button"
                       onClick={() => setActiveSubSection('meli-marketplace')}
-                      className="w-full py-2 px-4 bg-yellow-400 hover:bg-yellow-500 text-slate-900 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+                      className="w-full py-2 px-4 bg-primary hover:bg-primary-hover text-primary-foreground rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2 shadow-sm"
                     >
                       <Link2 size={16} />
                       {meliStatus.connected ? 'Sincronizar catálogo y campañas' : 'Conectar con Mercado Libre'}
@@ -747,7 +747,7 @@ export default function ProfileView({ userData }: ProfileViewProps) {
                       value={accessKeyForm.key}
                       onChange={(e) => setAccessKeyForm(prev => ({ ...prev, key: e.target.value }))}
                       maxLength={6}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 pr-10 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 pr-10 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
                       placeholder="Ej: 1234"
                     />
                     <button
@@ -769,7 +769,7 @@ export default function ProfileView({ userData }: ProfileViewProps) {
                       value={accessKeyForm.confirm}
                       onChange={(e) => setAccessKeyForm(prev => ({ ...prev, confirm: e.target.value }))}
                       maxLength={6}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 pr-10 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 pr-10 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
                       placeholder="Repetí la clave"
                     />
                     <button
@@ -791,7 +791,7 @@ export default function ProfileView({ userData }: ProfileViewProps) {
                   <button
                     onClick={handleSaveAccessKey}
                     disabled={savingKey}
-                    className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+                    className="flex-1 py-2 px-4 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary-hover disabled:opacity-50 shadow-sm"
                   >
                     {savingKey ? 'Guardando...' : 'Guardar'}
                   </button>
@@ -838,7 +838,7 @@ export default function ProfileView({ userData }: ProfileViewProps) {
 
       {/* --- FOOTER --- */}
       <div className="mt-8 text-center">
-        <button className="text-[13px] text-blue-500 font-medium hover:underline">
+        <button className="text-[13px] text-primary font-medium hover:underline">
           Podés <span className="font-bold">cancelar tu cuenta</span> siempre que lo desees.
         </button>
       </div>

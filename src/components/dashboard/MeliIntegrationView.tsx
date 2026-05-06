@@ -12,6 +12,31 @@ type MeliStatus = {
   expiresAt: string | null;
 };
 
+type ImportPreview = {
+  totalFound: number;
+  uniqueFound: number;
+  alreadyLinked: number;
+  toCreate: number;
+  toUpdate: number;
+  breakdown: {
+    byStatus: Record<string, number>;
+    byCondition: Record<string, number>;
+    byListingType: Record<string, number>;
+  };
+  samples: Array<{
+    id: string;
+    title: string;
+    price: number;
+    status: string;
+    condition: string;
+    listingType: string;
+    stock: number;
+    sold: number;
+    action: "create" | "update";
+  }>;
+  warnings: string[];
+};
+
 export default function MeliIntegrationView() {
   const { status } = useSession();
   const searchParams = useSearchParams();
@@ -20,6 +45,8 @@ export default function MeliIntegrationView() {
   const [importing, setImporting] = useState(false);
   const [syncingCamp, setSyncingCamp] = useState(false);
   const [promoPreview, setPromoPreview] = useState<string | null>(null);
+  const [importPreview, setImportPreview] = useState<ImportPreview | null>(null);
+  const [loadingImportPreview, setLoadingImportPreview] = useState(false);
 
   const loadStatus = useCallback(async () => {
     setLoadingStatus(true);
@@ -66,20 +93,52 @@ export default function MeliIntegrationView() {
     window.location.href = "/api/meli/oauth/authorize";
   };
 
+  const loadImportPreview = async () => {
+    setLoadingImportPreview(true);
+    try {
+      const r = await fetch("/api/meli/import?maxPages=15&sampleSize=30");
+      const d = await r.json();
+      if (!r.ok) {
+        toast.error(d.error || "No se pudo generar la vista previa");
+        return;
+      }
+      setImportPreview(d.preview || null);
+      if (d.preview) {
+        toast.success(
+          `Vista previa lista: ${d.preview.toCreate} nuevas y ${d.preview.toUpdate} para actualizar`
+        );
+      }
+    } catch {
+      toast.error("Error de red al leer vista previa");
+    } finally {
+      setLoadingImportPreview(false);
+    }
+  };
+
   const runImport = async () => {
+    if (!importPreview) {
+      toast.error("Primero revisá la vista previa de publicaciones");
+      return;
+    }
     setImporting(true);
     try {
       const r = await fetch("/api/meli/import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ maxPages: 15 }),
+        body: JSON.stringify({ maxPages: 15, requireConfirm: true, confirmed: true }),
       });
       const d = await r.json();
       if (!r.ok) {
         toast.error(d.error || "Error al importar");
         return;
       }
+      if (d.needsConfirmation) {
+        setImportPreview(d.preview || null);
+        toast.message("Confirmá la importación luego de revisar la vista previa.");
+        return;
+      }
       toast.success(`Importadas: ${d.imported}, actualizadas: ${d.updated}`);
+      await loadImportPreview();
       if (d.errorCount > 0) {
         toast.message(`${d.errorCount} avisos`, {
           description: (d.errors || []).slice(0, 3).join(" · "),
@@ -128,7 +187,7 @@ export default function MeliIntegrationView() {
   if (status === "loading" || loadingStatus) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
       </div>
     );
   }
@@ -148,7 +207,7 @@ export default function MeliIntegrationView() {
         <p className="text-sm mt-2">
           <a
             href="/dashboard#meli-ads-studio"
-            className="text-blue-600 font-medium hover:underline inline-flex items-center gap-1"
+            className="text-primary font-medium hover:underline inline-flex items-center gap-1"
           >
             Mercado Libre Ads — datos en vivo, análisis automático y aplicar cambios en campañas PADS
             <ExternalLink className="w-3 h-3 opacity-70" />
@@ -169,7 +228,7 @@ export default function MeliIntegrationView() {
           <button
             type="button"
             onClick={connectMeli}
-            className="inline-flex items-center gap-2 rounded-lg bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-semibold px-4 py-2 text-sm"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground font-semibold px-4 py-2 text-sm shadow-sm"
           >
             <Link2 className="w-4 h-4" />
             {meliStatus?.connected ? "Reconectar Mercado Libre" : "Conectar Mercado Libre"}
@@ -179,7 +238,7 @@ export default function MeliIntegrationView() {
           href="https://developers.mercadolibre.com.ar/es_ar/autenticacion-y-autorizacion"
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline"
+          className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
         >
           Documentación OAuth ML <ExternalLink className="w-3 h-3" />
         </a>
@@ -187,27 +246,113 @@ export default function MeliIntegrationView() {
 
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
         <div className="flex items-center gap-2">
-          <ShoppingBag className="w-5 h-5 text-blue-600" />
+          <ShoppingBag className="w-5 h-5 text-primary" />
           <h3 className="font-semibold text-slate-900">Importar publicaciones</h3>
         </div>
         <p className="text-sm text-slate-600">
           Trae tus publicaciones activas desde Mercado Libre a MADSJEEZ (título, fotos, precio, stock, envío, etc.).
           Los productos aparecen en búsqueda y en la ficha usando tu catálogo Prisma.
         </p>
-        <button
-          type="button"
-          disabled={!meliStatus?.connected || importing}
-          onClick={runImport}
-          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium px-4 py-2 text-sm"
-        >
-          {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-          Importar / actualizar desde ML
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            disabled={!meliStatus?.connected || loadingImportPreview || importing}
+            onClick={loadImportPreview}
+            className="rounded-lg border border-border bg-card hover:bg-muted px-4 py-2 text-sm font-medium text-foreground disabled:opacity-50"
+          >
+            {loadingImportPreview ? "Leyendo publicaciones..." : "Ver vista previa de publicaciones"}
+          </button>
+          <button
+            type="button"
+            disabled={!meliStatus?.connected || importing || !importPreview}
+            onClick={runImport}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary hover:bg-primary-hover disabled:opacity-50 text-primary-foreground font-medium px-4 py-2 text-sm shadow-sm"
+          >
+            {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+            Confirmar importación (sin duplicar)
+          </button>
+        </div>
+        {importPreview && (
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-3">
+            <p className="text-xs text-slate-700 font-medium">
+              Vista previa: {importPreview.uniqueFound} publicaciones únicas leídas desde ML ({importPreview.totalFound} registros
+              escaneados).
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+              <div className="rounded bg-white border border-slate-200 p-2">
+                <span className="text-slate-500">Se crearán</span>
+                <div className="text-base font-bold text-emerald-700">{importPreview.toCreate}</div>
+              </div>
+              <div className="rounded bg-white border border-slate-200 p-2">
+                <span className="text-slate-500">Se actualizarán</span>
+                <div className="text-base font-bold text-primary">{importPreview.toUpdate}</div>
+              </div>
+              <div className="rounded bg-white border border-slate-200 p-2">
+                <span className="text-slate-500">Ya vinculadas (no duplica)</span>
+                <div className="text-base font-bold text-slate-800">{importPreview.alreadyLinked}</div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+              <div>
+                <p className="font-semibold text-slate-700 mb-1">Por estado</p>
+                <div className="space-y-1">
+                  {Object.entries(importPreview.breakdown.byStatus).map(([k, v]) => (
+                    <div key={k} className="flex justify-between text-slate-600"><span>{k}</span><span>{v}</span></div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="font-semibold text-slate-700 mb-1">Por condición</p>
+                <div className="space-y-1">
+                  {Object.entries(importPreview.breakdown.byCondition).map(([k, v]) => (
+                    <div key={k} className="flex justify-between text-slate-600"><span>{k}</span><span>{v}</span></div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="font-semibold text-slate-700 mb-1">Por tipo de publicación</p>
+                <div className="space-y-1">
+                  {Object.entries(importPreview.breakdown.byListingType).map(([k, v]) => (
+                    <div key={k} className="flex justify-between text-slate-600"><span>{k}</span><span>{v}</span></div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-xs bg-white border border-slate-200 rounded">
+                <thead className="bg-slate-100 text-slate-600">
+                  <tr>
+                    <th className="text-left px-2 py-1">Publicación</th>
+                    <th className="text-right px-2 py-1">Precio</th>
+                    <th className="text-left px-2 py-1">Tipo</th>
+                    <th className="text-left px-2 py-1">Condición</th>
+                    <th className="text-left px-2 py-1">Acción</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {importPreview.samples.slice(0, 15).map((s) => (
+                    <tr key={s.id} className="border-t border-slate-100">
+                      <td className="px-2 py-1 text-slate-700 max-w-[260px] truncate">{s.title}</td>
+                      <td className="px-2 py-1 text-right text-slate-700">${Number(s.price || 0).toLocaleString("es-AR")}</td>
+                      <td className="px-2 py-1 text-slate-600">{s.listingType}</td>
+                      <td className="px-2 py-1 text-slate-600">{s.condition}</td>
+                      <td className={`px-2 py-1 font-semibold ${s.action === "create" ? "text-emerald-700" : "text-primary"}`}>
+                        {s.action === "create" ? "Crear" : "Actualizar"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
         <div className="flex items-center gap-2">
-          <Megaphone className="w-5 h-5 text-purple-600" />
+          <Megaphone className="w-5 h-5 text-primary" />
           <h3 className="font-semibold text-slate-900">Campañas con datos de ML</h3>
         </div>
         <p className="text-sm text-slate-600">
@@ -220,7 +365,7 @@ export default function MeliIntegrationView() {
             type="button"
             disabled={!meliStatus?.connected}
             onClick={loadPromotionsPreview}
-            className="rounded-lg border border-slate-300 bg-white hover:bg-slate-50 px-4 py-2 text-sm font-medium disabled:opacity-50"
+            className="rounded-lg border border-border bg-card hover:bg-muted px-4 py-2 text-sm font-medium text-foreground disabled:opacity-50"
           >
             Ver JSON promociones ML
           </button>
@@ -228,7 +373,7 @@ export default function MeliIntegrationView() {
             type="button"
             disabled={!meliStatus?.connected || syncingCamp}
             onClick={syncCampaigns}
-            className="inline-flex items-center gap-2 rounded-lg bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-medium px-4 py-2 text-sm"
+            className="inline-flex items-center gap-2 rounded-lg border border-primary bg-primary/10 text-primary hover:bg-primary/15 disabled:opacity-50 font-semibold px-4 py-2 text-sm"
           >
             {syncingCamp ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
             Sincronizar con campañas MADSJEEZ

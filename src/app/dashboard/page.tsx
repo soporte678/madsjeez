@@ -236,15 +236,15 @@ export default function App() {
     <div className="flex-1 flex flex-col gap-6 w-full max-w-5xl">
       <div className="flex justify-between items-center">
         <h1 className="text-[26px] font-semibold text-gray-800">Favoritos</h1>
-        <button className="bg-blue-500 text-white px-4 py-2 rounded-md font-semibold text-sm flex items-center gap-2 hover:bg-blue-600 transition-colors shadow-sm">
+        <button className="bg-primary text-primary-foreground px-4 py-2 rounded-md font-semibold text-sm flex items-center gap-2 hover:bg-primary-hover transition-colors shadow-sm">
           <Plus size={18} /> Crear lista
         </button>
       </div>
 
       <div className="border-b border-gray-200">
         <nav className="flex gap-8">
-          <button onClick={() => setActiveFavoritosTab('favoritos')} className={`pb-3 px-1 text-[15px] font-medium transition-colors ${activeFavoritosTab === 'favoritos' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-800'}`}>Mis favoritos</button>
-          <button onClick={() => setActiveFavoritosTab('listas')} className={`pb-3 px-1 text-[15px] font-medium transition-colors ${activeFavoritosTab === 'listas' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-800'}`}>Listas</button>
+          <button onClick={() => setActiveFavoritosTab('favoritos')} className={`pb-3 px-1 text-[15px] font-medium transition-colors ${activeFavoritosTab === 'favoritos' ? 'text-primary border-b-2 border-primary' : 'text-gray-500 hover:text-gray-800'}`}>Mis favoritos</button>
+          <button onClick={() => setActiveFavoritosTab('listas')} className={`pb-3 px-1 text-[15px] font-medium transition-colors ${activeFavoritosTab === 'listas' ? 'text-primary border-b-2 border-primary' : 'text-gray-500 hover:text-gray-800'}`}>Listas</button>
         </nav>
       </div>
 
@@ -254,7 +254,7 @@ export default function App() {
         </div>
         <h3 className="text-lg font-semibold text-gray-800 mb-2">Aún no tienes favoritos</h3>
         <p className="text-sm text-gray-500 max-w-xs mb-8">Guarda los productos que más te gusten para tenerlos siempre a mano.</p>
-        <button className="bg-blue-50 text-blue-600 font-semibold text-sm px-8 py-3 rounded-md hover:bg-blue-100 transition-colors">Buscar productos</button>
+        <button className="bg-primary/10 text-primary font-semibold text-sm px-8 py-3 rounded-md hover:bg-primary/15 transition-colors">Buscar productos</button>
       </div>
     </div>
   );
@@ -269,7 +269,7 @@ export default function App() {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-2">
         <div className="relative max-w-md">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input type="text" placeholder="Buscar nombre de la tienda" className="w-full py-2 pl-9 pr-4 text-sm border border-gray-300 rounded-full focus:outline-none focus:border-blue-500" />
+          <input type="text" placeholder="Buscar nombre de la tienda" className="w-full py-2 pl-9 pr-4 text-sm border border-gray-300 rounded-full focus:outline-none focus:border-primary" />
         </div>
       </div>
 
@@ -346,10 +346,10 @@ export default function App() {
 
   const renderNovedades = () => (
     <div className="flex-1 flex flex-col gap-6 w-full max-w-4xl">
-      <div className="flex justify-between items-center mb-2"><h1 className="text-[26px] font-semibold text-gray-800">Novedades</h1><button className="text-blue-600 text-sm font-semibold hover:underline">Configurar notificaciones</button></div>
+      <div className="flex justify-between items-center mb-2"><h1 className="text-[26px] font-semibold text-gray-800">Novedades</h1><button className="text-primary text-sm font-semibold hover:underline">Configurar notificaciones</button></div>
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex gap-5 hover:shadow-md transition-shadow cursor-pointer">
-        <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0"><Megaphone size={24} /></div>
-        <div><div className="flex items-center gap-2 mb-1"><span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wide">Importante</span><span className="text-xs text-gray-400 font-medium">Hace 2 horas</span></div><h3 className="text-lg font-bold text-gray-800 mb-1.5">¡Te damos la bienvenida a Madsjeez!</h3><p className="text-[14px] text-gray-600 mb-3 leading-relaxed">Estamos muy felices de que te sumes a nuestra plataforma. Aquí encontrarás todas las herramientas necesarias para potenciar tu negocio.</p><a href="#" className="text-blue-600 text-sm font-semibold hover:underline">Ir a la Central de Aprendizaje</a></div>
+        <div className="w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center text-primary shrink-0"><Megaphone size={24} /></div>
+        <div><div className="flex items-center gap-2 mb-1"><span className="bg-primary/15 text-primary text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wide">Importante</span><span className="text-xs text-gray-400 font-medium">Hace 2 horas</span></div><h3 className="text-lg font-bold text-gray-800 mb-1.5">¡Te damos la bienvenida a Madsjeez!</h3><p className="text-[14px] text-gray-600 mb-3 leading-relaxed">Estamos muy felices de que te sumes a nuestra plataforma. Aquí encontrarás todas las herramientas necesarias para potenciar tu negocio.</p><a href="#" className="text-primary text-sm font-semibold hover:underline">Ir a la Central de Aprendizaje</a></div>
       </div>
     </div>
   );
@@ -406,8 +406,8 @@ export default function App() {
     return (
       <div className="fixed inset-0 bg-gray-100 z-50 overflow-y-auto">
         {/* Header amarillo */}
-        <div className="bg-[#fff159] py-10 text-center relative border-b border-yellow-400">
-          <button onClick={() => setShowLiveMonitor(false)} className="absolute left-6 top-6 flex items-center gap-1 text-blue-900 font-bold hover:underline text-sm">
+        <div className="bg-muted py-10 text-center relative border-b border-border">
+          <button onClick={() => setShowLiveMonitor(false)} className="absolute left-6 top-6 flex items-center gap-1 text-slate-900 font-bold hover:underline text-sm">
             <ChevronDown className="rotate-90" size={16}/> Volver a Métricas
           </button>
           <button onClick={() => setShowLiveMonitor(false)} className="absolute right-6 top-6 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow hover:bg-gray-50">
@@ -429,15 +429,15 @@ export default function App() {
               <h3 className="text-sm font-semibold text-gray-800 mb-4 text-center">Métricas clave</h3>
               <div className="grid grid-cols-2 gap-4">
                 {[
-                  { icon: <Eye size={18} className="text-blue-500" />, label: 'Visitas únicas', value: '789' },
-                  { icon: <Users size={18} className="text-blue-500" />, label: 'Total de compradores', value: '14' },
-                  { icon: <ShoppingBag size={18} className="text-blue-500" />, label: 'Cantidad de ventas', value: '16' },
-                  { icon: <TrendingUp size={18} className="text-blue-500" />, label: 'Conversión', value: '2,03%' },
-                  { icon: <Package size={18} className="text-blue-500" />, label: 'Unidades vendidas', value: '17 u.' },
-                  { icon: <DollarSign size={18} className="text-blue-500" />, label: 'Precio promedio', value: '$ 33.576' },
+                  { icon: <Eye size={18} className="text-primary" />, label: 'Visitas únicas', value: '789' },
+                  { icon: <Users size={18} className="text-primary" />, label: 'Total de compradores', value: '14' },
+                  { icon: <ShoppingBag size={18} className="text-primary" />, label: 'Cantidad de ventas', value: '16' },
+                  { icon: <TrendingUp size={18} className="text-primary" />, label: 'Conversión', value: '2,03%' },
+                  { icon: <Package size={18} className="text-primary" />, label: 'Unidades vendidas', value: '17 u.' },
+                  { icon: <DollarSign size={18} className="text-primary" />, label: 'Precio promedio', value: '$ 33.576' },
                 ].map((m, i) => (
                   <div key={i} className="text-center">
-                    <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-2">{m.icon}</div>
+                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">{m.icon}</div>
                     <div className="text-lg font-black text-gray-800">{m.value}</div>
                     <div className="text-[10px] text-gray-500 mt-0.5">{m.label}</div>
                   </div>
@@ -460,7 +460,7 @@ export default function App() {
               </ResponsiveContainer>
               <div className="flex items-center justify-center gap-6 mt-2">
                 <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                  <span className="w-2.5 h-2.5 rounded-full bg-primary"></span>
                   <span className="text-xs text-gray-500">Hoy</span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -475,8 +475,8 @@ export default function App() {
               <h3 className="text-sm font-semibold text-gray-800 mb-4 text-center">Productos más vendidos</h3>
               <div className="space-y-3">
                 {topProducts.map((p) => (
-                  <div key={p.rank} className={`flex items-center gap-3 p-2.5 rounded-lg ${p.highlighted ? 'bg-yellow-50 border border-yellow-200' : 'hover:bg-gray-50'}`}>
-                    <div className={`text-sm font-bold ${p.rank === 1 ? 'text-yellow-600' : 'text-gray-500'} w-5 text-center`}>{p.rank}</div>
+                  <div key={p.rank} className={`flex items-center gap-3 p-2.5 rounded-lg ${p.highlighted ? 'bg-primary/5 border border-primary/20' : 'hover:bg-gray-50'}`}>
+                    <div className={`text-sm font-bold ${p.rank === 1 ? 'text-primary' : 'text-gray-500'} w-5 text-center`}>{p.rank}</div>
                     <div className="w-12 h-12 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden">
                       <img src={p.img} alt="" className="w-full h-full object-cover" />
                     </div>
@@ -496,10 +496,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* Floating help button */}
-        <button className="fixed bottom-6 right-6 w-12 h-12 bg-blue-500 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-600 transition-colors z-50">
-          <span className="text-lg font-bold">?</span>
-        </button>
       </div>
     );
   };
@@ -509,21 +505,20 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gray-100 font-sans text-gray-800 flex flex-col relative">
-      {/* HEADER AMARILLO */}
-      <header className="bg-[#fff159] py-2 px-4 shadow-sm z-50 relative flex-shrink-0">
+      <header className="bg-[var(--shell-header-bg)] border-b border-[var(--shell-header-border)] py-2 px-4 shadow-sm z-50 relative flex-shrink-0">
         <div className="max-w-[1200px] mx-auto flex items-center justify-between">
           <a href="/" className="flex items-center gap-2 group cursor-pointer">
-            <div className="relative w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center shadow-lg border border-white/10 overflow-hidden group-hover:shadow-blue-500/20 transition-all">
-              <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/30 to-transparent"></div>
+            <div className="relative w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center shadow-lg border border-white/10 overflow-hidden group-hover:shadow-primary/20 transition-all">
+              <div className="absolute inset-0 bg-gradient-to-tr from-primary/30 to-transparent"></div>
               <svg viewBox="0 0 100 100" className="w-7 h-7 overflow-visible">
                 <polygon points="15,80 35,30 55,55 35,80" fill="#2563EB" className="opacity-90" />
                 <polygon points="55,55 75,30 95,80 75,80" fill="#2563EB" className="opacity-90" />
-                <path d="M 85 80 L 65 30 L 45 65" fill="none" stroke="#FACC15" strokeWidth="14" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M 85 80 L 65 30 L 45 65" fill="none" stroke="#3b82f6" strokeWidth="14" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
             <span className="font-black text-[22px] tracking-tighter leading-none flex items-center uppercase">
               <span className="text-slate-900">MADS</span>
-              <span className="text-blue-700">JEEZ</span>
+              <span className="text-primary">JEEZ</span>
             </span>
           </a>
           <div className="flex items-center gap-4 text-[13px] text-slate-800 font-light">
@@ -560,8 +555,9 @@ export default function App() {
               <NotificationsDropdown isOpen={notifOpen} onClose={() => setNotifOpen(false)} />
             </div>
             <button 
+              type="button"
               onClick={() => setIsAssistantOpen(true)} 
-              className="bg-slate-900 text-white px-3 py-1 rounded-full text-xs font-medium hover:bg-slate-800 transition-colors"
+              className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-medium hover:bg-primary-hover transition-colors shadow-sm"
             >
               Asistente
             </button>
@@ -575,7 +571,7 @@ export default function App() {
         <aside className="w-56 flex-shrink-0 bg-white border-r border-gray-200">
           <div className="py-6 px-0">
             <h2 className="font-bold text-lg mb-4 flex items-center gap-2 px-4">
-              <span className="grid grid-cols-2 gap-0.5"><span className="w-2 h-2 bg-blue-500 rounded-sm"></span><span className="w-2 h-2 bg-blue-500 rounded-sm"></span><span className="w-2 h-2 bg-blue-500 rounded-sm"></span><span className="w-2 h-2 bg-blue-500 rounded-sm"></span></span>
+              <span className="grid grid-cols-2 gap-0.5"><span className="w-2 h-2 bg-primary rounded-sm"></span><span className="w-2 h-2 bg-primary rounded-sm"></span><span className="w-2 h-2 bg-primary rounded-sm"></span><span className="w-2 h-2 bg-primary rounded-sm"></span></span>
               MI CUENTA
             </h2>
             <nav className="flex flex-col gap-1">
@@ -583,14 +579,14 @@ export default function App() {
                 <div key={item.id}>
                   {item.isParent ? (
                     <>
-                      <button onClick={() => item.setIsOpen(!item.isOpen)} className="w-full flex items-center justify-between py-2 px-4 hover:bg-blue-50 text-blue-600 font-semibold transition-colors text-sm">
+                      <button onClick={() => item.setIsOpen(!item.isOpen)} className="w-full flex items-center justify-between py-2 px-4 hover:bg-primary/10 text-primary font-semibold transition-colors text-sm">
                         <div className="flex items-center gap-3">{item.icon} {item.label}</div>
                         <ChevronDown size={16} className={`transform transition-transform ${item.isOpen ? 'rotate-180' : ''}`} />
                       </button>
                       {item.isOpen && (
                         <div className="flex flex-col ml-4 mt-1 border-l-2 border-gray-200 pl-4 gap-1">
                           {item.subItems.map(sub => (
-                            <button key={sub.id} onClick={() => setActiveMenu(sub.id)} className={`text-left text-sm py-1.5 px-2 transition-colors flex items-center justify-between rounded ${activeMenu === sub.id ? 'text-blue-600 font-bold bg-blue-50' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`}>
+                            <button key={sub.id} onClick={() => setActiveMenu(sub.id)} className={`text-left text-sm py-1.5 px-2 transition-colors flex items-center justify-between rounded ${activeMenu === sub.id ? 'text-primary font-bold bg-[var(--shell-sidebar-active-bg)]' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`}>
                               <span>{sub.label}</span>
                               {(sub as any).rightIcon && (sub as any).rightIcon}
                             </button>
@@ -599,7 +595,7 @@ export default function App() {
                       )}
                     </>
                   ) : (
-                    <button onClick={() => setActiveMenu(item.id)} className={`w-full flex items-center justify-between py-2 px-4 font-medium transition-colors text-sm ${activeMenu === item.id ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-100'}`}>
+                    <button onClick={() => setActiveMenu(item.id)} className={`w-full flex items-center justify-between py-2 px-4 font-medium transition-colors text-sm ${activeMenu === item.id ? 'bg-[var(--shell-sidebar-active-bg)] text-primary' : 'text-gray-700 hover:bg-gray-100'}`}>
                       <div className="flex items-center gap-3">{item.icon || <LayoutGrid size={18}/>} {item.label}</div>
                     </button>
                   )}
@@ -659,15 +655,14 @@ export default function App() {
         </section>
       </div>
 
-      {/* ASISTENTE */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
-        {isAssistantOpen && (
-          <div className="bg-white w-[340px] rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.2)] border border-gray-200 mb-4 overflow-hidden flex flex-col">
+      {isAssistantOpen && (
+        <div className="fixed bottom-24 right-6 z-[10050] flex flex-col items-end max-sm:right-4">
+          <div className="bg-white w-[340px] max-w-[calc(100vw-2rem)] rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.2)] border border-gray-200 mb-4 overflow-hidden flex flex-col">
             <div className="px-4 py-3 border-b border-gray-100 flex justify-between items-center shadow-sm">
               <h3 className="font-bold text-gray-800 text-[15px]">Asistente</h3>
               <div className="flex items-center gap-2 text-gray-500">
-                <button className="hover:bg-gray-100 p-1.5 rounded-md transition-colors"><Maximize2 size={16}/></button>
-                <button onClick={() => setIsAssistantOpen(false)} className="hover:bg-gray-100 p-1.5 rounded-md transition-colors"><X size={18}/></button>
+                <button type="button" className="hover:bg-gray-100 p-1.5 rounded-md transition-colors"><Maximize2 size={16}/></button>
+                <button type="button" onClick={() => setIsAssistantOpen(false)} className="hover:bg-gray-100 p-1.5 rounded-md transition-colors"><X size={18}/></button>
               </div>
             </div>
             <div className="p-5 h-[320px] bg-gray-50 flex flex-col justify-end">
@@ -678,18 +673,13 @@ export default function App() {
             </div>
             <div className="p-4 bg-white border-t border-gray-100">
               <div className="relative">
-                <input type="text" placeholder="Preguntale al asistente..." className="w-full pl-4 pr-10 py-3 bg-gray-100 rounded-full text-[13px] font-medium focus:outline-none focus:bg-white focus:border-blue-500 transition-all" />
-                <button className="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-blue-100 hover:text-blue-600"><ChevronUp size={16} /></button>
+                <input type="text" placeholder="Preguntale al asistente..." className="w-full pl-4 pr-10 py-3 bg-gray-100 rounded-full text-[13px] font-medium focus:outline-none focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" />
+                <button type="button" className="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-primary/10 hover:text-primary"><ChevronUp size={16} /></button>
               </div>
             </div>
           </div>
-        )}
-        {!isAssistantOpen && (
-          <button onClick={() => setIsAssistantOpen(true)} className="w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-700 hover:scale-105 transition-all">
-            <MessageCircle size={28} /><span className="absolute top-0 right-0 w-3.5 h-3.5 bg-red-500 border-2 border-white rounded-full"></span>
-          </button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -699,19 +689,19 @@ function PreferenceItem({ title, subtitle, rightElement, hasBorder = true }) {
   return (
     <div className={`p-5 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer ${hasBorder ? 'border-b border-gray-100' : ''}`}>
       <div><h4 className="text-[15px] text-gray-800 font-medium">{title}</h4>{subtitle && <p className="text-[13px] text-gray-500 mt-1">{subtitle}</p>}</div>
-      {rightElement || <ChevronRight size={20} className="text-blue-500" />}
+      {rightElement || <ChevronRight size={20} className="text-primary" />}
     </div>
   );
 }
 
 function TabButton({ id, label, current, set }) {
   return (
-    <button onClick={() => set(id)} className={`pb-3 px-1 transition-colors ${current === id ? 'text-blue-600 border-b-2 border-blue-600' : 'hover:text-gray-800'}`}>{label}</button>
+    <button onClick={() => set(id)} className={`pb-3 px-1 transition-colors ${current === id ? 'text-primary border-b-2 border-primary' : 'hover:text-gray-800'}`}>{label}</button>
   );
 }
 
 function DropdownItem({ text, onClick }) {
   return (
-    <a href="#" onClick={(e) => { e.preventDefault(); if(onClick) onClick(); }} className="flex justify-between items-center px-4 py-2 hover:bg-blue-50/50 hover:text-blue-600 text-gray-600 transition-colors"><span>{text}</span></a>
+    <a href="#" onClick={(e) => { e.preventDefault(); if(onClick) onClick(); }} className="flex justify-between items-center px-4 py-2 hover:bg-primary/10 hover:text-primary text-gray-600 transition-colors"><span>{text}</span></a>
   );
 }

@@ -1,6 +1,15 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
+function isMissingColumnError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: string }).code === "P2022"
+  )
+}
+
 export async function GET() {
   try {
     // Get random active products with images, rotating daily based on date
@@ -51,6 +60,11 @@ export async function GET() {
     return NextResponse.json({ products: mapped, total: totalCount })
   } catch (error) {
     console.error("Carousel products error:", error)
+    // Mitigacion de incidente: si faltan columnas por migraciones pendientes,
+    // no tiramos 500 para evitar romper la home mientras se corrige la DB.
+    if (isMissingColumnError(error)) {
+      return NextResponse.json({ products: [], total: 0 })
+    }
     return NextResponse.json({ products: [], total: 0 }, { status: 500 })
   }
 }

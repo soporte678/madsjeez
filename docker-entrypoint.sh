@@ -11,9 +11,11 @@ if [ ! -f "package.json" ]; then
     exit 1
 fi
 
-# Ejecutar migraciones y fallback si DATABASE_URL está configurada
-if [ -n "$DATABASE_URL" ]; then
-    echo "=== DATABASE_URL configurada ==="
+# Permite mitigar incidentes de arranque si la DB está inestable
+if [ "$SKIP_DB_MIGRATIONS_ON_BOOT" = "true" ]; then
+    echo "WARNING: SKIP_DB_MIGRATIONS_ON_BOOT=true, saltando migraciones"
+elif [ -n "$DATABASE_URL" ]; then
+    echo "=== DATABASE_URL configurada (runtime) ==="
     echo "=== Ejecutando migraciones de Prisma ==="
     # Prisma 7 lee DATABASE_URL desde prisma.config.ts (datasource.url). No ignorar fallos.
     export DATABASE_URL
@@ -31,7 +33,7 @@ prisma.\$executeRawUnsafe('ALTER TABLE \"users\" ADD COLUMN IF NOT EXISTS \"acce
   .catch(e => { console.log('INFO:', e.message); return prisma.\$disconnect().catch(() => {}); });
 " || echo "WARNING: Fallback SQL fallo (ignorado)"
 else
-    echo "WARNING: DATABASE_URL no configurada, saltando migraciones"
+    echo "WARNING: DATABASE_URL no configurada en runtime, saltando migraciones"
 fi
 
 # Iniciar la aplicación

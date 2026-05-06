@@ -1,35 +1,36 @@
 @import "tailwindcss";
 
 :root {
-  /* Marketplace: alta energía visual + contraste legible (WCAG-friendly en pares token/foreground) */
-  --background: #fff8f4;
+  /*
+   * Paleta unificada — experiencia más sobria y profesional (comercio / SaaS).
+   * Usar siempre tokens (primary, muted, border…) en componentes; evitar amarillos planos sueltos.
+   */
+  --background: #f4f6f9;
   --foreground: #0f172a;
   --font-outfit: "Outfit", sans-serif;
   --font-montserrat: "Montserrat", sans-serif;
 
-  /* Primario — naranja‑rojo intenso (CTA, marca) */
-  --primary: #ff4d2e;
-  --primary-hover: #e63d22;
+  /* Primario — azul confianza (CTA principal, navegación activa, enlaces fuertes) */
+  --primary: #1d4ed8;
+  --primary-hover: #1e40af;
   --primary-foreground: #ffffff;
 
-  /* Secundario — ámbar llamativo sobre fondos claros */
-  --secondary: #ffb703;
-  --secondary-hover: #ffa60a;
-  --secondary-foreground: #0f172a;
+  /* Secundario — superficie neutra (botones secundarios, chips) */
+  --secondary: #f1f5f9;
+  --secondary-hover: #e2e8f0;
+  --secondary-foreground: #1e293b;
 
-  /* Acento — cyan eléctrico (links, chips, highlights) */
-  --accent: #00b4d8;
-  --accent-hover: #0096c7;
-  --accent-foreground: #04212b;
+  /* Acento — azul más claro (hover links, iconos de apoyo) */
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --accent-foreground: #ffffff;
 
-  /* Éxito — verde esmeralda (mejor lectura que lima neón) */
-  --success: #10b981;
-  --success-hover: #059669;
+  --success: #059669;
+  --success-hover: #047857;
   --success-foreground: #ffffff;
 
-  /* Alerta / promos — magenta vivo, texto siempre claro encima */
-  --warning: #db2777;
-  --warning-hover: #be185d;
+  --warning: #d97706;
+  --warning-hover: #b45309;
   --warning-foreground: #ffffff;
 
   --destructive: #dc2626;
@@ -37,23 +38,27 @@
   --destructive-foreground: #ffffff;
 
   --muted: #f1f5f9;
-  --muted-foreground: #475569;
+  --muted-foreground: #64748b;
   --card: #ffffff;
   --card-foreground: #0f172a;
   --popover: #ffffff;
   --popover-foreground: #0f172a;
   --border: #e2e8f0;
   --input: #e2e8f0;
-  --ring: #ff4d2e;
+  --ring: #3b82f6;
 
-  --gradient-primary: linear-gradient(135deg, #ff4d2e 0%, #ff9100 45%, #ffb703 100%);
-  --gradient-hero: linear-gradient(135deg, #0f172a 0%, #1e1b4b 52%, #312e81 100%);
-  --gradient-accent: linear-gradient(135deg, #00b4d8 0%, #06b6d4 50%, #14b8a6 100%);
-  --gradient-warm: linear-gradient(135deg, #ff4d2e 0%, #db2777 48%, #ffb703 100%);
-  --gradient-cool: linear-gradient(135deg, #00b4d8 0%, #6366f1 50%, #8b5cf6 100%);
+  --gradient-primary: linear-gradient(135deg, #1d4ed8 0%, #2563eb 48%, #3b82f6 100%);
+  --gradient-hero: linear-gradient(135deg, #0f172a 0%, #1e293b 52%, #334155 100%);
+  --gradient-accent: linear-gradient(135deg, #2563eb 0%, #4f46e5 55%, #6366f1 100%);
+  --gradient-warm: linear-gradient(135deg, #ea580c 0%, #d97706 50%, #ca8a04 100%);
+  --gradient-cool: linear-gradient(135deg, #0284c7 0%, #2563eb 50%, #4f46e5 100%);
 
-  /* Punto medio para degradados (CTA, marca) */
-  --brand-flare: #ff9100;
+  --brand-flare: #2563eb;
+
+  /* Shell dashboard / headers propios (si querés distinto del fondo página pública) */
+  --shell-header-bg: #ffffff;
+  --shell-header-border: #e2e8f0;
+  --shell-sidebar-active-bg: color-mix(in srgb, var(--primary) 12%, white);
 }
 
 @theme inline {
@@ -95,6 +100,51 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-outfit);
+}
+
+/* Utilidades de marca — botones alineados al sistema de tokens */
+.btn-primary-solid {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.5rem;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  transition: background 0.2s ease;
+}
+.btn-primary-solid:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+.btn-primary-solid:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--foreground);
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.btn-secondary-outline:hover:not(:disabled) {
+  background: var(--muted);
+  border-color: color-mix(in srgb, var(--primary) 25%, var(--border));
+}
+.btn-secondary-outline:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .font-outfit {

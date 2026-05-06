@@ -11,6 +11,8 @@ import {
   Zap,
   ChevronDown,
   ChevronUp,
+  ArrowDown,
+  ArrowUp,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -24,6 +26,7 @@ type SnapshotCampaign = {
   site_id: string;
   advertiser_id: number;
   metrics?: Record<string, number>;
+  metrics_prev?: Record<string, number>;
 };
 
 type Recommendation = {
@@ -46,6 +49,12 @@ export default function MeliAdsStudioView() {
     metricsDays?: number;
     advertisers?: { advertiser_id: number; site_id: string; account_name?: string }[];
     campaigns?: SnapshotCampaign[];
+    totals?: Record<string, number>;
+    previousTotals?: Record<string, number>;
+    deltas?: Record<string, number>;
+    finance?: Record<string, number>;
+    currentWindow?: { start: string; end: string };
+    previousWindow?: { start: string; end: string };
     recommendations?: Recommendation[];
     errors?: string[];
   } | null>(null);
@@ -120,7 +129,7 @@ export default function MeliAdsStudioView() {
   if (sess === "loading") {
     return (
       <div className="flex justify-center py-20">
-        <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
       </div>
     );
   }
@@ -131,6 +140,32 @@ export default function MeliAdsStudioView() {
 
   const recs = snapshot?.recommendations ?? [];
   const camps = snapshot?.campaigns ?? [];
+  const totals = snapshot?.totals ?? {};
+  const deltas = snapshot?.deltas ?? {};
+  const finance = snapshot?.finance ?? {};
+
+  const num = (v: unknown) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  };
+  const money = (v: unknown) =>
+    new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(num(v));
+  const count = (v: unknown) => new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 }).format(num(v));
+  const pct = (v: unknown, digits = 2) => `${num(v).toFixed(digits)}%`;
+  const ratio = (v: unknown, digits = 2) => num(v).toFixed(digits);
+
+  const Delta = ({ value, kind = "number" }: { value: number; kind?: "number" | "money" | "pct" }) => {
+    if (!Number.isFinite(value) || value === 0) return <span className="text-xs text-gray-400">= 0</span>;
+    const up = value > 0;
+    const text =
+      kind === "money" ? money(Math.abs(value)) : kind === "pct" ? `${Math.abs(value).toFixed(2)} pp` : count(Math.abs(value));
+    return (
+      <span className={`inline-flex items-center gap-1 text-xs font-semibold ${up ? "text-emerald-600" : "text-red-600"}`}>
+        {up ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
+        {text}
+      </span>
+    );
+  };
 
   return (
     <div className="space-y-8 max-w-6xl">
@@ -153,7 +188,7 @@ export default function MeliAdsStudioView() {
           type="button"
           disabled={loading}
           onClick={load}
-          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium px-4 py-2 text-sm"
+          className="inline-flex items-center gap-2 rounded-lg bg-primary hover:bg-primary-hover disabled:opacity-50 text-primary-foreground font-medium px-4 py-2 text-sm shadow-sm"
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
           Actualizar datos y análisis
@@ -171,6 +206,38 @@ export default function MeliAdsStudioView() {
           <AlertTriangle className="w-5 h-5 shrink-0" />
           No hay anunciante PADS para esta cuenta. Verificá permisos u operativamente Product Ads en Mercado Libre.
         </div>
+      )}
+
+      {camps.length > 0 && (
+        <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3">
+          <div className="rounded-xl border border-gray-200 bg-white p-4">
+            <p className="text-xs text-gray-500">Presupuesto diario total</p>
+            <p className="text-xl font-bold text-emerald-700">{money(totals.budget)}</p>
+            <Delta value={num(deltas.budget)} kind="money" />
+          </div>
+          <div className="rounded-xl border border-gray-200 bg-white p-4">
+            <p className="text-xs text-gray-500">Gasto (ventana actual)</p>
+            <p className="text-xl font-bold text-emerald-700">{money(totals.cost)}</p>
+            <Delta value={num(deltas.cost)} kind="money" />
+          </div>
+          <div className="rounded-xl border border-gray-200 bg-white p-4">
+            <p className="text-xs text-gray-500">Ingresos estimados Ads</p>
+            <p className="text-xl font-bold text-emerald-700">{money(totals.revenue)}</p>
+            <Delta value={num(deltas.revenue)} kind="money" />
+          </div>
+          <div className="rounded-xl border border-gray-200 bg-white p-4">
+            <p className="text-xs text-gray-500">Ganancia estimada</p>
+            <p className={`text-xl font-bold ${num(totals.profit) >= 0 ? "text-emerald-700" : "text-red-600"}`}>
+              {money(totals.profit)}
+            </p>
+            <Delta value={num(deltas.profit)} kind="money" />
+          </div>
+          <div className="rounded-xl border border-gray-200 bg-white p-4">
+            <p className="text-xs text-gray-500">Próxima factura (proyección)</p>
+            <p className="text-xl font-bold text-emerald-700">{money(finance.nextInvoiceProjection)}</p>
+            <p className="text-xs text-gray-500 mt-1">Diario: {money(finance.avgDailySpent)}</p>
+          </div>
+        </section>
       )}
 
       {camps.length > 0 && (
@@ -198,14 +265,20 @@ export default function MeliAdsStudioView() {
               <tbody>
                 {camps.map((c) => {
                   const m = c.metrics || {};
+                  const p = c.metrics_prev || {};
                   const prints = m.prints ?? 0;
                   const clicks = m.clicks ?? 0;
-                  let ctr = "—";
-                  if (prints > 0) ctr = ((clicks / prints) * 100).toFixed(2);
+                  let ctr = Number.NaN;
+                  if (prints > 0) ctr = (clicks / prints) * 100;
                   else if (m.ctr != null && Number.isFinite(m.ctr)) {
                     const v = Number(m.ctr);
-                    ctr = (v <= 1 ? v * 100 : v).toFixed(2);
+                    ctr = v <= 1 ? v * 100 : v;
                   }
+                  const prevCtrRaw = Number(p.ctr ?? 0);
+                  const prevCtr = prevCtrRaw > 0 && prevCtrRaw <= 1 ? prevCtrRaw * 100 : prevCtrRaw;
+                  const cost = num(m.cost);
+                  const acos = num(m.acos);
+                  const roas = num(m.roas);
                   return (
                     <tr key={`${c.site_id}-${c.id}`} className="border-t border-gray-100 hover:bg-gray-50/80">
                       <td className="px-3 py-2 text-gray-900 font-medium max-w-[220px] truncate">
@@ -213,17 +286,52 @@ export default function MeliAdsStudioView() {
                       </td>
                       <td className="px-3 py-2 text-gray-700">{c.status}</td>
                       <td className="px-3 py-2 text-gray-700">{c.strategy}</td>
-                      <td className="px-3 py-2 text-right">{c.budget ?? "—"}</td>
-                      <td className="px-3 py-2 text-right">{prints}</td>
-                      <td className="px-3 py-2 text-right">{clicks}</td>
-                      <td className="px-3 py-2 text-right">{ctr}</td>
-                      <td className="px-3 py-2 text-right">{m.cost ?? "—"}</td>
-                      <td className="px-3 py-2 text-right">{m.acos ?? "—"}</td>
-                      <td className="px-3 py-2 text-right">{m.roas ?? "—"}</td>
+                      <td className="px-3 py-2 text-right text-emerald-700 font-semibold">
+                        <div>{money(c.budget)}</div>
+                        <span className="text-xs text-gray-400">diario</span>
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        <div>{count(prints)}</div>
+                        <Delta value={num(prints) - num(p.prints)} />
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        <div>{count(clicks)}</div>
+                        <Delta value={num(clicks) - num(p.clicks)} />
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        <div>{Number.isFinite(ctr) ? pct(ctr) : "—"}</div>
+                        <Delta value={Number.isFinite(ctr) ? ctr - prevCtr : 0} kind="pct" />
+                      </td>
+                      <td className="px-3 py-2 text-right text-emerald-700 font-semibold">
+                        <div>{money(cost)}</div>
+                        <Delta value={cost - num(p.cost)} kind="money" />
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        <div>{pct(acos)}</div>
+                        <Delta value={acos - num(p.acos)} kind="pct" />
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        <div>{ratio(roas)}x</div>
+                        <Delta value={roas - num(p.roas)} />
+                      </td>
                     </tr>
                   );
                 })}
               </tbody>
+              <tfoot className="bg-gray-50 border-t border-gray-200">
+                <tr className="font-semibold text-gray-800">
+                  <td className="px-3 py-2">Totales</td>
+                  <td className="px-3 py-2">—</td>
+                  <td className="px-3 py-2">—</td>
+                  <td className="px-3 py-2 text-right text-emerald-700">{money(totals.budget)}</td>
+                  <td className="px-3 py-2 text-right">{count(totals.prints)}</td>
+                  <td className="px-3 py-2 text-right">{count(totals.clicks)}</td>
+                  <td className="px-3 py-2 text-right">{pct(totals.ctr)}</td>
+                  <td className="px-3 py-2 text-right text-emerald-700">{money(totals.cost)}</td>
+                  <td className="px-3 py-2 text-right">{pct(totals.acos)}</td>
+                  <td className="px-3 py-2 text-right">{ratio(totals.roas)}x</td>
+                </tr>
+              </tfoot>
             </table>
           </div>
         </section>
@@ -233,7 +341,7 @@ export default function MeliAdsStudioView() {
         <section className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <Info className="w-5 h-5 text-blue-600" />
+              <Info className="w-5 h-5 text-primary" />
               <h3 className="font-semibold text-gray-900">Análisis automático — acciones sugeridas</h3>
             </div>
             <button
@@ -287,7 +395,7 @@ export default function MeliAdsStudioView() {
                       <button
                         type="button"
                         onClick={() => setExpanded((e) => ({ ...e, [r.id]: !open }))}
-                        className="text-xs text-blue-600 font-medium inline-flex items-center gap-1 mt-1 hover:underline"
+                        className="text-xs text-primary font-medium inline-flex items-center gap-1 mt-1 hover:underline"
                       >
                         {open ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                         Ver payload ML (PUT)
