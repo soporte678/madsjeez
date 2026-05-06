@@ -364,6 +364,21 @@ export default function MeliAdsStudioView() {
     s === "critical" ? "Crítico" : s === "warning" ? "Advertencia" : "Informativo";
   const categoryLabel = (c: Recommendation["category"]) =>
     c === "positive" ? "Positivo" : c === "negative" ? "Riesgo" : c === "efficiency" ? "Eficiencia" : "Crecimiento";
+  const statusLabel = (s?: string) => {
+    const v = (s || "").toLowerCase();
+    if (v === "active") return "Activa";
+    if (v === "paused") return "Pausada";
+    if (v === "draft") return "Borrador";
+    if (v === "ended") return "Finalizada";
+    return s || "—";
+  };
+  const strategyLabel = (s?: string) => {
+    const v = (s || "").toLowerCase();
+    if (v === "profitability") return "Rentabilidad";
+    if (v === "increase") return "Incremento";
+    if (v === "visibility") return "Visibilidad";
+    return s || "—";
+  };
 
   return (
     <div className="space-y-8 max-w-6xl">
@@ -712,8 +727,8 @@ export default function MeliAdsStudioView() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-3 py-2 text-gray-700">{c.status}</td>
-                      <td className="px-3 py-2 text-gray-700">{c.strategy}</td>
+                      <td className="px-3 py-2 text-gray-700">{statusLabel(c.status)}</td>
+                      <td className="px-3 py-2 text-gray-700">{strategyLabel(c.strategy)}</td>
                       <td className="px-3 py-2 text-right text-emerald-700 font-semibold">
                         <div>{money(c.budget)}</div>
                         <span className="text-xs text-gray-400">diario</span>
@@ -758,7 +773,7 @@ export default function MeliAdsStudioView() {
                                   <div key={`${it.item_id ?? idx}`} className="text-xs border border-gray-200 rounded px-2 py-1.5 bg-white flex flex-wrap gap-3">
                                     <span className="font-medium text-gray-900">{it.title || it.item_id || "Ítem"}</span>
                                     <span className="text-gray-600">ID: {it.item_id || "-"}</span>
-                                    <span className="text-gray-600">Estado: {it.status || "-"}</span>
+                                    <span className="text-gray-600">Estado: {statusLabel(it.status)}</span>
                                     <span className="text-gray-700">Clicks: {count(mm.clicks ?? 0)}</span>
                                     <span className="text-gray-700">Impresiones: {count(mm.prints ?? 0)}</span>
                                     <span className="text-gray-700">Costo: {money(mm.cost ?? 0)}</span>
@@ -851,7 +866,7 @@ export default function MeliAdsStudioView() {
                   <div className="flex gap-3 items-start">
                     <input
                       type="checkbox"
-                      className="mt-1.5 rounded border-border bg-card accent-primary"
+                      className="mt-1.5 h-4 w-4 rounded border-2 border-border bg-card accent-primary shadow-sm"
                       checked={Boolean(selected[r.id])}
                       onChange={() => toggleRec(r.id)}
                     />
