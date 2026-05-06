@@ -131,6 +131,54 @@ export async function meliPadsSearchCampaignsBasic(
   });
 }
 
+/**
+ * Fallback multi-tenant: algunos entornos exponen campañas en la ruta sin /advertisers/:id
+ * y requieren advertiser_id como query param.
+ */
+export async function meliPadsSearchCampaignsWithMetricsAltPath(
+  accessToken: string,
+  siteId: string,
+  advertiserId: number,
+  dateFrom: string,
+  dateTo: string,
+  offset = 0,
+  limit = 50
+) {
+  const qs = new URLSearchParams({
+    advertiser_id: String(advertiserId),
+    limit: String(limit),
+    offset: String(offset),
+    date_from: dateFrom,
+    date_to: dateTo,
+    metrics: PADS_METRICS,
+    metrics_summary: "true",
+    channel: "marketplace",
+  });
+  const path = `/marketplace/advertising/${encodeURIComponent(siteId)}/product_ads/campaigns/search?${qs.toString()}`;
+  return meliApi<MeliPadsCampaignSearchResponse>(accessToken, path, {
+    headers: { "api-version": "2" },
+  });
+}
+
+export async function meliPadsSearchCampaignsBasicAltPath(
+  accessToken: string,
+  siteId: string,
+  advertiserId: number,
+  offset = 0,
+  limit = 50
+) {
+  const qs = new URLSearchParams({
+    advertiser_id: String(advertiserId),
+    limit: String(limit),
+    offset: String(offset),
+    channel: "marketplace",
+  });
+  const path = `/marketplace/advertising/${encodeURIComponent(siteId)}/product_ads/campaigns/search?${qs.toString()}`;
+  return meliApi<MeliPadsCampaignSearchResponse>(accessToken, path, {
+    headers: { "api-version": "2" },
+  });
+}
+
 export async function meliPadsPutCampaign(
   accessToken: string,
   siteId: string,

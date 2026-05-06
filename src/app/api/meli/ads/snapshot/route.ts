@@ -8,6 +8,8 @@ import {
   meliPadsSearchCampaignsBasic,
   meliPadsSearchCampaignsWithMetrics,
   meliPadsSearchCampaignsWithMetricsRange,
+  meliPadsSearchCampaignsBasicAltPath,
+  meliPadsSearchCampaignsWithMetricsAltPath,
   meliPadsGetCampaignWithMetrics,
   type MeliPadsCampaignRow,
   type MeliPadsCampaignMetrics,
@@ -190,6 +192,35 @@ export async function GET(req: Request) {
           if (!camp.ok) {
             errors.push(`Campañas básicas (${adv.advertiser_id}): HTTP ${camp.status}`);
             continue;
+          }
+        }
+
+        // Fallback multi-tenant: endpoint alternativo sin segmento /advertisers/:id
+        if (!(camp.data.results?.length)) {
+          const altWithMetrics = await meliPadsSearchCampaignsWithMetricsAltPath(
+            meli.accessToken,
+            adv.site_id,
+            adv.advertiser_id,
+            currentWindow.start,
+            currentWindow.end,
+            0,
+            50
+          );
+          if (altWithMetrics.ok && (altWithMetrics.data.results?.length ?? 0) > 0) {
+            camp = altWithMetrics;
+            errors.push(`Fallback alt-path OK (${adv.advertiser_id})`);
+          } else {
+            const altBasic = await meliPadsSearchCampaignsBasicAltPath(
+              meli.accessToken,
+              adv.site_id,
+              adv.advertiser_id,
+              0,
+              50
+            );
+            if (altBasic.ok && (altBasic.data.results?.length ?? 0) > 0) {
+              camp = altBasic;
+              errors.push(`Fallback alt-path básico OK (${adv.advertiser_id})`);
+            }
           }
         }
 
