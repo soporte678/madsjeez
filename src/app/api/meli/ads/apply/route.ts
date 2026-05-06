@@ -87,20 +87,24 @@ export async function POST(req: Request) {
       }
 
       const res = await meliPadsPutCampaign(meli.accessToken, siteId, campaignId, payload as Record<string, unknown>);
-      await prisma.meliAdsChange.create({
-        data: {
-          userId: session.user.id,
-          campaignId,
-          advertiserId: Number.isFinite(advertiserId) && advertiserId > 0 ? advertiserId : null,
-          siteId,
-          recommendationId: typeof a.recommendationId === "string" ? a.recommendationId : null,
-          recommendationTitle: typeof a.recommendationTitle === "string" ? a.recommendationTitle : null,
-          payload: payload as unknown as object,
-          apiStatus: res.status,
-          apiOk: res.ok,
-          apiDetail: (res.ok ? null : res.data) as unknown as object | null,
-        },
-      });
+      try {
+        await prisma.meliAdsChange.create({
+          data: {
+            userId: session.user.id,
+            campaignId,
+            advertiserId: Number.isFinite(advertiserId) && advertiserId > 0 ? advertiserId : null,
+            siteId,
+            recommendationId: typeof a.recommendationId === "string" ? a.recommendationId : null,
+            recommendationTitle: typeof a.recommendationTitle === "string" ? a.recommendationTitle : null,
+            payload: payload as unknown as object,
+            apiStatus: res.status,
+            apiOk: res.ok,
+            apiDetail: (res.ok ? null : res.data) as unknown as object | null,
+          },
+        });
+      } catch (persistErr) {
+        console.error("apply/meliAdsChange persistence:", persistErr);
+      }
       results.push({
         campaignId,
         ok: res.ok,

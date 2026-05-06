@@ -462,56 +462,60 @@ export async function GET(req: Request) {
     const daysRemaining = Math.max(0, daysInMonth - new Date().getDate());
     const nextInvoiceProjection = avgDailySpent * daysRemaining;
 
-    // Persistencia histórica cada sincronización (base para evolución diaria y control de impacto).
-    const createdSnapshot = await prisma.meliAdsSnapshot.create({
-      data: {
-        userId: session.user.id,
-        metricsDays: days,
-        advertisersCount: advertisers.length,
-        campaignsCount: campaigns.length,
-        recommendationsCount: recommendations.length,
-        totals: totals as unknown as object,
-        deltas: {
-          prints: totals.prints - previousTotals.prints,
-          clicks: totals.clicks - previousTotals.clicks,
-          ctr: totals.ctr - previousTotals.ctr,
-          cost: totals.cost - previousTotals.cost,
-          acos: totals.acos - previousTotals.acos,
-          roas: totals.roas - previousTotals.roas,
-          budget: totals.budget - previousTotals.budget,
-          revenue: totals.revenue - previousTotals.revenue,
-          profit: totals.profit - previousTotals.profit,
-        } as unknown as object,
-        diagnostics: diagnosticsByAdvertiser as unknown as object,
-        errors: errors as unknown as object,
-      },
-      select: { id: true, createdAt: true },
-    });
-
-    if (campaigns.length > 0) {
-      await prisma.meliAdsCampaignSnapshot.createMany({
-        data: campaigns.map((c) => ({
-          snapshotId: createdSnapshot.id,
-          campaignId: Number(c.id),
-          advertiserId: Number(c.advertiser_id),
-          siteId: c.site_id,
-          name: c.name ?? null,
-          status: c.status ?? null,
-          strategy: c.strategy ?? null,
-          budget: c.budget != null ? Number(c.budget) : null,
-          roasTarget: c.roas_target != null ? Number(c.roas_target) : null,
-          metrics: (c.metrics ?? null) as unknown as object | null,
-          metricsPrev: (c.metrics_prev ?? null) as unknown as object | null,
-          trendScore: campaignTrendScore(
-            c.metrics as unknown as Record<string, unknown> | undefined,
-            c.metrics_prev as unknown as Record<string, unknown> | undefined
-          ),
-        })),
+    let createdSnapshot: { id: string; createdAt: Date } | null = null;
+    let dailyStats: Array<{ day: string; snapshots: number; avgCost: number; avgRevenue: number; avgProfit: number }> = [];
+    let changeSummary = { positive: 0, negative: 0, neutral: 0, pending: 0 };
+    try {
+      // Persistencia histórica cada sincronización (base para evolución diaria y control de impacto).
+      createdSnapshot = await prisma.meliAdsSnapshot.create({
+        data: {
+          userId: session.user.id,
+          metricsDays: days,
+          advertisersCount: advertisers.length,
+          campaignsCount: campaigns.length,
+          recommendationsCount: recommendations.length,
+          totals: totals as unknown as object,
+          deltas: {
+            prints: totals.prints - previousTotals.prints,
+            clicks: totals.clicks - previousTotals.clicks,
+            ctr: totals.ctr - previousTotals.ctr,
+            cost: totals.cost - previousTotals.cost,
+            acos: totals.acos - previousTotals.acos,
+            roas: totals.roas - previousTotals.roas,
+            budget: totals.budget - previousTotals.budget,
+            revenue: totals.revenue - previousTotals.revenue,
+            profit: totals.profit - previousTotals.profit,
+          } as unknown as object,
+          diagnostics: diagnosticsByAdvertiser as unknown as object,
+          errors: errors as unknown as object,
+        },
+        select: { id: true, createdAt: true },
       });
-    }
+
+      if (campaigns.length > 0) {
+        await prisma.meliAdsCampaignSnapshot.createMany({
+          data: campaigns.map((c) => ({
+            snapshotId: createdSnapshot.id,
+            campaignId: Number(c.id),
+            advertiserId: Number(c.advertiser_id),
+            siteId: c.site_id,
+            name: c.name ?? null,
+            status: c.status ?? null,
+            strategy: c.strategy ?? null,
+            budget: c.budget != null ? Number(c.budget) : null,
+            roasTarget: c.roas_target != null ? Number(c.roas_target) : null,
+            metrics: (c.metrics ?? null) as unknown as object | null,
+            metricsPrev: (c.metrics_prev ?? null) as unknown as object | null,
+            trendScore: campaignTrendScore(
+              c.metrics as unknown as Record<string, unknown> | undefined,
+              c.metrics_prev as unknown as Record<string, unknown> | undefined
+            ),
+          })),
+        });
+      }
 
     // Evaluar cambios aplicados pendientes con la foto actual.
-    const pendingChanges = await prisma.meliAdsChange.findMany({
+      const pendingChanges = await prisma.meliAdsChange.findMany({
       where: {
         userId: session.user.id,
         outcome: "PENDING",
@@ -537,29 +541,29 @@ export async function GET(req: Request) {
           outcomeScore: evalRes.score,
           outcomeSummary: evalRes.summary,
           evaluatedAt: new Date(),
-          evaluatedSnapshotId: createdSnapshot.id,
+          evaluatedSnapshotId: createdSnapshot?.id ?? null,
         },
       });
     }
 
-    const recentSnapshots = await prisma.meliAdsSnapshot.findMany({
+      const recentSnapshots = await prisma.meliAdsSnapshot.findMany({
       where: { userId: session.user.id },
       orderBy: { createdAt: "desc" },
       take: 500,
       select: { createdAt: true, totals: true },
     });
-    const dailyMap = new Map<string, { cost: number; revenue: number; profit: number; snapshots: number }>();
-    for (const s of recentSnapshots) {
-      const day = s.createdAt.toISOString().slice(0, 10);
-      const t = (s.totals ?? {}) as Record<string, unknown>;
-      const agg = dailyMap.get(day) ?? { cost: 0, revenue: 0, profit: 0, snapshots: 0 };
-      agg.cost += n(t.cost);
-      agg.revenue += n(t.revenue);
-      agg.profit += n(t.profit);
-      agg.snapshots += 1;
-      dailyMap.set(day, agg);
-    }
-    const dailyStats = Array.from(dailyMap.entries())
+      const dailyMap = new Map<string, { cost: number; revenue: number; profit: number; snapshots: number }>();
+      for (const s of recentSnapshots) {
+        const day = s.createdAt.toISOString().slice(0, 10);
+        const t = (s.totals ?? {}) as Record<string, unknown>;
+        const agg = dailyMap.get(day) ?? { cost: 0, revenue: 0, profit: 0, snapshots: 0 };
+        agg.cost += n(t.cost);
+        agg.revenue += n(t.revenue);
+        agg.profit += n(t.profit);
+        agg.snapshots += 1;
+        dailyMap.set(day, agg);
+      }
+      dailyStats = Array.from(dailyMap.entries())
       .map(([day, x]) => ({
         day,
         snapshots: x.snapshots,
@@ -570,21 +574,28 @@ export async function GET(req: Request) {
       .sort((a, b) => (a.day < b.day ? -1 : 1))
       .slice(-30);
 
-    const changeSummaryRows = await prisma.meliAdsChange.groupBy({
-      by: ["outcome"],
-      where: { userId: session.user.id },
-      _count: { _all: true },
-    });
-    const changeSummary = {
-      positive: changeSummaryRows.find((r) => r.outcome === "POSITIVE")?._count._all ?? 0,
-      negative: changeSummaryRows.find((r) => r.outcome === "NEGATIVE")?._count._all ?? 0,
-      neutral: changeSummaryRows.find((r) => r.outcome === "NEUTRAL")?._count._all ?? 0,
-      pending: changeSummaryRows.find((r) => r.outcome === "PENDING")?._count._all ?? 0,
-    };
+      const changeSummaryRows = await prisma.meliAdsChange.groupBy({
+        by: ["outcome"],
+        where: { userId: session.user.id },
+        _count: { _all: true },
+      });
+      changeSummary = {
+        positive: changeSummaryRows.find((r) => r.outcome === "POSITIVE")?._count._all ?? 0,
+        negative: changeSummaryRows.find((r) => r.outcome === "NEGATIVE")?._count._all ?? 0,
+        neutral: changeSummaryRows.find((r) => r.outcome === "NEUTRAL")?._count._all ?? 0,
+        pending: changeSummaryRows.find((r) => r.outcome === "PENDING")?._count._all ?? 0,
+      };
+    } catch (persistErr) {
+      errors.push(
+        `Persistencia Ads no disponible: ${
+          persistErr instanceof Error ? persistErr.message : "db_history_unavailable"
+        }`
+      );
+    }
 
     return NextResponse.json({
       fetchedAt: new Date().toISOString(),
-      snapshotId: createdSnapshot.id,
+      snapshotId: createdSnapshot?.id ?? null,
       metricsDays: days,
       currentWindow,
       previousWindow,
