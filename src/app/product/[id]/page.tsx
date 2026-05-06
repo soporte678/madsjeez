@@ -320,8 +320,8 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                     <div className="relative group bg-card border border-border rounded-lg p-4">
                       <div className="flex gap-0 overflow-x-auto scroll-smooth" style={{ scrollbarWidth: 'none' }}>
                         {relatedProducts.map((item: any) => (
-                          <Link key={item.id} href={`/product/${item.id}`} className="min-w-[160px] max-w-[160px] px-3 py-2 cursor-pointer flex flex-col hover:opacity-80 transition-opacity border-r border-gray-100 last:border-r-0">
-                            <div className="h-[140px] mb-3 flex items-center justify-center">
+                          <Link key={item.id} href={`/product/${item.id}`} className="min-w-[170px] max-w-[170px] px-3 py-2 cursor-pointer flex flex-col hover:opacity-95 transition-opacity border-r border-border last:border-r-0">
+                            <div className="h-[140px] mb-3 flex items-center justify-center rounded-lg bg-card border border-border p-2">
                               {item.primary_image ? (
                                 <img src={item.primary_image} alt={item.title} className="max-h-full max-w-full object-contain" />
                               ) : (
@@ -458,9 +458,9 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                       <div className="flex gap-4 overflow-x-auto pb-4" style={{ scrollbarWidth: 'none' }}>
                         {topRatedProducts.map((item: any) => (
                           <Link key={item.id} href={`/product/${item.id}`} className="min-w-[200px] max-w-[200px] border border-border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer flex flex-col bg-card">
-                            <div className="h-32 mb-4 flex items-center justify-center">
+                            <div className="h-32 mb-4 flex items-center justify-center rounded-lg bg-card border border-border p-2">
                               {item.primary_image ? (
-                                <img src={item.primary_image} alt={item.title} className="max-h-full max-w-full object-contain mix-blend-multiply" />
+                                <img src={item.primary_image} alt={item.title} className="max-h-full max-w-full object-contain" />
                               ) : (
                                 <Package className="h-12 w-12 text-gray-300" />
                               )}
@@ -550,8 +550,8 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
               <h2 className="text-[20px] font-normal text-gray-800 mb-5">Elegidos para vos de {sellerName}</h2>
               <div className="flex gap-0 overflow-x-auto scroll-smooth" style={{ scrollbarWidth: 'none' }}>
                 {sellerProducts.map((item: any) => (
-                  <Link key={item.id} href={`/product/${item.id}`} className="min-w-[160px] max-w-[160px] px-3 py-2 cursor-pointer flex flex-col hover:opacity-80 transition-opacity border-r border-gray-100 last:border-r-0">
-                    <div className="h-[140px] mb-3 flex items-center justify-center">
+                  <Link key={item.id} href={`/product/${item.id}`} className="min-w-[170px] max-w-[170px] px-3 py-2 cursor-pointer flex flex-col hover:opacity-95 transition-opacity border-r border-border last:border-r-0">
+                    <div className="h-[140px] mb-3 flex items-center justify-center rounded-lg bg-card border border-border p-2">
                       {item.primary_image ? (
                         <img src={item.primary_image} alt={item.title} className="max-h-full max-w-full object-contain" />
                       ) : (
