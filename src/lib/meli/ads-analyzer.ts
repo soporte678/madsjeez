@@ -53,7 +53,7 @@ function buildBasePayload(row: MeliPadsCampaignRow, channel = "marketplace"): Ad
 }
 
 /**
- * Reglas heurísticas estilo gestión de performance (CTR, ACOS vs benchmark, pérdida por presupuesto).
+ * Reglas heurísticas estilo gestión de performance (CTR, ACOS vs valor de referencia, pérdida por presupuesto).
  * Los cambios son conservadores; revisá siempre en ML.
  */
 export function analyzePadsCampaigns(input: {
@@ -125,7 +125,7 @@ export function analyzePadsCampaigns(input: {
       });
     }
 
-    // 2) ACOS muy por encima del benchmark
+    // 2) ACOS muy por encima del valor de referencia
     if (status === "active" && acos > 0 && bench > 0 && acos > bench * 1.45 && cost >= 10) {
       const newRoas = Math.min(45, roas * 1.25);
       seq += 1;
@@ -136,7 +136,7 @@ export function analyzePadsCampaigns(input: {
         expectedImpact: "positive",
         confidence: 0.88,
         priorityScore: 93,
-        title: "ACOS por encima del benchmark",
+        title: "ACOS por encima del valor de referencia",
         rationale:
           `El ACOS de la campaña supera ampliamente la referencia de Mercado Libre. Subir el ROAS objetivo reduce agresividad y suele bajar el ACOS efectivo.${trend}`,
         advertiserId: advId,

@@ -371,7 +371,7 @@ export default function MeliAdsStudioView() {
         <h2 className="text-xl font-bold text-gray-900">Mercado Libre Ads — estudio automático</h2>
         <p className="text-sm text-gray-600 mt-1 max-w-3xl">
           Traemos tus campañas de <strong>Product Ads (PADS)</strong>, métricas recientes de Mercado Libre y un{" "}
-          <strong>análisis automático</strong> con reglas de performance (CTR, ACOS vs benchmark, pérdida por
+          <strong>análisis automático</strong> con reglas de performance (CTR, ACOS vs valor de referencia, pérdida por
           presupuesto, ROAS). Podés aplicar los cambios sugeridos vía API (presupuesto, estrategia, ROAS objetivo,
           estado).
         </p>
