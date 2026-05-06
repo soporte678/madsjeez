@@ -470,15 +470,23 @@ export default function MeliAdsStudioView() {
 
       {(dailyStats.length > 0 || recs.length > 0) && (
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="rounded-xl border border-emerald-400/30 bg-emerald-500/10 p-4">
-            <h3 className="text-sm font-semibold text-emerald-700 mb-2">Semáforo de impacto (cambios aplicados)</h3>
+          <div className="rounded-xl border border-border bg-card p-4">
+            <h3 className="text-sm font-semibold text-foreground mb-2">Semáforo de impacto (cambios aplicados)</h3>
             <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="rounded-md bg-emerald-600/20 text-emerald-700 px-2 py-1">Positivos: {changeSummary.positive}</div>
-              <div className="rounded-md bg-red-600/20 text-red-700 px-2 py-1">Negativos: {changeSummary.negative}</div>
-              <div className="rounded-md bg-slate-500/20 text-slate-700 px-2 py-1">Neutrales: {changeSummary.neutral}</div>
-              <div className="rounded-md bg-amber-500/20 text-amber-700 px-2 py-1">Pendientes: {changeSummary.pending}</div>
+              <div className="rounded-md border border-emerald-300 bg-emerald-50 px-2 py-1 text-slate-900">
+                <span className="font-semibold text-emerald-700">Positivos:</span> {changeSummary.positive}
+              </div>
+              <div className="rounded-md border border-red-300 bg-red-50 px-2 py-1 text-slate-900">
+                <span className="font-semibold text-red-700">Negativos:</span> {changeSummary.negative}
+              </div>
+              <div className="rounded-md border border-slate-300 bg-slate-50 px-2 py-1 text-slate-900">
+                <span className="font-semibold text-slate-700">Neutrales:</span> {changeSummary.neutral}
+              </div>
+              <div className="rounded-md border border-amber-300 bg-amber-50 px-2 py-1 text-slate-900">
+                <span className="font-semibold text-amber-700">Pendientes:</span> {changeSummary.pending}
+              </div>
             </div>
-            <p className="text-[11px] text-emerald-800/90 mt-2">
+            <p className="text-[11px] text-muted-foreground mt-2">
               La evaluación se recalcula al sincronizar cada 10 min comparando CTR/ACOS/ROAS contra el período previo.
             </p>
           </div>
