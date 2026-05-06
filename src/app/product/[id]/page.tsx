@@ -238,11 +238,11 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
     <div className="min-h-screen flex flex-col">
       <Navbar />
 
-      <div className="min-h-screen bg-[#ededed] font-sans text-[#333] pb-20">
+      <div className="min-h-screen bg-background font-sans text-foreground pb-20">
         {/* Top Banner */}
-        <div className="bg-white border-b border-gray-200 py-3 px-4 text-sm justify-center hidden md:flex">
-          <span className="text-gray-600">También puede interesarte: </span>
-          <Link href={`/category/${categorySlug}`} className="font-semibold text-gray-800 ml-1 hover:text-blue-600 transition-colors">
+        <div className="bg-card border-b border-border py-3 px-4 text-sm justify-center hidden md:flex">
+          <span className="text-muted-foreground">También puede interesarte: </span>
+          <Link href={`/category/${categorySlug}`} className="font-semibold text-foreground ml-1 hover:text-primary transition-colors">
             {categoryName}
           </Link>
         </div>
@@ -270,7 +270,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
           </div>
 
           {/* MAIN CONTAINER */}
-          <div className="bg-white rounded-lg shadow-sm flex flex-col lg:flex-row p-0 lg:p-4 gap-6">
+          <div className="bg-card text-card-foreground rounded-lg shadow-sm border border-border flex flex-col lg:flex-row p-0 lg:p-4 gap-6">
 
             {/* LEFT COLUMN */}
             <div className="flex-[2] flex flex-col min-w-0">
@@ -297,7 +297,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                 </div>
               </div>
 
-              <div className="w-full h-px bg-gray-200 my-8 hidden md:block"></div>
+              <div className="w-full h-px bg-border my-8 hidden md:block"></div>
 
               {/* Description */}
               {product.description && (
@@ -308,7 +308,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                       {product.description}
                     </div>
                   </div>
-                  <div className="w-full h-px bg-gray-200 my-8 hidden md:block"></div>
+                  <div className="w-full h-px bg-border my-8 hidden md:block"></div>
                 </>
               )}
 
@@ -317,7 +317,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                 <>
                   <div className="px-4 lg:px-0">
                     <h2 className="text-[20px] font-normal text-gray-800 mb-5">Relacionado con esta publicación</h2>
-                    <div className="relative group bg-white border border-gray-200 rounded-lg p-4">
+                    <div className="relative group bg-card border border-border rounded-lg p-4">
                       <div className="flex gap-0 overflow-x-auto scroll-smooth" style={{ scrollbarWidth: 'none' }}>
                         {relatedProducts.map((item: any) => (
                           <Link key={item.id} href={`/product/${item.id}`} className="min-w-[160px] max-w-[160px] px-3 py-2 cursor-pointer flex flex-col hover:opacity-80 transition-opacity border-r border-gray-100 last:border-r-0">
@@ -337,12 +337,12 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                         ))}
                       </div>
                       {/* Right arrow */}
-                      <button className="absolute right-[-16px] top-1/2 -translate-y-1/2 w-10 h-10 bg-white border border-gray-200 rounded-full shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:shadow-lg">
-                        <ChevronRight size={20} className="text-gray-600" />
+                      <button className="absolute right-[-16px] top-1/2 -translate-y-1/2 w-10 h-10 bg-card border border-border rounded-full shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:shadow-lg">
+                        <ChevronRight size={20} className="text-muted-foreground" />
                       </button>
                     </div>
                   </div>
-                  <div className="w-full h-px bg-gray-200 my-8 hidden md:block"></div>
+                  <div className="w-full h-px bg-border my-8 hidden md:block"></div>
                 </>
               )}
 
@@ -365,12 +365,12 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                 </Link>
               </div>
 
-              <div className="w-full h-px bg-gray-200 my-8 hidden md:block"></div>
+              <div className="w-full h-px bg-border my-8 hidden md:block"></div>
 
               {/* OPINIONES Y CALIFICACIONES */}
               <div className="px-4 lg:px-0 mb-10">
                 <h2 className="text-[24px] font-semibold text-gray-800 mb-6">Opiniones del producto</h2>
-                <div className="bg-white p-6 rounded-lg border border-gray-200 flex flex-col md:flex-row gap-12">
+                <div className="bg-card p-6 rounded-lg border border-border flex flex-col md:flex-row gap-12">
                   {/* Rating General */}
                   <div className="flex flex-col w-full md:w-64 shrink-0">
                     <div className="flex items-end gap-3 mb-3">
@@ -447,17 +447,17 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                 </div>
               </div>
 
-              <div className="w-full h-px bg-gray-200 my-8 hidden md:block"></div>
+              <div className="w-full h-px bg-border my-8 hidden md:block"></div>
 
               {/* CON 4 ESTRELLAS O MÁS */}
               {topRatedProducts.length > 0 && (
                 <>
                   <div className="px-4 lg:px-0">
-                    <div className="bg-white p-6 rounded-lg border border-gray-200 relative group">
+                    <div className="bg-card p-6 rounded-lg border border-border relative group">
                       <h2 className="text-[22px] font-semibold text-gray-800 mb-6">Con 4 estrellas o más</h2>
                       <div className="flex gap-4 overflow-x-auto pb-4" style={{ scrollbarWidth: 'none' }}>
                         {topRatedProducts.map((item: any) => (
-                          <Link key={item.id} href={`/product/${item.id}`} className="min-w-[200px] max-w-[200px] border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer flex flex-col bg-white">
+                          <Link key={item.id} href={`/product/${item.id}`} className="min-w-[200px] max-w-[200px] border border-border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer flex flex-col bg-card">
                             <div className="h-32 mb-4 flex items-center justify-center">
                               {item.primary_image ? (
                                 <img src={item.primary_image} alt={item.title} className="max-h-full max-w-full object-contain mix-blend-multiply" />
@@ -473,18 +473,18 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                           </Link>
                         ))}
                       </div>
-                      <button className="absolute -right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.15)] flex items-center justify-center text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-gray-50">
+                      <button className="absolute -right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-card rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.15)] flex items-center justify-center text-primary opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-muted">
                         <ChevronRight size={24} />
                       </button>
                     </div>
                   </div>
-                  <div className="w-full h-px bg-gray-200 my-8 hidden md:block"></div>
+                  <div className="w-full h-px bg-border my-8 hidden md:block"></div>
                 </>
               )}
 
               {/* FOOTER - CATEGORÍAS DESTACADAS */}
               <div className="px-4 lg:px-0 mb-10">
-                <div className="bg-white p-8 rounded-lg border border-gray-200">
+                <div className="bg-card p-8 rounded-lg border border-border">
                   <h3 className="text-[18px] font-semibold text-gray-800 mb-6">Destacado en {categoryName}</h3>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-6 text-[13px] text-gray-500">
                     <div className="flex flex-col gap-3">
@@ -546,7 +546,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
 
           {/* Seller Products Carousel */}
           {sellerProducts.length > 0 && (
-            <div className="mt-8 bg-white p-6 rounded-lg border border-gray-200 relative group">
+            <div className="mt-8 bg-card p-6 rounded-lg border border-border relative group">
               <h2 className="text-[20px] font-normal text-gray-800 mb-5">Elegidos para vos de {sellerName}</h2>
               <div className="flex gap-0 overflow-x-auto scroll-smooth" style={{ scrollbarWidth: 'none' }}>
                 {sellerProducts.map((item: any) => (
@@ -567,8 +567,8 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                 ))}
               </div>
               {/* Right arrow */}
-              <button className="absolute right-[-16px] top-1/2 -translate-y-1/2 w-10 h-10 bg-white border border-gray-200 rounded-full shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:shadow-lg">
-                <ChevronRight size={20} className="text-gray-600" />
+              <button className="absolute right-[-16px] top-1/2 -translate-y-1/2 w-10 h-10 bg-card border border-border rounded-full shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:shadow-lg">
+                <ChevronRight size={20} className="text-muted-foreground" />
               </button>
             </div>
           )}

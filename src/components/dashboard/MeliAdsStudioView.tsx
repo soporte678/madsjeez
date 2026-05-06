@@ -10,8 +10,6 @@ import {
   Pencil,
   Info,
   Zap,
-  ChevronDown,
-  ChevronUp,
   ArrowDown,
   ArrowUp,
 } from "lucide-react";
@@ -127,7 +125,6 @@ export default function MeliAdsStudioView() {
     }
   });
   const [selected, setSelected] = useState<Record<string, boolean>>({});
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [sortBy, setSortBy] = useState<"name" | "clicks" | "prints" | "ctr" | "cost" | "acos" | "roas" | "budget">("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [editingNames, setEditingNames] = useState<Record<string, string>>({});
@@ -841,7 +838,6 @@ export default function MeliAdsStudioView() {
                     : r.expectedImpact === "positive"
                       ? "bg-emerald-500/10 border-emerald-400/30"
                       : "bg-card border-border";
-              const open = expanded[r.id];
               return (
                 <li key={r.id} className={`p-4 rounded-xl border shadow-sm ${rowTint}`}>
                   <div className="flex gap-3 items-start">
@@ -874,19 +870,7 @@ export default function MeliAdsStudioView() {
                       </div>
                       <p className="text-sm text-foreground/90 leading-relaxed">{r.rationale}</p>
                       <p className="text-xs text-muted-foreground">Campaña #{r.campaignId}</p>
-                      <button
-                        type="button"
-                        onClick={() => setExpanded((e) => ({ ...e, [r.id]: !open }))}
-                        className="text-xs text-primary font-medium inline-flex items-center gap-1 mt-1 hover:underline"
-                      >
-                        {open ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                        Ver payload ML (PUT)
-                      </button>
-                      {open && (
-                        <pre className="text-[11px] bg-slate-950 text-slate-100 p-3 rounded-lg mt-2 overflow-auto max-h-48">
-                          {JSON.stringify(r.applyPayload, null, 2)}
-                        </pre>
-                      )}
+                      <p className="text-xs text-muted-foreground">Configuración lista para aplicar en Mercado Libre.</p>
                     </div>
                   </div>
                 </li>
