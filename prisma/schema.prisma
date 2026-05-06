@@ -60,6 +60,13 @@ enum SubscriptionTier {
   PLATINUM
 }
 
+enum MeliAdsChangeOutcome {
+  PENDING
+  POSITIVE
+  NEGATIVE
+  NEUTRAL
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -141,6 +148,8 @@ model User {
   coupons           Coupon[]
   cart              Cart?
   sellerMeliOAuth   SellerMeliOAuth?
+  meliAdsSnapshots  MeliAdsSnapshot[]
+  meliAdsChanges    MeliAdsChange[]
 
   // Reputación
   reputationHistory ReputationHistory[] @relation("ReputationHistory")
@@ -932,6 +941,77 @@ model MadsliderLevel {
   updatedAt         DateTime @updatedAt @map("updated_at")
   
   @@map("madslider_levels")
+}
+
+model MeliAdsSnapshot {
+  id                  String   @id @default(cuid())
+  userId              String   @map("user_id")
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  metricsDays         Int      @default(14) @map("metrics_days")
+  advertisersCount    Int      @default(0) @map("advertisers_count")
+  campaignsCount      Int      @default(0) @map("campaigns_count")
+  recommendationsCount Int     @default(0) @map("recommendations_count")
+  totals              Json?
+  deltas              Json?
+  diagnostics         Json?
+  errors              Json?
+  source              String   @default("sync")
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  campaignRows        MeliAdsCampaignSnapshot[]
+  evaluatedChanges    MeliAdsChange[] @relation("MeliAdsChangeEvaluatedSnapshot")
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("meli_ads_snapshots")
+}
+
+model MeliAdsCampaignSnapshot {
+  id             String   @id @default(cuid())
+  snapshotId     String   @map("snapshot_id")
+  snapshot       MeliAdsSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  campaignId     Int      @map("campaign_id")
+  advertiserId   Int      @map("advertiser_id")
+  siteId         String   @map("site_id")
+  name           String?
+  status         String?
+  strategy       String?
+  budget         Float?
+  roasTarget     Float?   @map("roas_target")
+  metrics        Json?
+  metricsPrev    Json?    @map("metrics_prev")
+  trendScore     Float    @default(0) @map("trend_score")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([snapshotId])
+  @@index([campaignId, siteId])
+  @@map("meli_ads_campaign_snapshots")
+}
+
+model MeliAdsChange {
+  id                  String   @id @default(cuid())
+  userId              String   @map("user_id")
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campaignId          Int      @map("campaign_id")
+  advertiserId        Int?     @map("advertiser_id")
+  siteId              String   @map("site_id")
+  recommendationId    String?  @map("recommendation_id")
+  recommendationTitle String?  @map("recommendation_title")
+  payload             Json
+  apiStatus           Int      @default(0) @map("api_status")
+  apiOk               Boolean  @default(false) @map("api_ok")
+  apiDetail           Json?    @map("api_detail")
+  appliedAt           DateTime @default(now()) @map("applied_at")
+  outcome             MeliAdsChangeOutcome @default(PENDING)
+  outcomeScore        Float?   @map("outcome_score")
+  outcomeSummary      String?  @map("outcome_summary")
+  evaluatedAt         DateTime? @map("evaluated_at")
+  evaluatedSnapshotId String?   @map("evaluated_snapshot_id")
+  evaluatedSnapshot   MeliAdsSnapshot? @relation("MeliAdsChangeEvaluatedSnapshot", fields: [evaluatedSnapshotId], references: [id], onDelete: SetNull)
+
+  @@index([userId, appliedAt(sort: Desc)])
+  @@index([campaignId, siteId, appliedAt(sort: Desc)])
+  @@index([outcome, appliedAt(sort: Desc)])
+  @@map("meli_ads_changes")
 }
 
 // =====================

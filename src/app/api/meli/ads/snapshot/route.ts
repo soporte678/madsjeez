@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { getMeliAccessTokenForUser } from "@/lib/meli/prisma-session";
 import { meliGetSellerPromotions } from "@/lib/meli/api";
 import {
@@ -152,6 +153,35 @@ function sumMetrics(rows: CampaignEnriched[]) {
   };
 }
 
+function campaignTrendScore(current?: Record<string, unknown>, previous?: Record<string, unknown>): number {
+  if (!current || !previous) return 0;
+  const curCtr = pickMetric(current, ["ctr"]);
+  const prevCtr = pickMetric(previous, ["ctr"]);
+  const curAcos = pickMetric(current, ["acos"]);
+  const prevAcos = pickMetric(previous, ["acos"]);
+  const curRoas = pickMetric(current, ["roas"]);
+  const prevRoas = pickMetric(previous, ["roas"]);
+  const ctrScore = (curCtr - prevCtr) * 80;
+  const acosScore = (prevAcos - curAcos) * 3;
+  const roasScore = (curRoas - prevRoas) * 8;
+  return Math.round((ctrScore + acosScore + roasScore) * 100) / 100;
+}
+
+function evaluateChangeOutcome(current?: Record<string, unknown>, previous?: Record<string, unknown>) {
+  if (!current || !previous) return { outcome: "PENDING" as const, score: null as number | null, summary: "Sin datos suficientes para evaluar aún." };
+  const curCtr = pickMetric(current, ["ctr"]);
+  const prevCtr = pickMetric(previous, ["ctr"]);
+  const curAcos = pickMetric(current, ["acos"]);
+  const prevAcos = pickMetric(previous, ["acos"]);
+  const curRoas = pickMetric(current, ["roas"]);
+  const prevRoas = pickMetric(previous, ["roas"]);
+  const score = (curCtr - prevCtr) * 120 + (prevAcos - curAcos) * 4 + (curRoas - prevRoas) * 10;
+  const rounded = Math.round(score * 100) / 100;
+  if (rounded >= 2) return { outcome: "POSITIVE" as const, score: rounded, summary: "Mejora consistente tras el cambio (CTR/ROAS al alza y/o ACOS a la baja)." };
+  if (rounded <= -2) return { outcome: "NEGATIVE" as const, score: rounded, summary: "Deterioro de performance tras el cambio (CTR/ROAS caen y/o ACOS sube)." };
+  return { outcome: "NEUTRAL" as const, score: rounded, summary: "Variación marginal; mantener observación en próximas ventanas." };
+}
+
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -267,7 +297,7 @@ export async function GET(req: Request) {
           }
         }
 
-        let prevCamp = await meliPadsSearchCampaignsWithMetricsRange(
+        const prevCamp = await meliPadsSearchCampaignsWithMetricsRange(
           meli.accessToken,
           adv.site_id,
           adv.advertiser_id,
@@ -432,8 +462,129 @@ export async function GET(req: Request) {
     const daysRemaining = Math.max(0, daysInMonth - new Date().getDate());
     const nextInvoiceProjection = avgDailySpent * daysRemaining;
 
+    // Persistencia histórica cada sincronización (base para evolución diaria y control de impacto).
+    const createdSnapshot = await prisma.meliAdsSnapshot.create({
+      data: {
+        userId: session.user.id,
+        metricsDays: days,
+        advertisersCount: advertisers.length,
+        campaignsCount: campaigns.length,
+        recommendationsCount: recommendations.length,
+        totals: totals as unknown as object,
+        deltas: {
+          prints: totals.prints - previousTotals.prints,
+          clicks: totals.clicks - previousTotals.clicks,
+          ctr: totals.ctr - previousTotals.ctr,
+          cost: totals.cost - previousTotals.cost,
+          acos: totals.acos - previousTotals.acos,
+          roas: totals.roas - previousTotals.roas,
+          budget: totals.budget - previousTotals.budget,
+          revenue: totals.revenue - previousTotals.revenue,
+          profit: totals.profit - previousTotals.profit,
+        } as unknown as object,
+        diagnostics: diagnosticsByAdvertiser as unknown as object,
+        errors: errors as unknown as object,
+      },
+      select: { id: true, createdAt: true },
+    });
+
+    if (campaigns.length > 0) {
+      await prisma.meliAdsCampaignSnapshot.createMany({
+        data: campaigns.map((c) => ({
+          snapshotId: createdSnapshot.id,
+          campaignId: Number(c.id),
+          advertiserId: Number(c.advertiser_id),
+          siteId: c.site_id,
+          name: c.name ?? null,
+          status: c.status ?? null,
+          strategy: c.strategy ?? null,
+          budget: c.budget != null ? Number(c.budget) : null,
+          roasTarget: c.roas_target != null ? Number(c.roas_target) : null,
+          metrics: (c.metrics ?? null) as unknown as object | null,
+          metricsPrev: (c.metrics_prev ?? null) as unknown as object | null,
+          trendScore: campaignTrendScore(
+            c.metrics as unknown as Record<string, unknown> | undefined,
+            c.metrics_prev as unknown as Record<string, unknown> | undefined
+          ),
+        })),
+      });
+    }
+
+    // Evaluar cambios aplicados pendientes con la foto actual.
+    const pendingChanges = await prisma.meliAdsChange.findMany({
+      where: {
+        userId: session.user.id,
+        outcome: "PENDING",
+      },
+      orderBy: { appliedAt: "desc" },
+      take: 200,
+    });
+    const byCampaign = new Map<string, CampaignEnriched>();
+    for (const c of campaigns) byCampaign.set(`${c.site_id}:${c.id}`, c);
+    for (const ch of pendingChanges) {
+      const key = `${ch.siteId}:${ch.campaignId}`;
+      const cmp = byCampaign.get(key);
+      if (!cmp) continue;
+      const evalRes = evaluateChangeOutcome(
+        cmp.metrics as unknown as Record<string, unknown> | undefined,
+        cmp.metrics_prev as unknown as Record<string, unknown> | undefined
+      );
+      if (evalRes.outcome === "PENDING") continue;
+      await prisma.meliAdsChange.update({
+        where: { id: ch.id },
+        data: {
+          outcome: evalRes.outcome,
+          outcomeScore: evalRes.score,
+          outcomeSummary: evalRes.summary,
+          evaluatedAt: new Date(),
+          evaluatedSnapshotId: createdSnapshot.id,
+        },
+      });
+    }
+
+    const recentSnapshots = await prisma.meliAdsSnapshot.findMany({
+      where: { userId: session.user.id },
+      orderBy: { createdAt: "desc" },
+      take: 500,
+      select: { createdAt: true, totals: true },
+    });
+    const dailyMap = new Map<string, { cost: number; revenue: number; profit: number; snapshots: number }>();
+    for (const s of recentSnapshots) {
+      const day = s.createdAt.toISOString().slice(0, 10);
+      const t = (s.totals ?? {}) as Record<string, unknown>;
+      const agg = dailyMap.get(day) ?? { cost: 0, revenue: 0, profit: 0, snapshots: 0 };
+      agg.cost += n(t.cost);
+      agg.revenue += n(t.revenue);
+      agg.profit += n(t.profit);
+      agg.snapshots += 1;
+      dailyMap.set(day, agg);
+    }
+    const dailyStats = Array.from(dailyMap.entries())
+      .map(([day, x]) => ({
+        day,
+        snapshots: x.snapshots,
+        avgCost: x.snapshots > 0 ? x.cost / x.snapshots : 0,
+        avgRevenue: x.snapshots > 0 ? x.revenue / x.snapshots : 0,
+        avgProfit: x.snapshots > 0 ? x.profit / x.snapshots : 0,
+      }))
+      .sort((a, b) => (a.day < b.day ? -1 : 1))
+      .slice(-30);
+
+    const changeSummaryRows = await prisma.meliAdsChange.groupBy({
+      by: ["outcome"],
+      where: { userId: session.user.id },
+      _count: { _all: true },
+    });
+    const changeSummary = {
+      positive: changeSummaryRows.find((r) => r.outcome === "POSITIVE")?._count._all ?? 0,
+      negative: changeSummaryRows.find((r) => r.outcome === "NEGATIVE")?._count._all ?? 0,
+      neutral: changeSummaryRows.find((r) => r.outcome === "NEUTRAL")?._count._all ?? 0,
+      pending: changeSummaryRows.find((r) => r.outcome === "PENDING")?._count._all ?? 0,
+    };
+
     return NextResponse.json({
       fetchedAt: new Date().toISOString(),
+      snapshotId: createdSnapshot.id,
       metricsDays: days,
       currentWindow,
       previousWindow,
@@ -459,6 +610,8 @@ export async function GET(req: Request) {
         nextInvoiceProjection,
         daysElapsed,
       },
+      dailyStats,
+      changeSummary,
       promotions,
       recommendations,
       errors,

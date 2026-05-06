@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getMeliAccessTokenForUser } from "@/lib/meli/prisma-session";
+import { prisma } from "@/lib/prisma";
 import { meliPadsPutCampaign } from "@/lib/meli/pads-api";
 import type { AdsApplyPayload } from "@/lib/meli/ads-analyzer";
 
@@ -49,7 +50,14 @@ export async function POST(req: Request) {
     }
 
     const body = (await req.json()) as {
-      actions?: Array<{ siteId: string; campaignId: number; applyPayload: unknown }>;
+      actions?: Array<{
+        siteId: string;
+        advertiserId?: number;
+        campaignId: number;
+        recommendationId?: string;
+        recommendationTitle?: string;
+        applyPayload: unknown;
+      }>;
     };
 
     const actions = Array.isArray(body.actions) ? body.actions : [];
@@ -65,6 +73,7 @@ export async function POST(req: Request) {
 
     for (const a of actions) {
       const siteId = typeof a.siteId === "string" ? a.siteId.trim() : "";
+      const advertiserId = Number(a.advertiserId);
       const campaignId = Number(a.campaignId);
       const payload = sanitizePayload(a.applyPayload);
       if (!siteId || !Number.isFinite(campaignId) || campaignId <= 0 || !payload) {
@@ -78,6 +87,20 @@ export async function POST(req: Request) {
       }
 
       const res = await meliPadsPutCampaign(meli.accessToken, siteId, campaignId, payload as Record<string, unknown>);
+      await prisma.meliAdsChange.create({
+        data: {
+          userId: session.user.id,
+          campaignId,
+          advertiserId: Number.isFinite(advertiserId) && advertiserId > 0 ? advertiserId : null,
+          siteId,
+          recommendationId: typeof a.recommendationId === "string" ? a.recommendationId : null,
+          recommendationTitle: typeof a.recommendationTitle === "string" ? a.recommendationTitle : null,
+          payload: payload as unknown as object,
+          apiStatus: res.status,
+          apiOk: res.ok,
+          apiDetail: (res.ok ? null : res.data) as unknown as object | null,
+        },
+      });
       results.push({
         campaignId,
         ok: res.ok,

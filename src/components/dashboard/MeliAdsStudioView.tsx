@@ -32,8 +32,12 @@ type SnapshotCampaign = {
 type Recommendation = {
   id: string;
   severity: "info" | "warning" | "critical";
+  category: "positive" | "negative" | "efficiency" | "growth";
+  expectedImpact: "positive" | "negative" | "neutral";
+  confidence: number;
   title: string;
   rationale: string;
+  advertiserId?: number;
   campaignId: number;
   campaignName: string;
   siteId: string;
@@ -42,6 +46,24 @@ type Recommendation = {
 
 const SNAPSHOT_CACHE_KEY = "meli_ads_snapshot_v1";
 const AUTO_REFRESH_MS = 10 * 60 * 1000;
+
+function renderDelta(
+  value: number,
+  kind: "number" | "money" | "pct",
+  money: (v: unknown) => string,
+  count: (v: unknown) => string
+) {
+  if (!Number.isFinite(value) || value === 0) return <span className="text-xs text-gray-400">= 0</span>;
+  const up = value > 0;
+  const text =
+    kind === "money" ? money(Math.abs(value)) : kind === "pct" ? `${Math.abs(value).toFixed(2)} pp` : count(Math.abs(value));
+  return (
+    <span className={`inline-flex items-center gap-1 text-xs font-semibold ${up ? "text-emerald-600" : "text-red-600"}`}>
+      {up ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
+      {text}
+    </span>
+  );
+}
 
 export default function MeliAdsStudioView() {
   const { status: sess } = useSession();
@@ -59,8 +81,35 @@ export default function MeliAdsStudioView() {
     currentWindow?: { start: string; end: string };
     previousWindow?: { start: string; end: string };
     recommendations?: Recommendation[];
+    dailyStats?: Array<{ day: string; snapshots: number; avgCost: number; avgRevenue: number; avgProfit: number }>;
+    changeSummary?: { positive: number; negative: number; neutral: number; pending: number };
     errors?: string[];
-  } | null>(null);
+  } | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = localStorage.getItem(SNAPSHOT_CACHE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as { data?: unknown };
+      return (parsed?.data as {
+        fetchedAt?: string;
+        metricsDays?: number;
+        advertisers?: { advertiser_id: number; site_id: string; account_name?: string }[];
+        campaigns?: SnapshotCampaign[];
+        totals?: Record<string, number>;
+        previousTotals?: Record<string, number>;
+        deltas?: Record<string, number>;
+        finance?: Record<string, number>;
+        currentWindow?: { start: string; end: string };
+        previousWindow?: { start: string; end: string };
+        recommendations?: Recommendation[];
+        dailyStats?: Array<{ day: string; snapshots: number; avgCost: number; avgRevenue: number; avgProfit: number }>;
+        changeSummary?: { positive: number; negative: number; neutral: number; pending: number };
+        errors?: string[];
+      }) ?? null;
+    } catch {
+      return null;
+    }
+  });
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
@@ -99,25 +148,15 @@ export default function MeliAdsStudioView() {
   }, []);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(SNAPSHOT_CACHE_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw) as { data?: unknown };
-      if (parsed?.data) {
-        setSnapshot(parsed.data as NonNullable<typeof snapshot>);
-      }
-    } catch {
-      // ignore corrupted local cache
-    }
-  }, []);
-
-  useEffect(() => {
     // Primer pull para traer estado actual y luego refresco periódico.
-    load({ silent: true });
+    const kickoff = setTimeout(() => load({ silent: true }), 0);
     const timer = setInterval(() => {
       load({ silent: true });
     }, AUTO_REFRESH_MS);
-    return () => clearInterval(timer);
+    return () => {
+      clearTimeout(kickoff);
+      clearInterval(timer);
+    };
   }, [load]);
 
   const toggleRec = (id: string) => {
@@ -130,7 +169,10 @@ export default function MeliAdsStudioView() {
       .filter((r) => selected[r.id])
       .map((r) => ({
         siteId: r.siteId,
+        advertiserId: r.advertiserId,
         campaignId: r.campaignId,
+        recommendationId: r.id,
+        recommendationTitle: r.title,
         applyPayload: r.applyPayload,
       }));
     if (actions.length === 0) {
@@ -173,10 +215,14 @@ export default function MeliAdsStudioView() {
   }
 
   const recs = snapshot?.recommendations ?? [];
+  const positiveRecs = recs.filter((r) => r.expectedImpact === "positive");
+  const negativeRecs = recs.filter((r) => r.severity === "critical" || r.category === "negative" || r.expectedImpact === "negative");
   const camps = snapshot?.campaigns ?? [];
   const totals = snapshot?.totals ?? {};
   const deltas = snapshot?.deltas ?? {};
   const finance = snapshot?.finance ?? {};
+  const dailyStats = snapshot?.dailyStats ?? [];
+  const changeSummary = snapshot?.changeSummary ?? { positive: 0, negative: 0, neutral: 0, pending: 0 };
 
   const num = (v: unknown) => {
     const n = Number(v);
@@ -187,19 +233,6 @@ export default function MeliAdsStudioView() {
   const count = (v: unknown) => new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 }).format(num(v));
   const pct = (v: unknown, digits = 2) => `${num(v).toFixed(digits)}%`;
   const ratio = (v: unknown, digits = 2) => num(v).toFixed(digits);
-
-  const Delta = ({ value, kind = "number" }: { value: number; kind?: "number" | "money" | "pct" }) => {
-    if (!Number.isFinite(value) || value === 0) return <span className="text-xs text-gray-400">= 0</span>;
-    const up = value > 0;
-    const text =
-      kind === "money" ? money(Math.abs(value)) : kind === "pct" ? `${Math.abs(value).toFixed(2)} pp` : count(Math.abs(value));
-    return (
-      <span className={`inline-flex items-center gap-1 text-xs font-semibold ${up ? "text-emerald-600" : "text-red-600"}`}>
-        {up ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
-        {text}
-      </span>
-    );
-  };
 
   return (
     <div className="space-y-8 max-w-6xl">
@@ -247,29 +280,58 @@ export default function MeliAdsStudioView() {
           <div className="rounded-xl border border-gray-200 bg-white p-4">
             <p className="text-xs text-gray-500">Presupuesto diario total</p>
             <p className="text-xl font-bold text-emerald-700">{money(totals.budget)}</p>
-            <Delta value={num(deltas.budget)} kind="money" />
+            {renderDelta(num(deltas.budget), "money", money, count)}
           </div>
           <div className="rounded-xl border border-gray-200 bg-white p-4">
             <p className="text-xs text-gray-500">Gasto (ventana actual)</p>
             <p className="text-xl font-bold text-emerald-700">{money(totals.cost)}</p>
-            <Delta value={num(deltas.cost)} kind="money" />
+            {renderDelta(num(deltas.cost), "money", money, count)}
           </div>
           <div className="rounded-xl border border-gray-200 bg-white p-4">
             <p className="text-xs text-gray-500">Ingresos estimados Ads</p>
             <p className="text-xl font-bold text-emerald-700">{money(totals.revenue)}</p>
-            <Delta value={num(deltas.revenue)} kind="money" />
+            {renderDelta(num(deltas.revenue), "money", money, count)}
           </div>
           <div className="rounded-xl border border-gray-200 bg-white p-4">
             <p className="text-xs text-gray-500">Ganancia estimada</p>
             <p className={`text-xl font-bold ${num(totals.profit) >= 0 ? "text-emerald-700" : "text-red-600"}`}>
               {money(totals.profit)}
             </p>
-            <Delta value={num(deltas.profit)} kind="money" />
+            {renderDelta(num(deltas.profit), "money", money, count)}
           </div>
           <div className="rounded-xl border border-gray-200 bg-white p-4">
             <p className="text-xs text-gray-500">Próxima factura (proyección)</p>
             <p className="text-xl font-bold text-emerald-700">{money(finance.nextInvoiceProjection)}</p>
             <p className="text-xs text-gray-500 mt-1">Diario: {money(finance.avgDailySpent)}</p>
+          </div>
+        </section>
+      )}
+
+      {(dailyStats.length > 0 || recs.length > 0) && (
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="rounded-xl border border-emerald-400/30 bg-emerald-500/10 p-4">
+            <h3 className="text-sm font-semibold text-emerald-700 mb-2">Semáforo de impacto (cambios aplicados)</h3>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="rounded-md bg-emerald-600/20 text-emerald-700 px-2 py-1">Positivos: {changeSummary.positive}</div>
+              <div className="rounded-md bg-red-600/20 text-red-700 px-2 py-1">Negativos: {changeSummary.negative}</div>
+              <div className="rounded-md bg-slate-500/20 text-slate-700 px-2 py-1">Neutrales: {changeSummary.neutral}</div>
+              <div className="rounded-md bg-amber-500/20 text-amber-700 px-2 py-1">Pendientes: {changeSummary.pending}</div>
+            </div>
+            <p className="text-[11px] text-emerald-800/90 mt-2">
+              La evaluación se recalcula al sincronizar cada 10 min comparando CTR/ACOS/ROAS contra el período previo.
+            </p>
+          </div>
+          <div className="rounded-xl border border-cyan-400/30 bg-cyan-500/10 p-4">
+            <h3 className="text-sm font-semibold text-cyan-800 mb-2">Estadística diaria (promedio por sync)</h3>
+            <div className="space-y-1 max-h-40 overflow-auto text-xs">
+              {dailyStats.slice(-7).map((d) => (
+                <div key={d.day} className="flex items-center justify-between border-b border-cyan-700/10 pb-1">
+                  <span>{d.day}</span>
+                  <span className="text-cyan-900">Costo {money(d.avgCost)}</span>
+                  <span className={d.avgProfit >= 0 ? "text-emerald-700" : "text-red-700"}>Profit {money(d.avgProfit)}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
       )}
@@ -326,27 +388,27 @@ export default function MeliAdsStudioView() {
                       </td>
                       <td className="px-3 py-2 text-right">
                         <div>{count(prints)}</div>
-                        <Delta value={num(prints) - num(p.prints)} />
+                        {renderDelta(num(prints) - num(p.prints), "number", money, count)}
                       </td>
                       <td className="px-3 py-2 text-right">
                         <div>{count(clicks)}</div>
-                        <Delta value={num(clicks) - num(p.clicks)} />
+                        {renderDelta(num(clicks) - num(p.clicks), "number", money, count)}
                       </td>
                       <td className="px-3 py-2 text-right">
                         <div>{Number.isFinite(ctr) ? pct(ctr) : "—"}</div>
-                        <Delta value={Number.isFinite(ctr) ? ctr - prevCtr : 0} kind="pct" />
+                        {renderDelta(Number.isFinite(ctr) ? ctr - prevCtr : 0, "pct", money, count)}
                       </td>
                       <td className="px-3 py-2 text-right text-emerald-700 font-semibold">
                         <div>{money(cost)}</div>
-                        <Delta value={cost - num(p.cost)} kind="money" />
+                        {renderDelta(cost - num(p.cost), "money", money, count)}
                       </td>
                       <td className="px-3 py-2 text-right">
                         <div>{pct(acos)}</div>
-                        <Delta value={acos - num(p.acos)} kind="pct" />
+                        {renderDelta(acos - num(p.acos), "pct", money, count)}
                       </td>
                       <td className="px-3 py-2 text-right">
                         <div>{ratio(roas)}x</div>
-                        <Delta value={roas - num(p.roas)} />
+                        {renderDelta(roas - num(p.roas), "number", money, count)}
                       </td>
                     </tr>
                   );
@@ -388,6 +450,12 @@ export default function MeliAdsStudioView() {
               Aplicar seleccionadas en ML
             </button>
           </div>
+          <div className="px-4 py-2 text-xs bg-slate-50 border-b border-gray-100 flex flex-wrap gap-2">
+            <span className="rounded bg-emerald-100 text-emerald-700 px-2 py-0.5">Positivas: {positiveRecs.length}</span>
+            <span className="rounded bg-red-100 text-red-700 px-2 py-0.5">Riesgos: {negativeRecs.length}</span>
+            <span className="rounded bg-amber-100 text-amber-700 px-2 py-0.5">Warnings: {recs.filter((r) => r.severity === "warning").length}</span>
+            <span className="rounded bg-blue-100 text-blue-700 px-2 py-0.5">Total: {recs.length}</span>
+          </div>
           <ul className="divide-y divide-gray-100">
             {recs.map((r) => {
               const Icon =
@@ -398,13 +466,23 @@ export default function MeliAdsStudioView() {
                     : Info;
               const color =
                 r.severity === "critical"
-                  ? "text-red-600 bg-red-50 border-red-100"
+                  ? "text-red-700 bg-red-100 border-red-300"
                   : r.severity === "warning"
-                    ? "text-primary bg-primary/10 border-primary/20"
-                    : "text-blue-700 bg-blue-50 border-blue-100";
+                    ? "text-amber-800 bg-amber-100 border-amber-300"
+                    : r.expectedImpact === "positive"
+                      ? "text-emerald-700 bg-emerald-100 border-emerald-300"
+                      : "text-blue-700 bg-blue-50 border-blue-100";
+              const rowTint =
+                r.severity === "critical"
+                  ? "bg-red-50/60"
+                  : r.severity === "warning"
+                    ? "bg-amber-50/70"
+                    : r.expectedImpact === "positive"
+                      ? "bg-emerald-50/60"
+                      : "bg-white";
               const open = expanded[r.id];
               return (
-                <li key={r.id} className="p-4">
+                <li key={r.id} className={`p-4 ${rowTint}`}>
                   <div className="flex gap-3 items-start">
                     <input
                       type="checkbox"
@@ -420,6 +498,12 @@ export default function MeliAdsStudioView() {
                         <span className="font-semibold text-gray-900">{r.title}</span>
                         <span className="text-[11px] uppercase tracking-wide text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
                           {r.severity}
+                        </span>
+                        <span className="text-[11px] uppercase tracking-wide text-gray-600 bg-gray-100 px-2 py-0.5 rounded">
+                          {r.category}
+                        </span>
+                        <span className="text-[11px] tracking-wide text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded">
+                          Confianza {(r.confidence * 100).toFixed(0)}%
                         </span>
                       </div>
                       <p className="text-sm text-gray-600">{r.rationale}</p>

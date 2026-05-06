@@ -12,6 +12,9 @@ export type AdsApplyPayload = {
 export type AdsRecommendation = {
   id: string;
   severity: "info" | "warning" | "critical";
+  category: "positive" | "negative" | "efficiency" | "growth";
+  expectedImpact: "positive" | "negative" | "neutral";
+  confidence: number;
   title: string;
   rationale: string;
   advertiserId: number;
@@ -102,6 +105,9 @@ export function analyzePadsCampaigns(input: {
       out.push({
         id: `pads-${row.id}-low-ctr-${seq}`,
         severity: "warning",
+        category: "negative",
+        expectedImpact: "positive",
+        confidence: 0.81,
         title: "CTR bajo con volumen de impresiones",
         rationale:
           `Hay exposición pero pocos clics: conviene orientar la campaña a rentabilidad y encarecer levemente el objetivo ROAS para que ML priorice intención de compra más alta.${trend}`,
@@ -124,6 +130,9 @@ export function analyzePadsCampaigns(input: {
       out.push({
         id: `pads-${row.id}-acos-${seq}`,
         severity: "critical",
+        category: "negative",
+        expectedImpact: "positive",
+        confidence: 0.88,
         title: "ACOS por encima del benchmark",
         rationale:
           `El ACOS de la campaña supera ampliamente la referencia de Mercado Libre. Subir el ROAS objetivo reduce agresividad y suele bajar el ACOS efectivo.${trend}`,
@@ -147,6 +156,9 @@ export function analyzePadsCampaigns(input: {
       out.push({
         id: `pads-${row.id}-budget-${seq}`,
         severity: "info",
+        category: "growth",
+        expectedImpact: "positive",
+        confidence: 0.72,
         title: "Tráfico limitado por presupuesto",
         rationale:
           `Una parte relevante de las impresiones se pierde por presupuesto. Si la cuenta es rentable, un aumento moderado del presupuesto diario puede recuperar alcance.${trend}`,
@@ -167,6 +179,9 @@ export function analyzePadsCampaigns(input: {
       out.push({
         id: `pads-${row.id}-no-print-${seq}`,
         severity: "info",
+        category: "growth",
+        expectedImpact: "positive",
+        confidence: 0.66,
         title: "Sin impresiones en el período",
         rationale:
           `Si el ítem es nuevo o tiene poca trayectoria, una estrategia visibility suele acelerar datos; cuando haya volumen, volvé a profitability.${trend}`,
@@ -195,6 +210,9 @@ export function analyzePadsCampaigns(input: {
       out.push({
         id: `pads-${row.id}-scale-${seq}`,
         severity: "info",
+        category: "positive",
+        expectedImpact: "positive",
+        confidence: 0.77,
         title: "ROAS real muy superior al objetivo",
         rationale:
           `Hay margen para captar más demanda sin tensionar el ROAS: incremento moderado de presupuesto manteniendo la estrategia actual.${trend}`,
@@ -205,6 +223,53 @@ export function analyzePadsCampaigns(input: {
         applyPayload: {
           ...base,
           budget: newBudget,
+        },
+      });
+    }
+
+    // 6) Costo alto con muy baja tracción comercial
+    const cvr = Number(m.cvr ?? 0);
+    if (status === "active" && cost > 25 && clicks > 40 && cvr > 0 && cvr < 0.004) {
+      seq += 1;
+      out.push({
+        id: `pads-${row.id}-low-cvr-${seq}`,
+        severity: "critical",
+        category: "negative",
+        expectedImpact: "positive",
+        confidence: 0.84,
+        title: "Conversión baja con gasto relevante",
+        rationale:
+          `La campaña capta clics pero convierte poco para el gasto actual. Recomendable endurecer ROAS y pasar temporalmente a profitability para proteger margen.${trend}`,
+        advertiserId: advId,
+        siteId,
+        campaignId: row.id,
+        campaignName: row.name || String(row.id),
+        applyPayload: {
+          ...base,
+          strategy: "profitability",
+          roas_target: Math.min(50, Math.round(roas * 1.3 * 100) / 100),
+        },
+      });
+    }
+
+    // 7) Señal positiva fuerte de eficiencia
+    if (status === "active" && roasActual > 8 && acos > 0 && acos < 12 && prints > 500) {
+      seq += 1;
+      out.push({
+        id: `pads-${row.id}-high-eff-${seq}`,
+        severity: "info",
+        category: "positive",
+        expectedImpact: "neutral",
+        confidence: 0.7,
+        title: "Eficiencia alta sostenida",
+        rationale:
+          `ROAS y ACOS muestran una campaña saludable. Sugerencia: mantener estrategia y monitorear cada 24h para evitar sobreajustes.${trend}`,
+        advertiserId: advId,
+        siteId,
+        campaignId: row.id,
+        campaignName: row.name || String(row.id),
+        applyPayload: {
+          ...base,
         },
       });
     }
