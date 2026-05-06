@@ -7,6 +7,7 @@ import {
   RefreshCw,
   AlertTriangle,
   CheckCircle2,
+  Pencil,
   Info,
   Zap,
   ChevronDown,
@@ -130,6 +131,7 @@ export default function MeliAdsStudioView() {
   const [sortBy, setSortBy] = useState<"name" | "clicks" | "prints" | "ctr" | "cost" | "acos" | "roas" | "budget">("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [editingNames, setEditingNames] = useState<Record<string, string>>({});
+  const [editingCampaignNameRow, setEditingCampaignNameRow] = useState<string | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [expandedCampaignRows, setExpandedCampaignRows] = useState<Record<string, boolean>>({});
   const [campaignItems, setCampaignItems] = useState<Record<string, Array<{ item_id?: string; title?: string; status?: string; metrics?: Record<string, unknown> }>>>({});
@@ -581,7 +583,7 @@ export default function MeliAdsStudioView() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-              className="h-8 rounded border border-gray-300 px-2"
+              className="h-8 rounded border border-border bg-card text-foreground px-2"
             >
               <option value="name">Nombre (A-Z)</option>
               <option value="clicks">Clicks</option>
@@ -595,7 +597,7 @@ export default function MeliAdsStudioView() {
             <select
               value={sortDir}
               onChange={(e) => setSortDir(e.target.value as "asc" | "desc")}
-              className="h-8 rounded border border-gray-300 px-2"
+              className="h-8 rounded border border-border bg-card text-foreground px-2"
             >
               <option value="asc">Ascendente</option>
               <option value="desc">Descendente</option>
@@ -649,27 +651,59 @@ export default function MeliAdsStudioView() {
                         <div className="space-y-1">
                           <div className="truncate">{c.name || c.id}</div>
                           <div className="flex items-center gap-2">
-                            <input
-                              value={editingNames[rowKey] ?? c.name ?? ""}
-                              onChange={(e) => setEditingNames((s) => ({ ...s, [rowKey]: e.target.value }))}
-                              className="h-7 w-44 rounded border border-gray-300 px-2 text-xs"
-                              placeholder="Nuevo nombre"
-                            />
-                            <button
-                              type="button"
-                              disabled={renamingId === rowKey}
-                              onClick={() => renameCampaign(c)}
-                              className="h-7 rounded bg-primary text-primary-foreground px-2 text-xs disabled:opacity-50"
-                            >
-                              {renamingId === rowKey ? "Guardando..." : "Renombrar"}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => toggleCampaignItems(c)}
-                              className="h-7 rounded bg-slate-700 text-white px-2 text-xs"
-                            >
-                              {isExpanded ? "Ocultar artículos" : "Ver artículos"}
-                            </button>
+                            {editingCampaignNameRow === rowKey ? (
+                              <>
+                                <input
+                                  autoFocus
+                                  value={editingNames[rowKey] ?? c.name ?? ""}
+                                  onChange={(e) => setEditingNames((s) => ({ ...s, [rowKey]: e.target.value }))}
+                                  className="h-7 w-44 rounded border border-border bg-card px-2 text-xs text-foreground"
+                                  placeholder="Nuevo nombre"
+                                />
+                                <button
+                                  type="button"
+                                  disabled={renamingId === rowKey}
+                                  onClick={async () => {
+                                    await renameCampaign(c);
+                                    setEditingCampaignNameRow(null);
+                                  }}
+                                  className="h-7 rounded bg-primary text-primary-foreground px-2 text-xs disabled:opacity-50"
+                                >
+                                  {renamingId === rowKey ? "..." : "Guardar"}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingCampaignNameRow(null);
+                                    setEditingNames((s) => ({ ...s, [rowKey]: c.name ?? "" }));
+                                  }}
+                                  className="h-7 rounded bg-muted text-foreground px-2 text-xs"
+                                >
+                                  Cancelar
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <button
+                                  type="button"
+                                  title="Editar nombre de campaña"
+                                  onClick={() => {
+                                    setEditingCampaignNameRow(rowKey);
+                                    setEditingNames((s) => ({ ...s, [rowKey]: c.name ?? "" }));
+                                  }}
+                                  className="h-7 w-7 rounded border border-border bg-card text-primary inline-flex items-center justify-center hover:bg-muted"
+                                >
+                                  <Pencil size={13} />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => toggleCampaignItems(c)}
+                                  className="h-7 rounded bg-muted text-foreground px-2 text-xs hover:bg-muted/80"
+                                >
+                                  {isExpanded ? "Ocultar artículos" : "Ver artículos"}
+                                </button>
+                              </>
+                            )}
                           </div>
                         </div>
                       </td>
@@ -813,7 +847,7 @@ export default function MeliAdsStudioView() {
                   <div className="flex gap-3 items-start">
                     <input
                       type="checkbox"
-                      className="mt-1.5 rounded border-border"
+                      className="mt-1.5 rounded border-border bg-card accent-primary"
                       checked={Boolean(selected[r.id])}
                       onChange={() => toggleRec(r.id)}
                     />
@@ -839,9 +873,7 @@ export default function MeliAdsStudioView() {
                         )}
                       </div>
                       <p className="text-sm text-foreground/90 leading-relaxed">{r.rationale}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Campaña #{r.campaignId} · {r.campaignName}
-                      </p>
+                      <p className="text-xs text-muted-foreground">Campaña #{r.campaignId}</p>
                       <button
                         type="button"
                         onClick={() => setExpanded((e) => ({ ...e, [r.id]: !open }))}
