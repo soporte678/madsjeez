@@ -382,7 +382,7 @@ export async function GET(req: Request) {
           currentAllZeroBeforeFallback: currentAllZero,
           currentFallbackHits,
           previousAllZeroBeforeFallback: prevAllZero,
-          previousFallbackHits,
+          previousFallbackHits: prevFallbackHits,
         };
 
         for (const row of currentRows) {
