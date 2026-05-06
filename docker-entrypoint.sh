@@ -15,7 +15,12 @@ fi
 if [ -n "$DATABASE_URL" ]; then
     echo "=== DATABASE_URL configurada ==="
     echo "=== Ejecutando migraciones de Prisma ==="
-    npx prisma migrate deploy --datasource-url="$DATABASE_URL" 2>&1 || echo "WARNING: Prisma migrate deploy fallo (ignorado)"
+    # Prisma 7 lee DATABASE_URL desde prisma.config.ts (datasource.url). No ignorar fallos.
+    export DATABASE_URL
+    if ! npx prisma migrate deploy; then
+        echo "ERROR: prisma migrate deploy falló — revisá logs y _prisma_migrations"
+        exit 1
+    fi
 
     echo "=== Verificando/creado columna access_key via fallback SQL ==="
     node -e "

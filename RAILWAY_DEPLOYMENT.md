@@ -323,6 +323,14 @@ railway up
 
 ---
 
+## Prisma y base de datos (Producción)
+
+- **`docker-entrypoint.sh`** ejecuta `npx prisma migrate deploy` al iniciar el contenedor si `DATABASE_URL` está definida. Si falla, **el arranque se corta** (evita servir la app con un cliente Prisma más nuevo que el esquema de la BD).
+- **`prisma.config.ts`** define `datasource.url` (Prisma 7). Sin migraciones aplicadas verás errores tipo columna/tabla inexistente (`meli_item_id`, `seller_meli_oauth`, `billing_cycle`, etc.).
+- Si necesitás aplicar migraciones **sin redeploy**: conectá a la misma base que Railway y ejecutá `npx prisma migrate deploy` usando ese `DATABASE_URL`.
+
+---
+
 ## Checklist Final
 
 - [ ] Proyecto desplegado en Railway

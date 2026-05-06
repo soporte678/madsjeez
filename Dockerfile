@@ -37,9 +37,8 @@ RUN echo "=== Generando Prisma Client ===" && \
     npx prisma generate && \
     echo "=== Prisma Client generado ==="
 
-# Skip migrations during build - they are already applied
-# If you need to run migrations, do it manually via Supabase SQL Editor
-# RUN npx prisma migrate deploy
+# Migraciones en runtime: docker-entrypoint.sh ejecuta `prisma migrate deploy`
+# (prisma.config.ts define datasource.url = DATABASE_URL de Railway).
 
 # Build de Next.js (bypass package.json cached script)
 RUN echo "=== Iniciando build de Next.js ===" && \
