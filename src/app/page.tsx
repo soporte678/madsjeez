@@ -443,9 +443,9 @@ export default function Home() {
       <section className="max-w-[1184px] mx-auto px-4 mb-10">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 bg-card rounded shadow-sm flex overflow-hidden cursor-pointer group hover:shadow-md transition-shadow h-[250px] border border-border">
-            <div className="w-1/2 p-8 flex flex-col justify-center">
+            <div className="w-1/2 p-8 flex flex-col justify-center text-card-foreground">
               <span className="text-[10px] font-bold tracking-[2px] text-muted-foreground mb-2 uppercase">Organizá mejor</span>
-              <h3 className="text-[22px] font-bold text-foreground leading-tight mb-4">MÁS ESPACIO Y<br/>ORDEN PRÁCTICO</h3>
+              <h3 className="text-[22px] font-bold leading-tight mb-4 text-card-foreground">MÁS ESPACIO Y<br/>ORDEN PRÁCTICO</h3>
               <Link href="/search" className="bg-gradient-to-r from-[#ff4d2e] to-[#ff9100] hover:from-[#ff9100] hover:to-[#ffb703] text-white px-5 py-2 rounded-lg font-bold text-[14px] w-fit shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/50 transition-all duration-300 hover:-translate-y-0.5 btn-shine">Ver ofertas</Link>
             </div>
             <div className="w-1/2 bg-muted overflow-hidden relative">
@@ -453,9 +453,9 @@ export default function Home() {
             </div>
           </div>
           <div className="flex-1 bg-card rounded shadow-sm flex overflow-hidden cursor-pointer group hover:shadow-md transition-shadow h-[250px] border border-border">
-            <div className="w-1/2 p-8 flex flex-col justify-center">
+            <div className="w-1/2 p-8 flex flex-col justify-center text-card-foreground">
               <span className="text-[10px] font-bold tracking-[2px] text-muted-foreground mb-2 uppercase">Renová tu hogar</span>
-              <h3 className="text-[22px] font-bold text-foreground leading-tight mb-4">¡HOGAR Y MUEBLES!<br/>HASTA 35% OFF</h3>
+              <h3 className="text-[22px] font-bold leading-tight mb-4 text-card-foreground">¡HOGAR Y MUEBLES!<br/>HASTA 35% OFF</h3>
               <Link href="/search" className="bg-gradient-to-r from-[#ff4d2e] to-[#ff9100] hover:from-[#ff9100] hover:to-[#ffb703] text-white px-5 py-2 rounded-lg font-bold text-[14px] w-fit shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/50 transition-all duration-300 hover:-translate-y-0.5 btn-shine">Ver ofertas</Link>
             </div>
             <div className="w-1/2 bg-muted overflow-hidden relative">
@@ -471,7 +471,7 @@ export default function Home() {
           <h2 className="text-4xl md:text-5xl font-black text-white mb-4 tracking-tight">
             ¿LISTO PARA <span className="bg-gradient-to-r from-[#ff4d2e] via-[#ffb703] to-[#00b4d8] bg-clip-text text-transparent">ESCALAR?</span>
           </h2>
-          <p className="text-gray-400 text-sm md:text-base font-light">
+          <p className="text-slate-200/95 text-sm md:text-base font-light leading-relaxed max-w-xl mx-auto">
             Únete a la red Commerce Group más avanzada. Herramientas de grado empresarial para marcas que no conocen fronteras.
           </p>
         </div>
@@ -543,7 +543,7 @@ export default function Home() {
                 <h3 className={`text-xl font-black mb-2 ${plan.featured ? 'text-[#ffb703]' : plan.name === 'PLATINUM' ? 'text-[#00b4d8]' : 'text-[#ff4d2e]'}`}>{plan.name}</h3>
                 <div className="flex items-baseline justify-center gap-1 mb-4">
                   <span className="text-5xl font-black text-white">${plan.price}</span>
-                  <span className="text-slate-400 text-sm">/mes</span>
+                  <span className="text-slate-300 text-sm">/mes</span>
                 </div>
                 <div className={`text-xs font-black py-1.5 px-4 rounded-full ${
                   plan.featured
