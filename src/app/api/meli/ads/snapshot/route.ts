@@ -7,6 +7,8 @@ import {
   meliPadsListAdvertisers,
   meliPadsSearchCampaignsBasic,
   meliPadsSearchCampaignsWithMetrics,
+  meliPadsCampaignsBasicNoSearch,
+  meliPadsCampaignsWithMetricsRangeNoSearch,
   meliPadsSearchCampaignsWithMetricsRange,
   meliPadsSearchCampaignsBasicAltPath,
   meliPadsSearchCampaignsWithMetricsAltPath,
@@ -207,6 +209,36 @@ export async function GET(req: Request) {
         }
 
         // Fallback multi-tenant: endpoint alternativo sin segmento /advertisers/:id
+        if (padsSearchResults(camp.data).length === 0) {
+          const noSearchWithMetrics = await meliPadsCampaignsWithMetricsRangeNoSearch(
+            meli.accessToken,
+            adv.site_id,
+            adv.advertiser_id,
+            currentWindow.start,
+            currentWindow.end,
+            0,
+            50
+          );
+          if (noSearchWithMetrics.ok && padsSearchResults(noSearchWithMetrics.data).length > 0) {
+            camp = noSearchWithMetrics;
+            errors.push(`Fallback no-search con métricas OK (${adv.advertiser_id})`);
+          }
+        }
+
+        if (padsSearchResults(camp.data).length === 0) {
+          const noSearchBasic = await meliPadsCampaignsBasicNoSearch(
+            meli.accessToken,
+            adv.site_id,
+            adv.advertiser_id,
+            0,
+            50
+          );
+          if (noSearchBasic.ok && padsSearchResults(noSearchBasic.data).length > 0) {
+            camp = noSearchBasic;
+            errors.push(`Fallback no-search básico OK (${adv.advertiser_id})`);
+          }
+        }
+
         if (padsSearchResults(camp.data).length === 0) {
           const altWithMetrics = await meliPadsSearchCampaignsWithMetricsAltPath(
             meli.accessToken,
