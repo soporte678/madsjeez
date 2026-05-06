@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { 
   User, ShieldCheck, Users, CreditCard, 
   MapPin, Lock, MessageSquare, Star, 
@@ -16,6 +16,7 @@ import ProfileCardsView from './profile/ProfileCardsView';
 import ProfileAddressesView from './profile/ProfileAddressesView';
 import ProfilePrivacyView from './profile/ProfilePrivacyView';
 import ProfileCommunicationsView from './profile/ProfileCommunicationsView';
+import MeliIntegrationView from '@/components/dashboard/MeliIntegrationView';
 
 interface ProfileViewProps {
   userData?: {
@@ -76,6 +77,13 @@ export default function ProfileView({ userData }: ProfileViewProps) {
 
   const [savingKey, setSavingKey] = useState(false);
 
+  // Mercado Libre (catálogo / campañas)
+  const [meliStatus, setMeliStatus] = useState<{
+    connected: boolean;
+    meliUserId: string | null;
+    loading: boolean;
+  }>({ connected: false, meliUserId: null, loading: true });
+
   // Estado para navegación de sub-secciones del perfil
   const [activeSubSection, setActiveSubSection] = useState<string | null>(null);
 
@@ -103,6 +111,28 @@ export default function ProfileView({ userData }: ProfileViewProps) {
     };
 
     loadMpStatus();
+  }, []);
+
+  const loadMeliStatus = async () => {
+    try {
+      const r = await fetch('/api/meli/status');
+      const d = await r.json();
+      if (r.ok) {
+        setMeliStatus({
+          connected: Boolean(d.connected),
+          meliUserId: d.meliUserId ?? null,
+          loading: false,
+        });
+      } else {
+        setMeliStatus({ connected: false, meliUserId: null, loading: false });
+      }
+    } catch {
+      setMeliStatus({ connected: false, meliUserId: null, loading: false });
+    }
+  };
+
+  useEffect(() => {
+    loadMeliStatus();
   }, []);
 
   // Cargar estado de Clave de Acceso
@@ -393,7 +423,23 @@ export default function ProfileView({ userData }: ProfileViewProps) {
         : <Wallet className="text-gray-400" size={24} />,
       status: mpStatus.connected ? null : 'warning',
       isMercadoPago: true
-    }
+    },
+    {
+      id: 'meli-marketplace',
+      title: "Mercado Libre",
+      description: meliStatus.loading
+        ? "Cargando..."
+        : meliStatus.connected
+          ? `Conectado · usuario ML ${meliStatus.meliUserId ?? "—"}`
+          : "Importá tus publicaciones de Mercado Libre y sincronizá campañas con MADSJEEZ.",
+      icon: (
+        <div className="w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center text-slate-900 text-[10px] font-black">
+          ML
+        </div>
+      ),
+      status: meliStatus.connected ? null : 'warning',
+      isMercadoLibre: true,
+    },
   ];
 
   // Renderizar sub-sección si está activa
@@ -452,6 +498,33 @@ export default function ProfileView({ userData }: ProfileViewProps) {
       <ProfileCommunicationsView 
         onBack={() => setActiveSubSection(null)} 
       />
+    );
+  }
+
+  if (activeSubSection === 'meli-marketplace') {
+    return (
+      <div className="w-full max-w-5xl mx-auto pb-20">
+        <div className="mb-6 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveSubSection(null);
+              loadMeliStatus();
+            }}
+            className="flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-800"
+          >
+            <ChevronRight size={18} className="rotate-180" />
+            Volver al perfil
+          </button>
+        </div>
+        <Suspense
+          fallback={
+            <div className="flex justify-center py-16 text-gray-500 text-sm">Cargando Mercado Libre…</div>
+          }
+        >
+          <MeliIntegrationView />
+        </Suspense>
+      </div>
     );
   }
 
@@ -548,9 +621,11 @@ export default function ProfileView({ userData }: ProfileViewProps) {
           <div 
             key={card.id}
             className={`bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all flex flex-col h-full relative ${
-              card.isMercadoPago ? '' : 'cursor-pointer group'
+              card.isMercadoPago || card.isMercadoLibre ? '' : 'cursor-pointer group'
             }`}
-            onClick={card.isMercadoPago ? undefined : card.onClick || undefined}
+            onClick={
+              card.isMercadoPago || card.isMercadoLibre ? undefined : card.onClick || undefined
+            }
           >
             {card.status === 'warning' && (
               <div className="absolute top-4 right-4">
@@ -569,7 +644,7 @@ export default function ProfileView({ userData }: ProfileViewProps) {
             </div>
             
             <h3 className={`text-[16px] font-bold text-gray-800 mb-2 transition-colors ${
-              card.isMercadoPago ? '' : 'group-hover:text-blue-600'
+              card.isMercadoPago || card.isMercadoLibre ? '' : 'group-hover:text-blue-600'
             }`}>
               {card.title}
             </h3>
@@ -603,6 +678,36 @@ export default function ProfileView({ userData }: ProfileViewProps) {
                     <Link2 size={16} />
                     Conectar MercadoPago
                   </button>
+                )}
+              </div>
+            )}
+
+            {card.isMercadoLibre && (
+              <div className="mt-auto pt-2 space-y-2">
+                {meliStatus.loading ? (
+                  <button
+                    type="button"
+                    disabled
+                    className="w-full py-2 px-4 bg-gray-100 text-gray-400 rounded-lg text-sm font-medium cursor-not-allowed"
+                  >
+                    Cargando...
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setActiveSubSection('meli-marketplace')}
+                      className="w-full py-2 px-4 bg-yellow-400 hover:bg-yellow-500 text-slate-900 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Link2 size={16} />
+                      {meliStatus.connected ? 'Sincronizar catálogo y campañas' : 'Conectar con Mercado Libre'}
+                    </button>
+                    {!meliStatus.connected && (
+                      <p className="text-[11px] text-gray-500 text-center leading-snug">
+                        También podés hacerlo desde Ventas → Mercado Libre.
+                      </p>
+                    )}
+                  </>
                 )}
               </div>
             )}

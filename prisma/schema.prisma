@@ -140,6 +140,7 @@ model User {
   campaigns         Campaign[]
   coupons           Coupon[]
   cart              Cart?
+  sellerMeliOAuth   SellerMeliOAuth?
 
   // Reputación
   reputationHistory ReputationHistory[] @relation("ReputationHistory")
@@ -213,6 +214,9 @@ model Product {
   variations    ProductVariation[]
   campaignProducts CampaignProduct[]
   cartItems     CartItem[]
+
+  /// ID publicación MLA/MLM/etc. en Mercado Libre (importación)
+  meliItemId  String? @unique @map("meli_item_id")
   
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
@@ -222,6 +226,21 @@ model Product {
   @@index([isActive])
   @@index([isBoosted])
   @@map("products")
+}
+
+/// OAuth Mercado Libre por usuario (importar publicaciones y leer promociones)
+model SellerMeliOAuth {
+  id           String   @id @default(cuid())
+  userId       String   @unique @map("user_id")
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  meliUserId   String   @map("meli_user_id")
+  accessToken  String   @db.Text @map("access_token")
+  refreshToken String?  @db.Text @map("refresh_token")
+  expiresAt    DateTime @map("expires_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("seller_meli_oauth")
 }
 
 model ProductImage {
@@ -775,6 +794,9 @@ model Campaign {
   
   // Products in campaign
   products    CampaignProduct[]
+
+  /// Promoción origen Mercado Libre (si se sincronizó desde ML)
+  meliPromotionId String? @map("meli_promotion_id")
   
   createdAt   DateTime       @default(now()) @map("created_at")
   updatedAt   DateTime       @updatedAt @map("updated_at")
@@ -783,6 +805,7 @@ model Campaign {
   @@index([type])
   @@index([status])
   @@index([startDate])
+  @@unique([sellerId, meliPromotionId])
   @@map("campaigns")
 }
 

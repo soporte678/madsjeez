@@ -19,6 +19,8 @@ import {
   Package,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/prisma";
+import { getPrismaProductDetailBundle } from "@/lib/product/prisma-detail-for-page";
 import { ProductDetailClient } from "@/components/product/ProductDetailClient";
 import { BuyBox } from "@/components/product/BuyBox";
 
@@ -136,27 +138,55 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const { id } = await params;
   const product = await getProduct(id);
 
-  if (!product) {
+  if (product) {
+    return {
+      title: `${product.title} | MADSJEEZ`,
+      description: product.description?.slice(0, 160) || "Compra este producto en MADSJEEZ",
+    };
+  }
+
+  const prismaProd = await prisma.product.findUnique({
+    where: { id },
+    select: { title: true, description: true },
+  });
+
+  if (!prismaProd) {
     return { title: "Producto no encontrado | MADSJEEZ" };
   }
 
   return {
-    title: `${product.title} | MADSJEEZ`,
-    description: product.description?.slice(0, 160) || "Compra este producto en MADSJEEZ",
+    title: `${prismaProd.title} | MADSJEEZ`,
+    description: prismaProd.description?.slice(0, 160) || "Compra este producto en MADSJEEZ",
   };
 }
 
 export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const product = await getProduct(id);
-  if (!product) notFound();
+  const sbProduct = await getProduct(id);
 
-  const [relatedProducts, sellerProducts, productReviews, topRatedProducts] = await Promise.all([
-    getRelatedProducts(product.category_id, product.id),
-    getSellerProducts(product.seller_id, product.id),
-    getProductReviews(product.id),
-    getTopRatedProducts(product.category_id, product.id),
-  ]);
+  let product: any;
+  let relatedProducts: any[];
+  let sellerProducts: any[];
+  let productReviews: any[];
+  let topRatedProducts: any[];
+
+  if (sbProduct) {
+    product = sbProduct;
+    [relatedProducts, sellerProducts, productReviews, topRatedProducts] = await Promise.all([
+      getRelatedProducts(product.category_id, product.id),
+      getSellerProducts(product.seller_id, product.id),
+      getProductReviews(product.id),
+      getTopRatedProducts(product.category_id, product.id),
+    ]);
+  } else {
+    const bundle = await getPrismaProductDetailBundle(id);
+    if (!bundle) notFound();
+    product = bundle.product;
+    relatedProducts = bundle.relatedProducts;
+    sellerProducts = bundle.sellerProducts;
+    productReviews = bundle.productReviews;
+    topRatedProducts = bundle.topRatedProducts;
+  }
 
   const totalReviews = productReviews.length;
   const avgRating = totalReviews > 0

@@ -29,6 +29,12 @@ const nextConfig: NextConfig = {
   // Redirección de www a non-www (opcional)
   async redirects() {
     return [
+      // Producción antigua sin esta página: enviar al mismo panel dentro de /dashboard
+      {
+        source: "/dashboard/meli",
+        destination: "/dashboard#meli-sync",
+        permanent: false,
+      },
       {
         source: "/:path*",
         has: [

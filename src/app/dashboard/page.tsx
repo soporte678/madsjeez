@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import {
   Search, Bell, ShoppingCart, User, ChevronDown, ChevronRight,
   ShoppingBag, Tag, Megaphone, FileText, CreditCard, Settings,
@@ -34,40 +34,45 @@ import CampaignDetailView from "@/components/dashboard/CampaignDetailView";
 import CouponCreateView from "@/components/dashboard/CouponCreateView";
 import MarketingCentralView from "@/components/dashboard/MarketingCentralView";
 import AdvertisingView from "@/components/dashboard/AdvertisingView";
-
-function getInitialMenu() {
-  if (typeof window !== 'undefined') {
-    const hash = window.location.hash.replace('#', '');
-    if (hash) return hash;
-  }
-  return 'resumen';
-}
+import MeliIntegrationView from "@/components/dashboard/MeliIntegrationView";
 
 export default function App() {
-  const [activeMenu, setActiveMenu] = useState(getInitialMenu);
+  // Siempre igual en servidor y primer cliente (evita hydration mismatch). El hash se aplica en cliente.
+  const [activeMenu, setActiveMenu] = useState('resumen');
+  const [hashReady, setHashReady] = useState(false);
+
+  // Leer #fragmento inicial (ej. OAuth redirige a #meli-sync)
+  useEffect(() => {
+    const hash = window.location.hash.replace('#', '');
+    if (hash) setActiveMenu(hash);
+    setHashReady(true);
+  }, []);
 
   // Sync activeMenu to URL hash so refresh keeps the selected section
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const onHashChange = () => {
-        const hash = window.location.hash.replace('#', '');
-        if (hash) setActiveMenu(hash);
-      };
-      window.addEventListener('hashchange', onHashChange);
-      return () => window.removeEventListener('hashchange', onHashChange);
-    }
+    const onHashChange = () => {
+      const hash = window.location.hash.replace('#', '');
+      if (hash) setActiveMenu(hash);
+    };
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
 
+  // No pisar el hash hasta haber leído el inicial (si no, #meli-sync pasaba a #resumen y el panel quedaba vacío)
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const currentHash = window.location.hash.replace('#', '');
-      if (currentHash !== activeMenu) {
-        window.history.replaceState(null, '', `#${activeMenu}`);
-      }
+    if (!hashReady) return;
+    const currentHash = window.location.hash.replace('#', '');
+    if (currentHash !== activeMenu) {
+      window.history.replaceState(null, '', `#${activeMenu}`);
     }
-  }, [activeMenu]);
+  }, [activeMenu, hashReady]);
+
   const [comprasOpen, setComprasOpen] = useState(false);
   const [ventasOpen, setVentasOpen] = useState(false);
+
+  useEffect(() => {
+    if (activeMenu === "meli-sync") setVentasOpen(true);
+  }, [activeMenu]);
   const [marketingOpen, setMarketingOpen] = useState(false);
   const [facturacionOpen, setFacturacionOpen] = useState(false);
   const [configOpen, setConfigOpen] = useState(false);
@@ -163,6 +168,7 @@ export default function App() {
         { id: 'resumen', label: 'Resumen' },
         { id: 'ventas-novedades', label: 'Novedades' },
         { id: 'publicaciones', label: 'Publicaciones' },
+        { id: 'meli-sync', label: 'Mercado Libre' },
         { id: 'preguntas', label: 'Preguntas' },
         { id: 'ventas-lista', label: 'Ventas' },
         { id: 'posventa', label: 'Posventa' },
@@ -614,6 +620,17 @@ export default function App() {
             {activeMenu === 'carrito' && <CartView />}
             {activeMenu === 'ayuda' && <HelpView userData={currentUser || undefined} onNavigate={(section) => setActiveMenu(section)} />}
             {activeMenu === 'publicaciones' && <div className="-mx-4 lg:-mx-8">{renderPublicaciones()}</div>}
+            {activeMenu === 'meli-sync' && (
+              <Suspense
+                fallback={
+                  <div className="flex items-center justify-center py-16 text-gray-500 text-sm">
+                    Cargando Mercado Libre…
+                  </div>
+                }
+              >
+                <MeliIntegrationView />
+              </Suspense>
+            )}
             {activeMenu === 'marketing-ia' && <MarketingIAPage />}
             {activeMenu === 'central-marketing' && <MarketingCentralView />}
             {activeMenu === 'publicidad' && <AdvertisingView />}

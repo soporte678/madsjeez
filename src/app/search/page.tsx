@@ -17,6 +17,7 @@ import {
   Loader2,
   ImageIcon,
 } from "lucide-react";
+import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 
 interface Product {
@@ -28,6 +29,7 @@ interface Product {
   shipping_free: boolean;
   sales: number;
   sold_count?: number;
+  meli_item_id?: string | null;
   is_promoted?: boolean;
   primary_image: string | null;
   seller_name: string | null;
@@ -200,70 +202,27 @@ function SearchContent() {
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
-
-    let dbQuery = supabase
-      .from("products")
-      .select(
-        `
-        *,
-        product_images(url, is_primary),
-        profiles:seller_id(full_name),
-        categories:category_id(name)
-      `
-      )
-      .eq("is_active", true);
-
-    const q = searchParams.get("q");
-    const cat = searchParams.get("category");
-    const cond = searchParams.get("condition");
-    const sort = searchParams.get("sort") || "relevance";
-    const minPrice = searchParams.get("min_price");
-    const maxPrice = searchParams.get("max_price");
-    const freeShip = searchParams.get("free_shipping");
-
-    if (q) dbQuery = dbQuery.ilike("title", `%${q}%`);
-    if (cat) dbQuery = dbQuery.eq("category_id", cat);
-    if (cond) dbQuery = dbQuery.eq("condition", cond);
-    if (minPrice) dbQuery = dbQuery.gte("price", parseInt(minPrice, 10));
-    if (maxPrice) dbQuery = dbQuery.lte("price", parseInt(maxPrice, 10));
-    if (freeShip === "true") dbQuery = dbQuery.eq("shipping_free", true);
-
-    switch (sort) {
-      case "price_asc":
-        dbQuery = dbQuery.order("price", { ascending: true });
-        break;
-      case "price_desc":
-        dbQuery = dbQuery.order("price", { ascending: false });
-        break;
-      case "newest":
-        dbQuery = dbQuery.order("created_at", { ascending: false });
-        break;
-      default:
-        dbQuery = dbQuery.order("is_promoted", { ascending: false });
+    try {
+      const p = new URLSearchParams();
+      searchParams.forEach((value, key) => {
+        p.set(key, value);
+      });
+      const res = await fetch(`/api/search/listings?${p.toString()}`);
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Error al cargar resultados");
+        setProducts([]);
+        return;
+      }
+      const list = (data.products || []) as Product[];
+      setProducts(list);
+    } catch {
+      toast.error("Error al cargar resultados");
+      setProducts([]);
+    } finally {
+      setLoading(false);
     }
-
-    const { data } = await dbQuery.limit(96);
-
-    if (data) {
-      setProducts(
-        data.map((p: Record<string, unknown> & { product_images?: Array<{ url: string; is_primary?: boolean }>; profiles?: { full_name?: string }; categories?: { name?: string } }) => {
-          const imgs = p.product_images;
-          const sold = typeof p.sold_count === "number" ? p.sold_count : 0;
-          return {
-            ...p,
-            sold_count: sold,
-            sales: sold,
-            primary_image:
-              imgs?.find((img) => img.is_primary)?.url || imgs?.[0]?.url || null,
-            seller_name: p.profiles?.full_name ?? null,
-            seller_id: (p.seller_id as string) ?? null,
-            category_name: p.categories?.name ?? null,
-          } as Product;
-        })
-      );
-    }
-    setLoading(false);
-  }, [searchParams, supabase]);
+  }, [searchParams]);
 
   useEffect(() => {
     fetchCategories();
