@@ -120,16 +120,16 @@ export async function GET(req: Request) {
     const freeShip = searchParams.get("free_shipping");
     const limit = Math.min(parseInt(searchParams.get("limit") || "48", 10) || 48, 96);
 
-    let sbQuery = supabaseService
-      .from("products")
-      .select(
-        `
+    const baseSelect = `
         *,
-        product_images(url, is_primary),
+        product_images(url),
         profiles:seller_id(full_name),
         categories:category_id(name)
-      `
-      )
+      `;
+
+    let sbQuery = supabaseService
+      .from("products")
+      .select(baseSelect)
       .eq("is_active", true);
 
     if (q) sbQuery = sbQuery.ilike("title", `%${q}%`);
