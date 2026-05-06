@@ -253,15 +253,11 @@ export async function GET(request: NextRequest) {
       // Costo de boosts activos
       const activeBoosts = await prisma.productBoost.findMany({
         where: {
-          status: 'active',
-          endDate: { gte: now }
-        },
-        include: {
-          product: { where: { sellerId: userId } }
+          sellerId: userId,
+          endDate: { gte: now },
         }
       });
-      const sellerBoosts = activeBoosts.filter((b: any) => b.product);
-      const boostCost = sellerBoosts.reduce((sum: number, b: any) => sum + (b.cost || 0), 0);
+      const boostCost = activeBoosts.reduce((sum: number, b: any) => sum + (b.cost || 0), 0);
       billingBalance += boostCost;
 
       // Si hay balance > 0, está vencido (simplificado)
