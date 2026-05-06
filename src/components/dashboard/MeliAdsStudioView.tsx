@@ -177,7 +177,7 @@ export default function MeliAdsStudioView() {
           presupuesto, ROAS). Podés aplicar los cambios sugeridos vía API (presupuesto, estrategia, ROAS objetivo,
           estado).
         </p>
-        <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-3">
+        <p className="text-xs text-primary bg-primary/10 border border-primary/20 rounded-lg px-3 py-2 mt-3">
           Requiere tener Product Ads habilitado en Mercado Libre y scopes OAuth adecuados. Si ves 404 en anunciantes,
           activá las campañas desde ML → Gestión de publicaciones → Publicidad.
         </p>
@@ -202,7 +202,7 @@ export default function MeliAdsStudioView() {
       </div>
 
       {snapshot?.advertisers?.length === 0 && !loading && snapshot && (
-        <div className="rounded-xl border border-orange-200 bg-orange-50 p-4 text-sm text-orange-900 flex gap-2">
+        <div className="rounded-xl border border-primary/20 bg-primary/10 p-4 text-sm text-primary flex gap-2">
           <AlertTriangle className="w-5 h-5 shrink-0" />
           No hay anunciante PADS para esta cuenta. Verificá permisos u operativamente Product Ads en Mercado Libre.
         </div>
@@ -243,7 +243,7 @@ export default function MeliAdsStudioView() {
       {camps.length > 0 && (
         <section className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
-            <Zap className="w-5 h-5 text-amber-500" />
+            <Zap className="w-5 h-5 text-primary" />
             <h3 className="font-semibold text-gray-900">Campañas y métricas (ML)</h3>
           </div>
           <div className="overflow-x-auto">
@@ -366,7 +366,7 @@ export default function MeliAdsStudioView() {
                 r.severity === "critical"
                   ? "text-red-600 bg-red-50 border-red-100"
                   : r.severity === "warning"
-                    ? "text-amber-700 bg-amber-50 border-amber-100"
+                    ? "text-primary bg-primary/10 border-primary/20"
                     : "text-blue-700 bg-blue-50 border-blue-100";
               const open = expanded[r.id];
               return (

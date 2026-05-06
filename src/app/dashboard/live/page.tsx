@@ -47,9 +47,8 @@ export default function LiveMonitorPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 font-sans text-gray-800">
-      {/* Top Banner Amarillo */}
-      <div className="bg-[#fff159] py-8 text-center relative border-b border-yellow-400">
-        <Link href="/dashboard" className="absolute left-6 top-6 flex items-center gap-1 text-blue-900 font-bold hover:underline">
+      <div className="bg-muted py-8 text-center relative border-b border-border">
+        <Link href="/dashboard" className="absolute left-6 top-6 flex items-center gap-1 text-slate-900 font-bold hover:underline">
           <ArrowLeft size={16} /> Volver al dashboard
         </Link>
         <h1 className="text-2xl font-black text-gray-800">Ventas de hoy en vivo</h1>

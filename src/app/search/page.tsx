@@ -766,7 +766,7 @@ function ProductCard({
 
       <div className="p-3 flex flex-col flex-1">
         {sold > 40 && (
-          <span className="bg-[#fff3e0] text-[#f26522] text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-sm w-fit mb-1.5">
+          <span className="bg-primary/10 text-primary text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-sm w-fit mb-1.5">
             MÁS VENDIDO
           </span>
         )}

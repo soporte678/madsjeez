@@ -60,10 +60,10 @@ export default function AnalyticsPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 font-sans text-gray-800">
-      <header className="bg-[#fff159] py-4 px-4 shadow-sm">
+      <header className="bg-white border-b border-border py-4 px-4 shadow-sm">
         <div className="max-w-[1200px] mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="flex items-center gap-1 text-blue-900 font-bold hover:underline">
+            <Link href="/dashboard" className="flex items-center gap-1 text-slate-900 font-bold hover:underline">
               <ArrowLeft size={16} /> Volver
             </Link>
             <h1 className="text-2xl font-bold text-gray-800">Métricas</h1>
