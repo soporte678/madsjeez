@@ -7,7 +7,7 @@ healthcheckPath = "/api/health"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
-port = 3000
+# No fijar port aquí: Railway inyecta PORT en runtime; debe coincidir con el puerto real del proceso.
 
 [environments.production]
 numReplicas = 1
@@ -19,5 +19,5 @@ healthcheckTimeout = 300
 [environments.production.env]
 # Secrets (Supabase URL/keys, DATABASE_URL, MERCADOPAGO_*, MP_OAUTH_STATE_SECRET, etc.) must be set in the Railway dashboard — do not commit them here.
 NEXTAUTH_URL = "https://www.madsjeez.com.ar"
-PORT = "3000"
 NODE_ENV = "production"
+# Nunca sobreescribir PORT acá: Railway lo define para healthcheck y el proxy. La app usa process.env.PORT.

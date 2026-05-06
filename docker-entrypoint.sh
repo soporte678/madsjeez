@@ -36,7 +36,8 @@ else
     echo "WARNING: DATABASE_URL no configurada en runtime, saltando migraciones"
 fi
 
-# Iniciar la aplicación
-echo "=== Iniciando aplicación ==="
-echo "=== Comando: $@ ==="
-exec "$@"
+# Iniciar Next.js (siempre el puerto que Railway inyecta en PORT)
+PORT="${PORT:-3000}"
+export PORT
+echo "=== Iniciando Next.js en 0.0.0.0:${PORT} (healthcheck /api/health) ==="
+exec ./node_modules/.bin/next start -H 0.0.0.0 -p "$PORT"
