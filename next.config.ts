@@ -1,8 +1,16 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
+  /** Evita que el bundler rompa binarios nativos de Prisma/pg en runtime (standalone). */
+  serverExternalPackages: ["@prisma/client", "@prisma/adapter-pg", "prisma", "pg"],
   typescript: {
     ignoreBuildErrors: true,
+  },
+  /** Next 16+: top-level key (was experimental.outputFileTracingIncludes). Standalone trace para Prisma. */
+  outputFileTracingIncludes: {
+    "/api/**/*": ["./node_modules/.prisma/**/*", "./node_modules/@prisma/client/**/*"],
+    "/*": ["./node_modules/.prisma/**/*"],
   },
   // Configuración para dominio personalizado
   async headers() {
