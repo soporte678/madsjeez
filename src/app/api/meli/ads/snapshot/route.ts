@@ -440,8 +440,9 @@ export async function GET(req: Request) {
             prevByCampaignId.set(Number(p.row.id), p.metrics);
           }
         }
-        if (camp.data.metrics_summary != null) {
-          metricsSummaryByAdvertiser[String(adv.advertiser_id)] = camp.data.metrics_summary;
+        const metricsSummary = camp.data?.metrics_summary;
+        if (metricsSummary != null) {
+          metricsSummaryByAdvertiser[String(adv.advertiser_id)] = metricsSummary;
         }
 
         diagnosticsByAdvertiser[String(adv.advertiser_id)] = {
