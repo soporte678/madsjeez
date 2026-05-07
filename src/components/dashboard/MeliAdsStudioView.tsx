@@ -274,8 +274,9 @@ export default function MeliAdsStudioView() {
 
   const countCritical = recs.filter((r) => r.severity === "critical").length;
   const countWarning = recs.filter((r) => r.severity === "warning").length;
-  // "Virtudes" debe listar solo recomendaciones de categoría positiva (verde).
-  const countVirtue = recs.filter((r) => r.category === "positive").length;
+  // "Virtudes" representa el grupo no crítico/no advertencia (severidad informativa).
+  // Esto mantiene el total particionado: all = critical + warning + virtue(info).
+  const countVirtue = recs.filter((r) => r.severity === "info").length;
 
   const filteredRecs =
     recFilter === "all"
@@ -284,7 +285,7 @@ export default function MeliAdsStudioView() {
         ? recs.filter((r) => r.severity === "critical")
         : recFilter === "warning"
           ? recs.filter((r) => r.severity === "warning")
-          : recs.filter((r) => r.category === "positive");
+          : recs.filter((r) => r.severity === "info");
 
   const chartSlice = dailyStats.slice(-7);
   const chartLabelsArr = (() => {
