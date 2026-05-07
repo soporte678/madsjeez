@@ -19,6 +19,12 @@ function isGeminiQuotaOr429(error: unknown): boolean {
   )
 }
 
+function isGeminiAccessDenied(error: unknown): boolean {
+  const msg = error instanceof Error ? error.message : String(error)
+  const status = (error as { status?: number })?.status
+  return status === 403 || /403|denied access|Forbidden/i.test(msg)
+}
+
 /** Notificaciones determinísticas si Gemini no está disponible o superaste cuota. */
 function buildFallbackNotifications(ctx: ContextSlice) {
   type Row = {
@@ -80,7 +86,12 @@ export async function POST(req: NextRequest) {
     const apiKey = process.env.GEMINI_API_KEY
     if (!apiKey) return NextResponse.json({ error: "GEMINI_API_KEY not configured" }, { status: 500 })
 
-    const body = await req.json()
+    let body: { action?: string } = {}
+    try {
+      body = (await req.json()) as { action?: string }
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 })
+    }
     const { action } = body
 
     let supabase
@@ -201,15 +212,15 @@ Generá 5-8 notificaciones variadas. Usá español argentino, sé directo y gene
 
         return NextResponse.json({ notifications: enrichedNotifications })
       } catch (geminiErr: unknown) {
-        if (isGeminiQuotaOr429(geminiErr)) {
+        if (isGeminiQuotaOr429(geminiErr) || isGeminiAccessDenied(geminiErr)) {
           console.warn(
-            "[notifications] Gemini quota or rate limit; serving deterministic fallback (enable billing or GEMINI_NOTIFICATIONS_DISABLED=true to skip API)."
+            "[notifications] Gemini unavailable (quota/rate/access); serving deterministic fallback."
           )
           const fallback = buildFallbackNotifications(context)
           return NextResponse.json({
             notifications: enrich(fallback),
             aiUnavailable: true,
-            aiReason: "quota_or_rate_limit",
+            aiReason: isGeminiAccessDenied(geminiErr) ? "access_denied" : "quota_or_rate_limit",
           })
         }
         throw geminiErr
