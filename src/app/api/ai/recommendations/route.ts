@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const { userId, viewedProducts, searchHistory, currentProductId } = body
     const genAI = new GoogleGenerativeAI(apiKey)
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
 
     // Get user's viewed products context
     let viewedContext = ""

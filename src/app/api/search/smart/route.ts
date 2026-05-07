@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
 
     // Ask Gemini to interpret the natural language query
     const genAI = new GoogleGenerativeAI(apiKey)
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
 
     const prompt = `Sos un asistente de búsqueda para un marketplace de maquinaria, herramientas y ferretería en Argentina.
 
