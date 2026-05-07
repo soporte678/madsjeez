@@ -194,7 +194,7 @@ export default function App() {
       isOpen: marketingOpen,
       setIsOpen: setMarketingOpen,
       subItems: [
-        { id: 'marketing-ia', label: '✨ Marketing IA' },
+        { id: 'marketing-ia', label: '✨ Marketing IA (beta)' },
         { id: 'meli-ads-studio', label: 'Mercado Libre Ads' },
         { id: 'central-marketing', label: 'Central de marketing' },
         { id: 'publicidad', label: 'Publicidad' },
