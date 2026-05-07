@@ -57,6 +57,16 @@ type MeliAdsStudioSnapshot = {
   currentWindow?: { start: string; end: string };
   previousWindow?: { start: string; end: string };
   recommendations?: Recommendation[];
+  dailyCutoff?: {
+    timezone: string;
+    bucketDateKey: string;
+    source: string;
+    snapshotUpdatedAt: string | null;
+  } | null;
+  /** Suma de cortes diarios guardados en cada ventana (solo días con dato). */
+  rolledTotals?: Array<{ windowDays: number; daysIncluded: number; totals: Record<string, number> }>;
+  /** Historial de cortes diarios (más recientes al final del array). */
+  dailyHistory?: Array<{ bucketDateKey: string; updatedAt: string; totals: Record<string, number> }>;
   dailyStats?: Array<{ day: string; snapshots: number; avgCost: number; avgRevenue: number; avgProfit: number }>;
   changeSummary?: { positive: number; negative: number; neutral: number; pending: number };
   comparisons?: Array<{
@@ -384,6 +394,18 @@ export default function MeliAdsStudioView() {
           Requiere tener Product Ads habilitado en Mercado Libre y scopes OAuth adecuados. Si ves 404 en anunciantes,
           activá las campañas desde ML → Gestión de publicaciones → Publicidad.
         </p>
+        {snapshot?.dailyCutoff && (
+          <p className="text-xs text-muted-foreground mt-2">
+            <strong className="text-foreground">Corte diario guardado:</strong> día civil{" "}
+            <span className="font-mono">{snapshot.dailyCutoff.bucketDateKey}</span> (
+            {snapshot.dailyCutoff.timezone}). La lectura en vivo de ML se actualiza seguido; los totales históricos y
+            los acumulados 7/15/20 días usan solo una fila por día (
+            {snapshot.dailyCutoff.snapshotUpdatedAt
+              ? `última escritura ${new Date(snapshot.dailyCutoff.snapshotUpdatedAt).toLocaleString("es-AR")}`
+              : "sin marca de tiempo"}
+            ).
+          </p>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-3 items-center">
@@ -461,6 +483,105 @@ export default function MeliAdsStudioView() {
         </ul>
       </section>
 
+      {(snapshot?.rolledTotals?.length ?? 0) > 0 && (
+        <section className="space-y-4">
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">Totales acumulados (cortes diarios guardados)</h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              Cada día guardamos métricas PADS de Mercado Libre para <strong>ese día civil</strong> (Argentina). Acá se
+              <strong> suman</strong> costo, ingresos y profit entre esos cortes; CTR, ACOS y ROAS salen de los
+              agregados. Si falta un día en la ventana, “días con dato” será menor al largo de la ventana.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {(snapshot?.rolledTotals ?? []).map((roll) => {
+              const t = roll.totals;
+              return (
+                <div key={roll.windowDays} className="rounded-xl border border-border bg-card p-4 shadow-sm">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    Últimos {roll.windowDays} días
+                  </p>
+                  <p className="text-[11px] text-muted-foreground mb-2">
+                    {roll.daysIncluded}/{roll.windowDays} días con corte guardado
+                  </p>
+                  <dl className="space-y-1 text-xs">
+                    <div className="flex justify-between gap-2">
+                      <dt className="text-muted-foreground">Costo</dt>
+                      <dd className="font-semibold text-foreground">{money(t.cost)}</dd>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <dt className="text-muted-foreground">Ingresos Ads</dt>
+                      <dd className="font-semibold text-foreground">{money(t.revenue)}</dd>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <dt className="text-muted-foreground">Profit</dt>
+                      <dd className={`font-semibold ${num(t.profit) >= 0 ? "text-emerald-700" : "text-red-600"}`}>
+                        {money(t.profit)}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <dt className="text-muted-foreground">CTR</dt>
+                      <dd className="font-medium text-foreground">{pct(t.ctr)}</dd>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <dt className="text-muted-foreground">ACOS</dt>
+                      <dd className="font-medium text-foreground">{pct(t.acos)}</dd>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <dt className="text-muted-foreground">ROAS</dt>
+                      <dd className="font-medium text-foreground">{ratio(t.roas)}x</dd>
+                    </div>
+                  </dl>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {(snapshot?.dailyHistory?.length ?? 0) > 0 && (
+        <section className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+          <div className="px-4 py-3 border-b border-border bg-muted/40">
+            <h3 className="text-sm font-semibold text-foreground">Historial de cortes diarios</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Una fila por día civil (Argentina). Orden: más reciente arriba.
+            </p>
+          </div>
+          <div className="overflow-x-auto max-h-72 overflow-y-auto">
+            <table className="min-w-full text-xs">
+              <thead className="sticky top-0 bg-muted/90 text-muted-foreground backdrop-blur">
+                <tr>
+                  <th className="text-left px-3 py-2 font-medium">Día (AR)</th>
+                  <th className="text-left px-3 py-2 font-medium">Actualizado</th>
+                  <th className="text-right px-3 py-2 font-medium">Costo</th>
+                  <th className="text-right px-3 py-2 font-medium">Ingresos</th>
+                  <th className="text-right px-3 py-2 font-medium">Profit</th>
+                  <th className="text-right px-3 py-2 font-medium">ROAS</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...(snapshot?.dailyHistory ?? [])].reverse().map((row) => (
+                  <tr key={row.bucketDateKey} className="border-t border-border hover:bg-muted/50">
+                    <td className="px-3 py-2 font-mono text-foreground">{row.bucketDateKey}</td>
+                    <td className="px-3 py-2 text-muted-foreground">
+                      {new Date(row.updatedAt).toLocaleString("es-AR")}
+                    </td>
+                    <td className="px-3 py-2 text-right font-medium text-foreground">{money(row.totals.cost)}</td>
+                    <td className="px-3 py-2 text-right font-medium text-foreground">{money(row.totals.revenue)}</td>
+                    <td
+                      className={`px-3 py-2 text-right font-medium ${num(row.totals.profit) >= 0 ? "text-emerald-700" : "text-red-600"}`}
+                    >
+                      {money(row.totals.profit)}
+                    </td>
+                    <td className="px-3 py-2 text-right text-foreground">{ratio(row.totals.roas)}x</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
       {snapshot?.advertisers?.length === 0 && !loading && snapshot && (
         <div className="rounded-xl border border-primary/20 bg-primary/10 p-4 text-sm text-primary flex gap-2">
           <AlertTriangle className="w-5 h-5 shrink-0" />
@@ -519,11 +640,12 @@ export default function MeliAdsStudioView() {
               </div>
             </div>
             <p className="text-[11px] text-muted-foreground mt-2">
-              La evaluación se recalcula al sincronizar cada 10 min comparando CTR/ACOS/ROAS contra el período previo.
+              La evaluación de cambios aplicados usa la foto actual de ML vs período previo. El histórico publicitario en
+              BD usa un único corte por día civil (Argentina).
             </p>
           </div>
           <div className="rounded-xl border border-cyan-400/30 bg-cyan-500/10 p-4">
-            <h3 className="text-sm font-semibold text-cyan-800 mb-2">Estadística diaria (promedio por sync)</h3>
+            <h3 className="text-sm font-semibold text-cyan-800 mb-2">Evolución por día (corte guardado 24h)</h3>
             <div className="space-y-1 max-h-40 overflow-auto text-xs">
               {dailyStats.slice(-7).map((d) => (
                 <div key={d.day} className="flex items-center justify-between border-b border-cyan-700/10 pb-1">

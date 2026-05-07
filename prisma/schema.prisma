@@ -958,12 +958,17 @@ model MeliAdsSnapshot {
   diagnostics         Json?
   errors              Json?
   source              String   @default("sync")
+  /// Día civil AR (YYYY-MM-DD) para corte guardado una vez por día (`daily_cutoff`).
+  bucketDateKey       String?  @map("bucket_date_key")
   createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
 
   campaignRows        MeliAdsCampaignSnapshot[]
   evaluatedChanges    MeliAdsChange[] @relation("MeliAdsChangeEvaluatedSnapshot")
 
+  @@unique([userId, bucketDateKey], map: "meli_ads_snapshots_user_bucket_key")
   @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, bucketDateKey(sort: Desc)])
   @@map("meli_ads_snapshots")
 }
 
