@@ -14,6 +14,7 @@ import {
   meliPadsSearchCampaignsBasicAltPath,
   meliPadsSearchCampaignsWithMetricsAltPath,
   meliPadsGetCampaignWithMetrics,
+  type MeliPadsAdvertiser,
   type MeliPadsCampaignRow,
   type MeliPadsCampaignMetrics,
 } from "@/lib/meli/pads-api";
@@ -30,6 +31,34 @@ import {
 export const dynamic = "force-dynamic";
 
 const SOURCE_DAILY_CUTOFF = "daily_cutoff";
+
+/** Evita TypeError si PADS devuelve `advertisers` no iterable o filas incompletas. */
+function normalizePadsAdvertisers(raw: unknown, errorSink: string[]): MeliPadsAdvertiser[] {
+  if (!Array.isArray(raw)) {
+    if (raw != null) errorSink.push("PADS advertisers: la respuesta no es un array");
+    return [];
+  }
+  const out: MeliPadsAdvertiser[] = [];
+  for (const entry of raw) {
+    if (!entry || typeof entry !== "object") continue;
+    const o = entry as Record<string, unknown>;
+    const siteRaw = o.site_id;
+    const advRaw = o.advertiser_id;
+    const site_id = typeof siteRaw === "string" ? siteRaw.trim() : "";
+    const advertiser_id =
+      typeof advRaw === "number"
+        ? advRaw
+        : typeof advRaw === "string" && advRaw.trim() !== ""
+          ? Number(advRaw.replace(",", "."))
+          : NaN;
+    if (!site_id || !Number.isFinite(advertiser_id)) {
+      errorSink.push("PADS advertisers: fila ignorada (site_id o advertiser_id inválido)");
+      continue;
+    }
+    out.push({ ...(entry as MeliPadsAdvertiser), site_id, advertiser_id });
+  }
+  return out;
+}
 
 type CampaignEnriched = MeliPadsCampaignRow & {
   site_id: string;
@@ -295,7 +324,7 @@ export async function GET(req: Request) {
 
     const errors: string[] = [];
     const advRes = await meliPadsListAdvertisers(meli.accessToken);
-    const advertisers = advRes.data?.advertisers ?? [];
+    const advertisers = normalizePadsAdvertisers(advRes.data?.advertisers, errors);
     if (!advRes.ok) {
       errors.push(`PADS advertisers HTTP ${advRes.status}`);
     }
@@ -529,15 +558,27 @@ export async function GET(req: Request) {
     }
 
     let promotions: unknown = null;
-    const promoRes = await meliGetSellerPromotions(meli.accessToken, meli.meliUserId);
-    if (promoRes.ok) promotions = promoRes.data;
+    try {
+      const promoRes = await meliGetSellerPromotions(meli.accessToken, meli.meliUserId);
+      if (promoRes.ok) promotions = promoRes.data;
+    } catch (e) {
+      errors.push(
+        `Promociones vendedor: ${e instanceof Error ? e.message : "fetch_error"}`
+      );
+    }
 
     let recommendations: ReturnType<typeof analyzePadsCampaigns> = [];
     if (analyze && campaigns.length > 0) {
-      recommendations = analyzePadsCampaigns({
-        advertisers,
-        campaigns,
-      });
+      try {
+        recommendations = analyzePadsCampaigns({
+          advertisers,
+          campaigns,
+        });
+      } catch (e) {
+        errors.push(
+          `Análisis de campañas: ${e instanceof Error ? e.message : "analyze_error"}`
+        );
+      }
     }
 
     const totals = sumMetrics(campaigns);
@@ -900,6 +941,7 @@ export async function GET(req: Request) {
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "snapshot_error";
+    console.error("[GET /api/meli/ads/snapshot]", e);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
