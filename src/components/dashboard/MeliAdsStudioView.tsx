@@ -274,7 +274,8 @@ export default function MeliAdsStudioView() {
 
   const countCritical = recs.filter((r) => r.severity === "critical").length;
   const countWarning = recs.filter((r) => r.severity === "warning").length;
-  const countVirtue = recs.filter((r) => r.expectedImpact === "positive").length;
+  // "Virtudes" debe listar solo recomendaciones de categoría positiva (verde).
+  const countVirtue = recs.filter((r) => r.category === "positive").length;
 
   const filteredRecs =
     recFilter === "all"
@@ -283,7 +284,7 @@ export default function MeliAdsStudioView() {
         ? recs.filter((r) => r.severity === "critical")
         : recFilter === "warning"
           ? recs.filter((r) => r.severity === "warning")
-          : recs.filter((r) => r.expectedImpact === "positive");
+          : recs.filter((r) => r.category === "positive");
 
   const chartSlice = dailyStats.slice(-7);
   const chartLabelsArr = (() => {
