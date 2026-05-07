@@ -41,6 +41,10 @@ type Recommendation = {
   advertiserId?: number;
   campaignId: number;
   campaignName: string;
+  /** Presupuesto diario actual (PADS); opcional en snapshots cacheados viejos. */
+  campaignBudget?: number;
+  /** Cantidad de publicaciones/items; opcional en cache viejo. */
+  campaignItemsCount?: number;
   siteId: string;
   applyPayload: Record<string, unknown>;
 };
@@ -139,6 +143,8 @@ export default function MeliAdsStudioView() {
   const [loadingItems, setLoadingItems] = useState<Record<string, boolean>>({});
   const [compareDays, setCompareDays] = useState(7);
   const [recFilter, setRecFilter] = useState<"all" | "critical" | "warning" | "virtue">("all");
+  /** Detalle largo del análisis por id de recomendación (solo tras “Leer más…”). */
+  const [expandedRecAnalysis, setExpandedRecAnalysis] = useState<Record<string, boolean>>({});
 
   const load = useCallback(async (opts?: { silent?: boolean }) => {
     const silent = Boolean(opts?.silent);
@@ -949,9 +955,81 @@ export default function MeliAdsStudioView() {
                           </span>
                         )}
                       </div>
-                      <p className="mb-3 text-sm leading-relaxed text-slate-300">{r.rationale}</p>
+                      <div className="mb-2 flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-[11px] leading-snug text-slate-500">
+                        <span className="max-w-full truncate font-medium text-slate-300" title={r.campaignName}>
+                          {r.campaignName || `Campaña ${r.campaignId}`}
+                        </span>
+                        <span className="text-slate-600" aria-hidden>
+                          ·
+                        </span>
+                        <span>
+                          {(r.campaignItemsCount ?? 0) > 0 ? (
+                            <>
+                              <span className="tabular-nums text-slate-400">{r.campaignItemsCount}</span>{" "}
+                              producto{(r.campaignItemsCount ?? 0) === 1 ? "" : "s"}
+                            </>
+                          ) : (
+                            <span className="text-slate-500">Publicaciones: sin dato</span>
+                          )}
+                        </span>
+                        <span className="text-slate-600" aria-hidden>
+                          ·
+                        </span>
+                        <span className="tabular-nums text-slate-400">
+                          Presup.{" "}
+                          {money(
+                            typeof r.campaignBudget === "number"
+                              ? r.campaignBudget
+                              : num((r.applyPayload as { budget?: unknown })?.budget)
+                          )}
+                          <span className="text-slate-500"> / día</span>
+                          {(() => {
+                            const proposed = num((r.applyPayload as { budget?: unknown })?.budget);
+                            const cur =
+                              typeof r.campaignBudget === "number"
+                                ? r.campaignBudget
+                                : proposed;
+                            if (
+                              proposed > 0 &&
+                              cur > 0 &&
+                              Math.round(proposed * 100) !== Math.round(cur * 100)
+                            ) {
+                              return (
+                                <span className="text-slate-500">
+                                  {" "}
+                                  (sug.: {money(proposed)})
+                                </span>
+                              );
+                            }
+                            return null;
+                          })()}
+                        </span>
+                        <span className="w-full font-mono text-[10px] text-slate-600 sm:w-auto sm:pl-1">
+                          #{r.campaignId}
+                        </span>
+                      </div>
+                      <div className="mb-3">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExpandedRecAnalysis((prev) => ({
+                              ...prev,
+                              [r.id]: !prev[r.id],
+                            }))
+                          }
+                          className="text-left text-xs font-medium text-blue-400 underline-offset-2 hover:text-blue-300 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 rounded"
+                          aria-expanded={Boolean(expandedRecAnalysis[r.id])}
+                        >
+                          {expandedRecAnalysis[r.id]
+                            ? "Ocultar detalles del análisis"
+                            : "Leer más detalles del análisis"}
+                        </button>
+                        {expandedRecAnalysis[r.id] && (
+                          <p className="mt-2 text-sm leading-relaxed text-slate-300">{r.rationale}</p>
+                        )}
+                      </div>
                       <div className="flex items-center justify-between border-t border-slate-700/60 pt-2 text-xs text-slate-500">
-                        <span>Campaña #{r.campaignId}</span>
+                        <span className="text-[10px] text-slate-600">Mercado Libre Ads</span>
                         <span className="text-emerald-500/80">✓ Lista para aplicar</span>
                       </div>
                     </div>
