@@ -1,6 +1,23 @@
 import { prisma } from "@/lib/prisma";
 import { getSupabaseService } from "@/lib/supabase/service";
 
+async function findAuthUserIdByEmail(email: string): Promise<string | null> {
+  const supabase = getSupabaseService();
+  let page = 1;
+  const perPage = 200;
+  for (let i = 0; i < 10; i += 1) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage });
+    if (error || !data?.users?.length) return null;
+    const hit = data.users.find(
+      (u) => (u.email ?? "").trim().toLowerCase() === email
+    );
+    if (hit?.id) return hit.id;
+    if (data.users.length < perPage) break;
+    page += 1;
+  }
+  return null;
+}
+
 /**
  * Resuelve el UUID de `profiles` (Supabase) a partir del email.
  * Si no existe, intenta auto-provisionar usuario+perfil para evitar bloquear checkout.
@@ -19,28 +36,36 @@ export async function getProfileUuidByEmail(
     .maybeSingle();
   if (!initial.error && initial.data?.id) return initial.data.id as string;
 
-  const prismaUser = await prisma.user.findUnique({
-    where: { email: normalizedEmail },
+  const prismaUser = await prisma.user.findFirst({
+    where: { email: { equals: normalizedEmail, mode: "insensitive" } },
     select: { name: true, isSeller: true },
   });
-  if (!prismaUser) return null;
+  const profileRole = prismaUser?.isSeller ? "seller" : "buyer";
+  const profileName = prismaUser?.name ?? null;
 
   const created = await supabase.auth.admin.createUser({
     email: normalizedEmail,
     email_confirm: true,
-    user_metadata: prismaUser.name ? { full_name: prismaUser.name } : undefined,
+    user_metadata: profileName ? { full_name: profileName } : undefined,
   });
 
-  if (!created.error && created.data.user?.id) {
-    await supabase.from("profiles").upsert(
-      {
-        id: created.data.user.id,
-        email: normalizedEmail,
-        full_name: prismaUser.name ?? null,
-        role: prismaUser.isSeller ? "seller" : "buyer",
-      },
-      { onConflict: "email" }
-    );
+  let authUserId = created.data.user?.id ?? null;
+  if (!authUserId) {
+    authUserId = await findAuthUserIdByEmail(normalizedEmail);
+  }
+
+  if (authUserId) {
+    await supabase
+      .from("profiles")
+      .upsert(
+        {
+          id: authUserId,
+          email: normalizedEmail,
+          full_name: profileName,
+          role: profileRole,
+        },
+        { onConflict: "email" }
+      );
   }
 
   const finalLookup = await supabase
