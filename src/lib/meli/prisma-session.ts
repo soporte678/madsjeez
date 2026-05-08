@@ -1,13 +1,25 @@
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { getMeliEnv } from "./config";
 import { meliRefreshToken } from "./token";
 
 export async function getMeliAccessTokenForUser(
   prismaUserId: string
 ): Promise<{ accessToken: string; meliUserId: string } | null> {
-  const row = await prisma.sellerMeliOAuth.findUnique({
-    where: { userId: prismaUserId },
-  });
+  let row;
+  try {
+    row = await prisma.sellerMeliOAuth.findUnique({
+      where: { userId: prismaUserId },
+    });
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2022") {
+      console.warn(
+        "[meli] seller_meli_oauth: columna faltante en DB (ej. last_catalog_import_at). Ejecutá prisma migrate deploy."
+      );
+      return null;
+    }
+    throw e;
+  }
   if (!row) return null;
 
   const cfg = getMeliEnv();

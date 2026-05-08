@@ -120,11 +120,13 @@ export async function GET(req: Request) {
     const freeShip = searchParams.get("free_shipping");
     const limit = Math.min(parseInt(searchParams.get("limit") || "48", 10) || 48, 96);
 
+    // Hint explícito al FK hacia profiles; si usamos `profiles:seller_id` PostgREST a veces
+    // resuelve otro FK (p. ej. users) y falla con "full_name does not exist".
     const baseSelect = `
         *,
         product_images(url),
-        profiles:seller_id(full_name),
-        categories:category_id(name)
+        profiles!products_seller_id_fkey(full_name),
+        categories!products_category_id_fkey(name)
       `;
 
     let sbQuery = supabaseService

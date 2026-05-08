@@ -7,9 +7,28 @@ import {
   getProfileUuidByEmail,
   getProfileUuidForPrismaUserId,
 } from "@/lib/supabase-profile-map";
+import {
+  AFFILIATE_COOKIE_NAME,
+  computeCheckoutEscrowSplit,
+  isUuidLike,
+  parseCookieHeader,
+  roundMoney,
+} from "@/lib/checkout/escrow-split";
+
+function envPercent(key: string, fallback: number): number {
+  const raw = process.env[key];
+  if (raw == null || raw === "") return fallback;
+  const n = Number(raw.replace(",", "."));
+  if (!Number.isFinite(n) || n < 0 || n > 100) return fallback;
+  return n;
+}
 
 /**
- * Checkout Mercado Pago: carrito Prisma → orden Supabase → preferencia MP (mismo vendedor).
+ * Checkout Mercado Pago con split tipo marketplace:
+ * - Comprador paga: subtotal productos + 50% del envío (buyerShippingShare).
+ * - Split seller: neto = subtotal - comisión marketplace sobre producto - comisión afiliado - 50% envío.
+ * - Mercado Pago retiene en recolector (marketplace_fee): el resto = cargo comprador − seller_net.
+ * - Comisión afiliado NO sale por MP al afiliado: ledger Supabase `affiliate_ledger` pending hasta liberación.
  */
 export async function POST(req: Request) {
   try {
@@ -72,10 +91,47 @@ export async function POST(req: Request) {
     }
 
     const lines = cart.items;
-    const subtotal = lines.reduce((s, i) => s + i.price * i.quantity, 0);
-    const shippingCost = lines.some((i) => !i.product.freeShipping) ? 2500 : 0;
-    const orderTotal = subtotal + shippingCost;
-    const commissionAmount = subtotal * 0.1;
+    const subtotal = roundMoney(lines.reduce((s, i) => s + i.price * i.quantity, 0));
+    const shippingCostFull = lines.some((i) => !i.product.freeShipping) ? 2500 : 0;
+
+    const marketplaceSalesFeePercent = envPercent("MARKETPLACE_SALES_FEE_PERCENT", 10);
+    const affiliateDefaultPercent = envPercent("AFFILIATE_COMMISSION_PERCENT", 10);
+
+    const cookieAffiliateRaw = parseCookieHeader(req.headers.get("cookie"), AFFILIATE_COOKIE_NAME);
+    let affiliateUuid: string | null = null;
+    let affiliateCommissionPercent = 0;
+
+    if (cookieAffiliateRaw && isUuidLike(cookieAffiliateRaw)) {
+      const cand = cookieAffiliateRaw.trim();
+      if (cand !== buyerUuid && cand !== sellerUuid) {
+        const { data: affRow } = await supabaseService.from("profiles").select("id").eq("id", cand).maybeSingle();
+        if (affRow?.id) {
+          affiliateUuid = cand;
+          affiliateCommissionPercent = affiliateDefaultPercent;
+        }
+      }
+    }
+
+    const split = computeCheckoutEscrowSplit({
+      productSubtotal: subtotal,
+      shippingCostFull,
+      affiliateCommissionPercent,
+      marketplaceSalesFeePercent,
+    });
+
+    if (split.sellerNetPayout <= 0) {
+      return NextResponse.json(
+        {
+          error:
+            "La combinación de envío y comisiones deja al vendedor sin neto positivo. Revisá montos o porcentajes (MARKETPLACE_SALES_FEE_PERCENT / AFFILIATE_COMMISSION_PERCENT).",
+        },
+        { status: 400 }
+      );
+    }
+
+    const commissionProductTotal = roundMoney(
+      split.marketplaceSalesFeeAmount + split.affiliateCommissionAmount
+    );
 
     const { data: order, error: orderErr } = await supabaseService
       .from("orders")
@@ -83,10 +139,10 @@ export async function POST(req: Request) {
         buyer_id: buyerUuid,
         seller_id: sellerUuid,
         status: "pending",
-        total_amount: orderTotal,
-        shipping_cost: shippingCost,
+        total_amount: split.totalBuyerCharged,
+        shipping_cost: shippingCostFull,
         discount_amount: 0,
-        commission_amount: commissionAmount,
+        commission_amount: commissionProductTotal,
         shipping_address: shippingAddress,
         notes: null,
       })
@@ -100,17 +156,22 @@ export async function POST(req: Request) {
 
     const orderId = order.id as string;
 
+    const blendedCommissionRate =
+      subtotal > 0 ? roundMoney((commissionProductTotal / subtotal) * 100) : 0;
+
     for (const item of lines) {
       const unit = item.price;
-      const totalLine = unit * item.quantity;
+      const totalLine = roundMoney(unit * item.quantity);
+      const lineCommission = roundMoney(totalLine * (blendedCommissionRate / 100));
+
       const { error: liErr } = await supabaseService.from("order_items").insert({
         order_id: orderId,
         product_id: item.productId,
         quantity: item.quantity,
         unit_price: unit,
         total_price: totalLine,
-        commission_rate: 10,
-        commission_amount: totalLine * 0.1,
+        commission_rate: blendedCommissionRate,
+        commission_amount: lineCommission,
       });
       if (liErr) {
         console.error("order_items insert:", liErr);
@@ -119,14 +180,33 @@ export async function POST(req: Request) {
       }
     }
 
-    const { data: mpConnection, error: mpErr } = await supabaseService
+    // seller_mercadopago.seller_id es TEXT → User.id (Prisma / OAuth), NO profiles.id UUID.
+    let mpConnection: { mp_access_token: string | null } | null = null;
+    let mpLookupErr: unknown = null;
+
+    const byPrismaId = await supabaseService
       .from("seller_mercadopago")
       .select("mp_access_token, is_active")
-      .eq("seller_id", sellerUuid)
+      .eq("seller_id", sellerPrismaId)
       .eq("is_active", true)
       .maybeSingle();
 
-    if (mpErr || !mpConnection?.mp_access_token) {
+    if (byPrismaId.error) mpLookupErr = byPrismaId.error;
+    else if (byPrismaId.data?.mp_access_token) mpConnection = byPrismaId.data;
+
+    if (!mpConnection?.mp_access_token && sellerUuid) {
+      const legacy = await supabaseService
+        .from("seller_mercadopago")
+        .select("mp_access_token, is_active")
+        .eq("seller_id", sellerUuid)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (legacy.error) mpLookupErr = legacy.error;
+      if (legacy.data?.mp_access_token) mpConnection = legacy.data;
+    }
+
+    if (!mpConnection?.mp_access_token) {
+      if (mpLookupErr) console.error("seller_mercadopago lookup:", mpLookupErr);
       await supabaseService.from("orders").delete().eq("id", orderId);
       return NextResponse.json(
         {
@@ -148,23 +228,19 @@ export async function POST(req: Request) {
       currency_id: "ARS",
     }));
 
-    if (shippingCost > 0) {
+    if (shippingCostFull > 0 && split.buyerShippingShare > 0) {
       mpItems.push({
-        id: "shipping",
-        title: "Costo de envío",
+        id: "shipping_buyer_share",
+        title: "Envío (parte comprador 50%)",
         quantity: 1,
-        unit_price: shippingCost,
+        unit_price: split.buyerShippingShare,
         currency_id: "ARS",
       });
     }
 
-    const commissionOnProducts = Math.round(subtotal * 0.1 * 100) / 100;
-    const sellerShippingShare = Math.round(shippingCost * 0.5 * 100) / 100;
-    const marketplaceFee = commissionOnProducts + sellerShippingShare;
-
     const preference = {
       items: mpItems,
-      marketplace_fee: marketplaceFee,
+      marketplace_fee: split.marketplaceTotalRetention,
       payer: { email: buyerEmail },
       external_reference: orderId,
       notification_url: `${appUrl}/api/webhooks/mercadopago`,
@@ -202,13 +278,13 @@ export async function POST(req: Request) {
       mp_preference_id: mpData.id,
       mp_init_point: mpData.init_point,
       mp_sandbox_init_point: mpData.sandbox_init_point,
-      amount: orderTotal,
-      marketplace_commission: commissionOnProducts,
-      marketplace_fee_total: marketplaceFee,
-      seller_receives: orderTotal - marketplaceFee,
-      shipping_cost: shippingCost,
-      shipping_seller_share: sellerShippingShare,
-      shipping_buyer_share: shippingCost - sellerShippingShare,
+      amount: split.totalBuyerCharged,
+      marketplace_commission: commissionProductTotal,
+      marketplace_fee_total: split.marketplaceTotalRetention,
+      seller_receives: split.sellerNetPayout,
+      shipping_cost: shippingCostFull,
+      shipping_seller_share: split.sellerShippingShare,
+      shipping_buyer_share: split.buyerShippingShare,
       status: "pending",
       seller_id: sellerUuid,
       buyer_id: buyerUuid,
@@ -218,12 +294,36 @@ export async function POST(req: Request) {
       console.error("checkout mp payments insert (non-fatal):", payErr);
     }
 
+    if (affiliateUuid && split.affiliateCommissionAmount > 0) {
+      const releaseDate = new Date();
+      releaseDate.setUTCDate(releaseDate.getUTCDate() + 30);
+
+      const { error: ledgerErr } = await supabaseService.from("affiliate_ledger").insert({
+        affiliate_id: affiliateUuid,
+        order_id: orderId,
+        amount: split.affiliateCommissionAmount,
+        status: "pending",
+        release_date: releaseDate.toISOString(),
+      });
+
+      if (ledgerErr) {
+        console.error("affiliate_ledger insert (non-fatal):", ledgerErr);
+      }
+    }
+
     await prisma.cartItem.deleteMany({ where: { cartId: cart.id } });
 
     return NextResponse.json({
       init_point: mpData.init_point,
       sandbox_init_point: mpData.sandbox_init_point,
       order_id: orderId,
+      checkout_summary: {
+        total_buyer_charged: split.totalBuyerCharged,
+        seller_net_payout: split.sellerNetPayout,
+        marketplace_total_retention: split.marketplaceTotalRetention,
+        affiliate_commission_escrow: split.affiliateCommissionAmount,
+        affiliate_id: affiliateUuid,
+      },
     });
   } catch (e) {
     console.error("checkout/mp:", e);
