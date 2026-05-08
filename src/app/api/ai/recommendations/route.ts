@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { NextRequest, NextResponse } from "next/server"
 import { getSupabaseService } from "@/lib/supabase/service"
+import { hasValidProductImageUrl, primaryImageUrlFromRows } from "@/lib/productVisibility"
 
 export async function POST(req: NextRequest) {
   const fallback = (reason: string) =>
@@ -111,21 +112,24 @@ Responde SOLO con JSON:
 
     // Enrich recommendations with full product data
     const recIds = parsed.recommendations?.map((r: any) => r.id).filter(Boolean) || []
-    let enrichedProducts: any[] = []
+      let enrichedProducts: any[] = []
 
-    if (recIds.length > 0) {
-      const { data } = await supabase
-        .from("products")
-        .select("id, title, price, original_price, condition, shipping_free, slug, product_images(url)")
-        .in("id", recIds)
-        .eq("is_active", true)
+      if (recIds.length > 0) {
+        const { data } = await supabase
+          .from("products")
+          .select("id, title, price, original_price, condition, shipping_free, slug, product_images(url)")
+          .in("id", recIds)
+          .eq("is_active", true)
 
-      enrichedProducts = (data || []).map(p => ({
-        ...p,
-        image: p.product_images?.[0]?.url || null,
-        reason: parsed.recommendations.find((r: any) => r.id === p.id)?.reason || "",
-      }))
-    }
+        const mapped = (data || []).map((p) => ({
+          ...p,
+          image: primaryImageUrlFromRows(p.product_images),
+          reason: parsed.recommendations.find((r: any) => r.id === p.id)?.reason || "",
+        }))
+        const filtered = mapped.filter((p) => hasValidProductImageUrl(p.image))
+        const byId = new Map(filtered.map((p) => [p.id, p]))
+        enrichedProducts = recIds.map((id: string) => byId.get(id)).filter(Boolean)
+      }
 
     return NextResponse.json({
       section_title: parsed.section_title || "Recomendados para vos",

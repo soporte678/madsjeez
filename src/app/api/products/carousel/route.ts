@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { hasValidProductImageUrl, primaryImageUrlFromRows } from "@/lib/productVisibility"
 
 function isMissingColumnError(error: unknown): boolean {
   return (
@@ -27,7 +28,10 @@ export async function GET() {
 
     // Fetch a large batch of products (we'll paginate on frontend)
     const products = await prisma.product.findMany({
-      where: { isActive: true },
+      where: {
+        isActive: true,
+        images: { some: {} },
+      },
       include: {
         images: { orderBy: { order: "asc" }, take: 1 },
         category: { select: { name: true, slug: true } },
@@ -44,18 +48,20 @@ export async function GET() {
       return hashA - hashB
     })
 
-    const mapped = shuffled.map(p => ({
-      id: p.id,
-      title: p.title,
-      price: p.price,
-      originalPrice: p.originalPrice,
-      freeShipping: p.freeShipping,
-      sales: p.sales,
-      image: p.images[0]?.url || null,
-      category: p.category?.name || "",
-      sellerName: p.seller?.sellerName || "",
-      reputation: p.seller?.reputationColor || "",
-    }))
+    const mapped = shuffled
+      .map((p) => ({
+        id: p.id,
+        title: p.title,
+        price: p.price,
+        originalPrice: p.originalPrice,
+        freeShipping: p.freeShipping,
+        sales: p.sales,
+        image: primaryImageUrlFromRows(p.images),
+        category: p.category?.name || "",
+        sellerName: p.seller?.sellerName || "",
+        reputation: p.seller?.reputationColor || "",
+      }))
+      .filter((p) => hasValidProductImageUrl(p.image))
 
     return NextResponse.json({ products: mapped, total: totalCount })
   } catch (error) {

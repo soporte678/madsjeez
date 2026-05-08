@@ -22,6 +22,7 @@ import { ProductCarousel } from "@/components/ProductCarousel"
 import { CategoryCarousel } from "@/components/CategoryCarousel"
 import { RotatingProductCarousel } from "@/components/RotatingProductCarousel"
 import { createClient } from "@/lib/supabase/client"
+import { hasValidProductImageUrl, primaryImageUrlFromRows } from "@/lib/productVisibility"
 
 const demoClothing = [
   { id: 'd1', title: '12 Soquetes Medias Unisex Docena Talle Adultos', price: 16999, installments: 'Mismo precio 6 cuotas de $ 2.833', shipping: 'Llega mañana', image: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=300&q=80' },
@@ -177,10 +178,10 @@ export default function Home() {
       const supabase = createClient()
       const { data: prods } = await supabase
         .from('products')
-        .select('id, title, price, original_price, free_shipping, sales, product_images(url, is_primary)')
+        .select('id, title, price, original_price, free_shipping, sales, product_images(url, is_primary, order)')
         .eq('is_active', true)
         .order('created_at', { ascending: false })
-        .limit(12)
+        .limit(72)
 
       if (prods) {
         const mapped = prods.map((p: any) => ({
@@ -190,10 +191,11 @@ export default function Home() {
           original_price: p.original_price,
           free_shipping: p.free_shipping,
           sales: p.sales || 0,
-          image: p.product_images?.find((img: any) => img.is_primary)?.url || p.product_images?.[0]?.url || null,
+          image: primaryImageUrlFromRows(p.product_images),
         }))
-        setProducts(mapped.slice(0, 6))
-        setRecentProducts(mapped.slice(6, 12))
+        const withImages = mapped.filter((p: { image: string | null }) => hasValidProductImageUrl(p.image))
+        setProducts(withImages.slice(0, 6))
+        setRecentProducts(withImages.slice(6, 12))
       }
     }
     fetchProducts()

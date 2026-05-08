@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase"
+import { firstProductImageUrl, hasValidProductImageUrl } from "@/lib/productVisibility"
 
 // Productos de DEMO - se muestran cuando no hay ofertas reales
 // Estos productos tienen descuentos significativos para atraer usuarios
@@ -231,7 +232,7 @@ export async function GET(req: Request) {
       .from('products')
       .select(`
         *,
-        images(url, order),
+        product_images(url, order, is_primary),
         seller:users(id, full_name, seller_name, reputation_color),
         category:categories(id, name, slug),
         reviews(count, rating_avg)
@@ -329,7 +330,7 @@ export async function GET(req: Request) {
         discount_percentage: discountPercentage,
         badge,
         badge_color: badgeColor,
-        image: product.images?.[0]?.url || "",
+        image: firstProductImageUrl(product) || "",
         seller: {
           id: product.seller?.id,
           full_name: product.seller?.seller_name || product.seller?.full_name || "Vendedor",
@@ -345,7 +346,11 @@ export async function GET(req: Request) {
         installments: `6 cuotas de $${Math.round(product.price / 6).toLocaleString("es-AR")}`,
         isDemo: false
       }
-    }).filter((offer: any) => offer.discount_percentage >= parseInt(minDiscount))
+    }).filter(
+      (offer: any) =>
+        offer.discount_percentage >= parseInt(minDiscount) &&
+        hasValidProductImageUrl(offer.image)
+    )
 
     const realOffersCount = offers.length
 
@@ -405,13 +410,13 @@ export async function GET(req: Request) {
     
     // Agregar categorías de ofertas reales
     realOffers?.forEach((product: any) => {
-      if (product.category) {
-        categoriesMap.set(product.category.slug, {
-          name: product.category.name,
-          slug: product.category.slug,
-          count: (categoriesMap.get(product.category.slug)?.count || 0) + 1
-        })
-      }
+      if (!product.category) return
+      if (!hasValidProductImageUrl(firstProductImageUrl(product))) return
+      categoriesMap.set(product.category.slug, {
+        name: product.category.name,
+        slug: product.category.slug,
+        count: (categoriesMap.get(product.category.slug)?.count || 0) + 1
+      })
     })
     
     // Agregar categorías de demo
