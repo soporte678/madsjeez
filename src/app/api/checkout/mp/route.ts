@@ -340,6 +340,38 @@ export async function POST(req: Request) {
 
     const mpData = await mpResponse.json();
 
+    // Si no se pudo persistir en Supabase y usamos order temporal, guardamos espejo en Prisma
+    // para que la compra aparezca en /orders del usuario.
+    if (!persistedOrder) {
+      try {
+        await prisma.order.create({
+          data: {
+            orderNumber: `MP-${orderId.replace(/^tmp_/, "").slice(0, 22).toUpperCase()}`,
+            buyerId: buyerPrismaId,
+            subtotal,
+            shippingCost: shippingCostFull,
+            tax: 0,
+            total: split.totalBuyerCharged,
+            shippingName: String((shippingAddress as { recipient?: string }).recipient ?? "Destinatario"),
+            shippingAddress: `${String((shippingAddress as { street?: string }).street ?? "")} ${String((shippingAddress as { number?: string }).number ?? "")}`.trim(),
+            shippingCity: String((shippingAddress as { city?: string }).city ?? ""),
+            shippingState: String((shippingAddress as { state?: string }).state ?? ""),
+            shippingZip: String((shippingAddress as { zip?: string }).zip ?? ""),
+            shippingPhone: String((shippingAddress as { phone?: string }).phone ?? ""),
+            items: {
+              create: lines.map((row) => ({
+                quantity: row.quantity,
+                price: row.price,
+                productId: row.productId,
+              })),
+            },
+          },
+        });
+      } catch (shadowErr) {
+        console.error("checkout/mp prisma shadow order (non-fatal):", shadowErr);
+      }
+    }
+
     if (persistedOrder) {
       const { error: payErr } = await supabaseService.from("payments").insert({
         order_id: orderId,
