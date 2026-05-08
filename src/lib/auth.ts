@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import GoogleProvider from "next-auth/providers/google"
 import bcrypt from "bcryptjs"
 import { prisma } from "./prisma"
+import { getProfileUuidByEmail } from "./supabase-profile-map"
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET
@@ -109,6 +110,18 @@ export const authOptions: NextAuthOptions = {
         } catch (error: any) {
           console.error("Error CRITICO en signIn callback:", error.message, error.stack)
           // No bloqueamos el login si hay error en DB
+        }
+      }
+
+      // Sincroniza SIEMPRE el perfil en Supabase para no bloquear checkout MP.
+      if (user.email) {
+        try {
+          const profileId = await getProfileUuidByEmail(user.email)
+          if (!profileId) {
+            console.warn("[auth.signIn] Supabase profile no disponible para:", user.email)
+          }
+        } catch (e) {
+          console.error("[auth.signIn] error sincronizando perfil Supabase:", e)
         }
       }
       return true

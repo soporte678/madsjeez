@@ -40,6 +40,10 @@ export async function POST(req: Request) {
     const buyerPrismaId = (session.user as { id: string }).id;
     const buyerUuid = await getProfileUuidByEmail(session.user.email);
     if (!buyerUuid) {
+      console.error("checkout/mp buyer profile missing", {
+        email: session.user.email,
+        buyerPrismaId,
+      });
       return NextResponse.json(
         {
           code: "BUYER_PROFILE_MISSING",
