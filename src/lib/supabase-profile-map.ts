@@ -18,6 +18,47 @@ async function findAuthUserIdByEmail(email: string): Promise<string | null> {
   return null;
 }
 
+async function upsertProfileResilient(params: {
+  authUserId: string | null;
+  normalizedEmail: string;
+  profileName: string | null;
+  profileRole: "buyer" | "seller";
+  prismaUserId?: string | null;
+}): Promise<void> {
+  const supabase = getSupabaseService();
+  const candidateIds = [
+    params.authUserId,
+    params.prismaUserId ?? null,
+    crypto.randomUUID(),
+  ].filter(Boolean) as string[];
+
+  for (const id of candidateIds) {
+    const attempts: Array<Record<string, unknown>> = [
+      {
+        id,
+        email: params.normalizedEmail,
+        full_name: params.profileName,
+        role: params.profileRole,
+      },
+      {
+        id,
+        email: params.normalizedEmail,
+        full_name: params.profileName,
+      },
+      {
+        id,
+        email: params.normalizedEmail,
+      },
+    ];
+
+    for (const payload of attempts) {
+      const { error } = await supabase.from("profiles").upsert(payload, { onConflict: "email" });
+      if (!error) return;
+      console.warn("[profiles upsert attempt failed]", { payloadKeys: Object.keys(payload), error });
+    }
+  }
+}
+
 /**
  * Resuelve el UUID de `profiles` (Supabase) a partir del email.
  * Si no existe, intenta auto-provisionar usuario+perfil para evitar bloquear checkout.
@@ -38,7 +79,7 @@ export async function getProfileUuidByEmail(
 
   const prismaUser = await prisma.user.findFirst({
     where: { email: { equals: normalizedEmail, mode: "insensitive" } },
-    select: { name: true, isSeller: true },
+    select: { id: true, name: true, isSeller: true },
   });
   const profileRole = prismaUser?.isSeller ? "seller" : "buyer";
   const profileName = prismaUser?.name ?? null;
@@ -54,19 +95,13 @@ export async function getProfileUuidByEmail(
     authUserId = await findAuthUserIdByEmail(normalizedEmail);
   }
 
-  if (authUserId) {
-    await supabase
-      .from("profiles")
-      .upsert(
-        {
-          id: authUserId,
-          email: normalizedEmail,
-          full_name: profileName,
-          role: profileRole,
-        },
-        { onConflict: "email" }
-      );
-  }
+  await upsertProfileResilient({
+    authUserId,
+    normalizedEmail,
+    profileName,
+    profileRole,
+    prismaUserId: prismaUser?.id ?? null,
+  });
 
   const finalLookup = await supabase
     .from("profiles")
