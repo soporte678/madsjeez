@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { NextRequest, NextResponse } from "next/server"
 import { getSupabaseService } from "@/lib/supabase/service"
+import { hasValidProductImageUrl, primaryImageUrlFromRows } from "@/lib/productVisibility"
 
 export async function POST(req: NextRequest) {
   try {
@@ -83,18 +84,20 @@ Si no podés identificar el producto, devolvé:
         .or(orConditions)
         .limit(16)
 
-      products = (data || []).map((p: any) => ({
-        id: p.id,
-        title: p.title,
-        price: p.price,
-        original_price: p.original_price,
-        condition: p.condition,
-        shipping_free: p.shipping_free,
-        primary_image: p.product_images?.find((img: any) => img.is_primary)?.url || p.product_images?.[0]?.url || null,
-        seller_name: p.profiles?.full_name || null,
-        category_name: p.categories?.name || null,
-        sales: 0,
-      }))
+      products = (data || [])
+        .map((p: any) => ({
+          id: p.id,
+          title: p.title,
+          price: p.price,
+          original_price: p.original_price,
+          condition: p.condition,
+          shipping_free: p.shipping_free,
+          primary_image: primaryImageUrlFromRows(p.product_images),
+          seller_name: p.profiles?.full_name || null,
+          category_name: p.categories?.name || null,
+          sales: 0,
+        }))
+        .filter((p: any) => hasValidProductImageUrl(p.primary_image))
     }
 
     return NextResponse.json({

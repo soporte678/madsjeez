@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
+import { hasValidProductImageUrl } from "@/lib/productVisibility";
 
 interface Product {
   id: string;
@@ -215,7 +216,7 @@ function SearchContent() {
         return;
       }
       const list = (data.products || []) as Product[];
-      setProducts(list);
+      setProducts(list.filter((p) => hasValidProductImageUrl(p.primary_image)));
     } catch {
       toast.error("Error al cargar resultados");
       setProducts([]);

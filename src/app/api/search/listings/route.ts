@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { supabaseService } from "@/lib/supabase/service";
+import { hasValidProductImageUrl } from "@/lib/productVisibility";
 
 export const dynamic = "force-dynamic";
 
@@ -43,7 +44,7 @@ function mapSupabaseRow(p: Record<string, unknown>): UnifiedProduct {
     sales: Number(p.sales ?? p.sold_count ?? 0),
     sold_count: Number(p.sold_count ?? p.sales ?? 0),
     meli_item_id: (p.meli_item_id as string) ?? null,
-    primary_image: primary,
+    primary_image: typeof primary === "string" ? primary.trim() : null,
     seller_name: profiles?.full_name ?? null,
     seller_id: (p.seller_id as string) ?? null,
     category_name: cats?.name ?? null,
@@ -77,7 +78,7 @@ function mapPrismaProduct(p: {
     sales: p.sales,
     sold_count: p.sales,
     meli_item_id: p.meliItemId,
-    primary_image: p.images[0]?.url ?? null,
+    primary_image: p.images[0]?.url?.trim() ?? null,
     seller_name: p.seller.sellerName || p.seller.name || null,
     seller_id: p.seller.id,
     category_name: p.category.name,
@@ -206,7 +207,9 @@ export async function GET(req: Request) {
     for (const u of prismaUnified) mergedMap.set(`p:${u.id}`, u);
     for (const u of sbFiltered) mergedMap.set(`s:${u.id}`, u);
 
-    let merged = Array.from(mergedMap.values());
+    let merged = Array.from(mergedMap.values()).filter((row) =>
+      hasValidProductImageUrl(row.primary_image)
+    );
     merged = sortUnified(merged, sort).slice(0, limit);
 
     return NextResponse.json({ products: merged });
