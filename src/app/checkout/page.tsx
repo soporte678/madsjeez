@@ -18,6 +18,9 @@ import {
   ChevronRight,
   Package,
   Lock,
+  Plus,
+  Minus,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -29,12 +32,24 @@ interface CartItem {
     id: string;
     title: string;
     price: number;
+    stock: number;
     shipping_free: boolean;
     seller_id: string;
     primary_image: string | null;
     seller_name: string;
   };
 }
+
+type ShippingAddress = {
+  street: string;
+  number: string;
+  apartment: string;
+  city: string;
+  state: string;
+  zip: string;
+  phone: string;
+  recipient: string;
+};
 
 function mapApiCartToItems(cart: {
   items: Array<{
@@ -46,6 +61,7 @@ function mapApiCartToItems(cart: {
       id: string;
       title: string;
       price: number;
+      stock: number;
       freeShipping: boolean;
       seller: { id: string; name: string };
       images: Array<{ url: string }>;
@@ -60,6 +76,7 @@ function mapApiCartToItems(cart: {
       id: item.product.id,
       title: item.product.title,
       price: item.price,
+      stock: item.product.stock ?? 0,
       shipping_free: item.product.freeShipping,
       seller_id: item.product.seller.id,
       primary_image: item.product.images?.[0]?.url ?? null,
@@ -76,10 +93,11 @@ function CheckoutContent() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const [itemUpdatingId, setItemUpdatingId] = useState<string | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
-  const [shippingAddress, setShippingAddress] = useState({
+  const [shippingAddress, setShippingAddress] = useState<ShippingAddress>({
     street: "",
     number: "",
     apartment: "",
@@ -166,6 +184,41 @@ function CheckoutContent() {
   const sellerIds = new Set(cartItems.map((i) => i.product.seller_id));
   const multiSeller = sellerIds.size > 1;
 
+  const shippingDraftKey = `madsjeez_checkout_shipping_${
+    session?.user?.email?.toLowerCase() || "anon"
+  }`;
+
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    try {
+      const saved = localStorage.getItem(shippingDraftKey);
+      if (!saved) return;
+      const parsed = JSON.parse(saved) as Partial<ShippingAddress>;
+      setShippingAddress((prev) => ({
+        ...prev,
+        street: String(parsed.street ?? ""),
+        number: String(parsed.number ?? ""),
+        apartment: String(parsed.apartment ?? ""),
+        city: String(parsed.city ?? ""),
+        state: String(parsed.state ?? ""),
+        zip: String(parsed.zip ?? ""),
+        phone: String(parsed.phone ?? ""),
+        recipient: String(parsed.recipient ?? ""),
+      }));
+    } catch {
+      // ignore malformed local draft
+    }
+  }, [shippingDraftKey, status]);
+
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    try {
+      localStorage.setItem(shippingDraftKey, JSON.stringify(shippingAddress));
+    } catch {
+      // ignore storage quota/availability errors
+    }
+  }, [shippingAddress, shippingDraftKey, status]);
+
   const handleSubmitOrder = async () => {
     if (!session?.user || cartItems.length === 0) return;
 
@@ -230,6 +283,44 @@ function CheckoutContent() {
       toast.error(msg, { duration: 12_000 });
     } finally {
       setProcessing(false);
+    }
+  };
+
+  const updateCartItemQuantity = async (itemId: string, quantity: number) => {
+    setItemUpdatingId(itemId);
+    try {
+      const res = await fetch("/api/cart", {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ itemId, quantity }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error || "No se pudo actualizar la cantidad");
+        return;
+      }
+      await fetchCart();
+    } finally {
+      setItemUpdatingId(null);
+    }
+  };
+
+  const removeCartItem = async (itemId: string) => {
+    setItemUpdatingId(itemId);
+    try {
+      const res = await fetch(`/api/cart?itemId=${encodeURIComponent(itemId)}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error || "No se pudo eliminar el producto");
+        return;
+      }
+      await fetchCart();
+    } finally {
+      setItemUpdatingId(null);
     }
   };
 
@@ -536,7 +627,43 @@ function CheckoutContent() {
                           </div>
                           <div className="flex-1">
                             <p className="text-sm font-medium line-clamp-2">{item.product.title}</p>
-                            <p className="text-sm text-gray-500">Cantidad: {item.quantity}</p>
+                            <div className="mt-1 flex items-center gap-2">
+                              <button
+                                type="button"
+                                className="w-7 h-7 rounded border border-gray-300 flex items-center justify-center text-gray-700 disabled:opacity-40"
+                                onClick={() => updateCartItemQuantity(item.id, item.quantity - 1)}
+                                disabled={itemUpdatingId === item.id || processing}
+                                aria-label="Restar cantidad"
+                              >
+                                <Minus className="w-3 h-3" />
+                              </button>
+                              <span className="text-sm text-gray-600 min-w-[18px] text-center">{item.quantity}</span>
+                              <button
+                                type="button"
+                                className="w-7 h-7 rounded border border-gray-300 flex items-center justify-center text-gray-700 disabled:opacity-40"
+                                onClick={() => updateCartItemQuantity(item.id, item.quantity + 1)}
+                                disabled={
+                                  itemUpdatingId === item.id ||
+                                  processing ||
+                                  item.quantity >= item.product.stock
+                                }
+                                aria-label="Sumar cantidad"
+                              >
+                                <Plus className="w-3 h-3" />
+                              </button>
+                              <button
+                                type="button"
+                                className="ml-2 text-red-600 hover:text-red-700 disabled:opacity-40"
+                                onClick={() => removeCartItem(item.id)}
+                                disabled={itemUpdatingId === item.id || processing}
+                                aria-label="Eliminar producto"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                            {item.quantity >= item.product.stock && (
+                              <p className="text-[11px] text-amber-600 mt-1">Llegaste al stock disponible</p>
+                            )}
                             <p className="font-semibold">
                               ${(item.product.price * item.quantity).toLocaleString()}
                             </p>
