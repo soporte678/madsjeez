@@ -122,12 +122,32 @@ export async function POST(req: Request) {
       }
     }
 
-    const split = computeCheckoutEscrowSplit({
+    let split = computeCheckoutEscrowSplit({
       productSubtotal: subtotal,
       shippingCostFull,
       affiliateCommissionPercent,
       marketplaceSalesFeePercent,
     });
+
+    // En carritos de ticket bajo, 50/50 de envío puede dejar neto vendedor <= 0.
+    // Fallback operativo: el comprador cubre 100% del envío para destrabar checkout.
+    if (split.sellerNetPayout <= 0 && shippingCostFull > 0) {
+      const buyerShippingShare = shippingCostFull;
+      const sellerShippingShare = 0;
+      const totalBuyerCharged = roundMoney(subtotal + buyerShippingShare);
+      const sellerNetPayout = roundMoney(
+        subtotal - split.affiliateCommissionAmount - split.marketplaceSalesFeeAmount - sellerShippingShare
+      );
+      const marketplaceTotalRetention = roundMoney(totalBuyerCharged - sellerNetPayout);
+      split = {
+        ...split,
+        buyerShippingShare,
+        sellerShippingShare,
+        totalBuyerCharged,
+        sellerNetPayout,
+        marketplaceTotalRetention,
+      };
+    }
 
     if (split.sellerNetPayout <= 0) {
       return NextResponse.json(
