@@ -174,25 +174,36 @@ export async function POST(req: Request) {
       shipping_address: shippingAddress,
       notes: null,
     };
+    const orderPayloadAttempts: Array<Record<string, unknown>> = [
+      { ...baseOrderPayload, commission_amount: commissionProductTotal },
+      { ...baseOrderPayload },
+      {
+        buyer_id: buyerUuid,
+        seller_id: sellerUuid,
+        status: "pending",
+        total_amount: split.totalBuyerCharged,
+        shipping_address: shippingAddress,
+        notes: null,
+      },
+      {
+        buyer_id: buyerUuid,
+        seller_id: sellerUuid,
+        status: "pending",
+        total_amount: split.totalBuyerCharged,
+      },
+    ];
     let orderInsert = await supabaseService
       .from("orders")
-      .insert({
-        ...baseOrderPayload,
-        commission_amount: commissionProductTotal,
-      })
+      .insert(orderPayloadAttempts[0])
       .select("id")
       .single();
-
-    const orderInsertCode = (orderInsert.error as { code?: string } | null)?.code;
-    const orderInsertMessage = String((orderInsert.error as { message?: string } | null)?.message || "");
-    if (
-      orderInsert.error &&
-      orderInsertCode === "PGRST204" &&
-      orderInsertMessage.includes("commission_amount")
-    ) {
+    for (let i = 1; i < orderPayloadAttempts.length; i += 1) {
+      if (!orderInsert.error) break;
+      const code = (orderInsert.error as { code?: string } | null)?.code;
+      if (code !== "PGRST204") break;
       orderInsert = await supabaseService
         .from("orders")
-        .insert(baseOrderPayload)
+        .insert(orderPayloadAttempts[i])
         .select("id")
         .single();
     }
