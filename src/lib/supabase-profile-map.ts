@@ -33,28 +33,14 @@ async function upsertProfileResilient(params: {
   ].filter(Boolean) as string[];
 
   for (const id of candidateIds) {
-    const attempts: Array<Record<string, unknown>> = [
-      {
-        id,
-        email: params.normalizedEmail,
-        full_name: params.profileName,
-        role: params.profileRole,
-      },
-      {
-        id,
-        email: params.normalizedEmail,
-        full_name: params.profileName,
-      },
-      {
-        id,
-        email: params.normalizedEmail,
-      },
-    ];
+    const attempts: Array<Record<string, unknown>> = [{ id, email: params.normalizedEmail }, { id }];
 
     for (const payload of attempts) {
-      const { error } = await supabase.from("profiles").upsert(payload, { onConflict: "email" });
+      const { error } = await supabase.from("profiles").insert(payload);
       if (!error) return;
-      console.warn("[profiles upsert attempt failed]", { payloadKeys: Object.keys(payload), error });
+      // 23505: unique violation (id/email ya existe) -> no es bloqueo
+      const code = (error as { code?: string }).code;
+      if (code === "23505") return;
     }
   }
 }
@@ -79,15 +65,13 @@ export async function getProfileUuidByEmail(
 
   const prismaUser = await prisma.user.findFirst({
     where: { email: { equals: normalizedEmail, mode: "insensitive" } },
-    select: { id: true, name: true, isSeller: true },
+    select: { id: true },
   });
-  const profileRole = prismaUser?.isSeller ? "seller" : "buyer";
-  const profileName = prismaUser?.name ?? null;
 
   const created = await supabase.auth.admin.createUser({
     email: normalizedEmail,
     email_confirm: true,
-    user_metadata: profileName ? { full_name: profileName } : undefined,
+    user_metadata: undefined,
   });
 
   let authUserId = created.data.user?.id ?? null;
@@ -98,8 +82,8 @@ export async function getProfileUuidByEmail(
   await upsertProfileResilient({
     authUserId,
     normalizedEmail,
-    profileName,
-    profileRole,
+    profileName: null,
+    profileRole: "buyer",
     prismaUserId: prismaUser?.id ?? null,
   });
 
@@ -108,8 +92,13 @@ export async function getProfileUuidByEmail(
     .select("id")
     .eq("email", normalizedEmail)
     .maybeSingle();
-  if (finalLookup.error || !finalLookup.data?.id) return null;
-  return finalLookup.data.id as string;
+  if (!finalLookup.error && finalLookup.data?.id) return finalLookup.data.id as string;
+
+  if (authUserId) {
+    const byId = await supabase.from("profiles").select("id").eq("id", authUserId).maybeSingle();
+    if (!byId.error && byId.data?.id) return byId.data.id as string;
+  }
+  return null;
 }
 
 /**
