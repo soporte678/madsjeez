@@ -144,21 +144,39 @@ export async function POST(req: Request) {
       split.marketplaceSalesFeeAmount + split.affiliateCommissionAmount
     );
 
-    const { data: order, error: orderErr } = await supabaseService
+    const baseOrderPayload = {
+      buyer_id: buyerUuid,
+      seller_id: sellerUuid,
+      status: "pending",
+      total_amount: split.totalBuyerCharged,
+      shipping_cost: shippingCostFull,
+      discount_amount: 0,
+      shipping_address: shippingAddress,
+      notes: null,
+    };
+    let orderInsert = await supabaseService
       .from("orders")
       .insert({
-        buyer_id: buyerUuid,
-        seller_id: sellerUuid,
-        status: "pending",
-        total_amount: split.totalBuyerCharged,
-        shipping_cost: shippingCostFull,
-        discount_amount: 0,
+        ...baseOrderPayload,
         commission_amount: commissionProductTotal,
-        shipping_address: shippingAddress,
-        notes: null,
       })
       .select("id")
       .single();
+
+    const orderInsertCode = (orderInsert.error as { code?: string } | null)?.code;
+    const orderInsertMessage = String((orderInsert.error as { message?: string } | null)?.message || "");
+    if (
+      orderInsert.error &&
+      orderInsertCode === "PGRST204" &&
+      orderInsertMessage.includes("commission_amount")
+    ) {
+      orderInsert = await supabaseService
+        .from("orders")
+        .insert(baseOrderPayload)
+        .select("id")
+        .single();
+    }
+    const { data: order, error: orderErr } = orderInsert;
 
     if (orderErr || !order?.id) {
       console.error("checkout mp insert order:", orderErr);

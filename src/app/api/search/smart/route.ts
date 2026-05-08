@@ -72,9 +72,7 @@ Responde SOLO con el JSON válido, sin markdown ni explicación.`
       .from("products")
       .select(`
         id, title, price, original_price, condition, shipping_free, stock,
-        product_images(url, is_primary),
-        profiles:seller_id(full_name),
-        categories:category_id(name)
+        product_images(url, is_primary)
       `)
       .eq("is_active", true)
 
@@ -101,8 +99,8 @@ Responde SOLO con el JSON válido, sin markdown ni explicación.`
         shipping_free: p.shipping_free,
         stock: p.stock,
         primary_image: primaryImageUrlFromRows(p.product_images),
-        seller_name: p.profiles?.full_name || null,
-        category_name: p.categories?.name || null,
+        seller_name: null,
+        category_name: null,
         sales: 0,
       }))
       .filter((p: any) => hasValidProductImageUrl(p.primary_image))
