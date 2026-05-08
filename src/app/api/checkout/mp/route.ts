@@ -42,6 +42,7 @@ export async function POST(req: Request) {
     if (!buyerUuid) {
       return NextResponse.json(
         {
+          code: "BUYER_PROFILE_MISSING",
           error:
             "Tu cuenta no tiene perfil en la tienda (Supabase). Usá el mismo email que en el registro o contactá soporte.",
         },
@@ -67,13 +68,14 @@ export async function POST(req: Request) {
     });
 
     if (!cart?.items.length) {
-      return NextResponse.json({ error: "El carrito está vacío" }, { status: 400 });
+      return NextResponse.json({ code: "EMPTY_CART", error: "El carrito está vacío" }, { status: 400 });
     }
 
     const sellerIds = new Set(cart.items.map((i) => i.product.sellerId));
     if (sellerIds.size !== 1) {
       return NextResponse.json(
         {
+          code: "MULTI_SELLER_CART",
           error:
             "Por ahora solo podés pagar productos del mismo vendedor en un solo pago. Dejá solo ítems de un vendedor en el carrito.",
         },
@@ -85,7 +87,11 @@ export async function POST(req: Request) {
     const sellerUuid = await getProfileUuidForPrismaUserId(sellerPrismaId);
     if (!sellerUuid) {
       return NextResponse.json(
-        { error: "No se pudo resolver el vendedor para cobrar. Probá más tarde." },
+        {
+          code: "SELLER_PROFILE_MISSING",
+          error:
+            "No se pudo resolver el perfil del vendedor en la tienda (Supabase). El vendedor debe tener cuenta con el mismo email que en MADSJEEZ.",
+        },
         { status: 400 }
       );
     }
@@ -122,6 +128,7 @@ export async function POST(req: Request) {
     if (split.sellerNetPayout <= 0) {
       return NextResponse.json(
         {
+          code: "NEGATIVE_SELLER_NET",
           error:
             "La combinación de envío y comisiones deja al vendedor sin neto positivo. Revisá montos o porcentajes (MARKETPLACE_SALES_FEE_PERCENT / AFFILIATE_COMMISSION_PERCENT).",
         },
@@ -210,8 +217,9 @@ export async function POST(req: Request) {
       await supabaseService.from("orders").delete().eq("id", orderId);
       return NextResponse.json(
         {
+          code: "SELLER_MP_NOT_CONNECTED",
           error:
-            "El vendedor no tiene Mercado Pago conectado. Elegí otro vendedor o avisale que vincule su cuenta.",
+            "El vendedor no tiene Mercado Pago conectado. Pedile que vaya al panel → Perfil y vincule Mercado Pago, o elegí otro vendedor.",
         },
         { status: 400 }
       );

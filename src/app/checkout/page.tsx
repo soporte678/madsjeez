@@ -76,6 +76,7 @@ function CheckoutContent() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
   const [shippingAddress, setShippingAddress] = useState({
@@ -154,10 +155,13 @@ function CheckoutContent() {
     (acc, item) => acc + item.product.price * item.quantity,
     0
   );
-  const shipping = cartItems.some((item) => !item.product.shipping_free)
+  const shippingFull = cartItems.some((item) => !item.product.shipping_free)
     ? 2500
     : 0;
-  const total = subtotal + shipping;
+  /** Coherente con checkout MP (escrow): el comprador abona el 50% del envío. */
+  const buyerShippingShare =
+    shippingFull > 0 ? Math.round((shippingFull / 2) * 100) / 100 : 0;
+  const total = subtotal + buyerShippingShare;
 
   const sellerIds = new Set(cartItems.map((i) => i.product.seller_id));
   const multiSeller = sellerIds.size > 1;
@@ -165,6 +169,7 @@ function CheckoutContent() {
   const handleSubmitOrder = async () => {
     if (!session?.user || cartItems.length === 0) return;
 
+    setCheckoutError(null);
     setProcessing(true);
 
     try {
@@ -178,22 +183,51 @@ function CheckoutContent() {
         }),
       });
 
-      const data = await res.json().catch(() => ({}));
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        code?: string;
+        details?: unknown;
+      };
 
       if (!res.ok) {
-        toast.error(data.error || "No se pudo iniciar el pago");
+        const base =
+          typeof data.error === "string" && data.error.trim()
+            ? data.error
+            : `Error ${res.status}: no se pudo iniciar el pago`;
+        let detail = "";
+        if (data.details != null && typeof data.details === "object") {
+          try {
+            const msg = (data.details as { message?: string }).message;
+            if (msg) detail = ` (${msg})`;
+            else detail = ` (${JSON.stringify(data.details).slice(0, 280)})`;
+          } catch {
+            /* ignore */
+          }
+        }
+        const full = `${base}${detail}`;
+        setCheckoutError(full);
+        toast.error(base, {
+          description: data.code ? `${data.code}${detail}` : detail || undefined,
+          duration: 14_000,
+        });
+        console.warn("[checkout/mp]", res.status, data);
         return;
       }
 
-      const url = data.init_point || data.sandbox_init_point;
+      const url = (data as { init_point?: string; sandbox_init_point?: string }).init_point ||
+        (data as { sandbox_init_point?: string }).sandbox_init_point;
       if (url) {
-        window.location.href = url;
+        window.location.href = url as string;
         return;
       }
 
-      toast.error("Respuesta de pago incompleta");
+      const incomplete = "Respuesta de pago incompleta (sin URL de Mercado Pago)";
+      setCheckoutError(incomplete);
+      toast.error(incomplete, { duration: 12_000 });
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "Error al procesar el pedido");
+      const msg = e instanceof Error ? e.message : "Error al procesar el pedido";
+      setCheckoutError(msg);
+      toast.error(msg, { duration: 12_000 });
     } finally {
       setProcessing(false);
     }
@@ -444,6 +478,16 @@ function CheckoutContent() {
                         </div>
                       </div>
 
+                      {checkoutError && (
+                        <div
+                          role="alert"
+                          className="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-900"
+                        >
+                          <p className="font-semibold mb-1">No se pudo iniciar el pago</p>
+                          <p className="leading-snug">{checkoutError}</p>
+                        </div>
+                      )}
+
                       <div className="flex gap-3">
                         <Button variant="outline" onClick={() => setStep(2)}>
                           Volver
@@ -509,17 +553,32 @@ function CheckoutContent() {
                         <span>${subtotal.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Envío</span>
-                        <span>{shipping === 0 ? "Gratis" : `$${shipping.toLocaleString()}`}</span>
+                        <span className="text-gray-600">Envío (total logística)</span>
+                        <span>
+                          {shippingFull === 0 ? "Gratis" : `$${shippingFull.toLocaleString("es-AR")}`}
+                        </span>
                       </div>
+                      {shippingFull > 0 && (
+                        <div className="flex justify-between text-sm text-gray-600">
+                          <span>Pagás ahora (50% envío)</span>
+                          <span>${buyerShippingShare.toLocaleString("es-AR")}</span>
+                        </div>
+                      )}
                     </div>
 
                     <Separator className="my-4" />
 
                     <div className="flex justify-between text-lg font-semibold">
-                      <span>Total</span>
-                      <span>${total.toLocaleString()}</span>
+                      <span>Total a pagar</span>
+                      <span>${total.toLocaleString("es-AR")}</span>
                     </div>
+
+                    {shippingFull > 0 && (
+                      <p className="mt-2 text-xs text-gray-500 leading-snug">
+                        El otro 50% del envío lo absorbe el vendedor desde su liquidación. Si viniste por un afiliado,
+                        su comisión queda retenida en escrow hasta cumplir la política de devoluciones.
+                      </p>
+                    )}
 
                     <div className="mt-4 flex items-center gap-2 text-sm text-gray-500">
                       <Shield className="h-4 w-4" />
