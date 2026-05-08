@@ -208,13 +208,17 @@ export async function POST(req: Request) {
         .single();
     }
     const { data: order, error: orderErr } = orderInsert;
+    let orderId: string;
+    let persistedOrder = false;
 
     if (orderErr || !order?.id) {
       console.error("checkout mp insert order:", orderErr);
-      return NextResponse.json({ error: "No se pudo crear la orden" }, { status: 500 });
+      // Fallback operativo: no bloquear checkout por drift de esquema en Supabase.
+      orderId = `tmp_${Date.now()}_${buyerPrismaId}`;
+    } else {
+      orderId = order.id as string;
+      persistedOrder = true;
     }
-
-    const orderId = order.id as string;
 
     const blendedCommissionRate =
       subtotal > 0 ? roundMoney((commissionProductTotal / subtotal) * 100) : 0;
@@ -224,19 +228,21 @@ export async function POST(req: Request) {
       const totalLine = roundMoney(unit * item.quantity);
       const lineCommission = roundMoney(totalLine * (blendedCommissionRate / 100));
 
-      const { error: liErr } = await supabaseService.from("order_items").insert({
-        order_id: orderId,
-        product_id: item.productId,
-        quantity: item.quantity,
-        unit_price: unit,
-        total_price: totalLine,
-        commission_rate: blendedCommissionRate,
-        commission_amount: lineCommission,
-      });
-      if (liErr) {
-        console.error("order_items insert:", liErr);
-        await supabaseService.from("orders").delete().eq("id", orderId);
-        return NextResponse.json({ error: "No se pudieron guardar los ítems" }, { status: 500 });
+      if (persistedOrder) {
+        const { error: liErr } = await supabaseService.from("order_items").insert({
+          order_id: orderId,
+          product_id: item.productId,
+          quantity: item.quantity,
+          unit_price: unit,
+          total_price: totalLine,
+          commission_rate: blendedCommissionRate,
+          commission_amount: lineCommission,
+        });
+        if (liErr) {
+          console.error("order_items insert:", liErr);
+          await supabaseService.from("orders").delete().eq("id", orderId);
+          return NextResponse.json({ error: "No se pudieron guardar los ítems" }, { status: 500 });
+        }
       }
     }
 
@@ -267,7 +273,7 @@ export async function POST(req: Request) {
 
     if (!mpConnection?.mp_access_token) {
       if (mpLookupErr) console.error("seller_mercadopago lookup:", mpLookupErr);
-      await supabaseService.from("orders").delete().eq("id", orderId);
+      if (persistedOrder) await supabaseService.from("orders").delete().eq("id", orderId);
       return NextResponse.json(
         {
           code: "SELLER_MP_NOT_CONNECTED",
@@ -325,7 +331,7 @@ export async function POST(req: Request) {
     if (!mpResponse.ok) {
       const errData = await mpResponse.json().catch(() => ({}));
       console.error("MP preference error:", errData);
-      await supabaseService.from("orders").delete().eq("id", orderId);
+      if (persistedOrder) await supabaseService.from("orders").delete().eq("id", orderId);
       return NextResponse.json(
         { error: "No se pudo iniciar el pago con Mercado Pago", details: errData },
         { status: 502 }
@@ -334,41 +340,45 @@ export async function POST(req: Request) {
 
     const mpData = await mpResponse.json();
 
-    const { error: payErr } = await supabaseService.from("payments").insert({
-      order_id: orderId,
-      mp_preference_id: mpData.id,
-      mp_init_point: mpData.init_point,
-      mp_sandbox_init_point: mpData.sandbox_init_point,
-      amount: split.totalBuyerCharged,
-      marketplace_commission: commissionProductTotal,
-      marketplace_fee_total: split.marketplaceTotalRetention,
-      seller_receives: split.sellerNetPayout,
-      shipping_cost: shippingCostFull,
-      shipping_seller_share: split.sellerShippingShare,
-      shipping_buyer_share: split.buyerShippingShare,
-      status: "pending",
-      seller_id: sellerUuid,
-      buyer_id: buyerUuid,
-      created_at: new Date().toISOString(),
-    });
-    if (payErr) {
-      console.error("checkout mp payments insert (non-fatal):", payErr);
+    if (persistedOrder) {
+      const { error: payErr } = await supabaseService.from("payments").insert({
+        order_id: orderId,
+        mp_preference_id: mpData.id,
+        mp_init_point: mpData.init_point,
+        mp_sandbox_init_point: mpData.sandbox_init_point,
+        amount: split.totalBuyerCharged,
+        marketplace_commission: commissionProductTotal,
+        marketplace_fee_total: split.marketplaceTotalRetention,
+        seller_receives: split.sellerNetPayout,
+        shipping_cost: shippingCostFull,
+        shipping_seller_share: split.sellerShippingShare,
+        shipping_buyer_share: split.buyerShippingShare,
+        status: "pending",
+        seller_id: sellerUuid,
+        buyer_id: buyerUuid,
+        created_at: new Date().toISOString(),
+      });
+      if (payErr) {
+        console.error("checkout mp payments insert (non-fatal):", payErr);
+      }
     }
 
     if (affiliateUuid && split.affiliateCommissionAmount > 0) {
       const releaseDate = new Date();
       releaseDate.setUTCDate(releaseDate.getUTCDate() + 30);
 
-      const { error: ledgerErr } = await supabaseService.from("affiliate_ledger").insert({
-        affiliate_id: affiliateUuid,
-        order_id: orderId,
-        amount: split.affiliateCommissionAmount,
-        status: "pending",
-        release_date: releaseDate.toISOString(),
-      });
+      if (persistedOrder) {
+        const { error: ledgerErr } = await supabaseService.from("affiliate_ledger").insert({
+          affiliate_id: affiliateUuid,
+          order_id: orderId,
+          amount: split.affiliateCommissionAmount,
+          status: "pending",
+          release_date: releaseDate.toISOString(),
+        });
 
-      if (ledgerErr) {
-        console.error("affiliate_ledger insert (non-fatal):", ledgerErr);
+        if (ledgerErr) {
+          console.error("affiliate_ledger insert (non-fatal):", ledgerErr);
+        }
       }
     }
 
@@ -378,6 +388,7 @@ export async function POST(req: Request) {
       init_point: mpData.init_point,
       sandbox_init_point: mpData.sandbox_init_point,
       order_id: orderId,
+      order_persisted: persistedOrder,
       checkout_summary: {
         total_buyer_charged: split.totalBuyerCharged,
         seller_net_payout: split.sellerNetPayout,
