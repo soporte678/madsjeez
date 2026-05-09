@@ -43,7 +43,7 @@ async function getCategoryProducts(categoryId: string) {
     `)
     .eq("category_id", categoryId)
     .eq("is_active", true)
-    .order("is_promoted", { ascending: false })
+    .order("updated_at", { ascending: false })
     .order("created_at", { ascending: false });
 
   return products?.map((product: any) => ({

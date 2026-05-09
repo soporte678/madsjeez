@@ -48,7 +48,7 @@ function mapSupabaseRow(p: Record<string, unknown>): UnifiedProduct {
     seller_name: profiles?.full_name ?? null,
     seller_id: (p.seller_id as string) ?? null,
     category_name: cats?.name ?? null,
-    is_promoted: Boolean(p.is_promoted),
+    is_promoted: typeof p.is_promoted === "boolean" ? p.is_promoted : false,
     created_at: (p.created_at as string) ?? null,
   };
 }
@@ -149,7 +149,8 @@ export async function GET(req: Request) {
         sbQuery = sbQuery.order("created_at", { ascending: false });
         break;
       default:
-        sbQuery = sbQuery.order("is_promoted", { ascending: false });
+        // relevance: sin depender de `is_promoted` (columna ausente en algunos proyectos Supabase)
+        sbQuery = sbQuery.order("updated_at", { ascending: false });
     }
 
     const { data: sbData, error: sbErr } = await sbQuery.limit(limit);
