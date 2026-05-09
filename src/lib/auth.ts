@@ -9,51 +9,93 @@ const googleClientId = process.env.GOOGLE_CLIENT_ID
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET
 
 /**
- * Cookies OAuth (state + pkce) deben persistir entre redirect a Google y el callback.
- * Si NEXTAUTH_URL usa apex pero el usuario entra por www (o al revés), el navegador no envía
- * cookies host-only → "State cookie was missing". Solución: misma URL canónica en NEXTAUTH_URL
- * o NEXTAUTH_COOKIE_DOMAIN=.tudominio.com para compartir cookie entre subdominios.
+ * Cookies de NextAuth deben compartirse entre www y apex para evitar:
+ * - OAuth callback: "State cookie was missing"
+ * - Login exitoso pero sesión perdida al volver (loop al login)
  */
-function oauthCookieDomain(): { domain?: string } {
-  const raw = process.env.NEXTAUTH_COOKIE_DOMAIN?.trim()
-  if (!raw) return {}
-  const domain = raw.startsWith(".") ? raw : `.${raw}`
-  return { domain }
-}
-
-function useSecureOAuthCookies(): boolean {
+function useSecureAuthCookies(): boolean {
   const url = process.env.NEXTAUTH_URL ?? ""
   if (url.startsWith("https://")) return true
   if (process.env.VERCEL) return true
   return process.env.NODE_ENV === "production"
 }
 
-function buildOAuthFlowCookies(): NextAuthOptions["cookies"] | undefined {
-  if (!process.env.NEXTAUTH_COOKIE_DOMAIN?.trim()) return undefined
-  const secure = useSecureOAuthCookies()
+function deriveCookieDomain(): string | null {
+  const explicit = process.env.NEXTAUTH_COOKIE_DOMAIN?.trim()
+  if (explicit) return explicit.startsWith(".") ? explicit : `.${explicit}`
+
+  const raw = process.env.NEXTAUTH_URL?.trim()
+  if (!raw) return null
+  try {
+    const host = new URL(raw).hostname.toLowerCase()
+    if (host === "localhost" || /^\d{1,3}(\.\d{1,3}){3}$/.test(host)) return null
+    const parts = host.split(".")
+    if (parts.length < 2) return null
+    // TLD compuesto frecuente en AR: .com.ar
+    if (host.endsWith(".com.ar") && parts.length >= 3) {
+      return `.${parts.slice(-3).join(".")}`
+    }
+    return `.${parts.slice(-2).join(".")}`
+  } catch {
+    return null
+  }
+}
+
+function buildAuthCookies(): NextAuthOptions["cookies"] | undefined {
+  const domain = deriveCookieDomain()
+  if (!domain) return undefined
+
+  const secure = useSecureAuthCookies()
   const prefix = secure ? "__Secure-" : ""
-  const extras = oauthCookieDomain()
-  const base = {
+  const csrfName = secure ? "__Secure-next-auth.csrf-token" : "next-auth.csrf-token"
+  const sessionMaxAge = 30 * 24 * 60 * 60
+
+  const common = {
     httpOnly: true,
     sameSite: "lax" as const,
     path: "/",
     secure,
-    maxAge: 60 * 15,
-    ...extras,
+    domain,
   }
+
   return {
+    sessionToken: {
+      name: `${prefix}next-auth.session-token`,
+      options: {
+        ...common,
+        maxAge: sessionMaxAge,
+      },
+    },
+    callbackUrl: {
+      name: `${prefix}next-auth.callback-url`,
+      options: common,
+    },
+    csrfToken: {
+      name: csrfName,
+      options: common,
+    },
     state: {
       name: `${prefix}next-auth.state`,
-      options: base,
+      options: {
+        ...common,
+        maxAge: 60 * 15,
+      },
     },
     pkceCodeVerifier: {
       name: `${prefix}next-auth.pkce.code_verifier`,
-      options: base,
+      options: {
+        ...common,
+        maxAge: 60 * 15,
+      },
+    },
+    nonce: {
+      name: `${prefix}next-auth.nonce`,
+      options: common,
     },
   }
 }
 
-const oauthCookiesMerged = buildOAuthFlowCookies()
+const sharedAuthCookies = buildAuthCookies()
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
@@ -115,7 +157,7 @@ export const authOptions: NextAuthOptions = {
         ]
       : []),
   ],
-  ...(oauthCookiesMerged ? { cookies: oauthCookiesMerged } : {}),
+  ...(sharedAuthCookies ? { cookies: sharedAuthCookies } : {}),
   session: {
     strategy: "jwt"
   },
