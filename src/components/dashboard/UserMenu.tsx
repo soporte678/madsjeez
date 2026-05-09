@@ -38,6 +38,11 @@ interface DropdownItemProps {
 export const UserMenu: React.FC<UserMenuProps> = ({ isOpen, onClose, userData, onNavigate }) => {
   if (!isOpen) return null;
 
+  const handleSignOut = async () => {
+    onClose();
+    await signOut({ callbackUrl: "/", redirect: true });
+  };
+
   return (
     <>
       {/* Capa invisible para cerrar el menú al hacer clic fuera */}
@@ -135,7 +140,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ isOpen, onClose, userData, o
 
         {/* SECCIÓN 4: Salida */}
         <div className="py-1">
-          <DropdownItem text="Salir" onClick={() => signOut({ callbackUrl: '/' })} />
+          <DropdownItem text="Salir" onClick={handleSignOut} />
         </div>
       </div>
     </>
