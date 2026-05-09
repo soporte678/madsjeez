@@ -8,6 +8,53 @@ import { getProfileUuidByEmail } from "./supabase-profile-map"
 const googleClientId = process.env.GOOGLE_CLIENT_ID
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET
 
+/**
+ * Cookies OAuth (state + pkce) deben persistir entre redirect a Google y el callback.
+ * Si NEXTAUTH_URL usa apex pero el usuario entra por www (o al revés), el navegador no envía
+ * cookies host-only → "State cookie was missing". Solución: misma URL canónica en NEXTAUTH_URL
+ * o NEXTAUTH_COOKIE_DOMAIN=.tudominio.com para compartir cookie entre subdominios.
+ */
+function oauthCookieDomain(): { domain?: string } {
+  const raw = process.env.NEXTAUTH_COOKIE_DOMAIN?.trim()
+  if (!raw) return {}
+  const domain = raw.startsWith(".") ? raw : `.${raw}`
+  return { domain }
+}
+
+function useSecureOAuthCookies(): boolean {
+  const url = process.env.NEXTAUTH_URL ?? ""
+  if (url.startsWith("https://")) return true
+  if (process.env.VERCEL) return true
+  return process.env.NODE_ENV === "production"
+}
+
+function buildOAuthFlowCookies(): NextAuthOptions["cookies"] | undefined {
+  if (!process.env.NEXTAUTH_COOKIE_DOMAIN?.trim()) return undefined
+  const secure = useSecureOAuthCookies()
+  const prefix = secure ? "__Secure-" : ""
+  const extras = oauthCookieDomain()
+  const base = {
+    httpOnly: true,
+    sameSite: "lax" as const,
+    path: "/",
+    secure,
+    maxAge: 60 * 15,
+    ...extras,
+  }
+  return {
+    state: {
+      name: `${prefix}next-auth.state`,
+      options: base,
+    },
+    pkceCodeVerifier: {
+      name: `${prefix}next-auth.pkce.code_verifier`,
+      options: base,
+    },
+  }
+}
+
+const oauthCookiesMerged = buildOAuthFlowCookies()
+
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   providers: [
@@ -58,7 +105,8 @@ export const authOptions: NextAuthOptions = {
             clientSecret: googleClientSecret,
             authorization: {
               params: {
-                prompt: "consent",
+                // No usar prompt: "consent" en cada login: Google mostraría la validación
+                // como si fuera siempre el primer acceso. El consentimiento se pide la primera vez.
                 access_type: "offline",
                 response_type: "code",
               },
@@ -67,6 +115,7 @@ export const authOptions: NextAuthOptions = {
         ]
       : []),
   ],
+  ...(oauthCookiesMerged ? { cookies: oauthCookiesMerged } : {}),
   session: {
     strategy: "jwt"
   },
