@@ -567,17 +567,19 @@ export default function Navbar() {
               </div>
 
               {/* Navegación (ml-8 para arrancar igual que el buscador) */}
-              <nav className="flex items-center gap-x-4 text-[13px] font-light ml-8 w-[480px]">
-                <Link href="/categories" className="flex items-center gap-0.5 nav-link whitespace-nowrap">
+              <nav className="flex flex-1 min-w-0 items-center gap-x-3 lg:gap-x-4 text-[13px] font-light ml-4 md:ml-8 overflow-x-auto scrollbar-hide pb-0.5 md:pb-0">
+                <Link href="/categories" className="flex items-center gap-0.5 nav-link whitespace-nowrap shrink-0">
                   Categorías <ChevronDown size={11} className="mt-0.5 opacity-40" />
                 </Link>
-                <Link href="/offers" className="nav-link whitespace-nowrap">Ofertas</Link>
-                <Link href="/coupons" className="nav-link whitespace-nowrap">Cupones</Link>
-                <Link href="/supermarket" className="nav-link whitespace-nowrap">Supermercado</Link>
-                <Link href="/fashion" className="nav-link whitespace-nowrap">Moda</Link>
-                <Link href="/dashboard/publicaciones" className="nav-link whitespace-nowrap">Vender</Link>
-                <Link href="/blog" className="nav-link whitespace-nowrap">Blog</Link>
-                <Link href="/help" className="nav-link whitespace-nowrap">Ayuda</Link>
+                <Link href="/offers" className="nav-link whitespace-nowrap shrink-0">Ofertas</Link>
+                <Link href="/deals" className="nav-link whitespace-nowrap shrink-0">Descuentos</Link>
+                <Link href="/coupons/public" className="nav-link whitespace-nowrap shrink-0">Cupones</Link>
+                <Link href="/search" className="nav-link whitespace-nowrap shrink-0">Catálogo</Link>
+                <Link href="/notifications" className="nav-link whitespace-nowrap shrink-0 hidden sm:inline">Alertas</Link>
+                <Link href="/subscriptions" className="nav-link whitespace-nowrap shrink-0 hidden md:inline">MADS+</Link>
+                <Link href="/seller/register" className="nav-link whitespace-nowrap shrink-0 hidden lg:inline">Vender</Link>
+                <Link href="/dashboard" className="nav-link whitespace-nowrap shrink-0 hidden xl:inline">Mi panel</Link>
+                <Link href="/help" className="nav-link whitespace-nowrap shrink-0">Ayuda</Link>
               </nav>
             </div>
 

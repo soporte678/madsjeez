@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, Suspense } from 'react';
+import Link from "next/link";
 import {
   Search, Bell, ShoppingCart, User, ChevronDown, ChevronRight,
   ShoppingBag, Tag, Megaphone, FileText, CreditCard, Settings,
@@ -152,9 +153,9 @@ export default function App() {
       isParent: true,
       isOpen: comprasOpen,
       setIsOpen: setComprasOpen,
-      subItems: [
+        subItems: [
         { id: 'compras', label: 'Compras' },
-        { id: 'carrito', label: 'Carrito' },
+        { id: 'carrito', label: 'Carrito (panel)' },
         { id: 'preguntas', label: 'Preguntas' },
         { id: 'opiniones', label: 'Opiniones' },
         { id: 'favoritos', label: 'Favoritos' },
@@ -179,7 +180,7 @@ export default function App() {
         { id: 'preguntas', label: 'Preguntas' },
         { id: 'ventas-lista', label: 'Ventas' },
         { id: 'posventa', label: 'Posventa' },
-        { id: 'metricas', label: 'Métricas' },
+        { id: 'metricas', label: 'Métricas (resumen)' },
         { id: 'reputacion', label: 'Reputación' },
         { id: 'productos-catalogo', label: 'Productos de catálogo' },
         { id: 'preferencias-venta', label: 'Preferencias de venta' },
@@ -600,6 +601,68 @@ export default function App() {
                 </div>
               ))}
             </nav>
+
+            <div className="mt-6 px-4 pt-5 border-t border-border space-y-1">
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground mb-3">
+                Accesos rápidos (sitio)
+              </p>
+              <Link
+                href="/"
+                className="flex items-center gap-2 rounded-md px-2 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              >
+                <Home size={16} className="shrink-0 opacity-70" />
+                Ir a la tienda
+              </Link>
+              <Link
+                href="/orders"
+                className="flex items-center gap-2 rounded-md px-2 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              >
+                <ClipboardList size={16} className="shrink-0 opacity-70" />
+                Mis pedidos / compras
+              </Link>
+              <Link
+                href="/cart"
+                className="flex items-center gap-2 rounded-md px-2 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              >
+                <ShoppingCart size={16} className="shrink-0 opacity-70" />
+                Carrito público
+              </Link>
+              <Link
+                href="/dashboard/analytics"
+                className="flex items-center gap-2 rounded-md px-2 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              >
+                <BarChart2 size={16} className="shrink-0 opacity-70" />
+                Métricas detalladas (página)
+              </Link>
+              <Link
+                href="/dashboard/live"
+                className="flex items-center gap-2 rounded-md px-2 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              >
+                <Activity size={16} className="shrink-0 opacity-70" />
+                Monitor en vivo
+              </Link>
+              <Link
+                href="/notifications"
+                className="flex items-center gap-2 rounded-md px-2 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              >
+                <Bell size={16} className="shrink-0 opacity-70" />
+                Notificaciones
+              </Link>
+              <Link
+                href="/subscriptions"
+                className="flex items-center gap-2 rounded-md px-2 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              >
+                <Zap size={16} className="shrink-0 opacity-70" />
+                Planes MADS+
+              </Link>
+              <Link
+                href="/seller/register"
+                className="flex items-center gap-2 rounded-md px-2 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              >
+                <Store size={16} className="shrink-0 opacity-70" />
+                Herramientas para vender
+              </Link>
+            </div>
           </div>
         </aside>
 
