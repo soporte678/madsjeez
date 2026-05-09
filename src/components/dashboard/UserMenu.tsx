@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { signOut } from "next-auth/react";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { 
   User, ChevronDown, ChevronRight, ShoppingBag, Tag, 
   Megaphone, FileText, CreditCard, Settings, Star, 
@@ -40,7 +41,21 @@ export const UserMenu: React.FC<UserMenuProps> = ({ isOpen, onClose, userData, o
 
   const handleSignOut = async () => {
     onClose();
-    await signOut({ callbackUrl: "/", redirect: true });
+    try {
+      await signOut({ callbackUrl: "/", redirect: false });
+    } catch (e) {
+      console.error("next-auth signOut error:", e);
+    }
+
+    // Fallback: algunos flujos del sitio aún usan sesión Supabase en cliente.
+    try {
+      const supabase = getSupabaseBrowserClient();
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.error("supabase signOut error:", e);
+    }
+
+    window.location.replace("/");
   };
 
   return (

@@ -20,6 +20,7 @@ import {
 import { useState } from "react";
 import { useCartStore } from "@/stores/cartStore";
 import RainbowLogo from "@/components/brand/RainbowLogo";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 const CATEGORY_LINKS = [
   { href: "/category/celulares-y-telefonia", label: "Celulares" },
@@ -57,8 +58,21 @@ export function Header() {
     }
   };
 
-  const handleSignOut = () => {
-    void signOut({ callbackUrl: "/" });
+  const handleSignOut = async () => {
+    try {
+      await signOut({ callbackUrl: "/", redirect: false });
+    } catch (e) {
+      console.error("next-auth signOut error:", e);
+    }
+
+    try {
+      const supabase = getSupabaseBrowserClient();
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.error("supabase signOut error:", e);
+    }
+
+    window.location.replace("/");
   };
 
   return (
