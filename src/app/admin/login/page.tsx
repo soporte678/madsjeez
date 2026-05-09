@@ -1,120 +1,96 @@
-"use client"
+"use client";
 
-import React, { useState } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { createClient } from "@/lib/supabase/client"
-import { toast } from "sonner"
-import { Eye, EyeOff, Lock, Mail, AlertTriangle, Shield } from "lucide-react"
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { toast } from "sonner";
+import { Eye, EyeOff, Lock, Mail, Shield } from "lucide-react";
 
 export default function AdminLoginPage() {
-  const router = useRouter()
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  // Clear any stale sessions on mount
   React.useEffect(() => {
-    const clearStaleSession = async () => {
-      const supabase = createClient()
-      // Check if there's a broken session and clear it
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session) {
-        // If there's a session but we're on the login page, clear it
-        await supabase.auth.signOut()
-      }
-    }
-    clearStaleSession()
-  }, [])
+    fetch("/api/admin/auth/sign-out", { method: "POST", credentials: "include" }).catch(
+      () => {}
+    );
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError("")
+    e.preventDefault();
+    setLoading(true);
+    setError("");
 
-    // Validate inputs before sending to Supabase
-    if (!email || !email.trim()) {
-      setError("Ingresa tu correo electrónico")
-      setLoading(false)
-      return
+    if (!email?.trim()) {
+      setError("Ingresa tu correo electrónico");
+      setLoading(false);
+      return;
     }
-    if (!password || !password.trim()) {
-      setError("Ingresa tu contraseña")
-      setLoading(false)
-      return
+    if (!password?.trim()) {
+      setError("Ingresa tu contraseña");
+      setLoading(false);
+      return;
     }
-
-    const supabase = createClient()
 
     try {
-      // Sign in with email/password
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      })
+      const res = await fetch("/api/admin/auth/sign-in", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), password }),
+      });
 
-      if (authError) {
-        throw authError
+      const data = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        error?: string;
+        admin?: { id: string; email: string; first_name?: string | null };
+      };
+
+      if (!res.ok || !data.ok || !data.admin) {
+        throw new Error(data.error || "Error al iniciar sesión");
       }
 
-      if (!authData.user) {
-        throw new Error("No se pudo autenticar")
-      }
-
-      // Check if user has admin access
-      const { data: adminUser, error: adminError } = await supabase
-        .from("admin_users")
-        .select("*, roles:role_id(*)")
-        .eq("user_id", authData.user.id)
-        .eq("is_active", true)
-        .single()
-
-      if (adminError || !adminUser) {
-        // Sign out and show error
-        await supabase.auth.signOut()
-        throw new Error("No tienes permisos para acceder al panel de administracion")
-      }
-
-      // Get IP and user agent for logging
       try {
-        const ipResponse = await fetch("https://api.ipify.org?format=json")
-        const { ip } = await ipResponse.json()
-        
-        // Send login alert
+        const ipResponse = await fetch("https://api.ipify.org?format=json");
+        const { ip } = await ipResponse.json();
+
         await fetch("/api/admin/login-alert", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          credentials: "include",
           body: JSON.stringify({
-            adminUserId: adminUser.id,
-            email: adminUser.email,
+            adminUserId: data.admin.id,
+            email: data.admin.email,
             ip,
             userAgent: navigator.userAgent,
             timestamp: new Date().toISOString(),
           }),
-        })
+        });
       } catch (alertError) {
-        console.error("Failed to send login alert:", alertError)
-        // Don't block login if alert fails
+        console.error("Failed to send login alert:", alertError);
       }
 
-      toast.success(`Bienvenido, ${adminUser.first_name || adminUser.email}`)
-      router.push("/admin")
-      router.refresh()
-    } catch (err: any) {
-      console.error("Login error:", err)
-      setError(err.message || "Error al iniciar sesión")
-      toast.error(err.message || "Error al iniciar sesión")
+      toast.success(`Bienvenido, ${data.admin.first_name || data.admin.email}`);
+      router.push("/admin");
+      router.refresh();
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Error al iniciar sesión";
+      console.error("Login error:", err);
+      setError(message);
+      toast.error(message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-[#FFF159] rounded-xl mb-4 shadow-lg">
             <span className="text-[#2D3277] font-bold text-2xl">MQ</span>
@@ -123,20 +99,21 @@ export default function AdminLoginPage() {
           <p className="text-slate-400 mt-1">Panel de Administración</p>
         </div>
 
-        {/* Security Notice */}
         <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 mb-6">
           <div className="flex items-start gap-3">
             <Shield className="w-5 h-5 text-amber-400 mt-0.5 flex-shrink-0" />
             <div>
-              <p className="text-sm text-amber-200 font-medium">Acceso Unico - Solo Personal Autorizado</p>
+              <p className="text-sm text-amber-200 font-medium">
+                Acceso Unico - Solo Personal Autorizado
+              </p>
               <p className="text-xs text-amber-300/70 mt-1">
-                Este sistema es exclusivo para personal autorizado. Las cuentas solo pueden ser creadas por el administrador del sistema. Todas las acciones son registradas.
+                Este sistema es exclusivo para personal autorizado. Las cuentas solo pueden ser
+                creadas por el administrador del sistema. Todas las acciones son registradas.
               </p>
             </div>
           </div>
         </div>
 
-        {/* Login Form */}
         <div className="bg-white rounded-xl shadow-xl overflow-hidden">
           <div className="p-8">
             <h2 className="text-xl font-bold text-gray-800 mb-6">Iniciar Sesión</h2>
@@ -218,7 +195,6 @@ export default function AdminLoginPage() {
           </div>
         </div>
 
-        {/* Back to site */}
         <div className="text-center mt-6">
           <Link href="/" className="text-slate-400 hover:text-white text-sm transition-colors">
             ← Volver al sitio público
@@ -226,5 +202,5 @@ export default function AdminLoginPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
