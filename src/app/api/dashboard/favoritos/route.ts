@@ -167,3 +167,29 @@ export async function GET(request: NextRequest) {
     });
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const id = request.nextUrl.searchParams.get("id");
+    if (!id) {
+      return NextResponse.json({ error: "id requerido" }, { status: 400 });
+    }
+
+    await prisma.favorite.deleteMany({
+      where: {
+        id,
+        userId: session.user.id,
+      },
+    });
+
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error("Error deleting favorito:", error);
+    return NextResponse.json({ error: "Error al eliminar favorito" }, { status: 500 });
+  }
+}
