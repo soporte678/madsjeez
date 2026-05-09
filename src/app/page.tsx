@@ -6,23 +6,35 @@ import Navbar from "@/components/Navbar"
 import AIRecommendations from "@/components/AIRecommendations"
 import AISmartNotifications from "@/components/AISmartNotifications"
 import Link from "next/link"
-import { useSession } from "next-auth/react"
-import { 
-  Search, Bell, Heart, ShoppingCart, Menu, 
-  Laptop, Home as HomeIcon, Armchair, Dumbbell, Shirt, 
-  Gamepad2, Sparkles, CarFront, ChevronRight,
-  CheckCircle2, Check, Star, Truck, ChevronLeft, Zap, 
-  ShieldCheck, TrendingUp, Timer, MapPin, 
-  CreditCard, Package, Shield, HelpCircle,
-  Navigation, Box, Clock, ChevronDown,
-  Tv, Utensils, Car, Smartphone, ShoppingBasket, Wrench
+import {
+  ShoppingCart,
+  Gamepad2,
+  Sparkles,
+  ChevronRight,
+  Check,
+  Truck,
+  Zap,
+  ShieldCheck,
+  TrendingUp,
+  CreditCard,
+  Package,
+  Navigation,
+  Box,
+  Clock,
+  Tv,
+  Utensils,
+  Store,
+  Building2,
+  Rocket,
+  ShoppingBag,
+  Users,
 } from "lucide-react"
-import { useCartStore } from "@/stores/cartStore"
 import { ProductCarousel } from "@/components/ProductCarousel"
 import { CategoryCarousel } from "@/components/CategoryCarousel"
 import { RotatingProductCarousel } from "@/components/RotatingProductCarousel"
 import { createClient } from "@/lib/supabase/client"
 import { hasValidProductImageUrl, primaryImageUrlFromRows } from "@/lib/productVisibility"
+import { PaidAdBannerSlot } from "@/components/ads/PaidAdBannerSlot"
 
 const demoClothing = [
   { id: 'd1', title: '12 Soquetes Medias Unisex Docena Talle Adultos', price: 16999, installments: 'Mismo precio 6 cuotas de $ 2.833', shipping: 'Llega mañana', image: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=300&q=80' },
@@ -158,55 +170,73 @@ const heroBanners = [
 ]
 
 export default function Home() {
-  const { data: session } = useSession()
-  const { getTotalItems } = useCartStore()
   const [currentSlide, setCurrentSlide] = useState(0)
-  const [searchQuery, setSearchQuery] = useState("")
-  const cartItemsCount = getTotalItems()
   const [products, setProducts] = useState<any[]>([])
   const [recentProducts, setRecentProducts] = useState<any[]>([])
 
+  const heroSlideCount = heroBanners.length
+
   useEffect(() => {
+    if (heroSlideCount <= 1) return
     const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev === 5 ? 0 : prev + 1))
+      setCurrentSlide((prev) => (prev >= heroSlideCount - 1 ? 0 : prev + 1))
     }, 6000)
     return () => clearInterval(timer)
-  }, [])
+  }, [heroSlideCount])
 
   useEffect(() => {
+    let cancelled = false
     async function fetchProducts() {
-      const supabase = createClient()
-      const { data: prods } = await supabase
-        .from('products')
-        .select('id, title, price, original_price, free_shipping, sales, product_images(url, is_primary, order)')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false })
-        .limit(72)
+      try {
+        const supabase = createClient()
+        const { data: prods, error } = await supabase
+          .from("products")
+          .select(
+            "id, title, price, original_price, free_shipping, sales, product_images(url, is_primary, order)"
+          )
+          .eq("is_active", true)
+          .order("created_at", { ascending: false })
+          .limit(72)
 
-      if (prods) {
-        const mapped = prods.map((p: any) => ({
-          id: p.id,
-          title: p.title,
-          price: p.price,
-          original_price: p.original_price,
-          free_shipping: p.free_shipping,
-          sales: p.sales || 0,
-          image: primaryImageUrlFromRows(p.product_images),
+        if (cancelled) return
+        if (error) {
+          console.error("Landing products:", error.message)
+          setProducts([])
+          setRecentProducts([])
+          return
+        }
+        if (!prods?.length) {
+          setProducts([])
+          setRecentProducts([])
+          return
+        }
+        const mapped = prods.map((p: Record<string, unknown>) => ({
+          id: p.id as string,
+          title: p.title as string,
+          price: p.price as number,
+          original_price: p.original_price as number | null,
+          free_shipping: p.free_shipping as boolean,
+          sales: (p.sales as number) || 0,
+          image: primaryImageUrlFromRows(
+            p.product_images as Array<{ url?: unknown; is_primary?: boolean; order?: number }> | null
+          ),
         }))
-        const withImages = mapped.filter((p: { image: string | null }) => hasValidProductImageUrl(p.image))
+        const withImages = mapped.filter((p) => hasValidProductImageUrl(p.image))
         setProducts(withImages.slice(0, 6))
         setRecentProducts(withImages.slice(6, 12))
+      } catch (e) {
+        if (!cancelled) {
+          console.error("Landing products fetch:", e)
+          setProducts([])
+          setRecentProducts([])
+        }
       }
     }
-    fetchProducts()
-  }, [])
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (searchQuery.trim()) {
-      window.location.href = `/search?q=${encodeURIComponent(searchQuery)}`
+    void fetchProducts()
+    return () => {
+      cancelled = true
     }
-  }
+  }, [])
 
   return (
     <main className="min-h-screen bg-mesh font-outfit text-slate-900 overflow-x-hidden">
@@ -325,7 +355,7 @@ export default function Home() {
         <div className="bg-white rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.12)] p-1 grid grid-cols-2 md:grid-cols-4 divide-x divide-slate-100 border border-slate-200/50">
           {[
             { title: "Medios de pago", icon: CreditCard, color: "text-blue-600", desc: "Hasta 18 cuotas" },
-            { title: "Bajo costo", icon: Zap, color: "text-yellow-500", desc: "Menos de $30.000" },
+            { title: "Envío gratis", icon: Zap, color: "text-yellow-500", desc: "A partir de $30.000 en tu compra" },
             { title: "Best Sellers", icon: TrendingUp, color: "text-emerald-500", desc: "Top del mes" },
             { title: "Protección", icon: ShieldCheck, color: "text-blue-600", desc: "Compra segura" },
           ].map((item, index) => (
@@ -344,6 +374,133 @@ export default function Home() {
             </Link>
           ))}
         </div>
+      </section>
+
+      {/* Publicidad paga — demos con marca MADSJEEZ */}
+      <section
+        id="publicidad-madsjeez-ads"
+        className="max-w-[1184px] mx-auto px-4 mb-12 scroll-mt-24 rounded-2xl border-2 border-[#3483FA]/35 bg-gradient-to-b from-sky-50/95 via-white to-white py-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]"
+        aria-label="Espacios publicitarios en venta — demos"
+      >
+        <p className="mb-2 text-center text-xs font-black uppercase tracking-[0.2em] text-[#2968c8]">
+          MADSJEEZ Ads
+        </p>
+        <p className="mb-6 text-center text-lg font-black text-slate-900 md:text-xl">
+          Publicidad en la tienda — espacios disponibles
+        </p>
+        <p className="mb-6 max-w-2xl mx-auto text-center text-sm text-slate-600 leading-relaxed">
+          Los bloques de abajo son <strong className="text-slate-900">demostraciones</strong>: cualquier vendedor o anunciante puede{" "}
+          <strong className="text-slate-900">contratar estos lugares</strong> para promocionar su marca o productos.
+        </p>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <PaidAdBannerSlot variant="tile" demoIndex={0} />
+          <PaidAdBannerSlot variant="tile" demoIndex={1} />
+          <PaidAdBannerSlot variant="tile" demoIndex={2} />
+        </div>
+      </section>
+
+      {/* QUÉ ES MADSJEEZ — resumen para todos los perfiles */}
+      <section className="max-w-[1184px] mx-auto px-4 mb-14" aria-labelledby="about-madsjeez-heading">
+        <div className="rounded-2xl border border-slate-200/80 bg-gradient-to-b from-slate-50 to-white shadow-sm overflow-hidden">
+          <div className="px-6 py-8 md:px-10 md:py-10 border-b border-slate-100 bg-white/80">
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#3483FA] mb-2">
+              Marketplace argentino
+            </p>
+            <h2
+              id="about-madsjeez-heading"
+              className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight mb-4"
+            >
+              Qué es MADSJEEZ
+            </h2>
+            <p className="text-slate-600 text-[15px] md:text-base leading-relaxed max-w-3xl">
+              Es un marketplace donde compradores y negocios se encuentran en un solo lugar: podés{" "}
+              <strong className="font-semibold text-slate-800">descubrir productos</strong>, pagar con{" "}
+              <strong className="font-semibold text-slate-800">medios seguros</strong> (incluido Mercado Pago), gestionar{" "}
+              <strong className="font-semibold text-slate-800">envíos y postventa</strong>, y si vendés, usar herramientas para{" "}
+              <strong className="font-semibold text-slate-800">publicar, cobrar y hacer crecer tu marca</strong> sin depender solo de una red social.
+            </p>
+          </div>
+          <div className="p-6 md:p-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
+            {[
+              {
+                Icon: Store,
+                title: "Vendedores y tiendas",
+                text:
+                  "Publicá productos con fotos y precios, conectá cobros con Mercado Pago, seguí pedidos y reputación desde tu panel.",
+                href: "/seller/register",
+                cta: "Empezar a vender",
+              },
+              {
+                Icon: Building2,
+                title: "Comerciantes",
+                text:
+                  "Llevá tu catálogo online con una vitrina seria: mismos clientes, menos fricción — pedidos, mensajes y métricas en un solo lugar.",
+                href: "/seller/register",
+                cta: "Registrar mi negocio",
+              },
+              {
+                Icon: Rocket,
+                title: "Emprendedores",
+                text:
+                  "Probá planes y exposición sin infraestructura propia: desde una cuenta podés vender, promocionar y escalar cuando crezcas.",
+                href: "/subscriptions",
+                cta: "Ver planes",
+              },
+              {
+                Icon: ShoppingBag,
+                title: "Compradores",
+                text:
+                  "Buscá por categoría o texto, compará, comprá con cuotas cuando aplique y tenés seguimiento de compra y soporte si algo falla.",
+                href: "/search",
+                cta: "Explorar productos",
+              },
+              {
+                Icon: Users,
+                title: "Comunidad y otros usuarios",
+                text:
+                  "Afiliados, compradores recurrentes o quienes siguen tiendas: podés guardar favoritos, ver ofertas y enterarte de novedades sin perder el hilo.",
+                href: "/search",
+                cta: "Descubrir",
+              },
+              {
+                Icon: ShieldCheck,
+                title: "Confianza para todos",
+                text:
+                  "Reglas claras, reclamos y canal de ayuda: diseñamos el flujo para que comprar y vender sea predecible y con respaldo.",
+                href: "/help",
+                cta: "Centro de ayuda",
+              },
+            ].map((card) => (
+              <div
+                key={card.title}
+                className="flex flex-col rounded-xl border border-slate-100 bg-white p-5 shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:border-[#3483FA]/30 hover:shadow-md transition-all duration-300"
+              >
+                <div className="flex items-start gap-3 mb-3">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#3483FA]/10 text-[#3483FA]">
+                    <card.Icon className="h-5 w-5" strokeWidth={2} />
+                  </span>
+                  <h3 className="text-[16px] font-bold text-slate-900 leading-snug pt-1">{card.title}</h3>
+                </div>
+                <p className="text-[13px] md:text-sm text-slate-600 leading-relaxed flex-1 mb-4">{card.text}</p>
+                <Link
+                  href={card.href}
+                  className="inline-flex items-center gap-1 text-[13px] font-semibold text-[#3483FA] hover:text-[#2968c8] mt-auto"
+                >
+                  {card.cta}
+                  <ChevronRight className="h-4 w-4" />
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Franja publicitaria paga (demo — leaderboard) */}
+      <section className="max-w-[1184px] mx-auto px-4 mb-10" aria-labelledby="ads-franja-1">
+        <p id="ads-franja-1" className="sr-only">
+          Franja publicitaria tipo banner horizontal — demo MADSJEEZ Ads
+        </p>
+        <PaidAdBannerSlot variant="leaderboard" demoIndex={3} />
       </section>
 
       {/* MADS PRO BANNER */}
@@ -403,6 +560,10 @@ export default function Home() {
         />
       </section>
 
+      <section className="max-w-[1184px] mx-auto px-4 mb-8" aria-label="Franja publicitaria entre carruseles — demo">
+        <PaidAdBannerSlot variant="leaderboard" demoIndex={0} />
+      </section>
+
       {/* 4. CARRUSEL: Pensados para vos en Ropa */}
       <section className="max-w-[1184px] mx-auto px-4">
         <ProductCarousel
@@ -426,6 +587,19 @@ export default function Home() {
           subtitle="Nuestra selección se renueva automáticamente"
           offset={12}
         />
+      </section>
+
+      <section className="max-w-[1184px] mx-auto px-4 mb-10 rounded-2xl border border-[#3483FA]/25 bg-slate-50/80 py-6 md:py-8">
+        <p className="mb-1 text-center text-xs font-black uppercase tracking-[0.18em] text-[#2968c8]">
+          MADSJEEZ Ads
+        </p>
+        <p className="mb-4 text-center text-base font-bold text-slate-900 md:text-lg">
+          Sponsors & marcas — espacios rectangulares (demo)
+        </p>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <PaidAdBannerSlot variant="rectangle" demoIndex={1} />
+          <PaidAdBannerSlot variant="rectangle" demoIndex={2} />
+        </div>
       </section>
 
       {/* 5. CATEGORÍAS (Grilla 3 filas con scroll) */}
@@ -644,7 +818,27 @@ export default function Home() {
                   {section.links.map((link) => (
                     <li key={link}>
                       <Link
-                        href={link === "Términos" ? "/legal/terminos" : link === "Privacidad" ? "/legal/privacidad" : link === "Aviso Legal" ? "/legal/aviso-legal" : link === "Vender" ? "/seller/register" : link === "Suscripciones" ? "/subscriptions" : link === "Impulsar" ? "/seller/boost" : "/"}
+                        href={
+                          link === "Términos"
+                            ? "/legal/terminos"
+                            : link === "Privacidad"
+                              ? "/legal/privacidad"
+                              : link === "Aviso Legal"
+                                ? "/legal/aviso-legal"
+                                : link === "Vender"
+                                  ? "/seller/register"
+                                  : link === "Suscripciones"
+                                    ? "/subscriptions"
+                                    : link === "Impulsar"
+                                      ? "/dashboard#publicidad"
+                                      : link === "Ayuda"
+                                        ? "/help"
+                                        : link === "Servicios VIP"
+                                          ? "/subscriptions"
+                                          : link === "Contacto"
+                                            ? "/help"
+                                            : "/"
+                        }
                         className="text-[13px] font-bold text-slate-400 hover:text-[#00b4d8] transition-colors cursor-pointer"
                       >
                         {link}
