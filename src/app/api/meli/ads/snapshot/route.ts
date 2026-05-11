@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -737,8 +738,8 @@ export async function GET(req: Request) {
               strategy: c.strategy ?? null,
               budget: c.budget != null ? Number(c.budget) : null,
               roasTarget: c.roas_target != null ? Number(c.roas_target) : null,
-              metrics: (c.metrics ?? null) as unknown as object | null,
-              metricsPrev: (c.metrics_prev ?? null) as unknown as object | null,
+              metrics: c.metrics != null ? (c.metrics as Prisma.InputJsonValue) : Prisma.JsonNull,
+              metricsPrev: c.metrics_prev != null ? (c.metrics_prev as Prisma.InputJsonValue) : Prisma.JsonNull,
               trendScore: campaignTrendScore(
                 c.metrics as unknown as Record<string, unknown> | undefined,
                 c.metrics_prev as unknown as Record<string, unknown> | undefined
