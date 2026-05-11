@@ -41,13 +41,12 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
-# Prisma migrate en Railway pre-deploy: standalone no trae el paquete `prisma` (hace falta para `prisma/config` en prisma.config.ts).
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder /app/node_modules/@prisma/engines ./node_modules/@prisma/engines
+# El trace standalone incluye `prisma` en package.json pero no el árbol completo del CLI (falta @prisma/config, c12, effect, …).
+COPY --from=builder /app/package-lock.json ./package-lock.json
+RUN npm install prisma@7.8.0 --omit=dev --no-audit --no-fund --legacy-peer-deps
 
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
-RUN npm install -g prisma@7.8.0
 
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN chmod +x /app/docker-entrypoint.sh
