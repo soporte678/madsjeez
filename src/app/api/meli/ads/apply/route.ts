@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getMeliAccessTokenForUser } from "@/lib/meli/prisma-session";
@@ -96,10 +97,11 @@ export async function POST(req: Request) {
             siteId,
             recommendationId: typeof a.recommendationId === "string" ? a.recommendationId : null,
             recommendationTitle: typeof a.recommendationTitle === "string" ? a.recommendationTitle : null,
-            payload: payload as unknown as object,
+            payload: payload as unknown as Prisma.InputJsonValue,
             apiStatus: res.status,
             apiOk: res.ok,
-            apiDetail: (res.ok ? null : res.data) as unknown as object | null,
+            apiDetail:
+              !res.ok && res.data != null ? (res.data as Prisma.InputJsonValue) : undefined,
           },
         });
       } catch (persistErr) {
