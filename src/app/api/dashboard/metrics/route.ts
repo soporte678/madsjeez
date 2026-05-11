@@ -44,23 +44,29 @@ export async function GET(request: Request) {
 
     if (ordersError && ordersError.code !== 'PGRST116') throw ordersError
 
-    // Calcular métricas
-    const totalSales = products?.reduce((sum, product) => sum + (product.sales || 0), 0) || 0
-    const totalRevenue = products?.reduce((sum, product) => sum + (product.price * (product.sales || 0)), 0) || 0
-    const totalViews = products?.reduce((sum, product) => sum + (product.views || 0), 0) || 0
+    type ProdRow = { price?: number; sales?: number; views?: number; status?: string; created_at?: string };
+    type OrdRow = { created_at?: string; total?: number };
 
-    const monthlyOrders = orders?.filter(order => {
-      const orderDate = new Date(order.created_at)
+    const prodList = (products ?? []) as ProdRow[];
+    const ordList = (orders ?? []) as OrdRow[];
+
+    // Calcular métricas
+    const totalSales = prodList.reduce((sum: number, product: ProdRow) => sum + (product.sales || 0), 0) || 0
+    const totalRevenue = prodList.reduce((sum: number, product: ProdRow) => sum + ((product.price || 0) * (product.sales || 0)), 0) || 0
+    const totalViews = prodList.reduce((sum: number, product: ProdRow) => sum + (product.views || 0), 0) || 0
+
+    const monthlyOrders = ordList.filter((order: OrdRow) => {
+      const orderDate = new Date(order.created_at ?? 0)
       return orderDate >= startOfMonth
     }) || []
 
-    const todayOrders = orders?.filter(order => {
-      const orderDate = new Date(order.created_at)
+    const todayOrders = ordList.filter((order: OrdRow) => {
+      const orderDate = new Date(order.created_at ?? 0)
       return orderDate >= startOfDay
     }) || []
 
-    const monthlyRevenue = monthlyOrders.reduce((sum, order) => sum + (order.total || 0), 0)
-    const todayRevenue = todayOrders.reduce((sum, order) => sum + (order.total || 0), 0)
+    const monthlyRevenue = monthlyOrders.reduce((sum: number, order: OrdRow) => sum + (order.total || 0), 0)
+    const todayRevenue = todayOrders.reduce((sum: number, order: OrdRow) => sum + (order.total || 0), 0)
 
     // Obtener preguntas pendientes
     const { data: questions, error: questionsError } = (await supabase
@@ -79,8 +85,11 @@ export async function GET(request: Request) {
 
     if (reviewsError && reviewsError.code !== 'PGRST116') throw reviewsError
 
-    const averageRating = reviews && reviews.length > 0 
-      ? reviews.reduce((sum, review) => sum + (review.rating || 0), 0) / reviews.length 
+    type RevRow = { rating?: number };
+    const revList = (reviews ?? []) as RevRow[];
+
+    const averageRating = revList.length > 0
+      ? revList.reduce((sum: number, review: RevRow) => sum + (review.rating || 0), 0) / revList.length
       : 0
 
     const metrics = {
@@ -93,18 +102,18 @@ export async function GET(request: Request) {
         todayCount: todayOrders.length
       },
       products: {
-        total: products?.length || 0,
-        active: products?.filter(p => p.status === 'ACTIVE').length || 0,
+        total: prodList.length || 0,
+        active: prodList.filter((p: ProdRow) => p.status === "ACTIVE").length || 0,
         views: totalViews
       },
-      orders: orders || [],
+      orders: ordList,
       questions: {
         pending: questions?.length || 0,
         total: questions?.length || 0
       },
       reviews: {
         average: averageRating,
-        total: reviews?.length || 0,
+        total: revList.length || 0,
         pending: 0
       },
       reputation: {
