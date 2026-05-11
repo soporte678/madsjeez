@@ -370,8 +370,8 @@ export default function App() {
     <div className="flex-1 flex flex-col gap-8 w-full max-w-4xl">
       <h1 className="text-[26px] font-semibold text-foreground mb-2">Preferencias de venta</h1>
       <section className="bg-card rounded-lg shadow-sm border border-border">
-        <PreferenceItem title="Mis domicilios de envíos" subtitle="Gestioná tus domicilios de envíos." />
-        <PreferenceItem title="Mis horarios de colecta" subtitle="Consultá tus horarios para enviar tus ventas a tiempo." />
+        <PreferenceItem title="Mis domicilios de envíos" subtitle="Gestioná tus domicilios de envíos." rightElement={null} />
+        <PreferenceItem title="Mis horarios de colecta" subtitle="Consultá tus horarios para enviar tus ventas a tiempo." rightElement={null} />
         <PreferenceItem title="Envíos Express" subtitle="Almacenamos tus productos en Madsjeez Hub." hasBorder={false} rightElement={<span></span>}/>
       </section>
     </div>
@@ -746,7 +746,17 @@ export default function App() {
 }
 
 // --- SUBCOMPONENTES REUTILIZABLES ---
-function PreferenceItem({ title, subtitle, rightElement, hasBorder = true }) {
+function PreferenceItem({
+  title,
+  subtitle,
+  rightElement,
+  hasBorder = true,
+}: {
+  title: string;
+  subtitle: string;
+  rightElement?: React.ReactNode;
+  hasBorder?: boolean;
+}) {
   return (
     <div className={`p-5 flex items-center justify-between hover:bg-muted transition-colors cursor-pointer ${hasBorder ? 'border-b border-border' : ''}`}>
       <div><h4 className="text-[15px] text-foreground font-medium">{title}</h4>{subtitle && <p className="text-[13px] text-muted-foreground mt-1">{subtitle}</p>}</div>
@@ -755,13 +765,23 @@ function PreferenceItem({ title, subtitle, rightElement, hasBorder = true }) {
   );
 }
 
-function TabButton({ id, label, current, set }) {
+function TabButton({
+  id,
+  label,
+  current,
+  set,
+}: {
+  id: string;
+  label: string;
+  current: string;
+  set: (id: string) => void;
+}) {
   return (
     <button onClick={() => set(id)} className={`pb-3 px-1 transition-colors ${current === id ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground hover:text-foreground'}`}>{label}</button>
   );
 }
 
-function DropdownItem({ text, onClick }) {
+function DropdownItem({ text, onClick }: { text: string; onClick?: () => void }) {
   return (
     <a href="#" onClick={(e) => { e.preventDefault(); if(onClick) onClick(); }} className="flex justify-between items-center px-4 py-2 hover:bg-primary/10 hover:text-primary text-muted-foreground transition-colors"><span>{text}</span></a>
   );
