@@ -28,7 +28,8 @@ interface FraudCase {
   type: string
   severity: "low" | "medium" | "high" | "critical"
   description: string
-  evidence: any
+  /** JSON / adjuntos desde `fraud_logs`; opcional para filas parciales o demo. */
+  evidence?: unknown
   status: "open" | "investigating" | "resolved" | "false_positive"
   reporter_id?: string
   reporter_email?: string
@@ -88,6 +89,7 @@ export default function FraudePage() {
           type: "multiple_accounts",
           severity: "high",
           description: "Múltiples cuentas desde mismo IP",
+          evidence: null,
           status: "investigating",
           created_at: new Date().toISOString(),
         },
