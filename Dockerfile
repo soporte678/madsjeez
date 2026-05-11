@@ -41,9 +41,11 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
-# El trace standalone incluye `prisma` en package.json pero no el árbol completo del CLI (falta @prisma/config, c12, effect, …).
+# No instalar `prisma` encima del standalone (deja @prisma/engines a medias y rompe el postinstall). Copiamos el árbol completo del builder + deps hoisted de @prisma/config.
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder /app/package-lock.json ./package-lock.json
-RUN npm install prisma@7.8.0 --omit=dev --no-audit --no-fund --legacy-peer-deps
+RUN npm install c12@3.3.4 deepmerge-ts@7.1.5 effect@3.20.0 empathic@2.0.0 --omit=dev --no-audit --no-fund --legacy-peer-deps --no-save
 
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
