@@ -1,30 +1,31 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-let _supabase: ReturnType<typeof createClient> | null = null
+/** Cliente browser sin `Database` generado: tipado laxo hasta migrar a tipos PostgREST reales. */
+let _supabase: SupabaseClient<any> | null = null;
 
-export function getSupabaseClient() {
-  if (_supabase) return _supabase
+export function getSupabaseClient(): SupabaseClient<any> {
+  if (_supabase) return _supabase;
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error(
-      'Supabase environment variables are missing. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.'
-    )
+      "Supabase environment variables are missing. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY."
+    );
   }
 
-  _supabase = createClient(supabaseUrl, supabaseAnonKey)
-  return _supabase
+  _supabase = createClient(supabaseUrl, supabaseAnonKey);
+  return _supabase;
 }
 
-export const supabase = new Proxy({} as ReturnType<typeof createClient>, {
+export const supabase = new Proxy({} as SupabaseClient<any>, {
   get(_target, prop) {
-    const client = getSupabaseClient()
+    const client = getSupabaseClient();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return (client as any)[prop]
+    return (client as any)[prop];
   },
-})
+});
 
 // Tipos para la base de datos
 export interface Database {
