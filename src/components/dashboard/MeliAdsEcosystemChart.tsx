@@ -87,14 +87,14 @@ export function MeliAdsEcosystemChart({ labels, revenueK, costK }: MeliAdsEcosys
           },
           scales: {
             x: {
-              grid: { color: "rgba(51, 65, 85, 0.45)", drawBorder: false },
+              grid: { color: "rgba(51, 65, 85, 0.45)" },
               ticks: { color: "#94a3b8", font: { size: 11 } },
             },
             y: {
               type: "linear",
               display: true,
               position: "left",
-              grid: { color: "rgba(51, 65, 85, 0.45)", drawBorder: false },
+              grid: { color: "rgba(51, 65, 85, 0.45)" },
               ticks: { color: "#34d399", font: { size: 11 } },
             },
             y1: {
