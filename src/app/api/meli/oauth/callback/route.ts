@@ -74,7 +74,9 @@ export async function GET(req: Request) {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     const code =
-      /seller_meli_oauth|does not exist|P2021|relation.*does not exist/i.test(msg)
+      /seller_meli_oauth|does not exist|P2021|P2022|column.*does not exist|relation.*does not exist/i.test(
+        msg
+      )
         ? "meli_db_schema"
         : "oauth_error";
     return NextResponse.redirect(meliDashboardReturn({ error: code }));

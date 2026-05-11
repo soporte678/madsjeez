@@ -180,7 +180,7 @@ export default function MeliIntegrationView() {
     const ok = searchParams.get("connected");
     const errorMessages: Record<string, string> = {
       meli_db_schema:
-        "La base de datos no tiene la tabla de Mercado Libre. Hay que ejecutar migraciones (prisma migrate deploy) en el servidor y volver a conectar.",
+        "Falta esquema de Mercado Libre en la base (tabla/columnas). Si acabás de desplegar, esperá el pre-deploy de migraciones; si no, ejecutá prisma migrate deploy con la DATABASE_URL de producción y reconectá ML.",
       invalid_state: "La sesión de OAuth caducó o es inválida. Probá “Conectar Mercado Libre” de nuevo.",
       meli_not_configured: "Faltan variables MELI_APP_ID / MELI_CLIENT_SECRET / MELI_REDIRECT_URI en el servidor.",
       users_me_failed: "Mercado Libre no devolvió tu usuario. Reintentá o revisá permisos de la app.",
