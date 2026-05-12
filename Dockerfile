@@ -34,7 +34,7 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends openssl ca-certificates && \
+    apt-get install -y --no-install-recommends openssl ca-certificates coreutils && \
     rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/public ./public
