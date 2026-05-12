@@ -152,6 +152,7 @@ export default function MeliAdsStudioView() {
     try {
       const res = await fetch(`/api/meli/ads/snapshot?analyze=1&days=14&compare_days=${compareDays}&t=${Date.now()}`, {
         cache: "no-store",
+        credentials: "include",
       });
       let data: Record<string, unknown>;
       try {
