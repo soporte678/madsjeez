@@ -11,6 +11,11 @@ import {
   Zap,
   ArrowDown,
   ArrowUp,
+  Activity,
+  BarChart2,
+  Search,
+  Filter,
+  Eye,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -159,6 +164,8 @@ export default function MeliAdsStudioView() {
   const [recFilter, setRecFilter] = useState<"all" | "critical" | "warning" | "virtue">("all");
   /** Detalle largo del análisis por id de recomendación (solo tras “Leer más…”). */
   const [expandedRecAnalysis, setExpandedRecAnalysis] = useState<Record<string, boolean>>({});
+  const [studioTab, setStudioTab] = useState<"overview" | "table">("overview");
+  const [campaignSearch, setCampaignSearch] = useState("");
 
   useEffect(() => {
     const v = readStoredCompareDays();
@@ -273,14 +280,14 @@ export default function MeliAdsStudioView() {
 
   if (sess === "loading") {
     return (
-      <div className="flex justify-center rounded-2xl border border-slate-800 bg-[#0a0f18] py-20">
+      <div className="flex justify-center rounded-xl border border-gray-800 bg-[#0A0F1C] py-20 shadow-lg">
         <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
       </div>
     );
   }
 
   if (sess === "unauthenticated") {
-    return <p className="text-sm text-slate-400">Iniciá sesión para usar esta herramienta.</p>;
+    return <p className="text-sm text-gray-400">Iniciá sesión para usar esta herramienta.</p>;
   }
 
   const recs = snapshot?.recommendations ?? [];
@@ -354,6 +361,11 @@ export default function MeliAdsStudioView() {
     });
     return arr;
   })();
+
+  const campaignQuery = campaignSearch.trim().toLowerCase();
+  const filteredSortedCamps = campaignQuery
+    ? sortedCamps.filter((c) => (c.name || String(c.id)).toLowerCase().includes(campaignQuery))
+    : sortedCamps;
 
   const renameCampaign = async (c: SnapshotCampaign) => {
     const rowKey = `${c.site_id}-${c.id}`;
@@ -454,128 +466,159 @@ export default function MeliAdsStudioView() {
   };
 
   return (
-    <div className="max-w-[1600px] space-y-8 rounded-2xl border border-slate-800 bg-[#0a0f18] p-4 text-slate-100 shadow-2xl sm:p-6 lg:p-8">
-      <header className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-        <div className="max-w-3xl flex-1 space-y-3">
-          <h2 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
-            Mercado Libre Ads <span className="text-blue-500">—</span> Estudio automático
-          </h2>
-          <p className="text-sm leading-relaxed text-slate-400">
-            Traemos tus campañas de <strong className="text-slate-200">Product Ads (PADS)</strong>, métricas recientes de
-            Mercado Libre y un <strong className="text-slate-200">análisis automático</strong> con reglas de performance
-            (CTR, ACOS vs valor de referencia, pérdida por presupuesto, ROAS). Podés aplicar los cambios sugeridos vía
-            API (presupuesto, estrategia, ROAS objetivo, estado).
-          </p>
-          <p className="rounded-lg border border-amber-500/25 bg-amber-950/40 px-3 py-2 text-xs text-amber-100/90">
-            Requiere tener Product Ads habilitado en Mercado Libre y scopes OAuth adecuados. Si ves 404 en anunciantes,
-            activá las campañas desde ML → Gestión de publicaciones → Publicidad.
-          </p>
-          {snapshot?.dailyCutoff && (
-            <p className="text-xs text-slate-500">
-              <strong className="text-slate-300">Corte diario guardado:</strong> día civil{" "}
-              <span className="font-mono text-slate-400">{snapshot.dailyCutoff.bucketDateKey}</span> (
-              {snapshot.dailyCutoff.timezone}). La lectura en vivo de ML se actualiza seguido; los totales históricos y los
-              acumulados por ventana usan solo una fila por día (
-              {snapshot.dailyCutoff.snapshotUpdatedAt
-                ? `última escritura ${new Date(snapshot.dailyCutoff.snapshotUpdatedAt).toLocaleString("es-AR")}`
-                : "sin marca de tiempo"}
-              ).
+    <div className="min-h-[50vh] bg-[#0A0F1C] text-gray-300">
+      <div className="mx-auto max-w-[1400px] space-y-6 p-4 sm:p-6 lg:p-8">
+        <header className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-3xl flex-1 space-y-3">
+            <h2 className="flex items-center gap-3 text-2xl font-bold tracking-tight text-white sm:text-3xl">
+              <Zap className="h-7 w-7 shrink-0 fill-blue-500/20 text-blue-500" aria-hidden />
+              Mercado Libre Ads <span className="text-blue-500">—</span> Estudio automático
+            </h2>
+            <p className="text-sm leading-relaxed text-gray-400">
+              Traemos tus campañas de <strong className="text-gray-200">Product Ads (PADS)</strong>, métricas recientes de
+              Mercado Libre y un <strong className="text-gray-200">análisis automático</strong> con reglas de performance.
+              Revisá las alertas y aplicá los cambios sugeridos.
             </p>
-          )}
-          <details className="group rounded-xl border border-slate-700/50 bg-slate-900/70 shadow-[0_4px_24px_rgba(0,0,0,0.35)] backdrop-blur-md transition-all">
-            <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-2 text-sm font-medium text-slate-300 hover:text-white [&::-webkit-details-marker]:hidden">
-              <span className="flex items-center gap-2">
-                <span aria-hidden>📖</span> Ver glosario rápido (acrónimos)
-              </span>
-              <span className="transition-transform duration-300 group-open:-rotate-180">▼</span>
-            </summary>
-            <div className="grid grid-cols-1 gap-2 border-t border-slate-700/50 px-4 pb-4 pt-3 text-xs text-slate-400 md:grid-cols-2 md:gap-x-8">
-              <p>
-                <strong className="text-slate-200">PADS:</strong> Product Ads de Mercado Libre; campañas de publicidad
-                sobre publicaciones.
+            <p className="rounded-lg border border-amber-500/30 bg-amber-950/40 px-3 py-2 text-xs text-amber-100/90">
+              Requiere tener Product Ads habilitado en Mercado Libre y scopes OAuth adecuados. Si ves 404 en anunciantes,
+              activá las campañas desde ML → Gestión de publicaciones → Publicidad.
+            </p>
+            {snapshot?.dailyCutoff && (
+              <p className="text-xs text-gray-500">
+                <strong className="text-gray-300">Corte diario guardado:</strong> día civil{" "}
+                <span className="font-mono text-gray-400">{snapshot.dailyCutoff.bucketDateKey}</span> (
+                {snapshot.dailyCutoff.timezone}). La lectura en vivo de ML se actualiza seguido; los totales históricos y los
+                acumulados por ventana usan solo una fila por día (
+                {snapshot.dailyCutoff.snapshotUpdatedAt
+                  ? `última escritura ${new Date(snapshot.dailyCutoff.snapshotUpdatedAt).toLocaleString("es-AR")}`
+                  : "sin marca de tiempo"}
+                ).
               </p>
-              <p>
-                <strong className="text-slate-200">CTR:</strong> porcentaje de clics sobre impresiones (clicks /
-                impresiones).
-              </p>
-              <p>
-                <strong className="text-slate-200">ACOS:</strong> costo publicitario sobre ventas atribuidas (costo /
-                ingresos Ads).
-              </p>
-              <p>
-                <strong className="text-slate-200">ROAS:</strong> ingresos Ads / costo (multiplicador).
-              </p>
-              <p>
-                <strong className="text-slate-200">API:</strong> conexión automática entre sistemas para leer datos y
-                aplicar cambios.
-              </p>
-              <p>
-                <strong className="text-slate-200">ML:</strong> abreviatura de Mercado Libre.
-              </p>
-              <p>
-                <strong className="text-slate-200">OAuth:</strong> autorización segura para dar permisos sin compartir
-                contraseña.
-              </p>
-              <p>
-                <strong className="text-slate-200">Pts. porcentuales:</strong> diferencia entre dos porcentajes (ej.: 2.0%
-                a 2.5% = +0.5 pts. porcentuales).
-              </p>
-            </div>
-          </details>
-        </div>
-
-        <div className="flex w-full flex-col gap-3 lg:w-auto lg:items-end">
-          <div className="flex flex-wrap items-center justify-end gap-3">
-            {snapshot?.fetchedAt && (
-              <span className="font-mono text-xs text-slate-500">
-                Última lectura: {new Date(snapshot.fetchedAt).toLocaleString("es-AR")}
-              </span>
             )}
-            <button
-              type="button"
-              disabled={loading}
-              onClick={() => load()}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-800 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-slate-700 disabled:opacity-50"
-            >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-              Actualizar datos y análisis
-            </button>
+            <details className="group rounded-xl border border-gray-800 bg-[#131A2A] shadow-lg transition-all">
+              <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-2 text-sm font-medium text-gray-300 hover:text-white [&::-webkit-details-marker]:hidden">
+                <span className="flex items-center gap-2">
+                  <span aria-hidden>📖</span> Ver glosario rápido (acrónimos)
+                </span>
+                <span className="transition-transform duration-300 group-open:-rotate-180">▼</span>
+              </summary>
+              <div className="grid grid-cols-1 gap-2 border-t border-gray-800 px-4 pb-4 pt-3 text-xs text-gray-400 md:grid-cols-2 md:gap-x-8">
+                <p>
+                  <strong className="text-gray-200">PADS:</strong> Product Ads de Mercado Libre; campañas de publicidad
+                  sobre publicaciones.
+                </p>
+                <p>
+                  <strong className="text-gray-200">CTR:</strong> porcentaje de clics sobre impresiones (clicks /
+                  impresiones).
+                </p>
+                <p>
+                  <strong className="text-gray-200">ACOS:</strong> costo publicitario sobre ventas atribuidas (costo /
+                  ingresos Ads).
+                </p>
+                <p>
+                  <strong className="text-gray-200">ROAS:</strong> ingresos Ads / costo (multiplicador).
+                </p>
+                <p>
+                  <strong className="text-gray-200">API:</strong> conexión automática entre sistemas para leer datos y
+                  aplicar cambios.
+                </p>
+                <p>
+                  <strong className="text-gray-200">ML:</strong> abreviatura de Mercado Libre.
+                </p>
+                <p>
+                  <strong className="text-gray-200">OAuth:</strong> autorización segura para dar permisos sin compartir
+                  contraseña.
+                </p>
+                <p>
+                  <strong className="text-gray-200">Pts. porcentuales:</strong> diferencia entre dos porcentajes (ej.: 2.0%
+                  a 2.5% = +0.5 pts. porcentuales).
+                </p>
+              </div>
+            </details>
           </div>
-          <div className="flex w-full flex-wrap items-center gap-1 overflow-x-auto rounded-lg border border-slate-700/50 bg-slate-900/70 p-1 shadow-inner backdrop-blur-md lg:w-auto">
-            <span className="whitespace-nowrap px-2 py-1.5 text-xs font-medium text-slate-400">Comparar:</span>
-            {[1, 2, 3, 5, 7, 15, 20, 30].map((days) => {
-              const active = compareDays === days;
-              return (
-                <button
-                  key={days}
-                  type="button"
-                  onClick={() => onChangeCompareDays(days)}
-                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 ${
-                    active ? "bg-blue-600 text-white shadow-sm" : "text-slate-400 hover:bg-slate-800/80 hover:text-white"
-                  }`}
-                  aria-pressed={active}
-                >
-                  {days === 1 ? "24h" : `${days}d`}
-                </button>
-              );
-            })}
-          </div>
-          <p className="text-right text-[11px] text-slate-500">
-            Ventana métricas ML: {snapshot?.metricsDays ?? 14} días · Comparás contra período anterior de{" "}
-            <span className="font-medium text-slate-400">
-              {compareDays === 1 ? "24h" : `${compareDays}d`}
-            </span>
-          </p>
-        </div>
-      </header>
 
+          <div className="flex w-full flex-col gap-3 lg:w-auto lg:items-end">
+            <div className="flex flex-wrap items-center justify-end gap-3">
+              {snapshot?.fetchedAt && (
+                <span className="flex items-center gap-2 font-mono text-xs text-gray-500">
+                  Última lectura: {new Date(snapshot.fetchedAt).toLocaleString("es-AR")}
+                  <RefreshCw className="h-3 w-3 cursor-pointer hover:text-white" aria-hidden />
+                </span>
+              )}
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => load()}
+                className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-black shadow-sm transition-colors hover:bg-gray-200 disabled:opacity-50"
+              >
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                Actualizar datos y análisis
+              </button>
+            </div>
+            <div className="flex w-full flex-wrap items-center gap-1 overflow-x-auto rounded-lg border border-gray-800 bg-[#131A2A] p-1 lg:w-auto">
+              <span className="whitespace-nowrap px-2 py-1.5 text-xs font-medium text-gray-500">Comparar:</span>
+              {[1, 2, 3, 5, 7, 15, 20, 30].map((days) => {
+                const active = compareDays === days;
+                return (
+                  <button
+                    key={days}
+                    type="button"
+                    onClick={() => onChangeCompareDays(days)}
+                    className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 ${
+                      active ? "bg-blue-600 text-white shadow-sm" : "text-gray-400 hover:bg-gray-800/80 hover:text-white"
+                    }`}
+                    aria-pressed={active}
+                  >
+                    {days === 1 ? "24h" : `${days}d`}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-right text-[11px] text-gray-500">
+              Ventana métricas ML: {snapshot?.metricsDays ?? 14} días · Comparás contra período anterior de{" "}
+              <span className="font-medium text-gray-400">
+                {compareDays === 1 ? "24h" : `${compareDays}d`}
+              </span>
+            </p>
+          </div>
+        </header>
+
+        <nav className="flex border-b border-gray-800" aria-label="Secciones del estudio">
+          <button
+            type="button"
+            onClick={() => setStudioTab("overview")}
+            className={`flex items-center gap-2 px-6 py-3 text-sm font-medium transition-colors ${
+              studioTab === "overview"
+                ? "border-b-2 border-blue-500 text-blue-400"
+                : "border-b-2 border-transparent text-gray-400 hover:text-white"
+            }`}
+          >
+            <Activity className="h-4 w-4" aria-hidden />
+            Resumen y alertas
+          </button>
+          <button
+            type="button"
+            onClick={() => setStudioTab("table")}
+            className={`flex items-center gap-2 px-6 py-3 text-sm font-medium transition-colors ${
+              studioTab === "table"
+                ? "border-b-2 border-blue-500 text-blue-400"
+                : "border-b-2 border-transparent text-gray-400 hover:text-white"
+            }`}
+          >
+            <BarChart2 className="h-4 w-4" aria-hidden />
+            Gestión detallada de campañas
+          </button>
+        </nav>
+
+        {studioTab === "overview" && (
+          <div className="space-y-8">
       {(snapshot?.rolledTotals?.length ?? 0) > 0 && (
         <section className="space-y-4">
           <div>
             <h3 className="text-sm font-semibold text-white">Totales acumulados (cortes diarios guardados)</h3>
-            <p className="mt-1 text-xs text-slate-400">
-              Cada día guardamos métricas PADS de Mercado Libre para <strong className="text-slate-300">ese día civil</strong>{" "}
-              (Argentina). Acá se <strong className="text-slate-300">suman</strong> costo, ingresos y profit entre esos
+            <p className="mt-1 text-xs text-gray-400">
+              Cada día guardamos métricas PADS de Mercado Libre para <strong className="text-gray-200">ese día civil</strong>{" "}
+              (Argentina). Acá se <strong className="text-gray-200">suman</strong> costo, ingresos y profit entre esos
               cortes; CTR, ACOS y ROAS salen de los agregados. Si falta un día en la ventana, “días con dato” será menor al
               largo de la ventana.
             </p>
@@ -586,38 +629,38 @@ export default function MeliAdsStudioView() {
               return (
                 <div
                   key={roll.windowDays}
-                  className="rounded-xl border border-slate-700/50 bg-slate-900/70 p-4 shadow-[0_4px_24px_rgba(0,0,0,0.35)] backdrop-blur-md"
+                  className="rounded-xl border border-gray-800 bg-[#131A2A] p-4 shadow-lg transition-colors hover:border-gray-700"
                 >
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Últimos {roll.windowDays} días</p>
-                  <p className="mb-2 text-[11px] text-slate-500">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Últimos {roll.windowDays} días</p>
+                  <p className="mb-2 text-[11px] text-gray-500">
                     {roll.daysIncluded}/{roll.windowDays} días con corte guardado
                   </p>
                   <dl className="space-y-1 text-xs">
                     <div className="flex justify-between gap-2">
-                      <dt className="text-slate-400">Costo</dt>
-                      <dd className="font-semibold text-slate-100">{money(t.cost)}</dd>
+                      <dt className="text-gray-400">Costo</dt>
+                      <dd className="font-semibold text-white">{money(t.cost)}</dd>
                     </div>
                     <div className="flex justify-between gap-2">
-                      <dt className="text-slate-400">Ingresos Ads</dt>
-                      <dd className="font-semibold text-slate-100">{money(t.revenue)}</dd>
+                      <dt className="text-gray-400">Ingresos Ads</dt>
+                      <dd className="font-semibold text-white">{money(t.revenue)}</dd>
                     </div>
                     <div className="flex justify-between gap-2">
-                      <dt className="text-slate-400">Profit</dt>
+                      <dt className="text-gray-400">Profit</dt>
                       <dd className={`font-semibold ${num(t.profit) >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
                         {money(t.profit)}
                       </dd>
                     </div>
                     <div className="flex justify-between gap-2">
-                      <dt className="text-slate-400">CTR</dt>
-                      <dd className="font-medium text-slate-200">{pct(t.ctr)}</dd>
+                      <dt className="text-gray-400">CTR</dt>
+                      <dd className="font-medium text-gray-200">{pct(t.ctr)}</dd>
                     </div>
                     <div className="flex justify-between gap-2">
-                      <dt className="text-slate-400">ACOS</dt>
-                      <dd className="font-medium text-slate-200">{pct(t.acos)}</dd>
+                      <dt className="text-gray-400">ACOS</dt>
+                      <dd className="font-medium text-gray-200">{pct(t.acos)}</dd>
                     </div>
                     <div className="flex justify-between gap-2">
-                      <dt className="text-slate-400">ROAS</dt>
-                      <dd className="font-medium text-sky-400">{ratio(t.roas)}x</dd>
+                      <dt className="text-gray-400">ROAS</dt>
+                      <dd className="font-medium text-blue-400">{ratio(t.roas)}x</dd>
                     </div>
                   </dl>
                 </div>
@@ -628,14 +671,14 @@ export default function MeliAdsStudioView() {
       )}
 
       {(snapshot?.dailyHistory?.length ?? 0) > 0 && (
-        <section className="overflow-hidden rounded-xl border border-slate-700/50 bg-slate-900/70 shadow-[0_4px_24px_rgba(0,0,0,0.35)] backdrop-blur-md">
-          <div className="border-b border-slate-700/50 bg-slate-900/80 px-4 py-3">
+        <section className="overflow-hidden rounded-xl border border-gray-800 bg-[#131A2A] shadow-lg">
+          <div className="border-b border-gray-800 bg-[#1A2235] px-4 py-3">
             <h3 className="text-sm font-semibold text-white">Historial de cortes diarios</h3>
-            <p className="mt-0.5 text-xs text-slate-400">Una fila por día civil (Argentina). Orden: más reciente arriba.</p>
+            <p className="mt-0.5 text-xs text-gray-400">Una fila por día civil (Argentina). Orden: más reciente arriba.</p>
           </div>
           <div className="max-h-72 overflow-x-auto overflow-y-auto">
             <table className="min-w-full text-xs">
-              <thead className="sticky top-0 z-10 bg-slate-900/95 text-slate-400 backdrop-blur-sm">
+              <thead className="sticky top-0 z-10 bg-[#1A2235] text-gray-400 backdrop-blur-sm">
                 <tr>
                   <th className="px-3 py-2 text-left font-medium">Día (AR)</th>
                   <th className="px-3 py-2 text-left font-medium">Actualizado</th>
@@ -645,19 +688,19 @@ export default function MeliAdsStudioView() {
                   <th className="px-3 py-2 text-right font-medium">ROAS</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800">
+              <tbody className="divide-y divide-gray-800/80">
                 {[...(snapshot?.dailyHistory ?? [])].reverse().map((row) => (
-                  <tr key={row.bucketDateKey} className="hover:bg-slate-800/40">
-                    <td className="px-3 py-2 font-mono text-slate-200">{row.bucketDateKey}</td>
-                    <td className="px-3 py-2 text-slate-400">{new Date(row.updatedAt).toLocaleString("es-AR")}</td>
-                    <td className="px-3 py-2 text-right font-medium text-slate-100">{money(row.totals.cost)}</td>
-                    <td className="px-3 py-2 text-right font-medium text-slate-100">{money(row.totals.revenue)}</td>
+                  <tr key={row.bucketDateKey} className="hover:bg-[#1C2538]">
+                    <td className="px-3 py-2 font-mono text-gray-200">{row.bucketDateKey}</td>
+                    <td className="px-3 py-2 text-gray-400">{new Date(row.updatedAt).toLocaleString("es-AR")}</td>
+                    <td className="px-3 py-2 text-right font-medium text-white">{money(row.totals.cost)}</td>
+                    <td className="px-3 py-2 text-right font-medium text-white">{money(row.totals.revenue)}</td>
                     <td
                       className={`px-3 py-2 text-right font-medium ${num(row.totals.profit) >= 0 ? "text-emerald-400" : "text-rose-400"}`}
                     >
                       {money(row.totals.profit)}
                     </td>
-                    <td className="px-3 py-2 text-right text-sky-400">{ratio(row.totals.roas)}x</td>
+                    <td className="px-3 py-2 text-right text-blue-400">{ratio(row.totals.roas)}x</td>
                   </tr>
                 ))}
               </tbody>
@@ -675,60 +718,69 @@ export default function MeliAdsStudioView() {
 
       {camps.length > 0 && (
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          <div className="relative overflow-hidden rounded-xl border border-slate-700/50 border-t-2 border-t-slate-500 bg-slate-900/70 p-5 pt-4 shadow-[0_4px_24px_rgba(0,0,0,0.35)] backdrop-blur-md">
-            <h3 className="mb-1 text-xs font-medium uppercase tracking-wider text-slate-400">Presupuesto diario</h3>
-            <p className="text-2xl font-bold text-white">{money(totals.budget)}</p>
-            <div className="mt-2">
-              {num(deltas.budget) === 0 ? (
-                <span className="text-xs text-slate-500">= 0 cambios recientes</span>
-              ) : (
-                renderDelta(num(deltas.budget), "money", "up_good", money, count, { theme: "dark", suffix: " vs ant." })
-              )}
+          <div className="flex flex-col justify-between rounded-xl border border-gray-800 bg-[#131A2A] p-4 shadow-lg transition-colors hover:border-gray-700">
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Presupuesto diario</h3>
+            <div>
+              <p className="text-2xl font-bold text-white">{money(totals.budget)}</p>
+              <div className="mt-2">
+                {num(deltas.budget) === 0 ? (
+                  <span className="text-xs text-gray-500">= 0 cambios recientes</span>
+                ) : (
+                  renderDelta(num(deltas.budget), "money", "up_good", money, count, { theme: "dark", suffix: " vs ant." })
+                )}
+              </div>
             </div>
           </div>
-          <div className="relative overflow-hidden rounded-xl border border-slate-700/50 border-t-2 border-t-blue-500 bg-slate-900/70 p-5 pt-4 shadow-[0_4px_24px_rgba(0,0,0,0.35)] backdrop-blur-md">
-            <div className="absolute -right-4 -top-4 h-16 w-16 rounded-full bg-blue-500/10 blur-2xl" aria-hidden />
-            <h3 className="mb-1 text-xs font-medium uppercase tracking-wider text-slate-400">Gasto (ventana)</h3>
-            <p className="text-2xl font-bold text-white">{money(totals.cost)}</p>
-            <div className="mt-2">
-              {renderDelta(num(deltas.cost), "money", "down_good", money, count, { theme: "dark", suffix: " vs ant." })}
+          <div className="flex flex-col justify-between rounded-xl border border-gray-800 bg-[#131A2A] p-4 shadow-lg transition-colors hover:border-gray-700">
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Gasto (ventana)</h3>
+            <div>
+              <p className="text-2xl font-bold text-white">{money(totals.cost)}</p>
+              <div className="mt-2">
+                {renderDelta(num(deltas.cost), "money", "down_good", money, count, { theme: "dark", suffix: " vs ant." })}
+              </div>
             </div>
           </div>
-          <div className="relative overflow-hidden rounded-xl border border-slate-700/50 border-t-2 border-t-emerald-500 bg-slate-900/70 p-5 pt-4 shadow-[0_4px_24px_rgba(0,0,0,0.35)] backdrop-blur-md">
-            <div className="absolute -right-4 -top-4 h-16 w-16 rounded-full bg-emerald-500/10 blur-2xl" aria-hidden />
-            <h3 className="mb-1 text-xs font-medium uppercase tracking-wider text-slate-400">Ingresos estimados</h3>
-            <p className="text-2xl font-bold text-white">{money(totals.revenue)}</p>
-            <div className="mt-2">
-              {renderDelta(num(deltas.revenue), "money", "up_good", money, count, { theme: "dark", suffix: " vs ant." })}
+          <div className="flex flex-col justify-between rounded-xl border border-gray-800 bg-[#131A2A] p-4 shadow-lg transition-colors hover:border-gray-700">
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Ingresos estimados</h3>
+            <div>
+              <p className="text-2xl font-bold text-white">{money(totals.revenue)}</p>
+              <div className="mt-2">
+                {renderDelta(num(deltas.revenue), "money", "up_good", money, count, { theme: "dark", suffix: " vs ant." })}
+              </div>
             </div>
           </div>
-          <div className="rounded-xl border border-slate-700/50 border-t-2 border-t-indigo-500 bg-slate-900/70 p-5 pt-4 shadow-[0_4px_24px_rgba(0,0,0,0.35)] backdrop-blur-md">
-            <h3 className="mb-1 text-xs font-medium uppercase tracking-wider text-slate-400">Ganancia / profit</h3>
-            <p className={`text-2xl font-bold ${num(totals.profit) >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
-              {money(totals.profit)}
-            </p>
-            <div className="mt-2">
-              {renderDelta(num(deltas.profit), "money", "up_good", money, count, { theme: "dark", suffix: " vs ant." })}
+          <div className="flex flex-col justify-between rounded-xl border border-gray-800 bg-[#131A2A] p-4 shadow-lg transition-colors hover:border-gray-700">
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Ganancia / profit</h3>
+            <div>
+              <p className={`text-2xl font-bold ${num(totals.profit) >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                {money(totals.profit)}
+              </p>
+              <div className="mt-2">
+                {renderDelta(num(deltas.profit), "money", "up_good", money, count, { theme: "dark", suffix: " vs ant." })}
+              </div>
             </div>
           </div>
-          <div className="rounded-xl border border-slate-700/50 border-t-2 border-t-slate-500 bg-slate-900/70 p-5 pt-4 shadow-[0_4px_24px_rgba(0,0,0,0.35)] backdrop-blur-md sm:col-span-2 lg:col-span-1">
-            <h3 className="mb-1 text-xs font-medium uppercase tracking-wider text-slate-400">Proyección factura</h3>
-            <p className="text-2xl font-bold text-slate-200">{money(finance.nextInvoiceProjection)}</p>
-            <p className="mt-2 text-xs text-slate-400">
-              Prom. diario: <span className="font-medium text-slate-300">{money(finance.avgDailySpent)}</span>
-            </p>
+          <div className="flex flex-col justify-between rounded-xl border border-gray-800 bg-[#131A2A] p-4 shadow-lg transition-colors hover:border-gray-700 sm:col-span-2 lg:col-span-1">
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Proyección factura</h3>
+            <div>
+              <p className="text-2xl font-bold text-white">{money(finance.nextInvoiceProjection)}</p>
+              <p className="mt-2 text-xs text-gray-500">
+                Prom. diario: <span className="font-medium text-gray-300">{money(finance.avgDailySpent)}</span>
+              </p>
+            </div>
           </div>
         </section>
       )}
 
       {camps.length > 0 && (
         <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div className="rounded-xl border border-slate-700/50 bg-slate-900/70 p-6 shadow-[0_4px_24px_rgba(0,0,0,0.35)] backdrop-blur-md lg:col-span-2">
+          <div className="rounded-xl border border-gray-800 bg-[#131A2A] p-6 shadow-lg lg:col-span-2">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-              <h3 className="flex items-center gap-2 text-base font-bold text-white">
-                <span aria-hidden>📊</span> Tendencia: ecosistema de marketing
+              <h3 className="flex items-center gap-2 text-base font-semibold text-white">
+                <BarChart2 className="h-5 w-5 text-blue-400" aria-hidden />
+                Tendencia: ecosistema de marketing
               </h3>
-              <span className="rounded bg-slate-800 px-2 py-1 text-xs text-slate-400">
+              <span className="rounded bg-[#1A2235] px-2 py-1 text-xs text-gray-400">
                 {compareDays === 1
                   ? "Ventana gráfico: 24h (1 día con corte)"
                   : `Últimos ${chartWindowDays} días (cortes guardados)`}
@@ -737,60 +789,60 @@ export default function MeliAdsStudioView() {
             {chartSlice.length > 0 ? (
               <MeliAdsEcosystemChart labels={chartLabelsArr} revenueK={revenueK} costK={costK} />
             ) : (
-              <div className="flex h-[280px] items-center justify-center rounded-lg border border-dashed border-slate-700 text-sm text-slate-500 lg:h-[340px]">
+              <div className="flex h-[280px] items-center justify-center rounded-lg border border-dashed border-gray-700 text-sm text-gray-500 lg:h-[340px]">
                 Sin serie diaria todavía: sincronizá para acumular cortes y ver costo vs ingresos en miles ($).
               </div>
             )}
           </div>
 
           <div className="flex flex-col gap-6">
-            <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/15 p-6 shadow-[0_4px_24px_rgba(0,0,0,0.25)] backdrop-blur-md">
-              <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-emerald-400">
-                <Zap className="h-4 w-4" /> Promedio diario (por sync)
+            <div className="rounded-xl border border-gray-800 bg-[#131A2A] p-6 shadow-lg">
+              <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-emerald-400">
+                <Zap className="h-4 w-4" aria-hidden /> Promedio diario (por sync)
               </h3>
               {avgDailyBlock ? (
                 <div className="space-y-4">
-                  <div className="flex items-end justify-between border-b border-slate-700/80 pb-2">
-                    <span className="text-xs text-slate-400">Fecha actual</span>
+                  <div className="flex items-end justify-between border-b border-gray-800 pb-2">
+                    <span className="text-xs text-gray-400">Fecha actual</span>
                     <span className="text-sm font-medium text-white">{avgDailyBlock.lastDay}</span>
                   </div>
-                  <div className="flex items-end justify-between border-b border-slate-700/80 pb-2">
-                    <span className="text-xs text-slate-400">Costo promedio</span>
+                  <div className="flex items-end justify-between border-b border-gray-800 pb-2">
+                    <span className="text-xs text-gray-400">Costo promedio</span>
                     <span className="text-sm font-medium text-rose-400">{money(avgDailyBlock.avgCost)}</span>
                   </div>
                   <div className="flex items-end justify-between">
-                    <span className="text-xs text-slate-400">Profit promedio</span>
+                    <span className="text-xs text-gray-400">Profit promedio</span>
                     <span className="text-sm font-bold text-emerald-400">{money(avgDailyBlock.avgProfit)}</span>
                   </div>
                 </div>
               ) : (
-                <p className="text-xs text-slate-500">Todavía no hay cortes diarios guardados para promediar.</p>
+                <p className="text-xs text-gray-500">Todavía no hay cortes diarios guardados para promediar.</p>
               )}
             </div>
 
-            <div className="flex flex-1 flex-col rounded-xl border border-slate-700/50 bg-slate-900/70 p-6 shadow-[0_4px_24px_rgba(0,0,0,0.35)] backdrop-blur-md">
-              <h3 className="mb-4 text-sm font-bold text-white">Resumen de impacto</h3>
+            <div className="flex flex-1 flex-col rounded-xl border border-gray-800 bg-[#131A2A] p-6 shadow-lg">
+              <h3 className="mb-4 text-sm font-semibold text-white">Resumen de impacto</h3>
               <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-lg border border-emerald-700/40 bg-emerald-900/25 p-3 text-center">
-                  <div className="mb-1 text-xs font-medium text-emerald-400">Positivos</div>
-                  <div className="text-xl font-bold text-white">{changeSummary.positive}</div>
+                <div className="flex flex-col items-center justify-center rounded-lg border border-emerald-500/30 bg-[#0A0F1C] p-3 text-emerald-400">
+                  <span className="text-xl font-bold text-white">{changeSummary.positive}</span>
+                  <span className="text-xs uppercase tracking-wider opacity-80">Positivo</span>
                 </div>
-                <div className="rounded-lg border border-rose-700/40 bg-rose-900/25 p-3 text-center">
-                  <div className="mb-1 text-xs font-medium text-rose-400">Negativos</div>
-                  <div className="text-xl font-bold text-white">{changeSummary.negative}</div>
+                <div className="flex flex-col items-center justify-center rounded-lg border border-rose-500/30 bg-[#0A0F1C] p-3 text-rose-400">
+                  <span className="text-xl font-bold text-white">{changeSummary.negative}</span>
+                  <span className="text-xs uppercase tracking-wider opacity-80">Negativo</span>
                 </div>
-                <div className="rounded-lg border border-slate-600 bg-slate-800/80 p-3 text-center">
-                  <div className="mb-1 text-xs font-medium text-slate-300">Neutrales</div>
-                  <div className="text-xl font-bold text-white">{changeSummary.neutral}</div>
+                <div className="flex flex-col items-center justify-center rounded-lg border border-gray-600/50 bg-[#0A0F1C] p-3 text-gray-400">
+                  <span className="text-xl font-bold text-white">{changeSummary.neutral}</span>
+                  <span className="text-xs uppercase tracking-wider opacity-80">Neutral</span>
                 </div>
-                <div className="rounded-lg border border-amber-700/40 bg-amber-900/25 p-3 text-center ring-1 ring-amber-500/20">
-                  <div className="mb-1 text-xs font-medium text-amber-400">Pendientes</div>
-                  <div className="text-xl font-bold text-white">{changeSummary.pending}</div>
+                <div className="flex flex-col items-center justify-center rounded-lg border border-amber-500/30 bg-[#0A0F1C] p-3 text-amber-400">
+                  <span className="text-xl font-bold text-white">{changeSummary.pending}</span>
+                  <span className="text-xs uppercase tracking-wider opacity-80">Pendiente</span>
                 </div>
               </div>
-              <p className="mt-3 text-center text-[10px] leading-tight text-slate-500">
+              <p className="mt-3 text-center text-[10px] leading-tight text-gray-500">
                 La evaluación se recalcula al sincronizar comparando CTR / ACOS / ROAS vs el período anterior (
-                {compareDays}d).
+                {compareDays === 1 ? "24h" : `${compareDays}d`}).
               </p>
             </div>
           </div>
@@ -798,20 +850,21 @@ export default function MeliAdsStudioView() {
       )}
 
       {comparisons.length > 0 && (
-        <details className="group overflow-hidden rounded-xl border border-slate-700/50 bg-slate-900/70 shadow-[0_4px_24px_rgba(0,0,0,0.35)] backdrop-blur-md">
-          <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800/50 [&::-webkit-details-marker]:hidden">
+        <details className="group overflow-hidden rounded-xl border border-gray-800 bg-[#131A2A] shadow-lg">
+          <summary className="cursor-pointer list-none bg-[#1A2235] px-4 py-3 text-sm font-semibold text-white hover:bg-[#232D42] [&::-webkit-details-marker]:hidden">
             <span className="flex items-center justify-between gap-2">
               <span className="flex items-center gap-2">
-                <span aria-hidden>📑</span> Informe comparativo del ecosistema (tabla detallada)
+                <BarChart2 className="h-4 w-4 text-blue-400" aria-hidden />
+                Informe comparativo del ecosistema (tabla detallada)
               </span>
-              <span className="text-xs font-normal text-slate-400 transition-transform group-open:-rotate-180">▼</span>
+              <span className="text-xs font-normal text-gray-400 transition-transform group-open:-rotate-180">▼</span>
             </span>
           </summary>
-          <div className="border-t border-slate-700/50 px-4 pb-4 pt-3">
-            <p className="mb-3 text-xs text-slate-400">Estado actual de la ventana vs snapshots históricos comparados.</p>
-            <div className="overflow-x-auto rounded-lg border border-slate-800">
+          <div className="border-t border-gray-800 px-4 pb-4 pt-3">
+            <p className="mb-3 text-xs text-gray-400">Estado actual de la ventana vs snapshots históricos comparados.</p>
+            <div className="overflow-x-auto rounded-lg border border-gray-800">
               <table className="min-w-full text-xs">
-                <thead className="bg-slate-950/90 text-slate-400">
+                <thead className="bg-[#1A2235] text-gray-400">
                   <tr>
                     <th className="px-3 py-2 text-left font-medium">Métrica</th>
                     <th className="px-3 py-2 text-right font-medium">Ahora</th>
@@ -822,7 +875,7 @@ export default function MeliAdsStudioView() {
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800">
+                <tbody className="divide-y divide-gray-800/80">
                   {[
                     { key: "cost", label: "Costo", fmt: "money" as const },
                     { key: "revenue", label: "Revenue", fmt: "money" as const },
@@ -843,8 +896,8 @@ export default function MeliAdsStudioView() {
                             ? `${v.toFixed(2)}x`
                             : count(v);
                     return (
-                      <tr key={row.key} className="hover:bg-slate-800/30">
-                        <td className="px-3 py-2 font-medium text-slate-200">{row.label}</td>
+                      <tr key={row.key} className="hover:bg-[#1C2538]">
+                        <td className="px-3 py-2 font-medium text-gray-200">{row.label}</td>
                         <td className="px-3 py-2 text-right font-semibold text-white">{format(nowVal)}</td>
                         {comparisons.map((c) => {
                           const old = num(c.metrics[row.key] ?? 0);
@@ -852,7 +905,7 @@ export default function MeliAdsStudioView() {
                           const direction: "up_good" | "down_good" =
                             row.key === "cost" || row.key === "acos" ? "down_good" : "up_good";
                           return (
-                            <td key={`${row.key}-${c.daysAgo}`} className="px-3 py-2 text-right text-slate-300">
+                            <td key={`${row.key}-${c.daysAgo}`} className="px-3 py-2 text-right text-gray-300">
                               <div>{format(old)}</div>
                               {renderDelta(
                                 delta,
@@ -880,9 +933,10 @@ export default function MeliAdsStudioView() {
           <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h3 className="flex items-center gap-2 text-xl font-bold text-white">
-                <span aria-hidden>🧠</span> Análisis automático — acciones sugeridas
+                <Zap className="h-6 w-6 fill-amber-400/15 text-amber-400" aria-hidden />
+                Análisis automático — acciones sugeridas
               </h3>
-              <p className="mt-1 text-sm text-slate-400">
+              <p className="mt-1 text-sm text-gray-400">
                 Revisá las alertas detectadas por el algoritmo y aplicá los cambios con un clic.
               </p>
             </div>
@@ -890,7 +944,7 @@ export default function MeliAdsStudioView() {
               type="button"
               disabled={applying || loading}
               onClick={applySelected}
-              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white shadow-lg shadow-emerald-500/20 transition-colors hover:bg-emerald-500 disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-emerald-500 disabled:opacity-50"
             >
               {applying ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
               Aplicar seleccionadas en ML
@@ -900,10 +954,10 @@ export default function MeliAdsStudioView() {
           <div className="mb-3 flex flex-wrap gap-2 overflow-x-auto pb-1">
             {(
               [
-                { id: "all" as const, label: `Todas (${recs.length})`, classes: "bg-slate-700 text-white" },
-                { id: "critical" as const, label: `🔴 Crítico (${countCritical})`, accent: "hover:border-rose-500/40 text-rose-400" },
-                { id: "warning" as const, label: `🟡 Advertencia (${countWarning})`, accent: "hover:border-amber-500/40 text-amber-400" },
-                { id: "virtue" as const, label: `🟢 Virtudes (${countVirtue})`, accent: "hover:border-emerald-500/40 text-emerald-400" },
+                { id: "all" as const, label: `Todas (${recs.length})`, classes: "bg-blue-600 text-white" },
+                { id: "critical" as const, label: `Crítico (${countCritical})`, accent: "border-gray-700 text-rose-400 hover:border-rose-500/40" },
+                { id: "warning" as const, label: `Advertencia (${countWarning})`, accent: "border-gray-700 text-amber-400 hover:border-amber-500/40" },
+                { id: "virtue" as const, label: `Virtudes (${countVirtue})`, accent: "border-gray-700 text-emerald-400 hover:border-emerald-500/40" },
               ] as const
             ).map((btn) => {
               const active = recFilter === btn.id;
@@ -912,12 +966,12 @@ export default function MeliAdsStudioView() {
                   key={btn.id}
                   type="button"
                   onClick={() => setRecFilter(btn.id)}
-                  className={`whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                  className={`whitespace-nowrap rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
                     active
                       ? btn.id === "all"
-                        ? btn.classes
-                        : `bg-slate-700 text-white ring-1 ring-white/10`
-                      : `border border-slate-700/80 bg-slate-900/60 ${"accent" in btn ? btn.accent : ""} hover:bg-slate-800/90`
+                        ? `${btn.classes} border-transparent`
+                        : `border-gray-600 bg-[#232D42] text-white`
+                      : `border bg-[#131A2A] ${"accent" in btn ? btn.accent : ""} hover:bg-[#1C2538]`
                   }`}
                 >
                   {btn.label}
@@ -927,7 +981,7 @@ export default function MeliAdsStudioView() {
           </div>
 
           {filteredRecs.length === 0 ? (
-            <p className="rounded-xl border border-slate-700/50 bg-slate-900/60 px-4 py-6 text-center text-sm text-slate-400">
+            <p className="rounded-xl border border-gray-800 bg-[#131A2A] px-4 py-6 text-center text-sm text-gray-400 shadow-lg">
               No hay acciones en esta categoría con los filtros actuales.
             </p>
           ) : (
@@ -936,85 +990,93 @@ export default function MeliAdsStudioView() {
                 const tone =
                   r.severity === "critical"
                     ? {
-                        bar: "border-l-rose-500 bg-rose-950/25 border-rose-500/35",
                         chip: "text-rose-400",
-                        label: "🔴 Acción urgente",
+                        label: "Acción urgente",
+                        icon: "alert" as const,
                       }
                     : r.severity === "warning"
                       ? {
-                          bar: "border-l-amber-500 bg-amber-950/20 border-amber-500/35",
                           chip: "text-amber-400",
-                          label: "🟡 Acción recomendada",
+                          label: "Acción recomendada",
+                          icon: "alert" as const,
                         }
                       : r.expectedImpact === "positive"
                         ? {
-                            bar: "border-l-emerald-500 bg-emerald-950/20 border-emerald-500/35",
                             chip: "text-emerald-400",
-                            label: "🟢 Virtud detectada",
+                            label: "Virtud detectada",
+                            icon: "ok" as const,
                           }
                         : {
-                            bar: "border-l-sky-500 bg-slate-900/40 border-slate-600/60",
                             chip: "text-sky-300",
-                            label: "🔵 Informativo",
+                            label: "Informativo",
+                            icon: "ok" as const,
                           };
                 const confPct = r.confidence <= 1 ? (r.confidence * 100).toFixed(0) : Number(r.confidence).toFixed(0);
                 return (
                   <div
                     key={r.id}
-                    className={`flex gap-4 rounded-r-xl border border-l-4 p-4 shadow-[0_4px_24px_rgba(0,0,0,0.35)] transition-transform hover:-translate-y-0.5 ${tone.bar}`}
+                    className="group flex gap-4 rounded-xl border border-gray-800 bg-[#131A2A] p-4 shadow-lg transition-all hover:border-blue-500/50"
                   >
                     <div className="pt-1">
                       <input
                         type="checkbox"
-                        className="h-4 w-4 rounded border-slate-600 bg-slate-800 accent-emerald-500 focus:ring-emerald-500 focus:ring-offset-slate-900"
+                        className="h-4 w-4 rounded border-gray-600 bg-[#0A0F1C] accent-emerald-500 focus:ring-emerald-500 focus:ring-offset-[#131A2A]"
                         checked={Boolean(selected[r.id])}
                         onChange={() => toggleRec(r.id)}
                       />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className={`mb-2 text-[11px] font-semibold uppercase tracking-wider ${tone.chip}`}>{tone.label}</div>
-                      <h4 className="mb-2 text-base font-bold text-white">{r.title}</h4>
-                      <div className="mb-3 flex flex-wrap gap-2 font-mono text-[10px]">
-                        <span className="rounded border border-slate-600 bg-slate-800/90 px-2 py-0.5 text-slate-300">
+                      <div className="mb-2 flex items-center gap-2">
+                        {tone.icon === "alert" ? (
+                          <AlertTriangle className={`h-4 w-4 shrink-0 ${tone.chip}`} aria-hidden />
+                        ) : (
+                          <CheckCircle2 className={`h-4 w-4 shrink-0 ${tone.chip}`} aria-hidden />
+                        )}
+                        <span className="text-xs font-bold uppercase tracking-wide text-gray-400">Motivo detectado</span>
+                      </div>
+                      <div className={`mb-1 text-[10px] font-semibold uppercase tracking-wider ${tone.chip}`}>{tone.label}</div>
+                      <h4 className="mb-3 text-base font-medium text-white">{r.title}</h4>
+                      <div className="mb-3 flex flex-wrap gap-2">
+                        <span className="rounded border border-blue-500/20 bg-blue-500/10 px-2 py-1 text-[10px] text-blue-400">
                           {categoryLabel(r.category)}
                         </span>
-                        <span className="rounded border border-indigo-700/40 bg-indigo-950/50 px-2 py-0.5 text-indigo-200">
+                        <span className="rounded border border-purple-500/20 bg-purple-500/10 px-2 py-1 text-[10px] text-purple-400">
                           Confianza {confPct}%
                         </span>
                         {typeof r.priorityScore === "number" && (
-                          <span className="rounded border border-fuchsia-700/40 bg-fuchsia-950/40 px-2 py-0.5 text-fuchsia-200">
+                          <span className="rounded border border-pink-500/20 bg-pink-500/10 px-2 py-1 text-[10px] text-pink-400">
                             Prioridad {Math.round(r.priorityScore)}
                           </span>
                         )}
                       </div>
-                      <div className="mb-2 flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-[11px] leading-snug text-slate-500">
-                        <span className="max-w-full truncate font-medium text-slate-300" title={r.campaignName}>
+                      <div className="mb-2 flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-[11px] leading-snug text-gray-500">
+                        <span className="max-w-full truncate font-medium text-gray-200" title={r.campaignName}>
                           {r.campaignName || `Campaña ${r.campaignId}`}
                         </span>
-                        <span className="text-slate-600" aria-hidden>
+                        <span className="text-gray-600" aria-hidden>
                           ·
                         </span>
                         <span>
                           {(r.campaignItemsCount ?? 0) > 0 ? (
                             <>
-                              <span className="tabular-nums text-slate-400">{r.campaignItemsCount}</span>{" "}
+                              <span className="tabular-nums text-gray-400">{r.campaignItemsCount}</span>{" "}
                               producto{(r.campaignItemsCount ?? 0) === 1 ? "" : "s"}
                             </>
                           ) : (
-                            <span className="text-slate-500">Publicaciones: sin dato</span>
+                            <span className="text-gray-500">Publicaciones: sin dato</span>
                           )}
                         </span>
-                        <span className="text-slate-600" aria-hidden>
+                        <span className="text-gray-600" aria-hidden>
                           ·
                         </span>
-                        <span className="tabular-nums text-slate-400">
+                        <span className="tabular-nums text-gray-400">
                           Presup.{" "}
                           {money(
                             typeof r.campaignBudget === "number"
                               ? r.campaignBudget
                               : num((r.applyPayload as { budget?: unknown })?.budget)
                           )}
-                          <span className="text-slate-500"> / día</span>
+                          <span className="text-gray-500"> / día</span>
                           {(() => {
                             const proposed = num((r.applyPayload as { budget?: unknown })?.budget);
                             const cur =
@@ -1027,16 +1089,16 @@ export default function MeliAdsStudioView() {
                               Math.round(proposed * 100) !== Math.round(cur * 100)
                             ) {
                               return (
-                                <span className="text-slate-500">
+                                <span className="text-emerald-400">
                                   {" "}
-                                  (sug.: {money(proposed)})
+                                  (sug. ~{money(proposed)})
                                 </span>
                               );
                             }
                             return null;
                           })()}
                         </span>
-                        <span className="w-full font-mono text-[10px] text-slate-600 sm:w-auto sm:pl-1">
+                        <span className="w-full font-mono text-[10px] text-gray-600 sm:w-auto sm:pl-1">
                           #{r.campaignId}
                         </span>
                       </div>
@@ -1057,12 +1119,15 @@ export default function MeliAdsStudioView() {
                             : "Leer más detalles del análisis"}
                         </button>
                         {expandedRecAnalysis[r.id] && (
-                          <p className="mt-2 text-sm leading-relaxed text-slate-300">{r.rationale}</p>
+                          <p className="mt-2 text-sm leading-relaxed text-gray-300">{r.rationale}</p>
                         )}
                       </div>
-                      <div className="flex items-center justify-between border-t border-slate-700/60 pt-2 text-xs text-slate-500">
-                        <span className="text-[10px] text-slate-600">Mercado Libre Ads</span>
-                        <span className="text-emerald-500/80">✓ Lista para aplicar</span>
+                      <div className="mt-4 flex items-center justify-between border-t border-gray-800 pt-3 text-xs text-gray-500">
+                        <span className="text-[10px] text-gray-600">Mercado Libre Ads</span>
+                        <span className="flex items-center gap-1 font-medium text-emerald-400">
+                          <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
+                          Listo para aplicar
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -1073,15 +1138,58 @@ export default function MeliAdsStudioView() {
         </section>
       )}
 
-      {camps.length > 0 && (
-        <section className="flex flex-col overflow-hidden rounded-xl border border-slate-700/50 bg-slate-900/70 shadow-[0_4px_24px_rgba(0,0,0,0.35)] backdrop-blur-md">
-          <div className="flex flex-col gap-4 border-b border-slate-700/50 bg-slate-900/80 p-5 sm:flex-row sm:items-center sm:justify-between">
-            <h3 className="flex items-center gap-2 text-lg font-bold text-white">
-              <Zap className="h-5 w-5 text-amber-400" />
-              Campañas y métricas (ML)
+          {!loading && snapshot && camps.length === 0 && (snapshot.advertisers?.length ?? 0) > 0 && (
+            <div className="space-y-3 rounded-xl border border-gray-800 bg-[#131A2A] p-4 shadow-lg">
+              <p className="text-sm text-gray-400">
+                No hay campañas PADS listadas para estos anunciantes. Si antes veías datos, suele deberse a un rechazo del
+                endpoint de búsqueda de ML o a que la respuesta vino en otro formato; revisá los avisos abajo o en el toast.
+              </p>
+              {Array.isArray(snapshot.errors) && snapshot.errors.length > 0 && (
+                <div className="rounded-lg border border-amber-500/30 bg-amber-950/40 px-3 py-2 text-xs text-amber-50">
+                  <p className="mb-1 font-semibold text-amber-200">Respuesta / rutas ML</p>
+                  <ul className="list-disc space-y-0.5 pl-4 opacity-90">
+                    {snapshot.errors.slice(0, 8).map((e, i) => (
+                      <li key={i}>{e}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+          </div>
+        )}
+
+        {studioTab === "table" && (
+          <>
+            {camps.length > 0 && (
+        <section className="flex flex-col overflow-hidden rounded-xl border border-gray-800 bg-[#131A2A] shadow-lg">
+          <div className="flex flex-col gap-4 border-b border-gray-800 bg-[#1A2235] p-4 sm:flex-row sm:items-center sm:justify-between">
+            <h3 className="flex items-center gap-2 text-lg font-semibold text-white">
+              <BarChart2 className="h-5 w-5 text-blue-400" aria-hidden />
+              Rendimiento detallado
             </h3>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-500" aria-hidden />
+                <input
+                  type="search"
+                  value={campaignSearch}
+                  onChange={(e) => setCampaignSearch(e.target.value)}
+                  placeholder="Buscar campaña…"
+                  className="w-full min-w-[200px] rounded-lg border border-gray-700 bg-[#0A0F1C] py-1.5 pl-8 pr-3 text-sm text-white placeholder:text-gray-600 focus:border-blue-500/50 focus:outline-none sm:w-64"
+                  aria-label="Buscar campaña por nombre"
+                />
+              </div>
+              <span className="hidden items-center gap-2 rounded-lg border border-gray-700 bg-[#232D42] px-3 py-1.5 text-sm text-gray-300 sm:inline-flex" title="Filtros avanzados próximamente">
+                <Filter className="h-3.5 w-3.5" aria-hidden />
+                Filtros
+              </span>
+            </div>
+          </div>
+          <div className="flex flex-col gap-4 border-b border-gray-800 bg-[#1A2235]/80 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-gray-500">Ordenar columnas y dirección (misma lógica que antes).</p>
             <div className="flex flex-wrap items-center gap-2 text-xs">
-              <span className="py-1.5 text-slate-400">Ordenar por:</span>
+              <span className="py-1.5 text-gray-400">Ordenar por:</span>
               {[
                 { id: "name", label: "Nombre" },
                 { id: "clicks", label: "Clics" },
@@ -1099,7 +1207,7 @@ export default function MeliAdsStudioView() {
                     type="button"
                     onClick={() => setSortBy(opt.id as typeof sortBy)}
                     className={`rounded px-3 py-1.5 font-medium transition-colors ${
-                      active ? "bg-blue-600 text-white shadow-sm" : "bg-slate-800 text-slate-200 hover:bg-slate-700"
+                      active ? "bg-blue-600 text-white shadow-sm" : "bg-[#232D42] text-gray-200 hover:bg-gray-700"
                     }`}
                   >
                     {opt.label}
@@ -1113,7 +1221,7 @@ export default function MeliAdsStudioView() {
                 className={`rounded px-3 py-1.5 font-medium transition-colors ${
                   sortDir === "desc"
                     ? "border border-blue-500/40 bg-blue-600/25 text-blue-300"
-                    : "border border-slate-600 bg-slate-800 text-slate-300 hover:bg-slate-700"
+                    : "border border-gray-700 bg-[#232D42] text-gray-300 hover:bg-gray-700"
                 }`}
               >
                 Descendente
@@ -1124,7 +1232,7 @@ export default function MeliAdsStudioView() {
                 className={`rounded px-3 py-1.5 font-medium transition-colors ${
                   sortDir === "asc"
                     ? "border border-blue-500/40 bg-blue-600/25 text-blue-300"
-                    : "border border-slate-600 bg-slate-800 text-slate-300 hover:bg-slate-700"
+                    : "border border-gray-700 bg-[#232D42] text-gray-300 hover:bg-gray-700"
                 }`}
               >
                 Ascendente
@@ -1145,7 +1253,7 @@ export default function MeliAdsStudioView() {
                   setSortBy("clicks");
                   setSortDir("asc");
                 }}
-                className="rounded bg-slate-700 px-2.5 py-1.5 text-white hover:bg-slate-600"
+                className="rounded bg-slate-700 px-2.5 py-1.5 text-white hover:bg-gray-600"
               >
                 Menos clics
               </button>
@@ -1153,19 +1261,19 @@ export default function MeliAdsStudioView() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[920px] text-left text-sm text-slate-300">
-              <thead className="sticky top-0 z-10 bg-slate-950/95 text-xs uppercase tracking-wide text-slate-400 backdrop-blur-sm">
-                <tr className="border-b border-slate-700">
-                  <th className="px-6 py-4 font-semibold">Campaña</th>
-                  <th className="px-6 py-4 font-semibold">Estado / estrategia</th>
-                  <th className="px-6 py-4 text-right font-semibold">Presupuesto</th>
-                  <th className="px-6 py-4 text-right font-semibold">Impresiones / clics</th>
-                  <th className="px-6 py-4 text-right font-semibold">CTR / costo</th>
-                  <th className="px-6 py-4 text-right font-semibold">ACOS / ROAS</th>
+            <table className="w-full min-w-[920px] text-left text-sm whitespace-nowrap text-gray-300">
+              <thead className="sticky top-0 z-10 bg-[#1A2235] text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+                <tr className="border-b border-gray-800">
+                  <th className="px-4 py-3">Campaña</th>
+                  <th className="px-4 py-3">Estado / estrategia</th>
+                  <th className="px-4 py-3 text-right">Presupuesto</th>
+                  <th className="px-4 py-3 text-right">Impresiones / clics</th>
+                  <th className="px-4 py-3 text-right">CTR / costo</th>
+                  <th className="px-4 py-3 text-right">ACOS / ROAS</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800">
-                {sortedCamps.map((c) => {
+              <tbody className="divide-y divide-gray-800/50">
+                {filteredSortedCamps.map((c) => {
                   const m = c.metrics || {};
                   const p = c.metrics_prev || {};
                   const prints = m.prints ?? 0;
@@ -1186,9 +1294,9 @@ export default function MeliAdsStudioView() {
                   const acosTone = acos > 50 ? "text-rose-400" : acos > 30 ? "text-amber-400" : "text-emerald-400";
                   return (
                     <Fragment key={rowKey}>
-                      <tr className="group transition-colors hover:bg-slate-800/40">
-                        <td className="max-w-[280px] px-6 py-4">
-                          <div className="font-semibold text-white group-hover:text-blue-400">{c.name || c.id}</div>
+                      <tr className="transition-colors hover:bg-[#1C2538]">
+                        <td className="max-w-[280px] px-4 py-4 align-top">
+                          <div className="mb-2 font-bold text-white">{c.name || c.id}</div>
                           <div className="mt-2 flex flex-wrap items-center gap-2">
                             {editingCampaignNameRow === rowKey ? (
                               <>
@@ -1230,38 +1338,39 @@ export default function MeliAdsStudioView() {
                                     setEditingCampaignNameRow(rowKey);
                                     setEditingNames((s) => ({ ...s, [rowKey]: c.name ?? "" }));
                                   }}
-                                  className="inline-flex h-8 w-8 items-center justify-center rounded border border-slate-600 bg-slate-900 text-blue-400 hover:bg-slate-800"
+                                  className="inline-flex h-8 items-center justify-center rounded border border-gray-700 bg-gray-800/80 p-1.5 text-gray-400 transition-colors hover:bg-blue-600 hover:text-white"
                                 >
-                                  <Pencil size={13} />
+                                  <Pencil size={12} />
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => toggleCampaignItems(c)}
-                                  className="text-xs font-medium text-blue-400 hover:text-blue-300"
+                                  className="inline-flex h-8 items-center gap-1 rounded border border-gray-700 bg-gray-800/80 px-2 py-1.5 text-[10px] font-medium uppercase tracking-wider text-amber-400 transition-colors hover:bg-gray-700 hover:text-amber-300"
                                 >
-                                  🏷️ Ver artículos
+                                  <Eye size={12} aria-hidden />
+                                  Ver artículos
                                 </button>
                               </>
                             )}
                           </div>
                         </td>
-                        <td className="px-6 py-4 align-top">
-                          <span className="inline-flex items-center gap-1.5 rounded-md border border-emerald-500/25 bg-emerald-500/10 px-2 py-1 text-xs font-medium text-emerald-400">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                        <td className="px-4 py-4 align-top">
+                          <span className="inline-flex items-center gap-1.5 rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold text-emerald-400">
+                            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
                             {statusLabel(c.status)}
                           </span>
-                          <div className="mt-2 text-xs text-slate-400">{strategyLabel(c.strategy)}</div>
+                          <div className="mt-2 text-xs text-gray-400">{strategyLabel(c.strategy)}</div>
                         </td>
-                        <td className="px-6 py-4 text-right align-top">
-                          <div className="font-medium text-emerald-400">{money(c.budget)}</div>
-                          <div className="text-[10px] font-medium uppercase tracking-wide text-slate-500">Diario</div>
+                        <td className="px-4 py-4 text-right align-top">
+                          <div className="font-bold text-emerald-400">{money(c.budget)}</div>
+                          <div className="text-[10px] font-medium uppercase tracking-wide text-gray-500">Diario</div>
                         </td>
-                        <td className="px-6 py-4 text-right align-top">
-                          <div className="text-white">
-                            {count(prints)} <span className="text-xs text-slate-500">vistas</span>
+                        <td className="px-4 py-4 text-right align-top">
+                          <div className="font-medium text-white">
+                            {count(prints)} <span className="text-[10px] font-normal text-gray-500">vistas</span>
                           </div>
-                          <div className="mt-1 text-slate-300">
-                            {count(clicks)} <span className="text-xs text-slate-500">clics</span>
+                          <div className="mt-1 font-medium text-white">
+                            {count(clicks)} <span className="text-[10px] font-normal text-gray-500">clics</span>
                           </div>
                           <div className="mt-1 flex justify-end">
                             {renderDelta(num(prints) - num(p.prints), "number", "up_good", money, count, {
@@ -1274,8 +1383,8 @@ export default function MeliAdsStudioView() {
                             })}
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-right align-top font-mono">
-                          <div className="text-white">{Number.isFinite(ctr) ? pct(ctr) : "—"}</div>
+                        <td className="px-4 py-4 text-right align-top font-mono">
+                          <div className="font-medium text-white">{Number.isFinite(ctr) ? pct(ctr) : "—"}</div>
                           <div className="mt-1 font-sans font-medium text-rose-400">{money(cost)}</div>
                           <div className="mt-1 flex justify-end">
                             {renderDelta(Number.isFinite(ctr) ? ctr - prevCtr : 0, "pct", "up_good", money, count, {
@@ -1286,9 +1395,9 @@ export default function MeliAdsStudioView() {
                             {renderDelta(cost - num(p.cost), "money", "down_good", money, count, { theme: "dark" })}
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-right align-top font-mono">
+                        <td className="px-4 py-4 text-right align-top font-mono">
                           <div className={`font-bold ${acosTone}`}>{pct(acos)}</div>
-                          <div className="mt-1 text-sky-400">{ratio(roas)}x</div>
+                          <div className="mt-1 text-blue-400">{ratio(roas)}x</div>
                           <div className="mt-1 flex justify-end">
                             {renderDelta(acos - num(p.acos), "pct", "down_good", money, count, { theme: "dark" })}
                           </div>
@@ -1298,12 +1407,12 @@ export default function MeliAdsStudioView() {
                         </td>
                       </tr>
                       {isExpanded && (
-                        <tr className="bg-slate-950/50">
-                          <td colSpan={6} className="px-6 py-4">
+                        <tr className="bg-[#0A0F1C]/80">
+                          <td colSpan={6} className="px-4 py-4">
                             {loadingItems[rowKey] ? (
-                              <p className="text-xs text-slate-400">Cargando artículos...</p>
+                              <p className="text-xs text-gray-400">Cargando artículos...</p>
                             ) : (campaignItems[rowKey] ?? []).length === 0 ? (
-                              <p className="text-xs text-slate-400">Sin artículos reportados para esta campaña.</p>
+                              <p className="text-xs text-gray-400">Sin artículos reportados para esta campaña.</p>
                             ) : (
                               <div className="space-y-2">
                                 {(campaignItems[rowKey] ?? []).slice(0, 30).map((it, idx) => {
@@ -1311,15 +1420,15 @@ export default function MeliAdsStudioView() {
                                   return (
                                     <div
                                       key={`${it.item_id ?? idx}`}
-                                      className="flex flex-wrap gap-3 rounded-lg border border-slate-700 bg-slate-900/80 px-3 py-2 text-xs text-slate-300"
+                                      className="flex flex-wrap gap-3 rounded-lg border border-gray-700 bg-[#131A2A] px-3 py-2 text-xs text-gray-300"
                                     >
                                       <span className="font-medium text-white">{it.title || it.item_id || "Ítem"}</span>
-                                      <span className="text-slate-400">ID: {it.item_id || "-"}</span>
-                                      <span className="text-slate-400">Estado: {statusLabel(it.status)}</span>
+                                      <span className="text-gray-400">ID: {it.item_id || "-"}</span>
+                                      <span className="text-gray-400">Estado: {statusLabel(it.status)}</span>
                                       <span>Clicks: {count(mm.clicks ?? 0)}</span>
                                       <span>Impresiones: {count(mm.prints ?? 0)}</span>
                                       <span className="text-rose-300">Costo: {money(mm.cost ?? 0)}</span>
-                                      <span className="text-sky-400">ROAS: {ratio(mm.roas ?? 0)}x</span>
+                                      <span className="text-blue-400">ROAS: {ratio(mm.roas ?? 0)}x</span>
                                     </div>
                                   );
                                 })}
@@ -1332,28 +1441,28 @@ export default function MeliAdsStudioView() {
                   );
                 })}
               </tbody>
-              <tfoot className="border-t border-slate-700 bg-slate-950/90 font-bold text-white">
+              <tfoot className="border-t border-gray-800 bg-[#1A2235] font-bold text-white">
                 <tr>
-                  <td className="px-6 py-4">TOTALES</td>
-                  <td className="px-6 py-4 text-slate-500">—</td>
-                  <td className="px-6 py-4 text-right text-emerald-400">{money(totals.budget)}</td>
-                  <td className="px-6 py-4 text-right">
+                  <td className="px-4 py-4">TOTALES</td>
+                  <td className="px-4 py-4 text-gray-500">—</td>
+                  <td className="px-4 py-4 text-right text-emerald-400">{money(totals.budget)}</td>
+                  <td className="px-4 py-4 text-right">
                     <div>
-                      {count(totals.prints)} <span className="text-xs font-normal text-slate-500">vistas</span>
+                      {count(totals.prints)} <span className="text-xs font-normal text-gray-500">vistas</span>
                     </div>
-                    <div className="mt-1 font-normal text-slate-300">
-                      {count(totals.clicks)} <span className="text-xs text-slate-500">clics</span>
+                    <div className="mt-1 font-normal text-gray-300">
+                      {count(totals.clicks)} <span className="text-xs text-gray-500">clics</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-right font-mono">
+                  <td className="px-4 py-4 text-right font-mono">
                     <div className="font-bold">{pct(totals.ctr)}</div>
                     <div className="mt-1 font-sans font-medium text-rose-400">{money(totals.cost)}</div>
                   </td>
-                  <td className="px-6 py-4 text-right font-mono">
+                  <td className="px-4 py-4 text-right font-mono">
                     <div className={num(totals.acos) > 50 ? "text-rose-400" : num(totals.acos) > 30 ? "text-amber-400" : "text-emerald-400"}>
                       {pct(totals.acos)}
                     </div>
-                    <div className="mt-1 text-sky-400">{ratio(totals.roas)}x</div>
+                    <div className="mt-1 text-blue-400">{ratio(totals.roas)}x</div>
                   </td>
                 </tr>
               </tfoot>
@@ -1362,24 +1471,14 @@ export default function MeliAdsStudioView() {
         </section>
       )}
 
-      {!loading && snapshot && camps.length === 0 && (snapshot.advertisers?.length ?? 0) > 0 && (
-        <div className="space-y-3 rounded-xl border border-slate-700/50 bg-slate-900/70 p-4 backdrop-blur-md">
-          <p className="text-sm text-slate-400">
-            No hay campañas PADS listadas para estos anunciantes. Si antes veías datos, suele deberse a un rechazo del
-            endpoint de búsqueda de ML o a que la respuesta vino en otro formato; revisá los avisos abajo o en el toast.
-          </p>
-          {Array.isArray(snapshot.errors) && snapshot.errors.length > 0 && (
-            <div className="rounded-lg border border-amber-500/30 bg-amber-950/40 px-3 py-2 text-xs text-amber-50">
-              <p className="mb-1 font-semibold text-amber-200">Respuesta / rutas ML</p>
-              <ul className="list-disc space-y-0.5 pl-4 opacity-90">
-                {snapshot.errors.slice(0, 8).map((e, i) => (
-                  <li key={i}>{e}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      )}
+            {camps.length === 0 && (
+              <div className="rounded-xl border border-gray-800 bg-[#131A2A] p-8 text-center text-sm text-gray-400 shadow-lg">
+                No hay campañas para mostrar en la tabla. Usá el resumen o actualizá los datos desde Mercado Libre.
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }
