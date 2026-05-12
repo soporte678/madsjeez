@@ -169,7 +169,9 @@ export default function MeliAdsStudioView() {
 
   useEffect(() => {
     const v = readStoredCompareDays();
-    setCompareDays((prev) => (prev === v ? prev : v));
+    queueMicrotask(() => {
+      setCompareDays((prev) => (prev === v ? prev : v));
+    });
   }, []);
 
   const load = useCallback(async (opts?: { silent?: boolean }) => {
