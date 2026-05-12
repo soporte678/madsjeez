@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import {
   Loader2,
@@ -160,22 +160,18 @@ export default function MeliAdsStudioView() {
   const [expandedCampaignRows, setExpandedCampaignRows] = useState<Record<string, boolean>>({});
   const [campaignItems, setCampaignItems] = useState<Record<string, Array<{ item_id?: string; title?: string; status?: string; metrics?: Record<string, unknown> }>>>({});
   const [loadingItems, setLoadingItems] = useState<Record<string, boolean>>({});
-  const [compareDays, setCompareDays] = useState(1);
+  const [compareDays, setCompareDays] = useState(() => readStoredCompareDays());
   const [recFilter, setRecFilter] = useState<"all" | "critical" | "warning" | "virtue">("all");
   /** Detalle largo del análisis por id de recomendación (solo tras “Leer más…”). */
   const [expandedRecAnalysis, setExpandedRecAnalysis] = useState<Record<string, boolean>>({});
   const [studioTab, setStudioTab] = useState<"overview" | "table">("overview");
   const [campaignSearch, setCampaignSearch] = useState("");
 
-  useEffect(() => {
-    const v = readStoredCompareDays();
-    queueMicrotask(() => {
-      setCompareDays((prev) => (prev === v ? prev : v));
-    });
-  }, []);
+  const loadGenRef = useRef(0);
 
   const load = useCallback(async (opts?: { silent?: boolean }) => {
     const silent = Boolean(opts?.silent);
+    const gen = ++loadGenRef.current;
     setLoading(true);
     try {
       const res = await fetch(`/api/meli/ads/snapshot?analyze=1&days=14&compare_days=${compareDays}&t=${Date.now()}`, {
@@ -186,9 +182,11 @@ export default function MeliAdsStudioView() {
       try {
         data = (await res.json()) as Record<string, unknown>;
       } catch {
+        if (gen !== loadGenRef.current) return;
         if (!silent) toast.error("Respuesta inválida del servidor");
         return;
       }
+      if (gen !== loadGenRef.current) return;
       if (!res.ok) {
         const msg = typeof data.error === "string" ? data.error : "No se pudo cargar Product Ads";
         if (!silent) toast.error(msg);
@@ -219,9 +217,12 @@ export default function MeliAdsStudioView() {
         });
       }
     } catch {
+      if (gen !== loadGenRef.current) return;
       if (!silent) toast.error("Error de red");
     } finally {
-      setLoading(false);
+      if (gen === loadGenRef.current) {
+        setLoading(false);
+      }
     }
   }, [compareDays]);
 
