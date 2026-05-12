@@ -17,11 +17,15 @@ if [ ! -f "./server.js" ]; then
   exit 1
 fi
 
-# Migraciones: en boot no corremos migrate (imagen standalone). En Railway usá preDeployCommand (ver railway.toml) o `railway run prisma migrate deploy`.
+# Migraciones: por defecto `node migrate.mjs` (= prisma migrate deploy) si hay DATABASE_URL.
+# Desactivar solo si corrés migrate en otro job: SKIP_DB_MIGRATIONS_ON_BOOT=true
 if [ "$SKIP_DB_MIGRATIONS_ON_BOOT" = "true" ]; then
-  echo "INFO: SKIP_DB_MIGRATIONS_ON_BOOT=true — sin migrate en boot (pre-deploy / manual)"
+  echo "INFO: SKIP_DB_MIGRATIONS_ON_BOOT=true — sin migrate en boot"
+elif [ -n "$DATABASE_URL" ] && [ -f "./migrate.mjs" ]; then
+  echo "INFO: aplicando migraciones Prisma antes de arrancar Next..."
+  node ./migrate.mjs
 elif [ -n "$DATABASE_URL" ]; then
-  echo "INFO: migrate en boot no configurado; usar pre-deploy o CLI."
+  echo "WARN: DATABASE_URL definida pero falta ./migrate.mjs; omitiendo migrate"
 fi
 
 exec node server.js

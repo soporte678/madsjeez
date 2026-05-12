@@ -5,7 +5,8 @@ import { defineConfig } from "prisma/config";
  * Prisma 7+: la URL del datasource vive en prisma.config.ts.
  * - En prod la URL viene de DATABASE_URL (Railway / runtime).
  * - `generate` en Docker build puede no tener DB real: placeholder solo para emitir el cliente.
- * - Migraciones: ejecutar fuera del container (Railway CLI / release). Supabase: puerto 6543 (pooler)
+ * - Migraciones: en Docker el entrypoint ejecuta `node migrate.mjs` salvo SKIP_DB_MIGRATIONS_ON_BOOT=true.
+ *   Supabase: puerto 6543 (pooler)
  *   suele fallar o colgar en `migrate deploy`; usar URL directa :5432 para migraciones.
  */
 function prismaDatabaseUrl(): string {
