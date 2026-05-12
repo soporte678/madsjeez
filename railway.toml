@@ -9,10 +9,8 @@ healthcheckPath = "/railway-health.txt"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
-# Migraciones antes de levantar réplicas (usa DATABASE_URL del servicio). Requiere prisma/ y CLI en la imagen (Dockerfile runner).
-# Railway: el array debe tener como máximo 1 elemento (todo el comando en un solo string).
-# Sin `prisma` en PATH: standalone no trae `.bin`; el CLI vive en el paquete copiado desde builder.
-preDeployCommand = ['sh -c "cd /app && node ./node_modules/prisma/build/index.js migrate deploy"']
+# Migraciones: NO usar preDeployCommand con `prisma migrate deploy` contra Supabase pooler (:6543) — suele colgar el deploy.
+# Se aplican al arrancar el contenedor (`docker-entrypoint.sh` → `node migrate.mjs`) salvo SKIP_DB_MIGRATIONS_ON_BOOT=true.
 # No fijar port aquí: Railway inyecta PORT en runtime; debe coincidir con el puerto real del proceso.
 
 [environments.production]
@@ -26,6 +24,6 @@ healthcheckTimeout = 300
 # Secrets (Supabase URL/keys, DATABASE_URL, MERCADOPAGO_*, MP_OAUTH_STATE_SECRET, etc.) must be set in the Railway dashboard — do not commit them here.
 NEXTAUTH_URL = "https://www.madsjeez.com.ar"
 NODE_ENV = "production"
-# El entrypoint standalone no corre migrate en boot; las aplicamos en preDeployCommand.
-SKIP_DB_MIGRATIONS_ON_BOOT = "true"
+# false = el entrypoint ejecuta migrate al iniciar (ver docker-entrypoint.sh). Poné true solo si migrás en otro job con URL directa :5432.
+SKIP_DB_MIGRATIONS_ON_BOOT = "false"
 # Nunca sobreescribir PORT acá: Railway lo define para healthcheck y el proxy.
