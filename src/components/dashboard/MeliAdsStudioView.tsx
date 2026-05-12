@@ -84,7 +84,21 @@ type MeliAdsStudioSnapshot = {
 };
 
 const SNAPSHOT_CACHE_KEY = "meli_ads_snapshot_v1";
+const COMPARE_DAYS_STORAGE_KEY = "meli_ads_compare_days_v1";
+const ALLOWED_COMPARE_DAYS = [1, 2, 3, 5, 7, 15, 20, 30] as const;
 const AUTO_REFRESH_MS = 10 * 60 * 1000;
+
+function readStoredCompareDays(): number {
+  if (typeof window === "undefined") return 1;
+  try {
+    const raw = localStorage.getItem(COMPARE_DAYS_STORAGE_KEY);
+    const n = raw ? Number.parseInt(raw, 10) : NaN;
+    if (Number.isFinite(n) && (ALLOWED_COMPARE_DAYS as readonly number[]).includes(n)) return n;
+  } catch {
+    /* ignore */
+  }
+  return 1;
+}
 
 function renderDelta(
   value: number,
@@ -141,10 +155,15 @@ export default function MeliAdsStudioView() {
   const [expandedCampaignRows, setExpandedCampaignRows] = useState<Record<string, boolean>>({});
   const [campaignItems, setCampaignItems] = useState<Record<string, Array<{ item_id?: string; title?: string; status?: string; metrics?: Record<string, unknown> }>>>({});
   const [loadingItems, setLoadingItems] = useState<Record<string, boolean>>({});
-  const [compareDays, setCompareDays] = useState(7);
+  const [compareDays, setCompareDays] = useState(1);
   const [recFilter, setRecFilter] = useState<"all" | "critical" | "warning" | "virtue">("all");
   /** Detalle largo del análisis por id de recomendación (solo tras “Leer más…”). */
   const [expandedRecAnalysis, setExpandedRecAnalysis] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const v = readStoredCompareDays();
+    setCompareDays((prev) => (prev === v ? prev : v));
+  }, []);
 
   const load = useCallback(async (opts?: { silent?: boolean }) => {
     const silent = Boolean(opts?.silent);
@@ -288,7 +307,8 @@ export default function MeliAdsStudioView() {
           ? recs.filter((r) => r.severity === "warning")
           : recs.filter((r) => r.severity === "info");
 
-  const chartSlice = dailyStats.slice(-7);
+  const chartWindowDays = Math.min(Math.max(compareDays, 1), 30);
+  const chartSlice = dailyStats.slice(-chartWindowDays);
   const chartLabelsArr = (() => {
     const n = chartSlice.length;
     if (n <= 0) return [];
@@ -301,7 +321,7 @@ export default function MeliAdsStudioView() {
   const costK = chartSlice.map((d) => d.avgCost / 1000);
 
   const avgDailyBlock = (() => {
-    const slice = dailyStats.slice(-7);
+    const slice = dailyStats.slice(-chartWindowDays);
     if (!slice.length) return null;
     const avgCost = slice.reduce((s, d) => s + d.avgCost, 0) / slice.length;
     const avgProfit = slice.reduce((s, d) => s + d.avgProfit, 0) / slice.length;
@@ -408,6 +428,11 @@ export default function MeliAdsStudioView() {
   };
   const onChangeCompareDays = (days: number) => {
     setCompareDays(days);
+    try {
+      localStorage.setItem(COMPARE_DAYS_STORAGE_KEY, String(days));
+    } catch {
+      /* ignore */
+    }
     setTimeout(() => load({ silent: true }), 0);
   };
   const categoryLabel = (c: Recommendation["category"]) =>
@@ -537,7 +562,9 @@ export default function MeliAdsStudioView() {
           </div>
           <p className="text-right text-[11px] text-slate-500">
             Ventana métricas ML: {snapshot?.metricsDays ?? 14} días · Comparás contra período anterior de{" "}
-            <span className="font-medium text-slate-400">{compareDays}d</span>
+            <span className="font-medium text-slate-400">
+              {compareDays === 1 ? "24h" : `${compareDays}d`}
+            </span>
           </p>
         </div>
       </header>
@@ -702,7 +729,9 @@ export default function MeliAdsStudioView() {
                 <span aria-hidden>📊</span> Tendencia: ecosistema de marketing
               </h3>
               <span className="rounded bg-slate-800 px-2 py-1 text-xs text-slate-400">
-                Últimos {Math.min(7, chartSlice.length || 7)} días (cortes guardados)
+                {compareDays === 1
+                  ? "Ventana gráfico: 24h (1 día con corte)"
+                  : `Últimos ${chartWindowDays} días (cortes guardados)`}
               </span>
             </div>
             {chartSlice.length > 0 ? (
