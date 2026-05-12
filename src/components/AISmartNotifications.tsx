@@ -51,10 +51,15 @@ export default function AISmartNotifications() {
 
   if (!show || notifications.length === 0) return null
 
-  const urgencyColors: Record<string, string> = {
+  const urgencyColors: Record<"high" | "medium" | "low", string> = {
     high: "border-l-red-500 bg-red-50",
     medium: "border-l-orange-500 bg-orange-50",
     low: "border-l-blue-500 bg-blue-50",
+  }
+
+  const urgencyClass = (raw?: string) => {
+    const k = raw === "high" || raw === "medium" || raw === "low" ? raw : "low"
+    return urgencyColors[k]
   }
 
   return (
@@ -71,7 +76,7 @@ export default function AISmartNotifications() {
       {notifications.slice(0, 4).map((n, i) => (
         <div
           key={i}
-          className={`bg-white rounded-lg shadow-lg border-l-4 p-3 flex items-start gap-3 cursor-pointer hover:shadow-xl transition-all ${urgencyColors[n.urgency] || urgencyColors.low}`}
+          className={`bg-white rounded-lg shadow-lg border-l-4 p-3 flex items-start gap-3 cursor-pointer hover:shadow-xl transition-all ${urgencyClass(n.urgency)}`}
           onClick={() => {
             if (n.product_slug) window.location.href = `/product/${n.product_slug}`
             dismiss(i)
