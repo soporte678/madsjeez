@@ -1,15 +1,23 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Bell, X, ChevronRight, Zap } from "lucide-react"
-import Link from "next/link"
+import { X, Zap } from "lucide-react"
+
+type SmartNotification = {
+  title?: string
+  message?: string
+  emoji?: string
+  urgency?: string
+  product_slug?: string | null
+}
 
 export default function AISmartNotifications() {
-  const [notifications, setNotifications] = useState<any[]>([])
+  const [notifications, setNotifications] = useState<SmartNotification[]>([])
   const [show, setShow] = useState(false)
-  const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
+    if (sessionStorage.getItem("madsjeez_notifs_loaded")) return
+
     const load = async () => {
       try {
         const res = await fetch("/api/ai/notifications", {
@@ -17,22 +25,23 @@ export default function AISmartNotifications() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "generate" }),
         })
-        const data = await res.json()
+        if (!res.ok) {
+          // 429 u otros: no marcar sesión para permitir reintento en la próxima visita
+          return
+        }
+        const data = (await res.json()) as { notifications?: SmartNotification[] }
+        sessionStorage.setItem("madsjeez_notifs_loaded", "1")
         if (data.notifications && data.notifications.length > 0) {
           setNotifications(data.notifications)
           // Show after 5 seconds
           setTimeout(() => setShow(true), 5000)
         }
-      } catch (e) { console.error(e) }
-      setLoaded(true)
+      } catch (e) {
+        console.error(e)
+      }
     }
 
-    // Only load once per session
-    const sessionLoaded = sessionStorage.getItem("madsjeez_notifs_loaded")
-    if (!sessionLoaded) {
-      load()
-      sessionStorage.setItem("madsjeez_notifs_loaded", "1")
-    }
+    void load()
   }, [])
 
   const dismiss = (index: number) => {

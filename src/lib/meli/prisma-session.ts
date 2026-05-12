@@ -22,16 +22,20 @@ export async function getMeliAccessTokenForUser(
   }
   if (!row) return null;
 
-  const cfg = getMeliEnv();
-  if (!cfg) return null;
-
   const now = Date.now();
   const bufferMs = 5 * 60 * 1000;
+  /** Token aún usable para APIs ML sin necesidad de credenciales de app en este request. */
   if (row.expiresAt.getTime() - bufferMs > now) {
     return { accessToken: row.accessToken, meliUserId: row.meliUserId };
   }
 
   if (!row.refreshToken) {
+    return { accessToken: row.accessToken, meliUserId: row.meliUserId };
+  }
+
+  const cfg = getMeliEnv();
+  if (!cfg) {
+    // Sin MELI_* no podemos refrescar; devolvemos el último access token (puede fallar en ML si ya expiró).
     return { accessToken: row.accessToken, meliUserId: row.meliUserId };
   }
 

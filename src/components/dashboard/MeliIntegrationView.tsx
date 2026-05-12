@@ -178,6 +178,8 @@ export default function MeliIntegrationView() {
   useEffect(() => {
     const err = searchParams.get("error");
     const ok = searchParams.get("connected");
+    const cleanQuery = () =>
+      window.history.replaceState({}, "", `${window.location.pathname}${window.location.hash}`);
     const errorMessages: Record<string, string> = {
       meli_db_schema:
         "Falta esquema de Mercado Libre en la base (tabla/columnas). Si acabás de desplegar, esperá el pre-deploy de migraciones; si no, ejecutá prisma migrate deploy con la DATABASE_URL de producción y reconectá ML.",
@@ -187,16 +189,44 @@ export default function MeliIntegrationView() {
       no_meli_user: "No se pudo leer tu ID de usuario en Mercado Libre.",
       oauth_error: "Error al guardar la conexión. Revisá logs del servidor.",
     };
-    if (err) {
-      const decoded = decodeURIComponent(err).replace(/\s+/g, " ").trim();
-      toast.error(errorMessages[decoded] || errorMessages[err] || decoded.slice(0, 280));
-      window.history.replaceState({}, "", `${window.location.pathname}${window.location.hash}`);
-    }
+
     if (ok) {
       toast.success("Mercado Libre conectado correctamente.");
-      window.history.replaceState({}, "", `${window.location.pathname}${window.location.hash}`);
+      cleanQuery();
+      return;
     }
-  }, [searchParams]);
+
+    if (!err) return;
+
+    if (status === "loading") return;
+
+    if (status !== "authenticated") return;
+
+    const decoded = decodeURIComponent(err).replace(/\s+/g, " ").trim();
+    const isSchemaErr = decoded === "meli_db_schema" || err === "meli_db_schema";
+
+    if (isSchemaErr && meliStatus?.connected) {
+      cleanQuery();
+      return;
+    }
+
+    void (async () => {
+      if (isSchemaErr) {
+        try {
+          const r = await fetch("/api/meli/status", { credentials: "include" });
+          const d = (await r.json()) as { connected?: boolean };
+          if (r.ok && d.connected) {
+            cleanQuery();
+            return;
+          }
+        } catch {
+          /* seguir y mostrar toast */
+        }
+      }
+      toast.error(errorMessages[decoded] || errorMessages[err] || decoded.slice(0, 280));
+      cleanQuery();
+    })();
+  }, [searchParams, status, meliStatus]);
 
   const loadLocalUnpublished = useCallback(async () => {
     setLoadingLocal(true);

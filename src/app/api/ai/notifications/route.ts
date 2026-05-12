@@ -1,5 +1,8 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
+import { getServerSession } from "next-auth"
 import { NextRequest, NextResponse } from "next/server"
+import { authOptions } from "@/lib/auth"
+import { checkRateLimit, clientIpFromRequest } from "@/lib/rate-limit-memory"
 import { getSupabaseService } from "@/lib/supabase/service"
 
 type ContextSlice = {
@@ -81,11 +84,12 @@ function buildFallbackNotifications(ctx: ContextSlice) {
   return rows.slice(0, 8)
 }
 
+const RATE_WINDOW_MS = 15 * 60 * 1000
+const RATE_MAX_ANON = Math.max(5, Number(process.env.NOTIFICATIONS_RATE_LIMIT_ANON_MAX) || 18)
+const RATE_MAX_AUTH = Math.max(10, Number(process.env.NOTIFICATIONS_RATE_LIMIT_AUTH_MAX) || 45)
+
 export async function POST(req: NextRequest) {
   try {
-    const apiKey = process.env.GEMINI_API_KEY
-    if (!apiKey) return NextResponse.json({ error: "GEMINI_API_KEY not configured" }, { status: 500 })
-
     let body: { action?: string } = {}
     try {
       body = (await req.json()) as { action?: string }
@@ -93,6 +97,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 })
     }
     const { action } = body
+
+    const session = await getServerSession(authOptions)
+    const ip = clientIpFromRequest(req)
+    const rateKey = session?.user?.id ? `notif:user:${session.user.id}` : `notif:ip:${ip}`
+    const rateMax = session?.user?.id ? RATE_MAX_AUTH : RATE_MAX_ANON
+    const limited = checkRateLimit(rateKey, { max: rateMax, windowMs: RATE_WINDOW_MS })
+    if (!limited.ok) {
+      return NextResponse.json(
+        { error: "Demasiados intentos. Probá más tarde." },
+        {
+          status: 429,
+          headers: { "Retry-After": String(limited.retryAfterSec) },
+        }
+      )
+    }
+
+    const apiKey = process.env.GEMINI_API_KEY
 
     let supabase
     try {
@@ -168,6 +189,24 @@ export async function POST(req: NextRequest) {
           notifications: enrich(fallback),
           aiUnavailable: true,
           aiReason: "disabled_via_env",
+        })
+      }
+
+      if (!apiKey) {
+        const fallback = buildFallbackNotifications(context)
+        return NextResponse.json({
+          notifications: enrich(fallback),
+          aiUnavailable: true,
+          aiReason: "no_api_key",
+        })
+      }
+
+      if (!session?.user?.id) {
+        const fallback = buildFallbackNotifications(context)
+        return NextResponse.json({
+          notifications: enrich(fallback),
+          aiUnavailable: true,
+          aiReason: "anonymous_uses_deterministic_feed",
         })
       }
 
