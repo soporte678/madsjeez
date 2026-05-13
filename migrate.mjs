@@ -6,12 +6,16 @@
  * `DIRECT_DATABASE_URL` / `PRISMA_DIRECT_URL`: si es host `db.*.supabase.co` y la app usa pooler :6543, se ignora
  * (IPv6-only) y se deriva session. Una URI **Session mode** (`*.pooler.supabase.com:5432`) sí se respeta.
  * @see https://supabase.com/docs/guides/database/connecting-to-postgres
+ *
+ * P3009 conocido `20260504174800_add_access_key`: si el probe confirma si existe la columna `users.access_key`,
+ * por defecto se ejecuta `prisma migrate resolve --applied` o `--rolled-back` y se reintenta `migrate deploy`.
+ * Desactivar: `PRISMA_MIGRATE_AUTO_RESOLVE_ACCESS_KEY=0` o `false`.
  */
 import { spawnSync } from "child_process";
 import path from "path";
 import { existsSync } from "fs";
 
-const MIGRATE_SCRIPT_TAG = "migrate.mjs 20260514e (pg probe SSL Supabase)";
+const MIGRATE_SCRIPT_TAG = "migrate.mjs 20260514f (P3009 add_access_key auto-resolve)";
 
 try {
   const dotenv = await import("dotenv");
@@ -322,6 +326,26 @@ function runPrismaMigrateDeploy(dbUrl) {
   return { status: r.status === 0 ? 0 : r.status ?? 1, combined };
 }
 
+/**
+ * `prisma migrate resolve --applied|--rolled-back <name>` (misma DATABASE_URL que migrate deploy).
+ */
+function runPrismaMigrateResolve(dbUrl, migrationName, applied) {
+  const flag = applied ? "--applied" : "--rolled-back";
+  const r = spawnSync("npx", ["prisma", "migrate", "resolve", flag, migrationName], {
+    env: { ...process.env, DATABASE_URL: dbUrl },
+    cwd: process.cwd(),
+    encoding: "utf8",
+    maxBuffer: 50 * 1024 * 1024,
+    stdio: ["inherit", "pipe", "pipe"],
+  });
+  const stdout = r.stdout ?? "";
+  const stderr = r.stderr ?? "";
+  if (stdout) process.stdout.write(stdout);
+  if (stderr) process.stderr.write(stderr);
+  const combined = `${stdout}\n${stderr}`;
+  return { status: r.status === 0 ? 0 : r.status ?? 1, combined };
+}
+
 function printP3009Hints(combined) {
   const name = extractFailedMigrationNameFromPrismaOutput(combined) ?? "(nombre en el log arriba)";
   console.error(
@@ -428,11 +452,34 @@ await (async function runMigrate() {
           // #endregion
 
           if (probe.ok) {
+            const autoOff =
+              String(process.env.PRISMA_MIGRATE_AUTO_RESOLVE_ACCESS_KEY || "").trim() === "0" ||
+              String(process.env.PRISMA_MIGRATE_AUTO_RESOLVE_ACCESS_KEY || "").toLowerCase() === "false";
+            if (!autoOff) {
+              const useApplied = probe.exists === true;
+              console.warn(
+                `[migrate] P3009 add_access_key: public.users.access_key existe=${probe.exists}; ` +
+                  `ejecutando migrate resolve --${useApplied ? "applied" : "rolled-back"} automático. ` +
+                  "Desactivar: PRISMA_MIGRATE_AUTO_RESOLVE_ACCESS_KEY=0"
+              );
+              const { status: rs, combined: rc } = runPrismaMigrateResolve(
+                tunedMigrateUrl,
+                failedName,
+                useApplied
+              );
+              if (rs === 0) {
+                console.warn("[migrate] migrate resolve OK; reintentando migrate deploy (mismo bucle).");
+                attempt -= 1;
+                continue;
+              }
+              console.error("[migrate] migrate resolve falló:", rc.slice(0, 900));
+            }
             console.error(
               `[migrate] P3009 diagnóstico (runtime): public.users.access_key existe=${probe.exists}. ` +
+                (autoOff ? "Auto-resolve desactivado. " : "") +
                 (probe.exists
-                  ? `Siguiente paso (una vez): DATABASE_URL=…session:5432… npx prisma migrate resolve --applied "${failedName}"`
-                  : `Siguiente paso (una vez): DATABASE_URL=…session:5432… npx prisma migrate resolve --rolled-back "${failedName}" y redeploy.`)
+                  ? `Manual: DATABASE_URL=…session:5432… npx prisma migrate resolve --applied "${failedName}"`
+                  : `Manual: DATABASE_URL=…session:5432… npx prisma migrate resolve --rolled-back "${failedName}" y redeploy.`)
             );
           } else {
             console.error(
