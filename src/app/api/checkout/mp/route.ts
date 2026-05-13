@@ -18,6 +18,11 @@ import { buildGuestClaim, shippingWithGuestClaim } from "@/lib/orders/guest-clai
 import { resolveCartShippingCost } from "@/lib/zipnova/quote-cart";
 import type { SellerMpRow } from "@/lib/mercadopago/seller-access-token";
 import { createCheckoutProPreferenceWithSellerTokenRetry } from "@/lib/mercadopago/preference-with-token-retry";
+import { notifyPostgrestReloadSchema } from "@/lib/supabase/postgrest-schema";
+
+function sleepMs(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
 
 function envPercent(key: string, fallback: number): number {
   const raw = process.env[key];
@@ -249,21 +254,36 @@ export async function POST(req: Request) {
         total_amount: split.totalBuyerCharged,
       },
     ];
-    let orderInsert = await supabaseService
-      .from("orders")
-      .insert(orderPayloadAttempts[0])
-      .select("id")
-      .single();
-    for (let i = 1; i < orderPayloadAttempts.length; i += 1) {
-      if (!orderInsert.error) break;
-      const code = (orderInsert.error as { code?: string } | null)?.code;
-      if (code !== "PGRST204") break;
-      orderInsert = await supabaseService
+
+    async function insertOrderWithPayloads(
+      payloads: Array<Record<string, unknown>>
+    ): Promise<{ data: { id: string } | null; error: unknown }> {
+      let orderInsert = await supabaseService
         .from("orders")
-        .insert(orderPayloadAttempts[i])
+        .insert(payloads[0])
         .select("id")
         .single();
+      for (let i = 1; i < payloads.length; i += 1) {
+        if (!orderInsert.error) break;
+        const code = (orderInsert.error as { code?: string } | null)?.code;
+        if (code !== "PGRST204") break;
+        orderInsert = await supabaseService
+          .from("orders")
+          .insert(payloads[i])
+          .select("id")
+          .single();
+      }
+      return orderInsert;
     }
+
+    let orderInsert = await insertOrderWithPayloads(orderPayloadAttempts);
+    const lastCode = (orderInsert.error as { code?: string } | null)?.code;
+    if (lastCode === "PGRST204") {
+      const notified = await notifyPostgrestReloadSchema(prisma);
+      if (notified) await sleepMs(500);
+      orderInsert = await insertOrderWithPayloads(orderPayloadAttempts);
+    }
+
     const { data: order, error: orderErr } = orderInsert;
     let orderId: string;
     let persistedOrder = false;

@@ -152,7 +152,8 @@ model User {
   campaigns         Campaign[]
   coupons           Coupon[]
   cart              Cart?
-  sellerMeliOAuth   SellerMeliOAuth?
+  sellerMeliOAuth     SellerMeliOAuth?
+  sellerZipnovaOAuth SellerZipnovaOAuth?
   meliAdsSnapshots  MeliAdsSnapshot[]
   meliAdsChanges    MeliAdsChange[]
   collaboratorInvitesSent SellerCollaboratorInvite[] @relation("CollaboratorInvitesSent")
@@ -260,6 +261,22 @@ model SellerMeliOAuth {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   @@map("seller_meli_oauth")
+}
+
+/// OAuth Zipnova Envíos por vendedor (integración marketplace multi-cuenta).
+model SellerZipnovaOAuth {
+  id               String   @id @default(cuid())
+  userId           String   @unique @map("user_id")
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken      String   @db.Text @map("access_token")
+  refreshToken     String?  @db.Text @map("refresh_token")
+  expiresAt        DateTime @map("expires_at")
+  scope            String?  @db.Text
+  zipnovaAccountId Int?     @map("zipnova_account_id")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("seller_zipnova_oauth")
 }
 
 model ProductImage {

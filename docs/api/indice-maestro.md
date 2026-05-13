@@ -42,6 +42,7 @@ Listado de handlers bajo `src/app/api`. Los métodos se obtienen del export en c
 | GET | `/api/dashboard/opiniones` |
 | GET | `/api/dashboard/orders` |
 | GET, POST, PATCH, DELETE | `/api/dashboard/products` |
+| GET | `/api/dashboard/products/filter-options` |
 | GET | `/api/dashboard/questions` |
 | GET | `/api/dashboard/summary` |
 | GET, POST, PATCH | `/api/dashboard/support` |
@@ -89,6 +90,9 @@ Listado de handlers bajo `src/app/api`. Los métodos se obtienen del export en c
 | POST | `/api/seller/payment-gateway/mercadopago/create-preference` |
 | POST | `/api/seller/payment-gateway/mercadopago/disconnect` |
 | GET | `/api/seller/payment-gateway/mercadopago/status` |
+| GET | `/api/seller/zipnova/oauth/callback` |
+| GET | `/api/seller/zipnova/oauth/start` |
+| GET | `/api/seller/zipnova/status` |
 | GET, POST | `/api/shipments` |
 | PATCH, POST | `/api/shipments/{id}` |
 | POST, GET | `/api/subscriptions` |

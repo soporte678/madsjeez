@@ -12,6 +12,7 @@ Soporte operativo: [Centro de ayuda Zipnova (es-419)](https://ayuda-envios.zipno
 | Endpoint interno de preview `POST /api/shipping/zipnova/quote` | **Producción** |
 | Uso de cotización en `POST /api/checkout/mp` (monto envío + `zipnova` en `shipping_address`) | **Producción** |
 | UI checkout: debounce y totales alineados con cotización | **Producción** |
+| OAuth por vendedor (conectar cuenta Zipnova del seller a la app marketplace) | **Parcial** — flujo start/callback + persistencia de tokens; la cotización/checkout global sigue usando credenciales Basic del marketplace hasta migrar a Bearer por vendedor |
 | Creación de envío en Zipnova post-pago (`POST /v2/shipments` o equivalente) | **No implementado** — documentar cuando exista handler/job |
 
 ## Variables de entorno
@@ -26,8 +27,26 @@ Definidas en `.env.example` con el prefijo `ZIPNOVA_*`. Resumen:
 | `ZIPNOVA_API_SECRET` | Sí (para Zipnova) | Contraseña HTTP Basic (secret API). |
 | `ZIPNOVA_SOURCE` | No | Identificador de canal (máx. 150 caracteres); default en código: `madsjeez_marketplace`. |
 | `ZIPNOVA_ORIGIN_ID` | No | ID de origen en el address book Zipnova; si no se define, usa el default de la cuenta. |
+| `ZIPNOVA_OAUTH_CLIENT_ID` | No | Cliente OAuth de la **app marketplace** registrada en Zipnova. |
+| `ZIPNOVA_OAUTH_CLIENT_SECRET` | No | Secreto de la app. |
+| `ZIPNOVA_OAUTH_REDIRECT_URI` | No | Debe coincidir con el redirect registrado en Zipnova (ej. `https://tu-dominio/api/seller/zipnova/oauth/callback`). |
+| `ZIPNOVA_OAUTH_BASE_URL` | No | Host OAuth sin `/v2` (ej. `https://api.zipnova.com.ar`); si falta, se deriva de `ZIPNOVA_API_BASE_URL`. |
 
 Si **no** está configurado el trío `ZIPNOVA_ACCOUNT_ID` + `ZIPNOVA_API_TOKEN` + `ZIPNOVA_API_SECRET` (y `account_id` válido), el costo de envío con ítems que **no** tienen envío gratis usa el **monto fijo legacy** de **2500** (ARS, según `resolveCartShippingCost` en `src/lib/zipnova/quote-cart.ts`).
+
+## OAuth por vendedor (marketplace)
+
+Zipnova documenta OAuth2 para que **cada cuenta Zipnova** autorice a la app del marketplace ([Autorización con OAuth](https://docs.zipnova.com/envios/principios/autorizacion-con-oauth.md)). Eso **no crea** una cuenta Zipnova nueva: enlaza una cuenta **ya existente** del vendedor.
+
+| Ruta | Método | Rol |
+|------|--------|-----|
+| `/api/seller/zipnova/oauth/start` | GET | Sesión vendedor; redirección a Zipnova authorize; cookie `zipnova_oauth_state`. |
+| `/api/seller/zipnova/oauth/callback` | GET | Intercambia `code` por tokens; `upsert` en `SellerZipnovaOAuth` (Prisma). |
+| `/api/seller/zipnova/status` | GET | JSON: `oauthAppConfigured`, `connected`, `expiresAt`, etc. Solo vendedores. |
+
+Variables: `ZIPNOVA_OAUTH_*` en `.env.example`. UI: enlace **Conectar Zipnova** en `/dashboard/publicaciones` cuando la app OAuth está configurada y el vendedor aún no conectó.
+
+**Nota:** el login con Google/Facebook en Madsjeez es independiente; no hay en la documentación pública de Zipnova un flujo para **provisionar** cuenta Zipnova desde esas identidades. El vendedor debe tener (o crear) cuenta en Zipnova y luego autorizar OAuth.
 
 ## Endpoints propios (Madsjeez)
 

@@ -11,7 +11,8 @@ Métricas y datos para el **dashboard** de la aplicación (comprador / operador 
 | GET | `/api/dashboard/live` | Monitor en vivo (ej. ventas del día). | Sesión |
 | GET | `/api/dashboard/orders` | Órdenes para vista dashboard. | Sesión |
 | GET | `/api/dashboard/compras` | Historial compras. | Sesión |
-| GET | `/api/dashboard/products` | Productos en contexto dashboard. | Sesión |
+| GET | `/api/dashboard/products` | Productos en contexto dashboard (filtros avanzados vía query: `sort`, `categoryId`, `f_*`). | Sesión |
+| GET | `/api/dashboard/products/filter-options` | Categorías distintas usadas en publicaciones del vendedor (para el modal de filtros). | Sesión |
 | POST | `/api/dashboard/products` | Crear desde panel. | Sesión |
 | PATCH | `/api/dashboard/products` | Actualizar desde panel. | Sesión |
 | DELETE | `/api/dashboard/products` | Eliminar desde panel. | Sesión |
