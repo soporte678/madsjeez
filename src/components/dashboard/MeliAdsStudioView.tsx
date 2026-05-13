@@ -220,9 +220,7 @@ export default function MeliAdsStudioView() {
       if (gen !== loadGenRef.current) return;
       if (!silent) toast.error("Error de red");
     } finally {
-      if (gen === loadGenRef.current) {
-        setLoading(false);
-      }
+      setLoading(false);
     }
   }, [compareDays]);
 
@@ -1162,10 +1160,11 @@ export default function MeliAdsStudioView() {
           </div>
         )}
 
-        {studioTab === "table" && (
-          <>
-            {camps.length > 0 && (
-        <section className="flex flex-col overflow-hidden rounded-xl border border-gray-800 bg-[#131A2A] shadow-lg">
+        {((studioTab === "overview" || studioTab === "table") && camps.length > 0) && (
+        <section
+          id="meli-ads-campaigns-table"
+          className="flex flex-col overflow-hidden rounded-xl border border-gray-800 bg-[#131A2A] shadow-lg"
+        >
           <div className="flex flex-col gap-4 border-b border-gray-800 bg-[#1A2235] p-4 sm:flex-row sm:items-center sm:justify-between">
             <h3 className="flex items-center gap-2 text-lg font-semibold text-white">
               <BarChart2 className="h-5 w-5 text-blue-400" aria-hidden />
@@ -1472,14 +1471,12 @@ export default function MeliAdsStudioView() {
             </table>
           </div>
         </section>
-      )}
+        )}
 
-            {camps.length === 0 && (
-              <div className="rounded-xl border border-gray-800 bg-[#131A2A] p-8 text-center text-sm text-gray-400 shadow-lg">
-                No hay campañas para mostrar en la tabla. Usá el resumen o actualizá los datos desde Mercado Libre.
-              </div>
-            )}
-          </>
+        {studioTab === "table" && camps.length === 0 && (
+          <div className="rounded-xl border border-gray-800 bg-[#131A2A] p-8 text-center text-sm text-gray-400 shadow-lg">
+            No hay campañas para mostrar en la tabla. Volvé al resumen o actualizá los datos desde Mercado Libre.
+          </div>
         )}
       </div>
     </div>

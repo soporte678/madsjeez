@@ -71,6 +71,47 @@ export type MeliPadsAdsSearchResponse = {
 const PADS_METRICS =
   "clicks,prints,ctr,cost,cpc,acos,organic_units_quantity,organic_units_amount,organic_items_quantity,direct_items_quantity,indirect_items_quantity,advertising_items_quantity,cvr,roas,direct_units_quantity,indirect_units_quantity,units_quantity,direct_amount,indirect_amount,total_amount,impression_share,top_impression_share,lost_impression_share_by_budget,lost_impression_share_by_ad_rank,acos_benchmark";
 
+/** Subconjunto estable para reintentar si ML responde 400 con la lista completa (cambia según cuenta/región). */
+const PADS_METRICS_MINIMAL =
+  "clicks,prints,ctr,cost,cpc,acos,cvr,roas,direct_amount,indirect_amount,total_amount";
+
+async function padsCampaignSearchWithMetricsRetry(
+  accessToken: string,
+  path: string,
+  dateFrom: string,
+  dateTo: string,
+  offset: number,
+  limit: number
+) {
+  const qsFull = new URLSearchParams({
+    limit: String(limit),
+    offset: String(offset),
+    date_from: dateFrom,
+    date_to: dateTo,
+    metrics: PADS_METRICS,
+    metrics_summary: "true",
+    channel: "marketplace",
+  });
+  let res = await meliApi<MeliPadsCampaignSearchResponse>(accessToken, `${path}?${qsFull.toString()}`, {
+    headers: { "api-version": "2" },
+  });
+  if (!res.ok && res.status === 400) {
+    const qsMin = new URLSearchParams({
+      limit: String(limit),
+      offset: String(offset),
+      date_from: dateFrom,
+      date_to: dateTo,
+      metrics: PADS_METRICS_MINIMAL,
+      metrics_summary: "true",
+      channel: "marketplace",
+    });
+    res = await meliApi<MeliPadsCampaignSearchResponse>(accessToken, `${path}?${qsMin.toString()}`, {
+      headers: { "api-version": "2" },
+    });
+  }
+  return res;
+}
+
 export function meliPadsDateRange(days: number) {
   const to = new Date();
   const from = new Date();
@@ -91,19 +132,8 @@ export async function meliPadsSearchCampaignsWithMetricsRange(
   offset = 0,
   limit = 50
 ) {
-  const qs = new URLSearchParams({
-    limit: String(limit),
-    offset: String(offset),
-    date_from: dateFrom,
-    date_to: dateTo,
-    metrics: PADS_METRICS,
-    metrics_summary: "true",
-    channel: "marketplace",
-  });
-  const path = `/marketplace/advertising/${encodeURIComponent(siteId)}/advertisers/${advertiserId}/product_ads/campaigns/search?${qs.toString()}`;
-  return meliApi<MeliPadsCampaignSearchResponse>(accessToken, path, {
-    headers: { "api-version": "2" },
-  });
+  const path = `/marketplace/advertising/${encodeURIComponent(siteId)}/advertisers/${advertiserId}/product_ads/campaigns/search`;
+  return padsCampaignSearchWithMetricsRetry(accessToken, path, dateFrom, dateTo, offset, limit);
 }
 
 /** Variante sin /search (según guía AR/new-product-ads). */
@@ -116,19 +146,8 @@ export async function meliPadsCampaignsWithMetricsRangeNoSearch(
   offset = 0,
   limit = 50
 ) {
-  const qs = new URLSearchParams({
-    limit: String(limit),
-    offset: String(offset),
-    date_from: dateFrom,
-    date_to: dateTo,
-    metrics: PADS_METRICS,
-    metrics_summary: "true",
-    channel: "marketplace",
-  });
-  const path = `/marketplace/advertising/${encodeURIComponent(siteId)}/advertisers/${advertiserId}/product_ads/campaigns?${qs.toString()}`;
-  return meliApi<MeliPadsCampaignSearchResponse>(accessToken, path, {
-    headers: { "api-version": "2" },
-  });
+  const path = `/marketplace/advertising/${encodeURIComponent(siteId)}/advertisers/${advertiserId}/product_ads/campaigns`;
+  return padsCampaignSearchWithMetricsRetry(accessToken, path, dateFrom, dateTo, offset, limit);
 }
 
 /** Campañas con métricas agregadas en el rango (últimos N días). */
@@ -203,20 +222,8 @@ export async function meliPadsSearchCampaignsWithMetricsAltPath(
   offset = 0,
   limit = 50
 ) {
-  const qs = new URLSearchParams({
-    advertiser_id: String(advertiserId),
-    limit: String(limit),
-    offset: String(offset),
-    date_from: dateFrom,
-    date_to: dateTo,
-    metrics: PADS_METRICS,
-    metrics_summary: "true",
-    channel: "marketplace",
-  });
-  const path = `/marketplace/advertising/${encodeURIComponent(siteId)}/product_ads/campaigns/search?${qs.toString()}`;
-  return meliApi<MeliPadsCampaignSearchResponse>(accessToken, path, {
-    headers: { "api-version": "2" },
-  });
+  const path = `/marketplace/advertising/${encodeURIComponent(siteId)}/product_ads/campaigns/search`;
+  return padsCampaignSearchWithMetricsRetry(accessToken, path, dateFrom, dateTo, offset, limit);
 }
 
 export async function meliPadsSearchCampaignsBasicAltPath(
@@ -263,15 +270,26 @@ export async function meliPadsGetCampaignWithMetrics(
   dateFrom: string,
   dateTo: string
 ) {
-  const qs = new URLSearchParams({
+  const pathBase = `/marketplace/advertising/${encodeURIComponent(siteId)}/product_ads/campaigns/${campaignId}`;
+  const qsFull = new URLSearchParams({
     date_from: dateFrom,
     date_to: dateTo,
     metrics: PADS_METRICS,
   });
-  const path = `/marketplace/advertising/${encodeURIComponent(siteId)}/product_ads/campaigns/${campaignId}?${qs.toString()}`;
-  return meliApi<MeliPadsCampaignRow>(accessToken, path, {
+  let res = await meliApi<MeliPadsCampaignRow>(accessToken, `${pathBase}?${qsFull.toString()}`, {
     headers: { "api-version": "2" },
   });
+  if (!res.ok && res.status === 400) {
+    const qsMin = new URLSearchParams({
+      date_from: dateFrom,
+      date_to: dateTo,
+      metrics: PADS_METRICS_MINIMAL,
+    });
+    res = await meliApi<MeliPadsCampaignRow>(accessToken, `${pathBase}?${qsMin.toString()}`, {
+      headers: { "api-version": "2" },
+    });
+  }
+  return res;
 }
 
 /** Items/anuncios de una campaña (o advertiser) con métricas. */
