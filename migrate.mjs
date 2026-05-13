@@ -1,8 +1,10 @@
 /**
- * Ejecuta `prisma migrate deploy`. Si `DATABASE_URL` es el pooler de Supabase (:6543),
- * usa `DIRECT_DATABASE_URL` / `SUPABASE_DATABASE_URL` en :5432 si existen; si no, intenta derivar
- * `db.<ref>.supabase.co:5432` desde el URI del pooler (usuario `postgres.<project_ref>`).
- * La app en runtime sigue usando las variables del proceso (no se modifica fuera de execSync).
+ * Ejecuta `prisma migrate deploy`. Si `DATABASE_URL` es el pooler Supabase en **transaction** (:6543),
+ * por defecto deriva la URI de **Supavisor session** (mismo host `*.pooler.supabase.com`, puerto **5432**,
+ * usuario `postgres.<ref>`) — compatible con **IPv4** (Railway, etc.). El host `db.*.supabase.co:5432`
+ * suele ser solo IPv6 y puede dar P1001 desde esos entornos.
+ * Si definís `DIRECT_DATABASE_URL` / `PRISMA_DIRECT_URL` (no pooler), se usa tal cual para migrate.
+ * @see https://supabase.com/docs/guides/database/connecting-to-postgres
  */
 import { execSync } from "child_process";
 import path from "path";
@@ -30,9 +32,46 @@ function hostPortHint(url) {
   return m ? m[1] : "(host no detectado)";
 }
 
+function looksLikeSupabaseDirectDbIpv6Host(url) {
+  if (!url || typeof url !== "string") return false;
+  return /db\.[a-z0-9]+\.supabase\.co/i.test(url);
+}
+
+/**
+ * Recomendado para `migrate deploy` desde PaaS **solo IPv4** (p. ej. Railway); el host `db.*.supabase.co` es IPv6 por defecto.
+ * @see https://supabase.com/docs/guides/database/connecting-to-postgres#pooler-session-mode
+ */
+function deriveSupabaseSessionPoolerFromTransactionPooler(poolerUrl) {
+  if (!poolerUrl || typeof poolerUrl !== "string" || !looksLikePgPooler(poolerUrl)) return null;
+  try {
+    const normalized = poolerUrl.trim().replace(/^postgres:/i, "postgresql:");
+    const parsed = new URL(normalized.replace(/^postgresql:/i, "http:"));
+    if (!parsed.hostname.includes("pooler.supabase.com")) return null;
+
+    const userDecoded = decodeURIComponent((parsed.username || "").replace(/\+/g, " "));
+    if (!userDecoded.startsWith("postgres.")) return null;
+
+    const password = parsed.password ? decodeURIComponent(parsed.password.replace(/\+/g, " ")) : "";
+    if (!password) return null;
+
+    const path = (parsed.pathname || "/postgres").replace(/\/+/g, "/") || "/postgres";
+    const qp = new URLSearchParams(parsed.search);
+    qp.delete("pgbouncer");
+    const qs = qp.toString();
+
+    const host = parsed.hostname;
+    const u = encodeURIComponent(userDecoded);
+    const p = encodeURIComponent(password);
+    return `postgresql://${u}:${p}@${host}:5432${path}${qs ? `?${qs}` : ""}`;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Pooler "Transaction" de Supabase: usuario `postgres.<project_ref>` y host `*.pooler.supabase.com`.
- * La conexión directa para DDL/migrate es `db.<project_ref>.supabase.co:5432` con usuario `postgres`.
+ * Conexión **directa** al Postgres del proyecto: `db.<project_ref>.supabase.co:5432` con usuario `postgres`.
+ * Útil con IPv6 o add-on IPv4; muchos contenedores en IPv4-only no alcanzan este host (P1001).
  * @see https://supabase.com/docs/guides/database/connecting-to-postgres
  */
 function deriveSupabaseDirectFromPooler(poolerUrl) {
@@ -67,8 +106,8 @@ function deriveSupabaseDirectFromPooler(poolerUrl) {
 }
 
 /**
- * Prisma `migrate deploy` con pooler Supabase (:6543) suele colgar o fallar.
- * Si existe una URL directa (:5432 / host db.*), usala solo para este proceso.
+ * Prisma `migrate deploy`: con Supabase + pooler transaction (:6543), priorizar **session pooler :5432**
+ * (IPv4-friendly). Opcional: `PRISMA_MIGRATE_SUPABASE_USE_DB_HOST=1` para forzar derivación a `db.*:5432`.
  */
 function pickMigrateDatabaseUrl() {
   const appPrimary = (process.env.DATABASE_URL || process.env.SUPABASE_DATABASE_URL || "").trim();
@@ -87,14 +126,44 @@ function pickMigrateDatabaseUrl() {
   }
 
   const supa = (process.env.SUPABASE_DATABASE_URL || "").trim();
-  if (appPrimary && looksLikePgPooler(appPrimary) && supa && !looksLikePgPooler(supa)) {
+  if (
+    appPrimary &&
+    looksLikePgPooler(appPrimary) &&
+    supa &&
+    !looksLikePgPooler(supa) &&
+    !looksLikeSupabaseDirectDbIpv6Host(supa)
+  ) {
     return { migrateUrl: supa, appUrl: appPrimary, source: "SUPABASE_DATABASE_URL" };
   }
 
   if (appPrimary && looksLikePgPooler(appPrimary)) {
-    const derived = deriveSupabaseDirectFromPooler(appPrimary);
-    if (derived) {
-      return { migrateUrl: derived, appUrl: appPrimary, source: "derived_Supabase_pooler→db.*.supabase.co:5432" };
+    const useDbHost =
+      String(process.env.PRISMA_MIGRATE_SUPABASE_USE_DB_HOST || "").trim() === "1" ||
+      String(process.env.PRISMA_MIGRATE_SUPABASE_USE_DB_HOST || "").toLowerCase() === "true";
+
+    if (useDbHost) {
+      const derivedDirect = deriveSupabaseDirectFromPooler(appPrimary);
+      if (derivedDirect) {
+        return {
+          migrateUrl: derivedDirect,
+          appUrl: appPrimary,
+          source: "derived_Supabase_pooler→db.*.supabase.co:5432(PRISMA_MIGRATE_SUPABASE_USE_DB_HOST)",
+        };
+      }
+    }
+
+    const session = deriveSupabaseSessionPoolerFromTransactionPooler(appPrimary);
+    if (session) {
+      return {
+        migrateUrl: session,
+        appUrl: appPrimary,
+        source: "derived_Supavisor_session_pooler:5432(IPv4-friendly)",
+      };
+    }
+
+    const derivedDirect = deriveSupabaseDirectFromPooler(appPrimary);
+    if (derivedDirect) {
+      return { migrateUrl: derivedDirect, appUrl: appPrimary, source: "derived_Supabase_pooler→db.*.supabase.co:5432" };
     }
   }
 
@@ -132,19 +201,22 @@ function sleepSyncSeconds(seconds) {
 const { migrateUrl, appUrl, source } = pickMigrateDatabaseUrl();
 const tunedMigrateUrl = tuneMigrateDatabaseUrl(migrateUrl);
 
-if (looksLikePgPooler(appUrl) && !looksLikePgPooler(tunedMigrateUrl)) {
-  const derivedNote =
-    source === "derived_Supabase_pooler→db.*.supabase.co:5432"
-      ? " (URI directa derivada del pooler: usuario postgres.<ref> de Supabase)."
+if (appUrl && migrateUrl && migrateUrl !== appUrl) {
+  const note = source.includes("session")
+    ? " IPv4-friendly (Supavisor session; ver https://supabase.com/docs/guides/database/connecting-to-postgres )."
+    : source.includes("db.*")
+      ? " Host db.* (a menudo IPv6-only desde el PaaS; si falla, no fuerces PRISMA_MIGRATE_SUPABASE_USE_DB_HOST)."
       : "";
   console.log(
-    `[migrate] Pooler para la app (${hostPortHint(appUrl)}); migrate deploy usa ${hostPortHint(tunedMigrateUrl)}${derivedNote}`
+    `[migrate] Runtime DB ≈ ${hostPortHint(appUrl)} · migrate deploy → ${hostPortHint(tunedMigrateUrl)} · ${source}.${note}`
   );
-} else if (looksLikePgPooler(tunedMigrateUrl) && !process.env.PRISMA_MIGRATE_POOLER_OK) {
+} else if (
+  looksLikePgPooler(tunedMigrateUrl) &&
+  tunedMigrateUrl.includes(":6543") &&
+  !process.env.PRISMA_MIGRATE_POOLER_OK
+) {
   console.warn(
-    "[migrate] La URL usada para migrate deploy sigue siendo el pooler (:6543 / pooler.*). " +
-      "`prisma migrate deploy` suele necesitar la URL directa (:5432, host db.*.supabase.co). " +
-      "Definí DIRECT_DATABASE_URL en Railway o exportá PRISMA_MIGRATE_POOLER_OK=1 para silenciar este aviso."
+    "[migrate] migrate deploy usa el pooler en puerto 6543 (transaction). Suele fallar con Prisma; preferí session :5432 o DIRECT_DATABASE_URL. Podés exportar PRISMA_MIGRATE_POOLER_OK=1 para silenciar."
   );
 }
 
@@ -174,7 +246,7 @@ try {
       console.error(`[migrate] Intento ${attempt}/${maxAttempts} falló.`, error?.message || error);
       if (attempt < maxAttempts) {
         console.warn(
-          `[migrate] Reintento en ${delaySec}s. Si persiste P1001: en Railway definí DIRECT_DATABASE_URL con la URI **Direct connection** (:5432) del panel Supabase (Database → Connection string). IPv4-only: ver add-on IPv4 o documentación Supabase para PaaS.`
+          `[migrate] Reintento en ${delaySec}s. Si sigue P1001 con host db.*: el runtime puede ser IPv4-only; este script ya prioriza Supavisor session :5432 desde el pooler. Opcional: URI session del panel Supabase (Connect → Session mode) en DIRECT_DATABASE_URL.`
         );
         sleepSyncSeconds(delaySec);
       }
