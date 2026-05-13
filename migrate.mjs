@@ -11,7 +11,7 @@ import { spawnSync } from "child_process";
 import path from "path";
 import { existsSync } from "fs";
 
-const MIGRATE_SCRIPT_TAG = "migrate.mjs 20260514c (P3009 hints; spawn migrate deploy)";
+const MIGRATE_SCRIPT_TAG = "migrate.mjs 20260514d (P3009 probe+agent log)";
 
 try {
   const dotenv = await import("dotenv");
@@ -210,6 +210,53 @@ function tuneMigrateDatabaseUrl(url) {
   return `${out}${sep}${add.join("&")}`;
 }
 
+function extractFailedMigrationNameFromPrismaOutput(combined) {
+  const m = combined.match(/The `([^`]+)` migration/);
+  return m?.[1] ?? null;
+}
+
+// #region agent log
+function agentDebugLog(payload) {
+  fetch("http://127.0.0.1:7607/ingest/af0ba961-993a-4927-ba69-95e1c7aba345", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "ff838a" },
+    body: JSON.stringify({
+      sessionId: "ff838a",
+      timestamp: Date.now(),
+      runId: process.env.AGENT_DEBUG_RUN_ID || "pre-fix",
+      ...payload,
+    }),
+  }).catch(() => {});
+}
+// #endregion
+
+/**
+ * Consulta liviana vía pg (misma URL que migrate deploy) para desambiguar P3009 en `add_access_key`.
+ * No loguea credenciales ni PII.
+ */
+async function probeUsersAccessKeyColumn(dbUrl) {
+  if (!dbUrl || typeof dbUrl !== "string") return { ok: false, reason: "no-url" };
+  try {
+    const { Client } = await import("pg");
+    const client = new Client({
+      connectionString: dbUrl,
+      connectionTimeoutMillis: 25_000,
+    });
+    await client.connect();
+    const r = await client.query(
+      `select exists (
+         select 1 from information_schema.columns
+         where table_schema = 'public' and table_name = 'users' and column_name = 'access_key'
+       ) as "accessKeyExists"`
+    );
+    await client.end();
+    return { ok: true, exists: Boolean(r.rows[0]?.accessKeyExists) };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { ok: false, error: msg.slice(0, 320) };
+  }
+}
+
 function sleepSyncSeconds(seconds) {
   const s = Math.max(1, Math.min(120, Math.floor(Number(seconds) || 10)));
   const until = Date.now() + s * 1000;
@@ -238,8 +285,7 @@ function runPrismaMigrateDeploy(dbUrl) {
 }
 
 function printP3009Hints(combined) {
-  const m = combined.match(/The `([^`]+)` migration/);
-  const name = m?.[1] ?? "(nombre en el log arriba)";
+  const name = extractFailedMigrationNameFromPrismaOutput(combined) ?? "(nombre en el log arriba)";
   console.error(
     `[migrate] P3009 — Prisma registró una migración fallida: \`${name}\`. Reintentar el deploy **no** lo soluciona.\n` +
       "Opciones (misma URL que usa migrate, p. ej. session pooler :5432):\n" +
@@ -284,37 +330,107 @@ if (!migrateUrl) {
   process.exit(1);
 }
 
-try {
-  const maxAttempts = Math.max(1, Math.min(12, Number(process.env.PRISMA_MIGRATE_ATTEMPTS || "5") || 5));
-  const delaySec = Math.max(2, Math.min(90, Number(process.env.PRISMA_MIGRATE_RETRY_SLEEP_SEC || "10") || 10));
-  let lastErr = null;
-  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-    console.log(`Ejecutando migraciones (intento ${attempt}/${maxAttempts})...`);
-    const { status, combined } = runPrismaMigrateDeploy(tunedMigrateUrl);
-    if (status === 0) {
-      lastErr = null;
-      break;
-    }
-    lastErr = new Error(combined.trim() || `prisma migrate deploy exit ${status}`);
-    console.error(`[migrate] Intento ${attempt}/${maxAttempts} falló.`, combined.slice(0, 800));
+await (async function runMigrate() {
+  try {
+    // #region agent log
+    agentDebugLog({
+      hypothesisId: "H4",
+      location: "migrate.mjs:runMigrate:boot",
+      message: "migrate-target",
+      data: { hostHint: hostPortHint(tunedMigrateUrl), source },
+    });
+    // #endregion
 
-    if (combined.includes("P3009")) {
-      printP3009Hints(combined);
-      break;
-    }
+    const maxAttempts = Math.max(1, Math.min(12, Number(process.env.PRISMA_MIGRATE_ATTEMPTS || "5") || 5));
+    const delaySec = Math.max(2, Math.min(90, Number(process.env.PRISMA_MIGRATE_RETRY_SLEEP_SEC || "10") || 10));
+    let lastErr = null;
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      console.log(`Ejecutando migraciones (intento ${attempt}/${maxAttempts})...`);
+      const { status, combined } = runPrismaMigrateDeploy(tunedMigrateUrl);
+      if (status === 0) {
+        lastErr = null;
+        break;
+      }
+      lastErr = new Error(combined.trim() || `prisma migrate deploy exit ${status}`);
+      console.error(`[migrate] Intento ${attempt}/${maxAttempts} falló.`, combined.slice(0, 800));
 
-    if (attempt < maxAttempts) {
-      console.warn(
-        `[migrate] Reintento en ${delaySec}s. (P1001/db.*: revisá DIRECT; P3009: no se reintenta — ver mensaje arriba.)`
-      );
-      sleepSyncSeconds(delaySec);
+      if (combined.includes("P3009")) {
+        const failedName = extractFailedMigrationNameFromPrismaOutput(combined);
+        printP3009Hints(combined);
+        // #region agent log
+        agentDebugLog({
+          hypothesisId: "H1",
+          location: "migrate.mjs:p3009",
+          message: "prisma-blocks-new-migrations",
+          data: { failedMigration: failedName, hasP3009: true },
+        });
+        // #endregion
+
+        if (failedName === "20260504174800_add_access_key") {
+          const probe = await probeUsersAccessKeyColumn(tunedMigrateUrl);
+          const recommend =
+            probe.ok && probe.exists === true
+              ? "applied"
+              : probe.ok && probe.exists === false
+                ? "rolled-back"
+                : null;
+          // #region agent log
+          agentDebugLog({
+            hypothesisId: recommend === "applied" ? "H2" : recommend === "rolled-back" ? "H3" : "H5",
+            location: "migrate.mjs:p3009-probe",
+            message: "users-access-key-column",
+            data: {
+              failedMigration: failedName,
+              probeOk: probe.ok,
+              accessKeyExists: probe.ok ? probe.exists : null,
+              probeError: probe.ok ? undefined : probe.error ?? probe.reason,
+              recommend,
+            },
+          });
+          // #endregion
+
+          if (probe.ok) {
+            console.error(
+              `[migrate] P3009 diagnóstico (runtime): public.users.access_key existe=${probe.exists}. ` +
+                (probe.exists
+                  ? `Siguiente paso (una vez): DATABASE_URL=…session:5432… npx prisma migrate resolve --applied "${failedName}"`
+                  : `Siguiente paso (una vez): DATABASE_URL=…session:5432… npx prisma migrate resolve --rolled-back "${failedName}" y redeploy.`)
+            );
+          } else {
+            console.error(
+              "[migrate] P3009 add_access_key: no se pudo comprobar information_schema (sin credenciales en log):",
+              probe.error || probe.reason || "(sin detalle)"
+            );
+          }
+        } else {
+          // #region agent log
+          agentDebugLog({
+            hypothesisId: "H1",
+            location: "migrate.mjs:p3009-skip-probe",
+            message: "no-column-probe-for-migration",
+            data: { failedMigration: failedName },
+          });
+          // #endregion
+        }
+        break;
+      }
+
+      if (attempt < maxAttempts) {
+        console.warn(
+          `[migrate] Reintento en ${delaySec}s. (P1001/db.*: revisá DIRECT; P3009: no se reintenta — ver mensaje arriba.)`
+        );
+        sleepSyncSeconds(delaySec);
+      }
     }
-  }
-  if (lastErr) {
-    console.error("Error:", lastErr);
+    if (lastErr) {
+      console.error("Error:", lastErr);
+      process.exit(1);
+    }
+  } catch (error) {
+    console.error("Error:", error);
     process.exit(1);
   }
-} catch (error) {
-  console.error("Error:", error);
+})().catch((err) => {
+  console.error("Error:", err);
   process.exit(1);
-}
+});
