@@ -105,17 +105,42 @@ function pickMigrateDatabaseUrl() {
   return { migrateUrl: "", appUrl: "", source: "" };
 }
 
-const { migrateUrl, appUrl, source } = pickMigrateDatabaseUrl();
+/**
+ * Afinar URL de migrate hacia Supabase: timeouts más largos y SSL explícito.
+ * Ayuda con P1001 intermitentes desde hosting (cold start / ruta a :5432).
+ */
+function tuneMigrateDatabaseUrl(url) {
+  if (!url || typeof url !== "string") return url;
+  if (!/supabase\.co|pooler\.supabase\.com/i.test(url)) return url;
+  let out = url.trim();
+  const add = [];
+  if (!/([?&])connect_timeout=/.test(out)) add.push("connect_timeout=60");
+  if (!/([?&])sslmode=/.test(out)) add.push("sslmode=require");
+  if (!add.length) return out;
+  const sep = out.includes("?") ? "&" : "?";
+  return `${out}${sep}${add.join("&")}`;
+}
 
-if (looksLikePgPooler(appUrl) && !looksLikePgPooler(migrateUrl)) {
+function sleepSyncSeconds(seconds) {
+  const s = Math.max(1, Math.min(120, Math.floor(Number(seconds) || 10)));
+  const until = Date.now() + s * 1000;
+  while (Date.now() < until) {
+    /* espera activa solo en migrate.mjs (boot en background) */
+  }
+}
+
+const { migrateUrl, appUrl, source } = pickMigrateDatabaseUrl();
+const tunedMigrateUrl = tuneMigrateDatabaseUrl(migrateUrl);
+
+if (looksLikePgPooler(appUrl) && !looksLikePgPooler(tunedMigrateUrl)) {
   const derivedNote =
     source === "derived_Supabase_pooler→db.*.supabase.co:5432"
       ? " (URI directa derivada del pooler: usuario postgres.<ref> de Supabase)."
       : "";
   console.log(
-    `[migrate] Pooler para la app (${hostPortHint(appUrl)}); migrate deploy usa ${hostPortHint(migrateUrl)}${derivedNote}`
+    `[migrate] Pooler para la app (${hostPortHint(appUrl)}); migrate deploy usa ${hostPortHint(tunedMigrateUrl)}${derivedNote}`
   );
-} else if (looksLikePgPooler(migrateUrl) && !process.env.PRISMA_MIGRATE_POOLER_OK) {
+} else if (looksLikePgPooler(tunedMigrateUrl) && !process.env.PRISMA_MIGRATE_POOLER_OK) {
   console.warn(
     "[migrate] La URL usada para migrate deploy sigue siendo el pooler (:6543 / pooler.*). " +
       "`prisma migrate deploy` suele necesitar la URL directa (:5432, host db.*.supabase.co). " +
@@ -131,12 +156,34 @@ if (!migrateUrl) {
 }
 
 try {
-  console.log("Ejecutando migraciones...");
-  execSync("npx prisma migrate deploy", {
-    env: { ...process.env, DATABASE_URL: migrateUrl },
-    stdio: "inherit",
-    cwd: process.cwd(),
-  });
+  const maxAttempts = Math.max(1, Math.min(12, Number(process.env.PRISMA_MIGRATE_ATTEMPTS || "5") || 5));
+  const delaySec = Math.max(2, Math.min(90, Number(process.env.PRISMA_MIGRATE_RETRY_SLEEP_SEC || "10") || 10));
+  let lastErr = null;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      console.log(`Ejecutando migraciones (intento ${attempt}/${maxAttempts})...`);
+      execSync("npx prisma migrate deploy", {
+        env: { ...process.env, DATABASE_URL: tunedMigrateUrl },
+        stdio: "inherit",
+        cwd: process.cwd(),
+      });
+      lastErr = null;
+      break;
+    } catch (error) {
+      lastErr = error;
+      console.error(`[migrate] Intento ${attempt}/${maxAttempts} falló.`, error?.message || error);
+      if (attempt < maxAttempts) {
+        console.warn(
+          `[migrate] Reintento en ${delaySec}s. Si persiste P1001: en Railway definí DIRECT_DATABASE_URL con la URI **Direct connection** (:5432) del panel Supabase (Database → Connection string). IPv4-only: ver add-on IPv4 o documentación Supabase para PaaS.`
+        );
+        sleepSyncSeconds(delaySec);
+      }
+    }
+  }
+  if (lastErr) {
+    console.error("Error:", lastErr);
+    process.exit(1);
+  }
 } catch (error) {
   console.error("Error:", error);
   process.exit(1);

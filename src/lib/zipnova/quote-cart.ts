@@ -1,6 +1,7 @@
 import type { ZipnovaConfig } from "@/lib/zipnova/config";
 import { getZipnovaConfig, zipnovaBasicAuthHeader } from "@/lib/zipnova/config";
 import { prisma } from "@/lib/prisma";
+import { isPrismaSchemaMissingError } from "@/lib/prisma/known-errors";
 import { refreshZipnovaAccessToken } from "@/lib/zipnova/oauth-marketplace";
 
 /** Valores por defecto si el catálogo no tiene medidas (hasta que el seller cargue datos reales). */
@@ -129,66 +130,78 @@ export async function resolveZipnovaQuoteConnection(
     return connectionFromBasic(basic);
   }
 
-  const row = await prisma.sellerZipnovaOAuth.findUnique({
-    where: { userId: sellerUserId.trim() },
-  });
+  try {
+    const row = await prisma.sellerZipnovaOAuth.findUnique({
+      where: { userId: sellerUserId.trim() },
+    });
 
-  if (!row?.accessToken?.trim()) {
-    if (!basic) return null;
-    return connectionFromBasic(basic);
-  }
-
-  let accessToken = row.accessToken.trim();
-  let refreshTok = row.refreshToken?.trim() ?? null;
-  let expiresAt = row.expiresAt;
-
-  if (expiresAt.getTime() < Date.now() + ZIPNOVA_EXPIRY_BUFFER_MS && refreshTok) {
-    try {
-      const t = await refreshZipnovaAccessToken(refreshTok);
-      accessToken = t.access_token;
-      refreshTok = (t.refresh_token ?? refreshTok).trim();
-      expiresAt = new Date(Date.now() + Math.max(60, t.expires_in) * 1000);
-      await prisma.sellerZipnovaOAuth.update({
-        where: { userId: row.userId },
-        data: {
-          accessToken,
-          refreshToken: refreshTok || null,
-          expiresAt,
-        },
-      });
-    } catch (e) {
-      console.error("[zipnova] refresh seller token:", e);
+    if (!row?.accessToken?.trim()) {
       if (!basic) return null;
       return connectionFromBasic(basic);
     }
-  }
 
-  let accountId = row.zipnovaAccountId;
-  if (accountId == null || accountId <= 0) {
-    const fetched = await fetchZipnovaFirstAccountId(baseUrl, accessToken);
-    if (fetched != null) {
-      accountId = fetched;
-      await prisma.sellerZipnovaOAuth
-        .update({
+    let accessToken = row.accessToken.trim();
+    let refreshTok = row.refreshToken?.trim() ?? null;
+    let expiresAt = row.expiresAt;
+
+    if (expiresAt.getTime() < Date.now() + ZIPNOVA_EXPIRY_BUFFER_MS && refreshTok) {
+      try {
+        const t = await refreshZipnovaAccessToken(refreshTok);
+        accessToken = t.access_token;
+        refreshTok = (t.refresh_token ?? refreshTok).trim();
+        expiresAt = new Date(Date.now() + Math.max(60, t.expires_in) * 1000);
+        await prisma.sellerZipnovaOAuth.update({
           where: { userId: row.userId },
-          data: { zipnovaAccountId: fetched },
-        })
-        .catch(() => undefined);
+          data: {
+            accessToken,
+            refreshToken: refreshTok || null,
+            expiresAt,
+          },
+        });
+      } catch (e) {
+        console.error("[zipnova] refresh seller token:", e);
+        if (!basic) return null;
+        return connectionFromBasic(basic);
+      }
     }
-  }
 
-  if (accountId != null && accountId > 0) {
-    return {
-      baseUrl,
-      accountId,
-      source,
-      originId,
-      authorization: `Bearer ${accessToken}`,
-    };
-  }
+    let accountId = row.zipnovaAccountId;
+    if (accountId == null || accountId <= 0) {
+      const fetched = await fetchZipnovaFirstAccountId(baseUrl, accessToken);
+      if (fetched != null) {
+        accountId = fetched;
+        await prisma.sellerZipnovaOAuth
+          .update({
+            where: { userId: row.userId },
+            data: { zipnovaAccountId: fetched },
+          })
+          .catch(() => undefined);
+      }
+    }
 
-  if (basic) return connectionFromBasic(basic);
-  return null;
+    if (accountId != null && accountId > 0) {
+      return {
+        baseUrl,
+        accountId,
+        source,
+        originId,
+        authorization: `Bearer ${accessToken}`,
+      };
+    }
+
+    if (basic) return connectionFromBasic(basic);
+    return null;
+  } catch (e) {
+    if (isPrismaSchemaMissingError(e)) {
+      console.warn(
+        "[zipnova] Tabla seller_zipnova_oauth inexistente (migrate deploy pendiente). Cotización con credenciales marketplace si existen."
+      );
+    } else {
+      console.error("[zipnova] resolveZipnovaQuoteConnection:", e);
+    }
+    if (!basic) return null;
+    return connectionFromBasic(basic);
+  }
 }
 
 /** Expuesto para armar el mismo payload de ítems en creación de envío (`POST /shipments`). */

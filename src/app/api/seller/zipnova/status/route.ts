@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isPrismaSchemaMissingError } from "@/lib/prisma/known-errors";
 import { getZipnovaMarketplaceOAuthConfig } from "@/lib/zipnova/oauth-marketplace";
 
 /** GET /api/seller/zipnova/status — si el vendedor conectó Zipnova OAuth y si el marketplace tiene app OAuth. */
@@ -17,14 +18,30 @@ export async function GET() {
 
   const oauthAppConfigured = getZipnovaMarketplaceOAuthConfig() != null;
 
-  const row = await prisma.sellerZipnovaOAuth.findUnique({
-    where: { userId: session.user.id },
-    select: { expiresAt: true, scope: true, zipnovaAccountId: true, updatedAt: true },
-  });
+  let row: {
+    expiresAt: Date;
+    scope: string | null;
+    zipnovaAccountId: number | null;
+    updatedAt: Date;
+  } | null = null;
+  let schemaMissing = false;
+  try {
+    row = await prisma.sellerZipnovaOAuth.findUnique({
+      where: { userId: session.user.id },
+      select: { expiresAt: true, scope: true, zipnovaAccountId: true, updatedAt: true },
+    });
+  } catch (e) {
+    if (isPrismaSchemaMissingError(e)) {
+      schemaMissing = true;
+    } else {
+      throw e;
+    }
+  }
 
   return NextResponse.json({
     oauthAppConfigured,
     connected: !!row,
+    schemaMissing,
     expiresAt: row?.expiresAt?.toISOString() ?? null,
     scope: row?.scope ?? null,
     zipnovaAccountId: row?.zipnovaAccountId ?? null,

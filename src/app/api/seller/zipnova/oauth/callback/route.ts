@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isPrismaSchemaMissingError } from "@/lib/prisma/known-errors";
 import { exchangeZipnovaAuthorizationCode } from "@/lib/zipnova/oauth-marketplace";
 import { fetchZipnovaFirstAccountId } from "@/lib/zipnova/quote-cart";
 
@@ -72,24 +73,31 @@ export async function GET(req: Request) {
       zipnovaAccountId = null;
     }
 
-    await prisma.sellerZipnovaOAuth.upsert({
-      where: { userId: session.user.id },
-      create: {
-        userId: session.user.id,
-        accessToken: tokens.access_token,
-        refreshToken: tokens.refresh_token ?? null,
-        expiresAt,
-        scope: DEFAULT_SCOPES,
-        zipnovaAccountId,
-      },
-      update: {
-        accessToken: tokens.access_token,
-        refreshToken: tokens.refresh_token ?? null,
-        expiresAt,
-        scope: DEFAULT_SCOPES,
-        ...(zipnovaAccountId != null ? { zipnovaAccountId } : {}),
-      },
-    });
+    try {
+      await prisma.sellerZipnovaOAuth.upsert({
+        where: { userId: session.user.id },
+        create: {
+          userId: session.user.id,
+          accessToken: tokens.access_token,
+          refreshToken: tokens.refresh_token ?? null,
+          expiresAt,
+          scope: DEFAULT_SCOPES,
+          zipnovaAccountId,
+        },
+        update: {
+          accessToken: tokens.access_token,
+          refreshToken: tokens.refresh_token ?? null,
+          expiresAt,
+          scope: DEFAULT_SCOPES,
+          ...(zipnovaAccountId != null ? { zipnovaAccountId } : {}),
+        },
+      });
+    } catch (dbErr) {
+      if (isPrismaSchemaMissingError(dbErr)) {
+        return fail("migrations_pending_run_prisma_migrate_deploy");
+      }
+      throw dbErr;
+    }
 
     const ok = redirectTo(req, "/dashboard/publicaciones?zipnova=connected");
     ok.cookies.delete(STATE_COOKIE);
