@@ -16,6 +16,7 @@ import {
 } from "@/lib/checkout/escrow-split";
 import { buildGuestClaim, shippingWithGuestClaim } from "@/lib/orders/guest-claim";
 import { resolveCartShippingCost } from "@/lib/zipnova/quote-cart";
+import { ensureSellerMpAccessToken, type SellerMpRow } from "@/lib/mercadopago/seller-access-token";
 
 function envPercent(key: string, fallback: number): number {
   const raw = process.env[key];
@@ -302,28 +303,30 @@ export async function POST(req: Request) {
     }
 
     // seller_mercadopago.seller_id es TEXT → User.id (Prisma / OAuth), NO profiles.id UUID.
-    let mpConnection: { mp_access_token: string | null } | null = null;
+    let mpConnection: SellerMpRow | null = null;
     let mpLookupErr: unknown = null;
+
+    const mpSelect = "seller_id, mp_access_token, mp_refresh_token, mp_token_expires_at, is_active";
 
     const byPrismaId = await supabaseService
       .from("seller_mercadopago")
-      .select("mp_access_token, is_active")
+      .select(mpSelect)
       .eq("seller_id", sellerPrismaId)
       .eq("is_active", true)
       .maybeSingle();
 
     if (byPrismaId.error) mpLookupErr = byPrismaId.error;
-    else if (byPrismaId.data?.mp_access_token) mpConnection = byPrismaId.data;
+    else if (byPrismaId.data?.mp_access_token) mpConnection = byPrismaId.data as SellerMpRow;
 
     if (!mpConnection?.mp_access_token && sellerUuid) {
       const legacy = await supabaseService
         .from("seller_mercadopago")
-        .select("mp_access_token, is_active")
+        .select(mpSelect)
         .eq("seller_id", sellerUuid)
         .eq("is_active", true)
         .maybeSingle();
       if (legacy.error) mpLookupErr = legacy.error;
-      if (legacy.data?.mp_access_token) mpConnection = legacy.data;
+      if (legacy.data?.mp_access_token) mpConnection = legacy.data as SellerMpRow;
     }
 
     if (!mpConnection?.mp_access_token) {
@@ -336,6 +339,15 @@ export async function POST(req: Request) {
             "El vendedor no tiene Mercado Pago conectado. Pedile que vaya al panel → Perfil y vincule Mercado Pago, o elegí otro vendedor.",
         },
         { status: 400 }
+      );
+    }
+
+    const mpToken = await ensureSellerMpAccessToken(supabaseService, mpConnection);
+    if (!mpToken.ok) {
+      if (persistedOrder) await supabaseService.from("orders").delete().eq("id", orderId);
+      return NextResponse.json(
+        { code: mpToken.code, error: mpToken.message },
+        { status: mpToken.code === "MP_TOKEN_REFRESH_FAILED" ? 502 : 400 }
       );
     }
 
@@ -377,14 +389,38 @@ export async function POST(req: Request) {
     const mpResponse = await fetch("https://api.mercadopago.com/checkout/preferences", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${mpConnection.mp_access_token}`,
+        Authorization: `Bearer ${mpToken.accessToken}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(preference),
     });
 
-    if (!mpResponse.ok) {
-      const errData = await mpResponse.json().catch(() => ({}));
+    let mpResponseFinal = mpResponse;
+    if (!mpResponseFinal.ok && mpResponseFinal.status === 401) {
+      const refetch = await supabaseService
+        .from("seller_mercadopago")
+        .select(mpSelect)
+        .eq("seller_id", mpConnection.seller_id)
+        .eq("is_active", true)
+        .maybeSingle();
+      const fresh = refetch.data as SellerMpRow | null;
+      if (fresh?.mp_refresh_token?.trim()) {
+        const forced = await ensureSellerMpAccessToken(supabaseService, fresh, { forceRefresh: true });
+        if (forced.ok) {
+          mpResponseFinal = await fetch("https://api.mercadopago.com/checkout/preferences", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${forced.accessToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(preference),
+          });
+        }
+      }
+    }
+
+    if (!mpResponseFinal.ok) {
+      const errData = await mpResponseFinal.json().catch(() => ({}));
       console.error("MP preference error:", errData);
       if (persistedOrder) await supabaseService.from("orders").delete().eq("id", orderId);
       return NextResponse.json(
@@ -393,7 +429,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const mpData = await mpResponse.json();
+    const mpData = await mpResponseFinal.json();
 
     // Si no se pudo persistir en Supabase y usamos order temporal, guardamos espejo en Prisma
     // para que la compra aparezca en /orders del usuario.
