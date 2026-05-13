@@ -13,7 +13,10 @@
 ## Después del deploy
 
 - [ ] En Railway: si existe `DIRECT_DATABASE_URL` con host `db.<ref>.supabase.co`, **eliminála** o reemplazala por la URI **Session** del panel (Connect → Session); con pooler `:6543` en `DATABASE_URL`, esa `DIRECT` provoca P1001 en migrate.
-- [ ] Si `migrate deploy` muestra **P3009** (ej. `20260504174800_add_access_key` failed): **no** lo arreglan más redeploys. Usá la misma `DATABASE_URL` que para migrate (pooler **session** `:5432`, copiada del log `migrate deploy → …pooler…:5432` o del panel Supabase → Connect → Session). En Supabase SQL Editor comprobá si existe la columna: `SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'access_key';` — si devuelve fila: `DATABASE_URL='…session…' npm run migrate:resolve:access-key-applied` (o `npx prisma migrate resolve --applied "20260504174800_add_access_key"`). Si **no** existe: `npm run migrate:resolve:access-key-rolled-back` y luego redeploy. Doc: https://pris.ly/d/migrate-resolve — en logs nuevos del contenedor buscá `[migrate] migrate.mjs 20260514c` para confirmar imagen actual.
+- [ ] **P3009 + `20260504174800_add_access_key`:** más redeploys **no** lo arreglan. URI **Session** `:5432` (misma que el log `migrate deploy → …pooler…:5432` o Supabase → Connect → Session), en la raíz del repo, **un comando** y listo:
+  - Si en logs aparece `[migrate] P3009 diagnóstico (runtime): … access_key existe=true` (línea `[migrate] migrate.mjs 20260514e` en el arranque): `DATABASE_URL='…' npm run migrate:resolve:access-key-applied`
+  - Si `existe=false` o no ves diagnóstico: comprobá en SQL Editor `information_schema.columns` para `users` / `access_key`; si no hay columna: `DATABASE_URL='…' npm run migrate:resolve:access-key-rolled-back` y redeploy para que Prisma vuelva a aplicar el SQL.
+  - **Después:** redeploy en Railway y confirmá que el primer `migrate deploy` del arranque **no** muestra P3009. Doc: https://pris.ly/d/migrate-resolve
 - [ ] Logs sin `P2021` / tabla `seller_zipnova_oauth` inexistente (migrate nunca completó). Opcional: `PRISMA_MIGRATE_ATTEMPTS`, `PRISMA_MIGRATE_RETRY_SLEEP_SEC`.
 - [ ] Verificar logs: sin errores 503 en `/api/webhooks/mercadopago` por firma.
 - [ ] OAuth vendedor MP: conectar cuenta de prueba y confirmar redirect con `mp_success`.
