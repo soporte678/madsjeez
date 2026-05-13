@@ -18,7 +18,7 @@ import { buildGuestClaim, shippingWithGuestClaim } from "@/lib/orders/guest-clai
 import { resolveCartShippingCost } from "@/lib/zipnova/quote-cart";
 import type { SellerMpRow } from "@/lib/mercadopago/seller-access-token";
 import { createCheckoutProPreferenceWithSellerTokenRetry } from "@/lib/mercadopago/preference-with-token-retry";
-import { notifyPostgrestReloadSchema } from "@/lib/supabase/postgrest-schema";
+import { notifyPostgrestReloadSchema, ensureSupabaseOrdersSellerIdColumn } from "@/lib/supabase/postgrest-schema";
 
 function sleepMs(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
@@ -277,10 +277,19 @@ export async function POST(req: Request) {
     }
 
     let orderInsert = await insertOrderWithPayloads(orderPayloadAttempts);
-    const lastCode = (orderInsert.error as { code?: string } | null)?.code;
+    let lastCode = (orderInsert.error as { code?: string } | null)?.code;
     if (lastCode === "PGRST204") {
       const notified = await notifyPostgrestReloadSchema(prisma);
       if (notified) await sleepMs(500);
+      orderInsert = await insertOrderWithPayloads(orderPayloadAttempts);
+      lastCode = (orderInsert.error as { code?: string } | null)?.code;
+    }
+    if (lastCode === "PGRST204") {
+      console.warn(
+        "[checkout/mp] PGRST204 en orders tras NOTIFY: intentando ADD COLUMN seller_id idempotente + NOTIFY (DDL)."
+      );
+      const ddlOk = await ensureSupabaseOrdersSellerIdColumn(prisma);
+      if (ddlOk) await sleepMs(800);
       orderInsert = await insertOrderWithPayloads(orderPayloadAttempts);
     }
 
@@ -289,7 +298,11 @@ export async function POST(req: Request) {
     let persistedOrder = false;
 
     if (orderErr || !order?.id) {
-      console.error("checkout mp insert order:", orderErr);
+      console.error(
+        "checkout mp insert order:",
+        orderErr,
+        "| Si persiste PGRST204: redeploy con migrate.mjs actual, DIRECT_DATABASE_URL :5432, y/o ejecutá scripts/supabase-fix-orders-seller-id.sql en Supabase. MP: reconectar Mercado Pago del vendedor si hay invalid_grant."
+      );
       // Fallback operativo: no bloquear checkout por drift de esquema en Supabase.
       orderId = `tmp_${Date.now()}_${buyerPrismaId}`;
     } else {
