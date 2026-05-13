@@ -3,12 +3,15 @@
  * por defecto deriva la URI de **Supavisor session** (mismo host `*.pooler.supabase.com`, puerto **5432**,
  * usuario `postgres.<ref>`) — compatible con **IPv4** (Railway, etc.). El host `db.*.supabase.co:5432`
  * suele ser solo IPv6 y puede dar P1001 desde esos entornos.
- * Si definís `DIRECT_DATABASE_URL` / `PRISMA_DIRECT_URL` (no pooler), se usa tal cual para migrate.
+ * `DIRECT_DATABASE_URL` / `PRISMA_DIRECT_URL`: si es host `db.*.supabase.co` y la app usa pooler :6543, se ignora
+ * (IPv6-only) y se deriva session. Una URI **Session mode** (`*.pooler.supabase.com:5432`) sí se respeta.
  * @see https://supabase.com/docs/guides/database/connecting-to-postgres
  */
 import { execSync } from "child_process";
 import path from "path";
 import { existsSync } from "fs";
+
+const MIGRATE_SCRIPT_TAG = "migrate.mjs 20260514b (session default; ignora DIRECT db.* + transaction :6543 si app=pooler)";
 
 try {
   const dotenv = await import("dotenv");
@@ -24,6 +27,12 @@ try {
 function looksLikePgPooler(url) {
   if (!url || typeof url !== "string") return false;
   return url.includes(":6543") || url.includes(".pooler.supabase.com");
+}
+
+/** Pooler Supabase en modo transaction (no usar para `migrate deploy`). */
+function looksLikeSupabaseTransactionPooler6543(url) {
+  if (!url || typeof url !== "string") return false;
+  return url.includes(":6543") && url.includes("pooler.supabase.com");
 }
 
 function hostPortHint(url) {
@@ -120,9 +129,20 @@ function pickMigrateDatabaseUrl() {
     .map((u) => u.trim());
 
   for (const u of explicitDirect) {
-    if (!looksLikePgPooler(u)) {
-      return { migrateUrl: u, appUrl: appPrimary || u, source: "DIRECT_DATABASE_URL|PRISMA_DIRECT_URL|DATABASE_URL_DIRECT" };
+    if (looksLikeSupabaseTransactionPooler6543(u)) {
+      console.warn(
+        "[migrate] Ignorando DIRECT_* con pooler transaction :6543; no es válido para migrate deploy. Usá session :5432 o dejá vacío."
+      );
+      continue;
     }
+    if (looksLikeSupabaseDirectDbIpv6Host(u) && looksLikePgPooler(appPrimary)) {
+      console.warn(
+        "[migrate] Ignorando DIRECT_DATABASE_URL / PRISMA_DIRECT_URL con host db.*.supabase.co: en Railway suele ser IPv6-only. " +
+          "Con DATABASE_URL pooler :6543 se usará Supavisor session :5432. Quitá esa variable o usá la URI **Session mode** del panel Supabase (Connect → Session)."
+      );
+      continue;
+    }
+    return { migrateUrl: u, appUrl: appPrimary || u, source: "DIRECT_DATABASE_URL|PRISMA_DIRECT_URL|DATABASE_URL_DIRECT" };
   }
 
   const supa = (process.env.SUPABASE_DATABASE_URL || "").trim();
@@ -200,6 +220,8 @@ function sleepSyncSeconds(seconds) {
 
 const { migrateUrl, appUrl, source } = pickMigrateDatabaseUrl();
 const tunedMigrateUrl = tuneMigrateDatabaseUrl(migrateUrl);
+
+console.log(`[migrate] ${MIGRATE_SCRIPT_TAG}`);
 
 if (appUrl && migrateUrl && migrateUrl !== appUrl) {
   const note = source.includes("session")

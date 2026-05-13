@@ -36,7 +36,7 @@ elif [ -n "$DATABASE_URL" ] && [ -f "./migrate.mjs" ]; then
   fi
     mig=$?
     if [ "$mig" != 0 ]; then
-      echo "WARN: migrate deploy terminó con código $mig (timeout=124). Revisá DIRECT_DATABASE_URL (:5432) o DATABASE_URL directa; pooler :6543 suele colgar. O ejecutá migrate a mano."
+      echo "WARN: migrate deploy terminó con código $mig (timeout=124). Revisá logs [migrate]: si ves db.*.supabase.co y P1001, quitá DIRECT_DATABASE_URL con host db.* o redeploy con migrate.mjs actual (session pooler :5432). O ejecutá migrate a mano con URI Session del panel Supabase."
     else
       echo "INFO: migrate deploy completó OK."
     fi

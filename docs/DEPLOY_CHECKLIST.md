@@ -12,7 +12,7 @@
 
 ## Después del deploy
 
-- [ ] Smoke: login, checkout Mercado Pago (sandbox/prod según entorno), webhook de prueba desde panel MP.
+- [ ] En Railway: si existe `DIRECT_DATABASE_URL` con host `db.<ref>.supabase.co`, **eliminála** o reemplazala por la URI **Session** del panel (Connect → Session); con pooler `:6543` en `DATABASE_URL`, esa `DIRECT` provoca P1001 en migrate.
 - [ ] Tras el deploy: logs sin `P2021` / tabla `seller_zipnova_oauth` inexistente (indica `migrate deploy` fallido). Opcional en Railway: `PRISMA_MIGRATE_ATTEMPTS`, `PRISMA_MIGRATE_RETRY_SLEEP_SEC` para reintentos en boot.
 - [ ] Verificar logs: sin errores 503 en `/api/webhooks/mercadopago` por firma.
 - [ ] OAuth vendedor MP: conectar cuenta de prueba y confirmar redirect con `mp_success`.
