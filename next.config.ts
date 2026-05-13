@@ -113,6 +113,11 @@ const nextConfig: NextConfig = {
         permanent: false,
       },
       {
+        source: "/docs",
+        destination: "/docs/api",
+        permanent: false,
+      },
+      {
         source: "/:path*",
         has: [
           {

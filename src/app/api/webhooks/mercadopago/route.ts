@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { OrderStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { supabaseService } from "@/lib/supabase/service";
+import { mergeSellerFulfillmentIntoShipping, parseSellerFulfillment } from "@/lib/orders/seller-fulfillment";
 import crypto from "crypto";
 
 const WEBHOOK_TS_SKEW_MS = 5 * 60 * 1000;
@@ -276,10 +277,32 @@ export async function POST(req: NextRequest) {
       };
       const orderStatus = statusMap[status] || "pending";
 
-      const { error: orderError } = await supabaseService
-        .from("orders")
-        .update({ status: orderStatus, updated_at: new Date().toISOString() })
-        .eq("id", orderId);
+      let shippingPatch: Record<string, unknown> | undefined;
+      if (orderStatus === "paid") {
+        const { data: prevOrder } = await supabaseService
+          .from("orders")
+          .select("shipping_address, status")
+          .eq("id", orderId)
+          .maybeSingle();
+        const prevSt = typeof (prevOrder as { status?: string } | null)?.status === "string"
+          ? String((prevOrder as { status: string }).status).toLowerCase()
+          : "";
+        const prevFul = parseSellerFulfillment((prevOrder as { shipping_address?: unknown } | null)?.shipping_address);
+        if (prevSt !== "paid" && !prevFul.paid_at) {
+          shippingPatch = mergeSellerFulfillmentIntoShipping(
+            (prevOrder as { shipping_address?: unknown } | null)?.shipping_address,
+            { paid_at: new Date().toISOString() }
+          );
+        }
+      }
+
+      const orderUpdate: Record<string, unknown> = {
+        status: orderStatus,
+        updated_at: new Date().toISOString(),
+      };
+      if (shippingPatch) orderUpdate.shipping_address = shippingPatch;
+
+      const { error: orderError } = await supabaseService.from("orders").update(orderUpdate).eq("id", orderId);
 
       if (orderError) {
         console.error("Error updating order status:", orderError);

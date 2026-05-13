@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ChevronRight, Package, Truck, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import Link from 'next/link';
+import { Package, Truck, CheckCircle2, XCircle, Clock } from 'lucide-react';
 
 interface CompraItem {
   id: string;
@@ -19,6 +20,7 @@ interface CompraItem {
   productPrice: number;
   sellerName: string | null;
   createdAt: string;
+  itemCount?: number;
 }
 
 interface ApiResponse {
@@ -102,9 +104,12 @@ export default function ComprasView() {
           <Package className="w-16 h-16 text-[#e6e6e6] mx-auto mb-4" />
           <h3 className="text-[18px] text-[#333] font-semibold mb-2">No tenés compras</h3>
           <p className="text-[14px] text-[#666]">Cuando compres productos, aparecerán aquí.</p>
-          <button className="mt-6 bg-[#3483fa] hover:bg-[#2968c8] text-white font-semibold text-[14px] py-2 px-6 rounded-[6px] transition-colors">
+          <Link
+            href="/"
+            className="inline-block mt-6 bg-[#3483fa] hover:bg-[#2968c8] text-white font-semibold text-[14px] py-2 px-6 rounded-[6px] transition-colors"
+          >
             Descubrir productos
-          </button>
+          </Link>
         </div>
       </div>
     );
@@ -191,9 +196,12 @@ export default function ComprasView() {
                 {item.shippingCity}, {item.shippingState}
               </div>
               <div className="flex items-center gap-4">
-                <button className="text-[14px] text-[#3483fa] font-semibold hover:text-blue-700 transition-colors">
+                <Link
+                  href={`/dashboard/pedido/${encodeURIComponent(item.id)}`}
+                  className="text-[14px] text-[#3483fa] font-semibold hover:text-blue-700 transition-colors"
+                >
                   Ver detalle
-                </button>
+                </Link>
                 {item.status === 'DELIVERED' && (
                   <button className="text-[14px] text-[#3483fa] font-semibold hover:text-blue-700 transition-colors">
                     Opinar

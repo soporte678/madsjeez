@@ -809,7 +809,7 @@ export default function Home() {
             </div>
             {[
               { title: "Marketplace", links: ["Ayuda", "Servicios VIP", "Contacto"] },
-              { title: "Ecosistema", links: ["Vender", "Suscripciones", "Impulsar"] },
+              { title: "Ecosistema", links: ["Vender", "Suscripciones", "Impulsar", "API Developers"] },
               { title: "Legales", links: ["Términos", "Privacidad", "Aviso Legal"] }
             ].map((section) => (
               <div key={section.title}>
@@ -831,7 +831,9 @@ export default function Home() {
                                     ? "/subscriptions"
                                     : link === "Impulsar"
                                       ? "/dashboard#publicidad"
-                                      : link === "Ayuda"
+                                      : link === "API Developers"
+                                        ? "/docs/api"
+                                        : link === "Ayuda"
                                         ? "/help"
                                         : link === "Servicios VIP"
                                           ? "/subscriptions"

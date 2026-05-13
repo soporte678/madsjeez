@@ -14,6 +14,8 @@ import {
   parseCookieHeader,
   roundMoney,
 } from "@/lib/checkout/escrow-split";
+import { buildGuestClaim, shippingWithGuestClaim } from "@/lib/orders/guest-claim";
+import { resolveCartShippingCost } from "@/lib/zipnova/quote-cart";
 
 function envPercent(key: string, fallback: number): number {
   const raw = process.env[key];
@@ -57,8 +59,20 @@ export async function POST(req: Request) {
     const body = (await req.json()) as {
       shipping?: Record<string, unknown>;
       buyer_email?: string;
+      guest_email?: string | null;
+      guest_phone?: string | null;
+      guest_document?: string | null;
     };
-    const shippingAddress = body.shipping ?? {};
+    const shippingAddressRaw = body.shipping ?? {};
+    const guestClaim = buildGuestClaim(session.user.email, {
+      email: body.guest_email ?? body.buyer_email,
+      phone: body.guest_phone,
+      document: body.guest_document,
+    });
+    const shippingAddress = shippingWithGuestClaim(
+      shippingAddressRaw as Record<string, unknown>,
+      guestClaim
+    );
 
     const cart = await prisma.cart.findUnique({
       where: { userId: buyerPrismaId },
@@ -102,7 +116,48 @@ export async function POST(req: Request) {
 
     const lines = cart.items;
     const subtotal = roundMoney(lines.reduce((s, i) => s + i.price * i.quantity, 0));
-    const shippingCostFull = lines.some((i) => !i.product.freeShipping) ? 2500 : 0;
+
+    const shippingForQuote = {
+      city: String((shippingAddress as { city?: string }).city ?? ""),
+      state: String((shippingAddress as { state?: string }).state ?? ""),
+      zip: String((shippingAddress as { zip?: string }).zip ?? ""),
+      street: String((shippingAddress as { street?: string }).street ?? ""),
+      number: String((shippingAddress as { number?: string }).number ?? ""),
+    };
+
+    let shippingAddressOut: Record<string, unknown> = { ...shippingAddress };
+    let shippingCostFull = 0;
+    try {
+      const shipRes = await resolveCartShippingCost({
+        lines: lines.map((i) => ({
+          quantity: i.quantity,
+          price: i.price,
+          product: {
+            id: i.product.id,
+            title: i.product.title,
+            sku: i.product.sku,
+            freeShipping: i.product.freeShipping,
+          },
+        })),
+        shipping: shippingForQuote,
+      });
+      shippingCostFull = shipRes.cost;
+      if (shipRes.zipnova) {
+        shippingAddressOut = { ...shippingAddressOut, zipnova: shipRes.zipnova };
+      }
+    } catch (zipErr) {
+      console.error("checkout/mp Zipnova quote:", zipErr);
+      return NextResponse.json(
+        {
+          code: "ZIPNOVA_QUOTE_FAILED",
+          error:
+            zipErr instanceof Error
+              ? zipErr.message
+              : "No se pudo cotizar el envío con Zipnova. Revisá la dirección o la configuración de envíos.",
+        },
+        { status: 502 }
+      );
+    }
 
     const marketplaceSalesFeePercent = envPercent("MARKETPLACE_SALES_FEE_PERCENT", 10);
     const affiliateDefaultPercent = envPercent("AFFILIATE_COMMISSION_PERCENT", 10);
@@ -171,7 +226,7 @@ export async function POST(req: Request) {
       total_amount: split.totalBuyerCharged,
       shipping_cost: shippingCostFull,
       discount_amount: 0,
-      shipping_address: shippingAddress,
+      shipping_address: shippingAddressOut,
       notes: null,
     };
     const orderPayloadAttempts: Array<Record<string, unknown>> = [
@@ -182,7 +237,7 @@ export async function POST(req: Request) {
         seller_id: sellerUuid,
         status: "pending",
         total_amount: split.totalBuyerCharged,
-        shipping_address: shippingAddress,
+        shipping_address: shippingAddressOut,
         notes: null,
       },
       {

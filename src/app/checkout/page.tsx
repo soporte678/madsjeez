@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, Suspense } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
@@ -108,6 +108,16 @@ function CheckoutContent() {
     recipient: "",
   });
 
+  /** Cotización servidor (Zipnova o monto legacy); null = aún no cotizado o dirección incompleta. */
+  const [shippingQuote, setShippingQuote] = useState<{
+    shipping_full: number;
+    buyer_shipping_share: number;
+    used_zipnova: boolean;
+  } | null>(null);
+  const [shippingQuoteLoading, setShippingQuoteLoading] = useState(false);
+  const [shippingQuoteError, setShippingQuoteError] = useState<string | null>(null);
+  const quoteAbortRef = useRef<AbortController | null>(null);
+
   const fetchCart = useCallback(async () => {
     setLoading(true);
     try {
@@ -173,13 +183,128 @@ function CheckoutContent() {
     (acc, item) => acc + item.product.price * item.quantity,
     0
   );
-  const shippingFull = cartItems.some((item) => !item.product.shipping_free)
-    ? 2500
-    : 0;
-  /** Coherente con checkout MP (escrow): el comprador abona el 50% del envío. */
+
+  const needsPaidShipping = cartItems.some((item) => !item.product.shipping_free);
+  const cartQuoteFingerprint = useMemo(
+    () =>
+      cartItems
+        .map((i) => `${i.id}:${i.quantity}:${i.product.shipping_free ? 1 : 0}`)
+        .join("|"),
+    [cartItems]
+  );
+
+  const addressEnoughForQuote =
+    shippingAddress.city.trim().length > 0 &&
+    shippingAddress.state.trim().length > 0 &&
+    shippingAddress.zip.trim().length > 0 &&
+    shippingAddress.street.trim().length > 0 &&
+    shippingAddress.number.trim().length > 0;
+
+  useEffect(() => {
+    if (status !== "authenticated") return;
+
+    if (!needsPaidShipping) {
+      quoteAbortRef.current?.abort();
+      setShippingQuote({ shipping_full: 0, buyer_shipping_share: 0, used_zipnova: false });
+      setShippingQuoteError(null);
+      setShippingQuoteLoading(false);
+      return;
+    }
+
+    if (!addressEnoughForQuote) {
+      quoteAbortRef.current?.abort();
+      setShippingQuote(null);
+      setShippingQuoteError(null);
+      setShippingQuoteLoading(false);
+      return;
+    }
+
+    const handle = setTimeout(() => {
+      const ac = new AbortController();
+      quoteAbortRef.current?.abort();
+      quoteAbortRef.current = ac;
+      setShippingQuoteLoading(true);
+      setShippingQuoteError(null);
+
+      void (async () => {
+        try {
+          const res = await fetch("/api/shipping/zipnova/quote", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            signal: ac.signal,
+            body: JSON.stringify({
+              shipping: {
+                city: shippingAddress.city,
+                state: shippingAddress.state,
+                zip: shippingAddress.zip,
+                street: shippingAddress.street,
+                number: shippingAddress.number,
+              },
+            }),
+          });
+          const data = (await res.json().catch(() => ({}))) as {
+            error?: string;
+            shipping_full?: number;
+            buyer_shipping_share?: number;
+            used_zipnova?: boolean;
+          };
+          if (!res.ok) {
+            throw new Error(
+              typeof data.error === "string" && data.error.trim()
+                ? data.error
+                : `Error ${res.status} al cotizar envío`
+            );
+          }
+          if (ac.signal.aborted) return;
+          setShippingQuote({
+            shipping_full: Number(data.shipping_full ?? 0),
+            buyer_shipping_share: Number(data.buyer_shipping_share ?? 0),
+            used_zipnova: Boolean(data.used_zipnova),
+          });
+        } catch (e: unknown) {
+          if (e instanceof DOMException && e.name === "AbortError") return;
+          if (ac.signal.aborted) return;
+          const msg = e instanceof Error ? e.message : "No se pudo cotizar el envío";
+          setShippingQuoteError(msg);
+          setShippingQuote(null);
+        } finally {
+          if (!ac.signal.aborted) setShippingQuoteLoading(false);
+        }
+      })();
+    }, 550);
+
+    return () => {
+      clearTimeout(handle);
+      quoteAbortRef.current?.abort();
+    };
+  }, [
+    status,
+    needsPaidShipping,
+    addressEnoughForQuote,
+    cartQuoteFingerprint,
+    shippingAddress.city,
+    shippingAddress.state,
+    shippingAddress.zip,
+    shippingAddress.street,
+    shippingAddress.number,
+  ]);
+
+  const shippingFull = !needsPaidShipping
+    ? 0
+    : shippingQuote != null
+      ? shippingQuote.shipping_full
+      : null;
+  /** Coherente con checkout MP (escrow): el comprador abona el 50% del envío (o lo que devuelva la API). */
   const buyerShippingShare =
-    shippingFull > 0 ? Math.round((shippingFull / 2) * 100) / 100 : 0;
-  const total = subtotal + buyerShippingShare;
+    shippingFull != null && shippingFull > 0
+      ? shippingQuote?.buyer_shipping_share ??
+        Math.round((shippingFull / 2) * 100) / 100
+      : 0;
+  const totalKnown =
+    shippingFull != null ? subtotal + (shippingFull > 0 ? buyerShippingShare : 0) : null;
+  const quoteUnresolved =
+    needsPaidShipping && (shippingQuote === null || shippingQuoteLoading);
 
   const sellerIds = new Set(cartItems.map((i) => i.product.seller_id));
   const multiSeller = sellerIds.size > 1;
@@ -586,7 +711,12 @@ function CheckoutContent() {
                         <Button
                           className="flex-1 bg-primary hover:bg-primary-hover"
                           onClick={handleSubmitOrder}
-                          disabled={processing || multiSeller}
+                          disabled={
+                            processing ||
+                            multiSeller ||
+                            quoteUnresolved ||
+                            Boolean(shippingQuoteError)
+                          }
                         >
                           {processing ? (
                             <>
@@ -679,28 +809,74 @@ function CheckoutContent() {
                         <span className="text-gray-600">Subtotal</span>
                         <span>${subtotal.toLocaleString()}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Envío (total logística)</span>
-                        <span>
-                          {shippingFull === 0 ? "Gratis" : `$${shippingFull.toLocaleString("es-AR")}`}
+                      <div className="flex justify-between items-start gap-2">
+                        <span className="text-gray-600 shrink-0">Envío (total logística)</span>
+                        <span className="text-right">
+                          {!needsPaidShipping && "Gratis"}
+                          {needsPaidShipping && !addressEnoughForQuote && (
+                            <span className="text-gray-500 text-sm">Completá calle, ciudad, CP…</span>
+                          )}
+                          {needsPaidShipping && addressEnoughForQuote && shippingQuoteLoading && (
+                            <span className="text-gray-500 text-sm inline-flex items-center gap-2">
+                              <span className="inline-block h-3.5 w-3.5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                              Cotizando…
+                            </span>
+                          )}
+                          {needsPaidShipping &&
+                            addressEnoughForQuote &&
+                            !shippingQuoteLoading &&
+                            shippingQuoteError && (
+                              <span className="text-red-600 text-sm leading-snug">{shippingQuoteError}</span>
+                            )}
+                          {needsPaidShipping &&
+                            addressEnoughForQuote &&
+                            !shippingQuoteLoading &&
+                            !shippingQuoteError &&
+                            shippingFull === 0 &&
+                            "Gratis"}
+                          {needsPaidShipping &&
+                            addressEnoughForQuote &&
+                            !shippingQuoteLoading &&
+                            !shippingQuoteError &&
+                            shippingFull != null &&
+                            shippingFull > 0 && (
+                              <span>${shippingFull.toLocaleString("es-AR")}</span>
+                            )}
                         </span>
                       </div>
-                      {shippingFull > 0 && (
+                      {shippingFull != null && shippingFull > 0 && (
                         <div className="flex justify-between text-sm text-gray-600">
-                          <span>Pagás ahora (50% envío)</span>
+                          <span>Pagás ahora (parte del envío)</span>
                           <span>${buyerShippingShare.toLocaleString("es-AR")}</span>
                         </div>
                       )}
+                      {shippingQuote?.used_zipnova && shippingFull != null && shippingFull > 0 && (
+                        <p className="text-[11px] text-gray-500">Cotización en vivo vía Zipnova.</p>
+                      )}
+                      {!shippingQuote?.used_zipnova &&
+                        needsPaidShipping &&
+                        shippingFull != null &&
+                        shippingFull > 0 &&
+                        !shippingQuoteLoading &&
+                        !shippingQuoteError && (
+                          <p className="text-[11px] text-gray-500">
+                            Monto fijo de envío (Zipnova no configurado en el servidor).
+                          </p>
+                        )}
                     </div>
 
                     <Separator className="my-4" />
 
                     <div className="flex justify-between text-lg font-semibold">
                       <span>Total a pagar</span>
-                      <span>${total.toLocaleString("es-AR")}</span>
+                      <span>
+                        {totalKnown != null
+                          ? `$${totalKnown.toLocaleString("es-AR")}`
+                          : `$${subtotal.toLocaleString("es-AR")} + envío`}
+                      </span>
                     </div>
 
-                    {shippingFull > 0 && (
+                    {shippingFull != null && shippingFull > 0 && (
                       <p className="mt-2 text-xs text-gray-500 leading-snug">
                         El otro 50% del envío lo absorbe el vendedor desde su liquidación. Si viniste por un afiliado,
                         su comisión queda retenida en escrow hasta cumplir la política de devoluciones.
