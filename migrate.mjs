@@ -11,7 +11,7 @@ import { spawnSync } from "child_process";
 import path from "path";
 import { existsSync } from "fs";
 
-const MIGRATE_SCRIPT_TAG = "migrate.mjs 20260514d (P3009 probe+agent log)";
+const MIGRATE_SCRIPT_TAG = "migrate.mjs 20260514e (pg probe SSL Supabase)";
 
 try {
   const dotenv = await import("dotenv");
@@ -194,13 +194,48 @@ function pickMigrateDatabaseUrl() {
   return { migrateUrl: "", appUrl: "", source: "" };
 }
 
+/** Host Supabase (pooler o db) en la cadena de conexión — para TLS/URL tuning sin afectar otros Postgres. */
+function looksLikeSupabasePostgresUrl(url) {
+  if (!url || typeof url !== "string") return false;
+  return /supabase\.co|pooler\.supabase\.com/i.test(url);
+}
+
+/**
+ * Quita `sslmode` / `ssl` del query string para usar solo `ssl` en opciones de `pg` Client (evita warning y duplicado).
+ */
+function postgresConnectionStringWithoutSslQueryParams(url) {
+  if (!url || typeof url !== "string") return url;
+  try {
+    const trimmed = url.trim();
+    const preferPostgresScheme = /^postgres:\/\//i.test(trimmed);
+    const normalized = trimmed.replace(/^postgres:/i, "postgresql:");
+    const parsed = new URL(normalized.replace(/^postgresql:/i, "http:"));
+    const qp = new URLSearchParams(parsed.search);
+    qp.delete("sslmode");
+    qp.delete("ssl");
+    const qs = qp.toString();
+    const path = (parsed.pathname || "/").replace(/\/+/g, "/") || "/";
+    const port = parsed.port ? `:${parsed.port}` : "";
+    const userDecoded = decodeURIComponent((parsed.username || "").replace(/\+/g, " "));
+    const passDecoded = parsed.password ? decodeURIComponent(parsed.password.replace(/\+/g, " ")) : "";
+    const auth =
+      userDecoded !== "" || passDecoded !== ""
+        ? `${encodeURIComponent(userDecoded)}${passDecoded !== "" ? `:${encodeURIComponent(passDecoded)}` : ""}@`
+        : "";
+    const scheme = preferPostgresScheme ? "postgres" : "postgresql";
+    return `${scheme}://${auth}${parsed.hostname}${port}${path}${qs ? `?${qs}` : ""}`;
+  } catch {
+    return url;
+  }
+}
+
 /**
  * Afinar URL de migrate hacia Supabase: timeouts más largos y SSL explícito.
  * Ayuda con P1001 intermitentes desde hosting (cold start / ruta a :5432).
  */
 function tuneMigrateDatabaseUrl(url) {
   if (!url || typeof url !== "string") return url;
-  if (!/supabase\.co|pooler\.supabase\.com/i.test(url)) return url;
+  if (!looksLikeSupabasePostgresUrl(url)) return url;
   let out = url.trim();
   const add = [];
   if (!/([?&])connect_timeout=/.test(out)) add.push("connect_timeout=60");
@@ -238,9 +273,12 @@ async function probeUsersAccessKeyColumn(dbUrl) {
   if (!dbUrl || typeof dbUrl !== "string") return { ok: false, reason: "no-url" };
   try {
     const { Client } = await import("pg");
+    const supabaseTls = looksLikeSupabasePostgresUrl(dbUrl);
+    const connectionString = supabaseTls ? postgresConnectionStringWithoutSslQueryParams(dbUrl) : dbUrl;
     const client = new Client({
-      connectionString: dbUrl,
+      connectionString,
       connectionTimeoutMillis: 25_000,
+      ...(supabaseTls ? { ssl: { rejectUnauthorized: false } } : {}),
     });
     await client.connect();
     const r = await client.query(
