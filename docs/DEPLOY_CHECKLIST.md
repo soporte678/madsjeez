@@ -13,7 +13,8 @@
 ## Después del deploy
 
 - [ ] En Railway: si existe `DIRECT_DATABASE_URL` con host `db.<ref>.supabase.co`, **eliminála** o reemplazala por la URI **Session** del panel (Connect → Session); con pooler `:6543` en `DATABASE_URL`, esa `DIRECT` provoca P1001 en migrate.
-- [ ] Tras el deploy: logs sin `P2021` / tabla `seller_zipnova_oauth` inexistente (indica `migrate deploy` fallido). Opcional en Railway: `PRISMA_MIGRATE_ATTEMPTS`, `PRISMA_MIGRATE_RETRY_SLEEP_SEC` para reintentos en boot.
+- [ ] Si `migrate deploy` muestra **P3009**: hay una fila fallida en `_prisma_migrations`. No redeploy infinito: con la URI de migrate (session :5432) ejecutá `npx prisma migrate resolve --applied "NOMBRE"` si el SQL ya está en la base, o `--rolled-back` si no. Ver logs `[migrate] P3009` del contenedor o https://pris.ly/d/migrate-resolve
+- [ ] Logs sin `P2021` / tabla `seller_zipnova_oauth` inexistente (migrate nunca completó). Opcional: `PRISMA_MIGRATE_ATTEMPTS`, `PRISMA_MIGRATE_RETRY_SLEEP_SEC`.
 - [ ] Verificar logs: sin errores 503 en `/api/webhooks/mercadopago` por firma.
 - [ ] OAuth vendedor MP: conectar cuenta de prueba y confirmar redirect con `mp_success`.
 

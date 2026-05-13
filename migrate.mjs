@@ -7,11 +7,11 @@
  * (IPv6-only) y se deriva session. Una URI **Session mode** (`*.pooler.supabase.com:5432`) sí se respeta.
  * @see https://supabase.com/docs/guides/database/connecting-to-postgres
  */
-import { execSync } from "child_process";
+import { spawnSync } from "child_process";
 import path from "path";
 import { existsSync } from "fs";
 
-const MIGRATE_SCRIPT_TAG = "migrate.mjs 20260514b (session default; ignora DIRECT db.* + transaction :6543 si app=pooler)";
+const MIGRATE_SCRIPT_TAG = "migrate.mjs 20260514c (P3009 hints; spawn migrate deploy)";
 
 try {
   const dotenv = await import("dotenv");
@@ -218,6 +218,41 @@ function sleepSyncSeconds(seconds) {
   }
 }
 
+/**
+ * Ejecuta `prisma migrate deploy` y devuelve salida combinada (para detectar P3009 en logs).
+ */
+function runPrismaMigrateDeploy(dbUrl) {
+  const r = spawnSync("npx", ["prisma", "migrate", "deploy"], {
+    env: { ...process.env, DATABASE_URL: dbUrl },
+    cwd: process.cwd(),
+    encoding: "utf8",
+    maxBuffer: 50 * 1024 * 1024,
+    stdio: ["inherit", "pipe", "pipe"],
+  });
+  const stdout = r.stdout ?? "";
+  const stderr = r.stderr ?? "";
+  if (stdout) process.stdout.write(stdout);
+  if (stderr) process.stderr.write(stderr);
+  const combined = `${stdout}\n${stderr}`;
+  return { status: r.status === 0 ? 0 : r.status ?? 1, combined };
+}
+
+function printP3009Hints(combined) {
+  const m = combined.match(/The `([^`]+)` migration/);
+  const name = m?.[1] ?? "(nombre en el log arriba)";
+  console.error(
+    `[migrate] P3009 — Prisma registró una migración fallida: \`${name}\`. Reintentar el deploy **no** lo soluciona.\n` +
+      "Opciones (misma URL que usa migrate, p. ej. session pooler :5432):\n" +
+      "  1) Revisá en Supabase → SQL Editor: SELECT migration_name, finished_at, logs FROM \"_prisma_migrations\" ORDER BY started_at DESC LIMIT 15;\n" +
+      "  2) Si el SQL de esa migración **ya está** en la base (ej. la columna/tablas existen): ejecutá una vez:\n" +
+      `       DATABASE_URL='…' npx prisma migrate resolve --applied "${name}"\n` +
+      "  3) Si **no** se aplicó y querés que Prisma vuelva a intentarla:\n" +
+      `       DATABASE_URL='…' npx prisma migrate resolve --rolled-back "${name}"\n` +
+      "     y luego redeploy / volvé a correr migrate deploy.\n" +
+      "Doc: https://pris.ly/d/migrate-resolve"
+  );
+}
+
 const { migrateUrl, appUrl, source } = pickMigrateDatabaseUrl();
 const tunedMigrateUrl = tuneMigrateDatabaseUrl(migrateUrl);
 
@@ -254,24 +289,25 @@ try {
   const delaySec = Math.max(2, Math.min(90, Number(process.env.PRISMA_MIGRATE_RETRY_SLEEP_SEC || "10") || 10));
   let lastErr = null;
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-    try {
-      console.log(`Ejecutando migraciones (intento ${attempt}/${maxAttempts})...`);
-      execSync("npx prisma migrate deploy", {
-        env: { ...process.env, DATABASE_URL: tunedMigrateUrl },
-        stdio: "inherit",
-        cwd: process.cwd(),
-      });
+    console.log(`Ejecutando migraciones (intento ${attempt}/${maxAttempts})...`);
+    const { status, combined } = runPrismaMigrateDeploy(tunedMigrateUrl);
+    if (status === 0) {
       lastErr = null;
       break;
-    } catch (error) {
-      lastErr = error;
-      console.error(`[migrate] Intento ${attempt}/${maxAttempts} falló.`, error?.message || error);
-      if (attempt < maxAttempts) {
-        console.warn(
-          `[migrate] Reintento en ${delaySec}s. Si sigue P1001 con host db.*: el runtime puede ser IPv4-only; este script ya prioriza Supavisor session :5432 desde el pooler. Opcional: URI session del panel Supabase (Connect → Session mode) en DIRECT_DATABASE_URL.`
-        );
-        sleepSyncSeconds(delaySec);
-      }
+    }
+    lastErr = new Error(combined.trim() || `prisma migrate deploy exit ${status}`);
+    console.error(`[migrate] Intento ${attempt}/${maxAttempts} falló.`, combined.slice(0, 800));
+
+    if (combined.includes("P3009")) {
+      printP3009Hints(combined);
+      break;
+    }
+
+    if (attempt < maxAttempts) {
+      console.warn(
+        `[migrate] Reintento en ${delaySec}s. (P1001/db.*: revisá DIRECT; P3009: no se reintenta — ver mensaje arriba.)`
+      );
+      sleepSyncSeconds(delaySec);
     }
   }
   if (lastErr) {
