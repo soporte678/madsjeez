@@ -11,11 +11,13 @@ import {
   Zap,
   ArrowDown,
   ArrowUp,
-  Activity,
   BarChart2,
   Search,
   Filter,
   Eye,
+  Calendar,
+  LayoutGrid,
+  Table2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -91,6 +93,9 @@ type MeliAdsStudioSnapshot = {
 const SNAPSHOT_CACHE_KEY = "meli_ads_snapshot_v1";
 const COMPARE_DAYS_STORAGE_KEY = "meli_ads_compare_days_v1";
 const ALLOWED_COMPARE_DAYS = [1, 2, 3, 5, 7, 15, 20, 30] as const;
+const ADS_SECTOR_STORAGE_KEY = "meli_ads_sector_v1";
+const ADS_SECTORS = ["resumen", "historial", "tendencia", "acciones", "campañas"] as const;
+type AdsSector = (typeof ADS_SECTORS)[number];
 const AUTO_REFRESH_MS = 10 * 60 * 1000;
 
 function readStoredCompareDays(): number {
@@ -103,6 +108,17 @@ function readStoredCompareDays(): number {
     /* ignore */
   }
   return 1;
+}
+
+function readStoredAdsSector(): AdsSector {
+  if (typeof window === "undefined") return "resumen";
+  try {
+    const raw = localStorage.getItem(ADS_SECTOR_STORAGE_KEY);
+    if (raw && (ADS_SECTORS as readonly string[]).includes(raw)) return raw as AdsSector;
+  } catch {
+    /* ignore */
+  }
+  return "resumen";
 }
 
 function renderDelta(
@@ -164,8 +180,17 @@ export default function MeliAdsStudioView() {
   const [recFilter, setRecFilter] = useState<"all" | "critical" | "warning" | "virtue">("all");
   /** Detalle largo del análisis por id de recomendación (solo tras “Leer más…”). */
   const [expandedRecAnalysis, setExpandedRecAnalysis] = useState<Record<string, boolean>>({});
-  const [studioTab, setStudioTab] = useState<"overview" | "table">("overview");
+  const [adsSector, setAdsSector] = useState<AdsSector>(() => readStoredAdsSector());
   const [campaignSearch, setCampaignSearch] = useState("");
+
+  const goAdsSector = (s: AdsSector) => {
+    setAdsSector(s);
+    try {
+      localStorage.setItem(ADS_SECTOR_STORAGE_KEY, s);
+    } catch {
+      /* ignore */
+    }
+  };
 
   const loadGenRef = useRef(0);
 
@@ -467,43 +492,38 @@ export default function MeliAdsStudioView() {
   };
 
   return (
-    <div className="min-h-[50vh] bg-[#0A0F1C] text-gray-300">
-      <div className="mx-auto max-w-[1400px] space-y-6 p-4 sm:p-6 lg:p-8">
-        <header className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-3xl flex-1 space-y-3">
-            <h2 className="flex items-center gap-3 text-2xl font-bold tracking-tight text-white sm:text-3xl">
-              <Zap className="h-7 w-7 shrink-0 fill-blue-500/20 text-blue-500" aria-hidden />
+    <div className="min-h-[40vh] bg-[#0A0F1C] text-gray-300">
+      <div className="mx-auto max-w-[1200px] space-y-3 p-3 sm:p-4">
+        <header className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-2xl flex-1 space-y-2">
+            <h2 className="flex items-center gap-2 text-lg font-bold tracking-tight text-white sm:text-xl">
+              <Zap className="h-6 w-6 shrink-0 fill-blue-500/20 text-blue-500" aria-hidden />
               Mercado Libre Ads <span className="text-blue-500">—</span> Estudio automático
             </h2>
-            <p className="text-sm leading-relaxed text-gray-400">
-              Traemos tus campañas de <strong className="text-gray-200">Product Ads (PADS)</strong>, métricas recientes de
-              Mercado Libre y un <strong className="text-gray-200">análisis automático</strong> con reglas de performance.
-              Revisá las alertas y aplicá los cambios sugeridos.
+            <p className="text-xs leading-snug text-gray-400 sm:text-[13px]">
+              PADS, métricas ML y análisis automático. Navegá por pestañas para ver cada bloque con más orden.
             </p>
-            <p className="rounded-lg border border-amber-500/30 bg-amber-950/40 px-3 py-2 text-xs text-amber-100/90">
-              Requiere tener Product Ads habilitado en Mercado Libre y scopes OAuth adecuados. Si ves 404 en anunciantes,
-              activá las campañas desde ML → Gestión de publicaciones → Publicidad.
+            <p className="rounded-md border border-amber-500/30 bg-amber-950/40 px-2.5 py-1.5 text-[11px] text-amber-100/90">
+              Requiere Product Ads + OAuth. Si ves 404 en anunciantes: ML → Gestión de publicaciones → Publicidad.
             </p>
             {snapshot?.dailyCutoff && (
-              <p className="text-xs text-gray-500">
-                <strong className="text-gray-300">Corte diario guardado:</strong> día civil{" "}
+              <p className="text-[10px] text-gray-500">
+                <strong className="text-gray-300">Corte diario:</strong>{" "}
                 <span className="font-mono text-gray-400">{snapshot.dailyCutoff.bucketDateKey}</span> (
-                {snapshot.dailyCutoff.timezone}). La lectura en vivo de ML se actualiza seguido; los totales históricos y los
-                acumulados por ventana usan solo una fila por día (
+                {snapshot.dailyCutoff.timezone})
                 {snapshot.dailyCutoff.snapshotUpdatedAt
-                  ? `última escritura ${new Date(snapshot.dailyCutoff.snapshotUpdatedAt).toLocaleString("es-AR")}`
-                  : "sin marca de tiempo"}
-                ).
+                  ? ` · ${new Date(snapshot.dailyCutoff.snapshotUpdatedAt).toLocaleString("es-AR")}`
+                  : ""}
               </p>
             )}
-            <details className="group rounded-xl border border-gray-800 bg-[#131A2A] shadow-lg transition-all">
-              <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-2 text-sm font-medium text-gray-300 hover:text-white [&::-webkit-details-marker]:hidden">
-                <span className="flex items-center gap-2">
-                  <span aria-hidden>📖</span> Ver glosario rápido (acrónimos)
+            <details className="group rounded-lg border border-gray-800 bg-[#131A2A] text-xs shadow-md transition-all">
+              <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-1.5 font-medium text-gray-300 hover:text-white [&::-webkit-details-marker]:hidden">
+                <span className="flex items-center gap-1.5">
+                  <span aria-hidden>📖</span> Glosario (acrónimos)
                 </span>
                 <span className="transition-transform duration-300 group-open:-rotate-180">▼</span>
               </summary>
-              <div className="grid grid-cols-1 gap-2 border-t border-gray-800 px-4 pb-4 pt-3 text-xs text-gray-400 md:grid-cols-2 md:gap-x-8">
+              <div className="grid grid-cols-1 gap-1.5 border-t border-gray-800 px-3 pb-3 pt-2 text-[11px] text-gray-400 md:grid-cols-2 md:gap-x-6">
                 <p>
                   <strong className="text-gray-200">PADS:</strong> Product Ads de Mercado Libre; campañas de publicidad
                   sobre publicaciones.
@@ -538,26 +558,26 @@ export default function MeliAdsStudioView() {
             </details>
           </div>
 
-          <div className="flex w-full flex-col gap-3 lg:w-auto lg:items-end">
-            <div className="flex flex-wrap items-center justify-end gap-3">
+          <div className="flex w-full flex-col gap-2 lg:w-auto lg:items-end">
+            <div className="flex flex-wrap items-center justify-end gap-2">
               {snapshot?.fetchedAt && (
-                <span className="flex items-center gap-2 font-mono text-xs text-gray-500">
+                <span className="flex items-center gap-1.5 font-mono text-[10px] text-gray-500">
                   Última lectura: {new Date(snapshot.fetchedAt).toLocaleString("es-AR")}
-                  <RefreshCw className="h-3 w-3 cursor-pointer hover:text-white" aria-hidden />
+                  <RefreshCw className="h-3 w-3 shrink-0 cursor-pointer hover:text-white" aria-hidden />
                 </span>
               )}
               <button
                 type="button"
                 disabled={loading}
                 onClick={() => load()}
-                className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-black shadow-sm transition-colors hover:bg-gray-200 disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-md bg-white px-3 py-1.5 text-xs font-semibold text-black shadow-sm transition-colors hover:bg-gray-200 disabled:opacity-50"
               >
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                Actualizar datos y análisis
+                {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                Actualizar
               </button>
             </div>
-            <div className="flex w-full flex-wrap items-center gap-1 overflow-x-auto rounded-lg border border-gray-800 bg-[#131A2A] p-1 lg:w-auto">
-              <span className="whitespace-nowrap px-2 py-1.5 text-xs font-medium text-gray-500">Comparar:</span>
+            <div className="flex w-full max-w-full flex-wrap items-center gap-0.5 overflow-x-auto rounded-md border border-gray-800 bg-[#131A2A] p-0.5 lg:w-auto">
+              <span className="whitespace-nowrap px-1.5 py-1 text-[10px] font-medium text-gray-500">Comparar:</span>
               {[1, 2, 3, 5, 7, 15, 20, 30].map((days) => {
                 const active = compareDays === days;
                 return (
@@ -565,7 +585,7 @@ export default function MeliAdsStudioView() {
                     key={days}
                     type="button"
                     onClick={() => onChangeCompareDays(days)}
-                    className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 ${
+                    className={`rounded px-2 py-1 text-[10px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 ${
                       active ? "bg-blue-600 text-white shadow-sm" : "text-gray-400 hover:bg-gray-800/80 hover:text-white"
                     }`}
                     aria-pressed={active}
@@ -575,44 +595,47 @@ export default function MeliAdsStudioView() {
                 );
               })}
             </div>
-            <p className="text-right text-[11px] text-gray-500">
-              Ventana métricas ML: {snapshot?.metricsDays ?? 14} días · Comparás contra período anterior de{" "}
-              <span className="font-medium text-gray-400">
-                {compareDays === 1 ? "24h" : `${compareDays}d`}
-              </span>
+            <p className="text-right text-[10px] text-gray-500">
+              Ventana ML: {snapshot?.metricsDays ?? 14}d · vs ant.:{" "}
+              <span className="font-medium text-gray-400">{compareDays === 1 ? "24h" : `${compareDays}d`}</span>
             </p>
           </div>
         </header>
 
-        <nav className="flex border-b border-gray-800" aria-label="Secciones del estudio">
-          <button
-            type="button"
-            onClick={() => setStudioTab("overview")}
-            className={`flex items-center gap-2 px-6 py-3 text-sm font-medium transition-colors ${
-              studioTab === "overview"
-                ? "border-b-2 border-blue-500 text-blue-400"
-                : "border-b-2 border-transparent text-gray-400 hover:text-white"
-            }`}
-          >
-            <Activity className="h-4 w-4" aria-hidden />
-            Resumen y alertas
-          </button>
-          <button
-            type="button"
-            onClick={() => setStudioTab("table")}
-            className={`flex items-center gap-2 px-6 py-3 text-sm font-medium transition-colors ${
-              studioTab === "table"
-                ? "border-b-2 border-blue-500 text-blue-400"
-                : "border-b-2 border-transparent text-gray-400 hover:text-white"
-            }`}
-          >
-            <BarChart2 className="h-4 w-4" aria-hidden />
-            Gestión detallada de campañas
-          </button>
+        <nav
+          className="-mx-0.5 flex overflow-x-auto border-b border-gray-800 pb-px"
+          aria-label="Secciones del estudio"
+        >
+          {(
+            [
+              { id: "resumen" as const, label: "Resumen", Icon: LayoutGrid },
+              { id: "historial" as const, label: "Histórico", Icon: Calendar },
+              { id: "tendencia" as const, label: "Tendencia", Icon: BarChart2 },
+              { id: "acciones" as const, label: "Acciones", Icon: Zap },
+              { id: "campañas" as const, label: "Campañas", Icon: Table2 },
+            ] as const
+          ).map(({ id, label, Icon }) => {
+            const active = adsSector === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => goAdsSector(id)}
+                className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-2 text-xs font-medium transition-colors sm:px-4 sm:text-sm ${
+                  active
+                    ? "border-b-2 border-blue-500 text-blue-400"
+                    : "border-b-2 border-transparent text-gray-400 hover:text-white"
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden />
+                {label}
+              </button>
+            );
+          })}
         </nav>
 
-        {studioTab === "overview" && (
-          <div className="space-y-8">
+        {adsSector === "historial" && (
+          <div className="space-y-4">
       {(snapshot?.rolledTotals?.length ?? 0) > 0 && (
         <section className="space-y-4">
           <div>
@@ -710,167 +733,27 @@ export default function MeliAdsStudioView() {
         </section>
       )}
 
-      {snapshot?.advertisers?.length === 0 && !loading && snapshot && (
-        <div className="flex gap-2 rounded-xl border border-amber-500/30 bg-amber-950/30 p-4 text-sm text-amber-100">
-          <AlertTriangle className="h-5 w-5 shrink-0 text-amber-400" />
-          No hay anunciante PADS para esta cuenta. Verificá permisos u operativamente Product Ads en Mercado Libre.
-        </div>
-      )}
-
-      {camps.length > 0 && (
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          <div className="flex flex-col justify-between rounded-xl border border-gray-800 bg-[#131A2A] p-4 shadow-lg transition-colors hover:border-gray-700">
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Presupuesto diario</h3>
-            <div>
-              <p className="text-2xl font-bold text-white">{money(totals.budget)}</p>
-              <div className="mt-2">
-                {num(deltas.budget) === 0 ? (
-                  <span className="text-xs text-gray-500">= 0 cambios recientes</span>
-                ) : (
-                  renderDelta(num(deltas.budget), "money", "up_good", money, count, { theme: "dark", suffix: " vs ant." })
-                )}
-              </div>
-            </div>
-          </div>
-          <div className="flex flex-col justify-between rounded-xl border border-gray-800 bg-[#131A2A] p-4 shadow-lg transition-colors hover:border-gray-700">
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Gasto (ventana)</h3>
-            <div>
-              <p className="text-2xl font-bold text-white">{money(totals.cost)}</p>
-              <div className="mt-2">
-                {renderDelta(num(deltas.cost), "money", "down_good", money, count, { theme: "dark", suffix: " vs ant." })}
-              </div>
-            </div>
-          </div>
-          <div className="flex flex-col justify-between rounded-xl border border-gray-800 bg-[#131A2A] p-4 shadow-lg transition-colors hover:border-gray-700">
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Ingresos estimados</h3>
-            <div>
-              <p className="text-2xl font-bold text-white">{money(totals.revenue)}</p>
-              <div className="mt-2">
-                {renderDelta(num(deltas.revenue), "money", "up_good", money, count, { theme: "dark", suffix: " vs ant." })}
-              </div>
-            </div>
-          </div>
-          <div className="flex flex-col justify-between rounded-xl border border-gray-800 bg-[#131A2A] p-4 shadow-lg transition-colors hover:border-gray-700">
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Ganancia / profit</h3>
-            <div>
-              <p className={`text-2xl font-bold ${num(totals.profit) >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
-                {money(totals.profit)}
-              </p>
-              <div className="mt-2">
-                {renderDelta(num(deltas.profit), "money", "up_good", money, count, { theme: "dark", suffix: " vs ant." })}
-              </div>
-            </div>
-          </div>
-          <div className="flex flex-col justify-between rounded-xl border border-gray-800 bg-[#131A2A] p-4 shadow-lg transition-colors hover:border-gray-700 sm:col-span-2 lg:col-span-1">
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Proyección factura</h3>
-            <div>
-              <p className="text-2xl font-bold text-white">{money(finance.nextInvoiceProjection)}</p>
-              <p className="mt-2 text-xs text-gray-500">
-                Prom. diario: <span className="font-medium text-gray-300">{money(finance.avgDailySpent)}</span>
-              </p>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {camps.length > 0 && (
-        <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div className="rounded-xl border border-gray-800 bg-[#131A2A] p-6 shadow-lg lg:col-span-2">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-              <h3 className="flex items-center gap-2 text-base font-semibold text-white">
-                <BarChart2 className="h-5 w-5 text-blue-400" aria-hidden />
-                Tendencia: ecosistema de marketing
-              </h3>
-              <span className="rounded bg-[#1A2235] px-2 py-1 text-xs text-gray-400">
-                {compareDays === 1
-                  ? "Ventana gráfico: 24h (1 día con corte)"
-                  : `Últimos ${chartWindowDays} días (cortes guardados)`}
-              </span>
-            </div>
-            {chartSlice.length > 0 ? (
-              <MeliAdsEcosystemChart labels={chartLabelsArr} revenueK={revenueK} costK={costK} />
-            ) : (
-              <div className="flex h-[280px] items-center justify-center rounded-lg border border-dashed border-gray-700 text-sm text-gray-500 lg:h-[340px]">
-                Sin serie diaria todavía: sincronizá para acumular cortes y ver costo vs ingresos en miles ($).
-              </div>
-            )}
-          </div>
-
-          <div className="flex flex-col gap-6">
-            <div className="rounded-xl border border-gray-800 bg-[#131A2A] p-6 shadow-lg">
-              <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-emerald-400">
-                <Zap className="h-4 w-4" aria-hidden /> Promedio diario (por sync)
-              </h3>
-              {avgDailyBlock ? (
-                <div className="space-y-4">
-                  <div className="flex items-end justify-between border-b border-gray-800 pb-2">
-                    <span className="text-xs text-gray-400">Fecha actual</span>
-                    <span className="text-sm font-medium text-white">{avgDailyBlock.lastDay}</span>
-                  </div>
-                  <div className="flex items-end justify-between border-b border-gray-800 pb-2">
-                    <span className="text-xs text-gray-400">Costo promedio</span>
-                    <span className="text-sm font-medium text-rose-400">{money(avgDailyBlock.avgCost)}</span>
-                  </div>
-                  <div className="flex items-end justify-between">
-                    <span className="text-xs text-gray-400">Profit promedio</span>
-                    <span className="text-sm font-bold text-emerald-400">{money(avgDailyBlock.avgProfit)}</span>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-xs text-gray-500">Todavía no hay cortes diarios guardados para promediar.</p>
-              )}
-            </div>
-
-            <div className="flex flex-1 flex-col rounded-xl border border-gray-800 bg-[#131A2A] p-6 shadow-lg">
-              <h3 className="mb-4 text-sm font-semibold text-white">Resumen de impacto</h3>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col items-center justify-center rounded-lg border border-emerald-500/30 bg-[#0A0F1C] p-3 text-emerald-400">
-                  <span className="text-xl font-bold text-white">{changeSummary.positive}</span>
-                  <span className="text-xs uppercase tracking-wider opacity-80">Positivo</span>
-                </div>
-                <div className="flex flex-col items-center justify-center rounded-lg border border-rose-500/30 bg-[#0A0F1C] p-3 text-rose-400">
-                  <span className="text-xl font-bold text-white">{changeSummary.negative}</span>
-                  <span className="text-xs uppercase tracking-wider opacity-80">Negativo</span>
-                </div>
-                <div className="flex flex-col items-center justify-center rounded-lg border border-gray-600/50 bg-[#0A0F1C] p-3 text-gray-400">
-                  <span className="text-xl font-bold text-white">{changeSummary.neutral}</span>
-                  <span className="text-xs uppercase tracking-wider opacity-80">Neutral</span>
-                </div>
-                <div className="flex flex-col items-center justify-center rounded-lg border border-amber-500/30 bg-[#0A0F1C] p-3 text-amber-400">
-                  <span className="text-xl font-bold text-white">{changeSummary.pending}</span>
-                  <span className="text-xs uppercase tracking-wider opacity-80">Pendiente</span>
-                </div>
-              </div>
-              <p className="mt-3 text-center text-[10px] leading-tight text-gray-500">
-                La evaluación se recalcula al sincronizar comparando CTR / ACOS / ROAS vs el período anterior (
-                {compareDays === 1 ? "24h" : `${compareDays}d`}).
-              </p>
-            </div>
-          </div>
-        </section>
-      )}
-
       {comparisons.length > 0 && (
-        <details className="group overflow-hidden rounded-xl border border-gray-800 bg-[#131A2A] shadow-lg">
-          <summary className="cursor-pointer list-none bg-[#1A2235] px-4 py-3 text-sm font-semibold text-white hover:bg-[#232D42] [&::-webkit-details-marker]:hidden">
+        <details className="group overflow-hidden rounded-lg border border-gray-800 bg-[#131A2A] shadow-md">
+          <summary className="cursor-pointer list-none bg-[#1A2235] px-3 py-2 text-xs font-semibold text-white hover:bg-[#232D42] [&::-webkit-details-marker]:hidden">
             <span className="flex items-center justify-between gap-2">
               <span className="flex items-center gap-2">
-                <BarChart2 className="h-4 w-4 text-blue-400" aria-hidden />
-                Informe comparativo del ecosistema (tabla detallada)
+                <BarChart2 className="h-3.5 w-3.5 text-blue-400" aria-hidden />
+                Comparativo del ecosistema (tabla)
               </span>
-              <span className="text-xs font-normal text-gray-400 transition-transform group-open:-rotate-180">▼</span>
+              <span className="text-[10px] font-normal text-gray-400 transition-transform group-open:-rotate-180">▼</span>
             </span>
           </summary>
-          <div className="border-t border-gray-800 px-4 pb-4 pt-3">
-            <p className="mb-3 text-xs text-gray-400">Estado actual de la ventana vs snapshots históricos comparados.</p>
-            <div className="overflow-x-auto rounded-lg border border-gray-800">
-              <table className="min-w-full text-xs">
+          <div className="border-t border-gray-800 px-3 pb-3 pt-2">
+            <p className="mb-2 text-[11px] text-gray-400">Ventana actual vs snapshots históricos.</p>
+            <div className="overflow-x-auto rounded-md border border-gray-800">
+              <table className="min-w-full text-[11px]">
                 <thead className="bg-[#1A2235] text-gray-400">
                   <tr>
-                    <th className="px-3 py-2 text-left font-medium">Métrica</th>
-                    <th className="px-3 py-2 text-right font-medium">Ahora</th>
+                    <th className="px-2 py-1.5 text-left font-medium">Métrica</th>
+                    <th className="px-2 py-1.5 text-right font-medium">Ahora</th>
                     {comparisons.map((c) => (
-                      <th key={c.daysAgo} className="px-3 py-2 text-right font-medium">
+                      <th key={c.daysAgo} className="px-2 py-1.5 text-right font-medium">
                         Hace {c.daysAgo}d
                       </th>
                     ))}
@@ -898,15 +781,15 @@ export default function MeliAdsStudioView() {
                             : count(v);
                     return (
                       <tr key={row.key} className="hover:bg-[#1C2538]">
-                        <td className="px-3 py-2 font-medium text-gray-200">{row.label}</td>
-                        <td className="px-3 py-2 text-right font-semibold text-white">{format(nowVal)}</td>
+                        <td className="px-2 py-1.5 font-medium text-gray-200">{row.label}</td>
+                        <td className="px-2 py-1.5 text-right font-semibold text-white">{format(nowVal)}</td>
                         {comparisons.map((c) => {
                           const old = num(c.metrics[row.key] ?? 0);
                           const delta = num(c.deltasVsNow[row.key] ?? 0);
                           const direction: "up_good" | "down_good" =
                             row.key === "cost" || row.key === "acos" ? "down_good" : "up_good";
                           return (
-                            <td key={`${row.key}-${c.daysAgo}`} className="px-3 py-2 text-right text-gray-300">
+                            <td key={`${row.key}-${c.daysAgo}`} className="px-2 py-1.5 text-right text-gray-300">
                               <div>{format(old)}</div>
                               {renderDelta(
                                 delta,
@@ -928,8 +811,183 @@ export default function MeliAdsStudioView() {
           </div>
         </details>
       )}
+          </div>
+        )}
 
-      {recs.length > 0 && (
+        {adsSector === "resumen" && (
+          <div className="space-y-4">
+      {snapshot?.advertisers?.length === 0 && !loading && snapshot && (
+        <div className="flex gap-2 rounded-xl border border-amber-500/30 bg-amber-950/30 p-4 text-sm text-amber-100">
+          <AlertTriangle className="h-5 w-5 shrink-0 text-amber-400" />
+          No hay anunciante PADS para esta cuenta. Verificá permisos u operativamente Product Ads en Mercado Libre.
+        </div>
+      )}
+
+      {camps.length > 0 && (
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="flex flex-col justify-between rounded-xl border border-gray-800 bg-[#131A2A] p-4 shadow-lg transition-colors hover:border-gray-700">
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Presupuesto diario</h3>
+            <div>
+              <p className="text-xl font-bold text-white">{money(totals.budget)}</p>
+              <div className="mt-2">
+                {num(deltas.budget) === 0 ? (
+                  <span className="text-xs text-gray-500">= 0 cambios recientes</span>
+                ) : (
+                  renderDelta(num(deltas.budget), "money", "up_good", money, count, { theme: "dark", suffix: " vs ant." })
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-col justify-between rounded-xl border border-gray-800 bg-[#131A2A] p-4 shadow-lg transition-colors hover:border-gray-700">
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Gasto (ventana)</h3>
+            <div>
+              <p className="text-xl font-bold text-white">{money(totals.cost)}</p>
+              <div className="mt-2">
+                {renderDelta(num(deltas.cost), "money", "down_good", money, count, { theme: "dark", suffix: " vs ant." })}
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-col justify-between rounded-xl border border-gray-800 bg-[#131A2A] p-4 shadow-lg transition-colors hover:border-gray-700">
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Ingresos estimados</h3>
+            <div>
+              <p className="text-xl font-bold text-white">{money(totals.revenue)}</p>
+              <div className="mt-2">
+                {renderDelta(num(deltas.revenue), "money", "up_good", money, count, { theme: "dark", suffix: " vs ant." })}
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-col justify-between rounded-xl border border-gray-800 bg-[#131A2A] p-4 shadow-lg transition-colors hover:border-gray-700">
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Ganancia / profit</h3>
+            <div>
+              <p className={`text-xl font-bold ${num(totals.profit) >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                {money(totals.profit)}
+              </p>
+              <div className="mt-2">
+                {renderDelta(num(deltas.profit), "money", "up_good", money, count, { theme: "dark", suffix: " vs ant." })}
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-col justify-between rounded-xl border border-gray-800 bg-[#131A2A] p-4 shadow-lg transition-colors hover:border-gray-700 sm:col-span-2 lg:col-span-1">
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Proyección factura</h3>
+            <div>
+              <p className="text-xl font-bold text-white">{money(finance.nextInvoiceProjection)}</p>
+              <p className="mt-2 text-xs text-gray-500">
+                Prom. diario: <span className="font-medium text-gray-300">{money(finance.avgDailySpent)}</span>
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {!loading && snapshot && camps.length === 0 && (snapshot.advertisers?.length ?? 0) > 0 && (
+        <div className="space-y-3 rounded-lg border border-gray-800 bg-[#131A2A] p-3 shadow-md">
+          <p className="text-xs text-gray-400 sm:text-sm">
+            No hay campañas PADS listadas para estos anunciantes. Si antes veías datos, suele deberse a un rechazo del
+            endpoint de búsqueda de ML o a que la respuesta vino en otro formato; revisá los avisos abajo o en el toast.
+          </p>
+          {Array.isArray(snapshot.errors) && snapshot.errors.length > 0 && (
+            <div className="rounded-md border border-amber-500/30 bg-amber-950/40 px-3 py-2 text-xs text-amber-50">
+              <p className="mb-1 font-semibold text-amber-200">Respuesta / rutas ML</p>
+              <ul className="list-disc space-y-0.5 pl-4 opacity-90">
+                {snapshot.errors.slice(0, 8).map((e, i) => (
+                  <li key={i}>{e}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+          </div>
+        )}
+
+        {adsSector === "tendencia" && (
+          <div className="space-y-4">
+      {camps.length > 0 ? (
+        <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div className="rounded-lg border border-gray-800 bg-[#131A2A] p-4 shadow-md lg:col-span-2">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-white">
+                <BarChart2 className="h-4 w-4 text-blue-400" aria-hidden />
+                Tendencia: ecosistema de marketing
+              </h3>
+              <span className="rounded bg-[#1A2235] px-2 py-0.5 text-[10px] text-gray-400 sm:text-xs">
+                {compareDays === 1
+                  ? "Ventana gráfico: 24h (1 día con corte)"
+                  : `Últimos ${chartWindowDays} días (cortes guardados)`}
+              </span>
+            </div>
+            {chartSlice.length > 0 ? (
+              <MeliAdsEcosystemChart labels={chartLabelsArr} revenueK={revenueK} costK={costK} />
+            ) : (
+              <div className="flex h-[280px] items-center justify-center rounded-lg border border-dashed border-gray-700 text-sm text-gray-500 lg:h-[340px]">
+                Sin serie diaria todavía: sincronizá para acumular cortes y ver costo vs ingresos en miles ($).
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-4">
+            <div className="rounded-lg border border-gray-800 bg-[#131A2A] p-4 shadow-md">
+              <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold text-emerald-400">
+                <Zap className="h-3.5 w-3.5" aria-hidden /> Promedio diario (por sync)
+              </h3>
+              {avgDailyBlock ? (
+                <div className="space-y-3">
+                  <div className="flex items-end justify-between border-b border-gray-800 pb-1.5">
+                    <span className="text-[11px] text-gray-400">Fecha actual</span>
+                    <span className="text-xs font-medium text-white">{avgDailyBlock.lastDay}</span>
+                  </div>
+                  <div className="flex items-end justify-between border-b border-gray-800 pb-1.5">
+                    <span className="text-[11px] text-gray-400">Costo promedio</span>
+                    <span className="text-xs font-medium text-rose-400">{money(avgDailyBlock.avgCost)}</span>
+                  </div>
+                  <div className="flex items-end justify-between">
+                    <span className="text-[11px] text-gray-400">Profit promedio</span>
+                    <span className="text-sm font-bold text-emerald-400">{money(avgDailyBlock.avgProfit)}</span>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-[11px] text-gray-500">Todavía no hay cortes diarios guardados para promediar.</p>
+              )}
+            </div>
+
+            <div className="flex flex-1 flex-col rounded-lg border border-gray-800 bg-[#131A2A] p-4 shadow-md">
+              <h3 className="mb-3 text-xs font-semibold text-white">Resumen de impacto</h3>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex flex-col items-center justify-center rounded-md border border-emerald-500/30 bg-[#0A0F1C] p-2 text-emerald-400">
+                  <span className="text-lg font-bold text-white">{changeSummary.positive}</span>
+                  <span className="text-[10px] uppercase tracking-wider opacity-80">Positivo</span>
+                </div>
+                <div className="flex flex-col items-center justify-center rounded-md border border-rose-500/30 bg-[#0A0F1C] p-2 text-rose-400">
+                  <span className="text-lg font-bold text-white">{changeSummary.negative}</span>
+                  <span className="text-[10px] uppercase tracking-wider opacity-80">Negativo</span>
+                </div>
+                <div className="flex flex-col items-center justify-center rounded-md border border-gray-600/50 bg-[#0A0F1C] p-2 text-gray-400">
+                  <span className="text-lg font-bold text-white">{changeSummary.neutral}</span>
+                  <span className="text-[10px] uppercase tracking-wider opacity-80">Neutral</span>
+                </div>
+                <div className="flex flex-col items-center justify-center rounded-md border border-amber-500/30 bg-[#0A0F1C] p-2 text-amber-400">
+                  <span className="text-lg font-bold text-white">{changeSummary.pending}</span>
+                  <span className="text-[10px] uppercase tracking-wider opacity-80">Pendiente</span>
+                </div>
+              </div>
+              <p className="mt-2 text-center text-[10px] leading-tight text-gray-500">
+                La evaluación se recalcula al sincronizar comparando CTR / ACOS / ROAS vs el período anterior (
+                {compareDays === 1 ? "24h" : `${compareDays}d`}).
+              </p>
+            </div>
+          </div>
+        </section>
+      ) : (
+        <p className="rounded-lg border border-gray-800 bg-[#131A2A] px-4 py-6 text-center text-sm text-gray-400">
+          Sin campañas en esta lectura: no podemos armar el gráfico de tendencia. Revisá la pestaña Campañas o actualizá datos.
+        </p>
+      )}
+          </div>
+        )}
+
+        {adsSector === "acciones" && (
+          <div className="space-y-4">
+      {recs.length > 0 ? (
         <section id="actions-section" className="scroll-mt-24">
           <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -1137,30 +1195,15 @@ export default function MeliAdsStudioView() {
             </div>
           )}
         </section>
+      ) : (
+        <div className="rounded-lg border border-gray-800 bg-[#131A2A] px-4 py-6 text-center text-sm text-gray-400">
+          No hay recomendaciones automáticas por ahora. Sincronizá o revisá cuando haya campañas con señal en la ventana.
+        </div>
       )}
-
-          {!loading && snapshot && camps.length === 0 && (snapshot.advertisers?.length ?? 0) > 0 && (
-            <div className="space-y-3 rounded-xl border border-gray-800 bg-[#131A2A] p-4 shadow-lg">
-              <p className="text-sm text-gray-400">
-                No hay campañas PADS listadas para estos anunciantes. Si antes veías datos, suele deberse a un rechazo del
-                endpoint de búsqueda de ML o a que la respuesta vino en otro formato; revisá los avisos abajo o en el toast.
-              </p>
-              {Array.isArray(snapshot.errors) && snapshot.errors.length > 0 && (
-                <div className="rounded-lg border border-amber-500/30 bg-amber-950/40 px-3 py-2 text-xs text-amber-50">
-                  <p className="mb-1 font-semibold text-amber-200">Respuesta / rutas ML</p>
-                  <ul className="list-disc space-y-0.5 pl-4 opacity-90">
-                    {snapshot.errors.slice(0, 8).map((e, i) => (
-                      <li key={i}>{e}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
           </div>
         )}
 
-        {((studioTab === "overview" || studioTab === "table") && camps.length > 0) && (
+        {adsSector === "campañas" && camps.length > 0 && (
         <section
           id="meli-ads-campaigns-table"
           className="flex flex-col overflow-hidden rounded-xl border border-gray-800 bg-[#131A2A] shadow-lg"
@@ -1473,9 +1516,9 @@ export default function MeliAdsStudioView() {
         </section>
         )}
 
-        {studioTab === "table" && camps.length === 0 && (
-          <div className="rounded-xl border border-gray-800 bg-[#131A2A] p-8 text-center text-sm text-gray-400 shadow-lg">
-            No hay campañas para mostrar en la tabla. Volvé al resumen o actualizá los datos desde Mercado Libre.
+        {adsSector === "campañas" && camps.length === 0 && (
+          <div className="rounded-lg border border-gray-800 bg-[#131A2A] p-6 text-center text-sm text-gray-400 shadow-md">
+            No hay campañas para mostrar en la tabla. Actualizá datos desde Mercado Libre o revisá otras pestañas.
           </div>
         )}
       </div>
