@@ -36,7 +36,7 @@ elif [ -n "$DATABASE_URL" ] && [ -f "./migrate.mjs" ]; then
   fi
     mig=$?
     if [ "$mig" != 0 ]; then
-      echo "WARN: migrate deploy terminó con código $mig (timeout=124). Revisá DATABASE_URL (URL directa :5432 recomendada) o ejecutá migrate a mano."
+      echo "WARN: migrate deploy terminó con código $mig (timeout=124). Revisá DIRECT_DATABASE_URL (:5432) o DATABASE_URL directa; pooler :6543 suele colgar. O ejecutá migrate a mano."
     else
       echo "INFO: migrate deploy completó OK."
     fi
