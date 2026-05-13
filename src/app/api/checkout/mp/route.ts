@@ -16,7 +16,8 @@ import {
 } from "@/lib/checkout/escrow-split";
 import { buildGuestClaim, shippingWithGuestClaim } from "@/lib/orders/guest-claim";
 import { resolveCartShippingCost } from "@/lib/zipnova/quote-cart";
-import { ensureSellerMpAccessToken, type SellerMpRow } from "@/lib/mercadopago/seller-access-token";
+import type { SellerMpRow } from "@/lib/mercadopago/seller-access-token";
+import { createCheckoutProPreferenceWithSellerTokenRetry } from "@/lib/mercadopago/preference-with-token-retry";
 
 function envPercent(key: string, fallback: number): number {
   const raw = process.env[key];
@@ -342,23 +343,24 @@ export async function POST(req: Request) {
       );
     }
 
-    const mpToken = await ensureSellerMpAccessToken(supabaseService, mpConnection);
-    if (!mpToken.ok) {
+    const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, "");
+    const buyerEmail = String(body.buyer_email || session.user.email || "").trim();
+    if (!buyerEmail) {
       if (persistedOrder) await supabaseService.from("orders").delete().eq("id", orderId);
       return NextResponse.json(
-        { code: mpToken.code, error: mpToken.message },
-        { status: mpToken.code === "MP_TOKEN_REFRESH_FAILED" ? 502 : 400 }
+        {
+          code: "BUYER_EMAIL_REQUIRED",
+          error: "Mercado Pago requiere un email del pagador. Verificá tu cuenta o contactá soporte.",
+        },
+        { status: 400 }
       );
     }
-
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    const buyerEmail = body.buyer_email || session.user.email || "";
 
     const mpItems = lines.map((row) => ({
       id: row.productId,
       title: row.product.title.slice(0, 120),
       quantity: row.quantity,
-      unit_price: Number(row.price),
+      unit_price: roundMoney(Number(row.price)),
       currency_id: "ARS",
     }));
 
@@ -367,14 +369,14 @@ export async function POST(req: Request) {
         id: "shipping_buyer_share",
         title: "Envío (parte comprador 50%)",
         quantity: 1,
-        unit_price: split.buyerShippingShare,
+        unit_price: roundMoney(split.buyerShippingShare),
         currency_id: "ARS",
       });
     }
 
     const preference = {
       items: mpItems,
-      marketplace_fee: split.marketplaceTotalRetention,
+      marketplace_fee: roundMoney(split.marketplaceTotalRetention),
       payer: { email: buyerEmail },
       external_reference: orderId,
       notification_url: `${appUrl}/api/webhooks/mercadopago`,
@@ -386,50 +388,34 @@ export async function POST(req: Request) {
       auto_return: "approved",
     };
 
-    const mpResponse = await fetch("https://api.mercadopago.com/checkout/preferences", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${mpToken.accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(preference),
-    });
-
-    let mpResponseFinal = mpResponse;
-    if (!mpResponseFinal.ok && mpResponseFinal.status === 401) {
-      const refetch = await supabaseService
-        .from("seller_mercadopago")
-        .select(mpSelect)
-        .eq("seller_id", mpConnection.seller_id)
-        .eq("is_active", true)
-        .maybeSingle();
-      const fresh = refetch.data as SellerMpRow | null;
-      if (fresh?.mp_refresh_token?.trim()) {
-        const forced = await ensureSellerMpAccessToken(supabaseService, fresh, { forceRefresh: true });
-        if (forced.ok) {
-          mpResponseFinal = await fetch("https://api.mercadopago.com/checkout/preferences", {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${forced.accessToken}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(preference),
-          });
-        }
-      }
-    }
-
-    if (!mpResponseFinal.ok) {
-      const errData = await mpResponseFinal.json().catch(() => ({}));
-      console.error("MP preference error:", errData);
-      if (persistedOrder) await supabaseService.from("orders").delete().eq("id", orderId);
-      return NextResponse.json(
-        { error: "No se pudo iniciar el pago con Mercado Pago", details: errData },
-        { status: 502 }
+    if (process.env.NODE_ENV === "production" && preference.notification_url.startsWith("http://")) {
+      console.warn(
+        "checkout/mp: notification_url es HTTP; Mercado Pago suele exigir HTTPS. Revisá NEXT_PUBLIC_APP_URL en Railway."
       );
     }
 
-    const mpData = await mpResponseFinal.json();
+    const mpPref = await createCheckoutProPreferenceWithSellerTokenRetry({
+      supabase: supabaseService,
+      mpRow: mpConnection,
+      mpSelect,
+      preference,
+    });
+
+    if (!mpPref.ok) {
+      console.error("MP preference error:", mpPref.body);
+      if (persistedOrder) await supabaseService.from("orders").delete().eq("id", orderId);
+      const statusOut = mpPref.httpStatus >= 500 ? 502 : 400;
+      return NextResponse.json(
+        {
+          code: "MP_PREFERENCE_FAILED",
+          error: mpPref.summarizedMessage,
+          details: mpPref.body,
+        },
+        { status: statusOut }
+      );
+    }
+
+    const mpData = mpPref.data;
 
     // Si no se pudo persistir en Supabase y usamos order temporal, guardamos espejo en Prisma
     // para que la compra aparezca en /orders del usuario.
