@@ -7,16 +7,16 @@
  * (IPv6-only) y se deriva session. Una URI **Session mode** (`*.pooler.supabase.com:5432`) sí se respeta.
  * @see https://supabase.com/docs/guides/database/connecting-to-postgres
  *
- * P3009 / deriva DDL: migraciones conocidas (`add_access_key`, `add_seller_meli_oauth`) pueden quedar
- * desalineadas con la base; por defecto se hace `migrate resolve` según probe y se reintenta `migrate deploy`.
- * P3018 "relation … already exists" para `add_seller_meli_oauth`: mismo `resolve --applied` automático.
- * Desactivar todo eso: `PRISMA_MIGRATE_AUTO_RESOLVE_P3009_DRIFT=0` o `PRISMA_MIGRATE_AUTO_RESOLVE_ACCESS_KEY=0` (alias).
+ * P3009 / deriva DDL: migraciones conocidas (`add_access_key`, `add_seller_meli_oauth`, `add_meli_ads_history`)
+ * pueden quedar desalineadas; por defecto `migrate resolve` según probe y se reintenta `migrate deploy`.
+ * P3018 "already exists" (tabla `seller_meli_oauth`, enum `MeliAdsChangeOutcome`, etc.): `resolve --applied` automático para esos nombres.
+ * Desactivar: `PRISMA_MIGRATE_AUTO_RESOLVE_P3009_DRIFT=0` o `PRISMA_MIGRATE_AUTO_RESOLVE_ACCESS_KEY=0` (alias).
  */
 import { spawnSync } from "child_process";
 import path from "path";
 import { existsSync } from "fs";
 
-const MIGRATE_SCRIPT_TAG = "migrate.mjs 20260514g (P3009/P3018 meli_oauth drift auto-resolve)";
+const MIGRATE_SCRIPT_TAG = "migrate.mjs 20260514h (P3018 meli_ads_history enum drift)";
 
 try {
   const dotenv = await import("dotenv");
@@ -344,6 +344,52 @@ async function probePublicTableExists(dbUrl, tableName) {
   }
 }
 
+/**
+ * Estado de `20260506141500_add_meli_ads_history`: enum `MeliAdsChangeOutcome` + tabla `meli_ads_snapshots`.
+ * `safeApplied`: solo true si conviene `migrate resolve --applied` sin dejar la base a medias.
+ */
+async function probeMeliAdsHistoryMigrationState(dbUrl) {
+  if (!dbUrl || typeof dbUrl !== "string") return { ok: false, reason: "no-url" };
+  try {
+    const { Client } = await import("pg");
+    const supabaseTls = looksLikeSupabasePostgresUrl(dbUrl);
+    const connectionString = supabaseTls ? postgresConnectionStringWithoutSslQueryParams(dbUrl) : dbUrl;
+    const client = new Client({
+      connectionString,
+      connectionTimeoutMillis: 25_000,
+      ...(supabaseTls ? { ssl: { rejectUnauthorized: false } } : {}),
+    });
+    await client.connect();
+    const r = await client.query(`
+      select
+        exists (
+          select 1
+          from pg_catalog.pg_type t
+          inner join pg_catalog.pg_namespace n on n.oid = t.typnamespace
+          where n.nspname = 'public'
+            and t.typname = 'MeliAdsChangeOutcome'
+            and t.typtype = 'e'
+        ) as "enumExists",
+        exists (
+          select 1 from information_schema.tables
+          where table_schema = 'public' and table_name = 'meli_ads_snapshots'
+        ) as "snapshotsExist"
+    `);
+    await client.end();
+    const enumExists = Boolean(r.rows[0]?.enumExists);
+    const snapshotsExist = Boolean(r.rows[0]?.snapshotsExist);
+    return {
+      ok: true,
+      enumExists,
+      snapshotsExist,
+      safeApplied: enumExists && snapshotsExist,
+    };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { ok: false, error: msg.slice(0, 320) };
+  }
+}
+
 function sleepSyncSeconds(seconds) {
   const s = Math.max(1, Math.min(120, Math.floor(Number(seconds) || 10)));
   const until = Date.now() + s * 1000;
@@ -451,7 +497,7 @@ await (async function runMigrate() {
     const maxAttempts = Math.max(1, Math.min(12, Number(process.env.PRISMA_MIGRATE_ATTEMPTS || "5") || 5));
     const delaySec = Math.max(2, Math.min(90, Number(process.env.PRISMA_MIGRATE_RETRY_SLEEP_SEC || "10") || 10));
     let lastErr = null;
-    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    attemptLoop: for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
       console.log(`Ejecutando migraciones (intento ${attempt}/${maxAttempts})...`);
       const { status, combined } = runPrismaMigrateDeploy(tunedMigrateUrl);
       if (status === 0) {
@@ -467,10 +513,8 @@ await (async function runMigrate() {
         !isPrismaMigrateAutoResolveP3009DriftDisabled()
       ) {
         const p3018Name = extractMigrationNameFromP3018(combined);
-        if (
-          p3018Name === "20260506120000_add_seller_meli_oauth" &&
-          /seller_meli_oauth/i.test(combined)
-        ) {
+        let p3018Resolved = false;
+        if (p3018Name === "20260506120000_add_seller_meli_oauth" && /seller_meli_oauth/i.test(combined)) {
           console.warn(
             `[migrate] P3018: objeto ya existente; migrate resolve --applied "${p3018Name}" automático. ` +
               "Desactivar: PRISMA_MIGRATE_AUTO_RESOLVE_P3009_DRIFT=0"
@@ -478,10 +522,26 @@ await (async function runMigrate() {
           const { status: rs, combined: rc } = runPrismaMigrateResolve(tunedMigrateUrl, p3018Name, true);
           if (rs === 0) {
             console.warn("[migrate] migrate resolve OK; reintentando migrate deploy (mismo bucle).");
-            attempt -= 1;
-            continue;
+            p3018Resolved = true;
+          } else {
+            console.error("[migrate] migrate resolve falló:", rc.slice(0, 900));
           }
-          console.error("[migrate] migrate resolve falló:", rc.slice(0, 900));
+        } else if (p3018Name === "20260506141500_add_meli_ads_history" && /MeliAdsChangeOutcome/i.test(combined)) {
+          console.warn(
+            `[migrate] P3018: tipo/enum ya existente; migrate resolve --applied "${p3018Name}" automático. ` +
+              "Desactivar: PRISMA_MIGRATE_AUTO_RESOLVE_P3009_DRIFT=0"
+          );
+          const { status: rs, combined: rc } = runPrismaMigrateResolve(tunedMigrateUrl, p3018Name, true);
+          if (rs === 0) {
+            console.warn("[migrate] migrate resolve OK; reintentando migrate deploy (mismo bucle).");
+            p3018Resolved = true;
+          } else {
+            console.error("[migrate] migrate resolve falló:", rc.slice(0, 900));
+          }
+        }
+        if (p3018Resolved) {
+          attempt -= 1;
+          continue attemptLoop;
         }
       }
 
@@ -537,7 +597,7 @@ await (async function runMigrate() {
               if (rs === 0) {
                 console.warn("[migrate] migrate resolve OK; reintentando migrate deploy (mismo bucle).");
                 attempt -= 1;
-                continue;
+                continue attemptLoop;
               }
               console.error("[migrate] migrate resolve falló:", rc.slice(0, 900));
             }
@@ -585,7 +645,7 @@ await (async function runMigrate() {
               if (rs === 0) {
                 console.warn("[migrate] migrate resolve OK; reintentando migrate deploy (mismo bucle).");
                 attempt -= 1;
-                continue;
+                continue attemptLoop;
               }
               console.error("[migrate] migrate resolve falló:", rc.slice(0, 900));
             }
@@ -599,6 +659,61 @@ await (async function runMigrate() {
           } else {
             console.error(
               "[migrate] P3009 add_seller_meli_oauth: no se pudo comprobar information_schema:",
+              probe.error || probe.reason || "(sin detalle)"
+            );
+          }
+        } else if (failedName === "20260506141500_add_meli_ads_history") {
+          const probe = await probeMeliAdsHistoryMigrationState(tunedMigrateUrl);
+          agentDebugLog({
+            hypothesisId: probe.ok && probe.safeApplied ? "H2" : probe.ok ? "H3" : "H5",
+            location: "migrate.mjs:p3009-probe-meli-ads",
+            message: "meli-ads-history-state",
+            data: {
+              failedMigration: failedName,
+              probeOk: probe.ok,
+              enumExists: probe.ok ? probe.enumExists : null,
+              snapshotsExist: probe.ok ? probe.snapshotsExist : null,
+              safeApplied: probe.ok ? probe.safeApplied : null,
+              probeError: probe.ok ? undefined : probe.error ?? probe.reason,
+            },
+          });
+
+          if (probe.ok) {
+            const autoOff = isPrismaMigrateAutoResolveP3009DriftDisabled();
+            if (!autoOff && probe.safeApplied) {
+              console.warn(
+                "[migrate] P3009 add_meli_ads_history: enum MeliAdsChangeOutcome + tabla meli_ads_snapshots presentes; " +
+                  "migrate resolve --applied automático. Desactivar: PRISMA_MIGRATE_AUTO_RESOLVE_P3009_DRIFT=0"
+              );
+              const { status: rs, combined: rc } = runPrismaMigrateResolve(tunedMigrateUrl, failedName, true);
+              if (rs === 0) {
+                console.warn("[migrate] migrate resolve OK; reintentando migrate deploy (mismo bucle).");
+                attempt -= 1;
+                continue attemptLoop;
+              }
+              console.error("[migrate] migrate resolve falló:", rc.slice(0, 900));
+            } else if (!autoOff && !probe.enumExists && !probe.snapshotsExist) {
+              console.warn(
+                "[migrate] P3009 add_meli_ads_history: sin enum ni tabla meli_ads_snapshots; migrate resolve --rolled-back automático."
+              );
+              const { status: rs, combined: rc } = runPrismaMigrateResolve(tunedMigrateUrl, failedName, false);
+              if (rs === 0) {
+                console.warn("[migrate] migrate resolve OK; reintentando migrate deploy (mismo bucle).");
+                attempt -= 1;
+                continue attemptLoop;
+              }
+              console.error("[migrate] migrate resolve falló:", rc.slice(0, 900));
+            } else {
+              console.error(
+                `[migrate] P3009 meli_ads_history: enumExists=${probe.enumExists} snapshotsExist=${probe.snapshotsExist}. ` +
+                  (autoOff ? "Auto-resolve desactivado. " : "") +
+                  "Si el SQL de la migración ya está completo en la base: `npm run migrate:resolve:meli-ads-history-applied`. " +
+                  "Si enum existe pero faltan tablas, corregí el esquema en Supabase antes de marcar --applied."
+              );
+            }
+          } else {
+            console.error(
+              "[migrate] P3009 add_meli_ads_history: probe falló:",
               probe.error || probe.reason || "(sin detalle)"
             );
           }

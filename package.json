@@ -12,7 +12,9 @@
     "migrate:resolve:access-key-applied": "prisma migrate resolve --applied 20260504174800_add_access_key",
     "migrate:resolve:access-key-rolled-back": "prisma migrate resolve --rolled-back 20260504174800_add_access_key",
     "migrate:resolve:meli-oauth-applied": "prisma migrate resolve --applied 20260506120000_add_seller_meli_oauth",
-    "migrate:resolve:meli-oauth-rolled-back": "prisma migrate resolve --rolled-back 20260506120000_add_seller_meli_oauth"
+    "migrate:resolve:meli-oauth-rolled-back": "prisma migrate resolve --rolled-back 20260506120000_add_seller_meli_oauth",
+    "migrate:resolve:meli-ads-history-applied": "prisma migrate resolve --applied 20260506141500_add_meli_ads_history",
+    "migrate:resolve:meli-ads-history-rolled-back": "prisma migrate resolve --rolled-back 20260506141500_add_meli_ads_history"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
