@@ -41,7 +41,8 @@ export async function POST(req: Request) {
       },
     }));
 
-    const res = await resolveCartShippingCost({ lines, shipping });
+    const sellerUserId = cart.items[0]?.product?.sellerId ?? null;
+    const res = await resolveCartShippingCost({ lines, shipping, sellerUserId });
     return NextResponse.json({
       shipping_full: res.cost,
       buyer_shipping_share: res.cost > 0 ? Math.round((res.cost / 2) * 100) / 100 : 0,

@@ -860,7 +860,8 @@ function CheckoutContent() {
                         !shippingQuoteLoading &&
                         !shippingQuoteError && (
                           <p className="text-[11px] text-gray-500">
-                            Monto fijo de envío (Zipnova no configurado en el servidor).
+                            Monto fijo de respaldo: falta Zipnova en el servidor o el vendedor no conectó Zipnova
+                            (OAuth) para cotizar por CP/zona.
                           </p>
                         )}
                     </div>

@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { exchangeZipnovaAuthorizationCode } from "@/lib/zipnova/oauth-marketplace";
+import { fetchZipnovaFirstAccountId } from "@/lib/zipnova/quote-cart";
 
 const STATE_COOKIE = "zipnova_oauth_state";
 
@@ -63,6 +64,14 @@ export async function GET(req: Request) {
     const tokens = await exchangeZipnovaAuthorizationCode(code);
     const expiresAt = new Date(Date.now() + Math.max(60, tokens.expires_in) * 1000);
 
+    const baseUrl = (process.env.ZIPNOVA_API_BASE_URL || "https://api.zipnova.com.ar/v2").replace(/\/$/, "");
+    let zipnovaAccountId: number | null = null;
+    try {
+      zipnovaAccountId = await fetchZipnovaFirstAccountId(baseUrl, tokens.access_token);
+    } catch {
+      zipnovaAccountId = null;
+    }
+
     await prisma.sellerZipnovaOAuth.upsert({
       where: { userId: session.user.id },
       create: {
@@ -71,12 +80,14 @@ export async function GET(req: Request) {
         refreshToken: tokens.refresh_token ?? null,
         expiresAt,
         scope: DEFAULT_SCOPES,
+        zipnovaAccountId,
       },
       update: {
         accessToken: tokens.access_token,
         refreshToken: tokens.refresh_token ?? null,
         expiresAt,
         scope: DEFAULT_SCOPES,
+        ...(zipnovaAccountId != null ? { zipnovaAccountId } : {}),
       },
     });
 

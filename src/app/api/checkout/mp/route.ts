@@ -147,6 +147,7 @@ export async function POST(req: Request) {
           },
         })),
         shipping: shippingForQuote,
+        sellerUserId: sellerPrismaId,
       });
       shippingCostFull = shipRes.cost;
       if (shipRes.zipnova) {

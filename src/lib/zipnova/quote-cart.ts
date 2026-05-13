@@ -1,9 +1,13 @@
 import type { ZipnovaConfig } from "@/lib/zipnova/config";
 import { getZipnovaConfig, zipnovaBasicAuthHeader } from "@/lib/zipnova/config";
+import { prisma } from "@/lib/prisma";
+import { refreshZipnovaAccessToken } from "@/lib/zipnova/oauth-marketplace";
 
 /** Valores por defecto si el catálogo no tiene medidas (hasta que el seller cargue datos reales). */
 const DEFAULT_WEIGHT_G = 500;
 const DEFAULT_CM = 25;
+
+const ZIPNOVA_EXPIRY_BUFFER_MS = 5 * 60 * 1000;
 
 export type CartLineForQuote = {
   quantity: number;
@@ -36,6 +40,14 @@ export type ZipnovaQuoteMeta = {
   options_count: number;
 };
 
+export type ZipnovaQuoteConnection = {
+  baseUrl: string;
+  accountId: number;
+  source: string;
+  originId: number | null;
+  authorization: string;
+};
+
 type QuoteResultRow = {
   selectable?: boolean;
   impediments?: unknown;
@@ -50,8 +62,139 @@ type QuoteResultRow = {
   pickup_points?: Array<{ point_id?: number }>;
 };
 
+function defaultZipnovaBaseUrl(): string {
+  return (process.env.ZIPNOVA_API_BASE_URL || "https://api.zipnova.com.ar/v2").replace(/\/$/, "");
+}
+
+function defaultZipnovaSource(): string {
+  return (process.env.ZIPNOVA_SOURCE || "madsjeez_marketplace").slice(0, 150);
+}
+
+function isArgentinaZipnovaApi(baseUrl: string): boolean {
+  return /zipnova\.com\.ar/i.test(baseUrl);
+}
+
+/** CP: sin espacios extra (Zipnova usa CP para tarifar por zona en AR). */
+function normalizePostalCode(zip: string): string {
+  return zip.replace(/\s+/g, "").trim();
+}
+
+function connectionFromBasic(cfg: ZipnovaConfig): ZipnovaQuoteConnection {
+  return {
+    baseUrl: cfg.baseUrl,
+    accountId: cfg.accountId,
+    source: cfg.source,
+    originId: cfg.originId,
+    authorization: zipnovaBasicAuthHeader(cfg),
+  };
+}
+
+/**
+ * Primera cuenta accesible con el token OAuth (para armar `account_id` en /shipments/quote).
+ */
+export async function fetchZipnovaFirstAccountId(
+  baseUrl: string,
+  accessToken: string
+): Promise<number | null> {
+  const url = `${baseUrl.replace(/\/$/, "")}/accounts`;
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+  const json = (await res.json().catch(() => ({}))) as {
+    data?: Array<{ id?: number }>;
+  };
+  if (!res.ok) return null;
+  const id = json.data?.[0]?.id;
+  return typeof id === "number" && Number.isFinite(id) && id > 0 ? id : null;
+}
+
+/**
+ * Credenciales para cotizar: OAuth del vendedor (origen/cuenta real) si está conectado;
+ * si no, credenciales Basic del marketplace (`ZIPNOVA_*`).
+ */
+export async function resolveZipnovaQuoteConnection(
+  sellerUserId?: string | null
+): Promise<ZipnovaQuoteConnection | null> {
+  const basic = getZipnovaConfig();
+  const baseUrl = basic?.baseUrl ?? defaultZipnovaBaseUrl();
+  const source = basic?.source ?? defaultZipnovaSource();
+  const originId = basic?.originId ?? null;
+
+  if (!sellerUserId?.trim()) {
+    if (!basic) return null;
+    return connectionFromBasic(basic);
+  }
+
+  const row = await prisma.sellerZipnovaOAuth.findUnique({
+    where: { userId: sellerUserId.trim() },
+  });
+
+  if (!row?.accessToken?.trim()) {
+    if (!basic) return null;
+    return connectionFromBasic(basic);
+  }
+
+  let accessToken = row.accessToken.trim();
+  let refreshTok = row.refreshToken?.trim() ?? null;
+  let expiresAt = row.expiresAt;
+
+  if (expiresAt.getTime() < Date.now() + ZIPNOVA_EXPIRY_BUFFER_MS && refreshTok) {
+    try {
+      const t = await refreshZipnovaAccessToken(refreshTok);
+      accessToken = t.access_token;
+      refreshTok = (t.refresh_token ?? refreshTok).trim();
+      expiresAt = new Date(Date.now() + Math.max(60, t.expires_in) * 1000);
+      await prisma.sellerZipnovaOAuth.update({
+        where: { userId: row.userId },
+        data: {
+          accessToken,
+          refreshToken: refreshTok || null,
+          expiresAt,
+        },
+      });
+    } catch (e) {
+      console.error("[zipnova] refresh seller token:", e);
+      if (!basic) return null;
+      return connectionFromBasic(basic);
+    }
+  }
+
+  let accountId = row.zipnovaAccountId;
+  if (accountId == null || accountId <= 0) {
+    const fetched = await fetchZipnovaFirstAccountId(baseUrl, accessToken);
+    if (fetched != null) {
+      accountId = fetched;
+      await prisma.sellerZipnovaOAuth
+        .update({
+          where: { userId: row.userId },
+          data: { zipnovaAccountId: fetched },
+        })
+        .catch(() => undefined);
+    }
+  }
+
+  if (accountId != null && accountId > 0) {
+    return {
+      baseUrl,
+      accountId,
+      source,
+      originId,
+      authorization: `Bearer ${accessToken}`,
+    };
+  }
+
+  if (basic) return connectionFromBasic(basic);
+  return null;
+}
+
 function buildItemsFromLines(lines: CartLineForQuote[]): Array<Record<string, unknown>> {
   const items: Array<Record<string, unknown>> = [];
+  const w = Math.round(DEFAULT_WEIGHT_G);
+  const dim = Math.round(DEFAULT_CM);
   for (const line of lines) {
     if (line.product.freeShipping) continue;
     const sku = (line.product.sku || line.product.id).slice(0, 190);
@@ -59,10 +202,10 @@ function buildItemsFromLines(lines: CartLineForQuote[]): Array<Record<string, un
     for (let q = 0; q < line.quantity; q += 1) {
       items.push({
         sku,
-        weight: DEFAULT_WEIGHT_G,
-        height: DEFAULT_CM,
-        width: DEFAULT_CM,
-        length: DEFAULT_CM,
+        weight: w,
+        height: dim,
+        width: dim,
+        length: dim,
         description: desc,
         classification_id: "1",
       });
@@ -75,7 +218,7 @@ function buildItemsFromLines(lines: CartLineForQuote[]): Array<Record<string, un
  * Llama POST /shipments/quote y elige la opción seleccionable más barata (price_incl_tax o price).
  */
 export async function requestZipnovaQuote(
-  cfg: ZipnovaConfig,
+  conn: ZipnovaQuoteConnection,
   input: {
     destination: ShippingAddressForQuote;
     declaredValue: number;
@@ -84,14 +227,19 @@ export async function requestZipnovaQuote(
 ): Promise<{ cost: number; meta: ZipnovaQuoteMeta; rawSample: unknown }> {
   const city = String(input.destination.city ?? "").trim();
   const state = String(input.destination.state ?? "").trim();
-  const zipcode = String(input.destination.zip ?? "").trim();
+  const zipcode = normalizePostalCode(String(input.destination.zip ?? ""));
   if (!city || !state) {
     throw new Error("Zipnova: faltan ciudad o provincia para cotizar");
   }
+  if (isArgentinaZipnovaApi(conn.baseUrl) && !zipcode) {
+    throw new Error(
+      "Zipnova: el código postal es obligatorio para cotizar por zona en Argentina (completá CP en el checkout)."
+    );
+  }
 
   const body: Record<string, unknown> = {
-    account_id: cfg.accountId,
-    source: cfg.source,
+    account_id: conn.accountId,
+    source: conn.source,
     declared_value: Math.max(0, input.declaredValue),
     destination: {
       city,
@@ -106,18 +254,19 @@ export async function requestZipnovaQuote(
     },
     items: input.items,
     sort_by: "price",
+    type_packaging: "dynamic",
   };
-  if (cfg.originId != null) {
-    body.origin_id = cfg.originId;
+  if (conn.originId != null) {
+    body.origin_id = conn.originId;
   }
 
-  const url = `${cfg.baseUrl}/shipments/quote`;
+  const url = `${conn.baseUrl}/shipments/quote`;
   const res = await fetch(url, {
     method: "POST",
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",
-      Authorization: zipnovaBasicAuthHeader(cfg),
+      Authorization: conn.authorization,
     },
     body: JSON.stringify(body),
   });
@@ -195,12 +344,14 @@ export type ResolveShippingResult = {
 /**
  * Resuelve el costo total de envío del carrito (lado servidor).
  * - Todo con free shipping → 0
- * - Sin Zipnova configurado → costo fijo legacy (2500) si hay ítems con envío
- * - Con Zipnova → cotización real; si falla, lanza (el caller puede convertir en 502)
+ * - Sin credenciales Zipnova (ni marketplace ni OAuth del vendedor) → costo fijo legacy (2500) si hay ítems con envío
+ * - Con Zipnova → cotización por destino (CP obligatorio en AR); si el vendedor conectó OAuth, se usa su cuenta/origen para tarifar por zona.
  */
 export async function resolveCartShippingCost(params: {
   lines: CartLineForQuote[];
   shipping: ShippingAddressForQuote;
+  /** User.id (Prisma) del vendedor del carrito; habilita cotización con OAuth Zipnova del seller. */
+  sellerUserId?: string | null;
   /** Si false, nunca llama a Zipnova (útil en tests). */
   allowZipnova?: boolean;
 }): Promise<ResolveShippingResult> {
@@ -209,18 +360,22 @@ export async function resolveCartShippingCost(params: {
     return { cost: 0, zipnova: null, usedZipnova: false };
   }
 
-  const cfg = params.allowZipnova === false ? null : getZipnovaConfig();
-  if (!cfg) {
-    return { cost: 2500, zipnova: null, usedZipnova: false };
-  }
-
   const items = buildItemsFromLines(params.lines);
   if (!items.length) {
     return { cost: 0, zipnova: null, usedZipnova: false };
   }
 
+  if (params.allowZipnova === false) {
+    return { cost: 2500, zipnova: null, usedZipnova: false };
+  }
+
+  const conn = await resolveZipnovaQuoteConnection(params.sellerUserId);
+  if (!conn) {
+    return { cost: 2500, zipnova: null, usedZipnova: false };
+  }
+
   const declared = params.lines.reduce((s, l) => s + l.price * l.quantity, 0);
-  const { cost, meta } = await requestZipnovaQuote(cfg, {
+  const { cost, meta } = await requestZipnovaQuote(conn, {
     destination: params.shipping,
     declaredValue: declared,
     items,
