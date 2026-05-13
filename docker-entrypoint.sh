@@ -19,24 +19,24 @@ fi
 
 # Migraciones: por defecto `node migrate.mjs` en **segundo plano** para que Next escuche
 # de inmediato y el healthcheck de Railway (`/railway-health.txt`) no falle mientras migrate
-# corre (puede tardar hasta ~180s con pooler o red lenta).
+# corre (puede tardar hasta ~300s con pooler o red lenta).
 #
 # Si necesitás que el proceso no sirva tráfico hasta tener schema al día: SKIP_DB_MIGRATIONS_ON_BOOT=true
 # y ejecutá migrate en un job aparte con URL directa :5432.
 if [ "$SKIP_DB_MIGRATIONS_ON_BOOT" = "true" ]; then
   echo "INFO: SKIP_DB_MIGRATIONS_ON_BOOT=true — sin migrate en boot"
 elif [ -n "$DATABASE_URL" ] && [ -f "./migrate.mjs" ]; then
-  echo "INFO: migrate en background (máx ~180s); Next arranca ya para healthchecks."
+  echo "INFO: migrate en background (máx ~300s); Next arranca ya para healthchecks."
   (
     set +e
-    if command -v timeout >/dev/null 2>&1; then
-      timeout 180 node ./migrate.mjs
-    else
-      node ./migrate.mjs
-    fi
+  if command -v timeout >/dev/null 2>&1; then
+    timeout 300 node ./migrate.mjs
+  else
+    node ./migrate.mjs
+  fi
     mig=$?
     if [ "$mig" != 0 ]; then
-      echo "WARN: migrate deploy terminó con código $mig (timeout=124). Revisá DATABASE_URL (URL directa :5432) o ejecutá migrate a mano."
+      echo "WARN: migrate deploy terminó con código $mig (timeout=124). Revisá DATABASE_URL (URL directa :5432 recomendada) o ejecutá migrate a mano."
     else
       echo "INFO: migrate deploy completó OK."
     fi

@@ -3,6 +3,16 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 /** Renovar antes del vencimiento para evitar 401 en checkout. */
 const MP_EXPIRY_BUFFER_MS = 5 * 60 * 1000;
 
+/** Serializa refresh OAuth por vendedor: MP invalida el refresh_token al usarlo; dos requests en paralelo rompen el grant. */
+const mpSellerOpTail = new Map<string, Promise<unknown>>();
+
+function runSerializedForSellerMp<T>(sellerId: string, task: () => Promise<T>): Promise<T> {
+  const prev = mpSellerOpTail.get(sellerId) ?? Promise.resolve();
+  const next = prev.catch(() => undefined).then(() => task());
+  mpSellerOpTail.set(sellerId, next.then(() => undefined, () => undefined));
+  return next;
+}
+
 export function mpSellerAccessTokenNeedsRefresh(expiresAtIso: string | null | undefined): boolean {
   if (expiresAtIso == null || expiresAtIso === "") return true;
   const t = new Date(expiresAtIso).getTime();
@@ -67,16 +77,30 @@ export type SellerMpRow = {
   mp_token_expires_at: string | null;
 };
 
-/**
- * Devuelve un access_token válido para la API de MP, renovando con refresh_token si hace falta
- * y persistiendo en `seller_mercadopago`.
- */
-export async function ensureSellerMpAccessToken(
+const MP_SELECT = "seller_id, mp_access_token, mp_refresh_token, mp_token_expires_at, is_active";
+
+export type EnsureSellerMpOk = { ok: true; accessToken: string; refreshed: boolean };
+export type EnsureSellerMpErr = { ok: false; code: string; message: string };
+export type EnsureSellerMpResult = EnsureSellerMpOk | EnsureSellerMpErr;
+
+async function ensureSellerMpAccessTokenImpl(
   supabase: SupabaseClient,
-  row: SellerMpRow,
+  sellerId: string,
   opts?: { forceRefresh?: boolean }
-): Promise<{ ok: true; accessToken: string } | { ok: false; code: string; message: string }> {
-  if (!row.mp_access_token?.trim()) {
+): Promise<EnsureSellerMpResult> {
+  const { data: live, error: loadErr } = await supabase
+    .from("seller_mercadopago")
+    .select(MP_SELECT)
+    .eq("seller_id", sellerId)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (loadErr) {
+    console.error("seller_mercadopago load:", loadErr);
+  }
+
+  const row = (live as SellerMpRow | null) ?? null;
+  if (!row?.mp_access_token?.trim()) {
     return {
       ok: false,
       code: "SELLER_MP_NOT_CONNECTED",
@@ -98,7 +122,7 @@ export async function ensureSellerMpAccessToken(
           "El token de Mercado Pago del vendedor expiró. Debe volver a conectar Mercado Pago desde el panel (Perfil).",
       };
     }
-    return { ok: true, accessToken: row.mp_access_token };
+    return { ok: true, accessToken: row.mp_access_token, refreshed: false };
   }
 
   if (!hasRefresh) {
@@ -129,17 +153,49 @@ export async function ensureSellerMpAccessToken(
       .eq("seller_id", row.seller_id);
 
     if (upErr) {
-      console.error("seller_mercadopago token refresh persist:", upErr);
+      console.error("seller_mercadopago token refresh persist (CRITICAL):", upErr);
+      return {
+        ok: false,
+        code: "MP_TOKEN_PERSIST_FAILED",
+        message:
+          "No se pudieron guardar los nuevos tokens de Mercado Pago en base de datos. Revisá permisos RLS o la tabla seller_mercadopago. El vendedor debe reconectar MP.",
+      };
     }
 
-    return { ok: true, accessToken: t.access_token };
+    return { ok: true, accessToken: t.access_token, refreshed: true };
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "Error al renovar token de Mercado Pago";
+    const raw = e instanceof Error ? e.message : "Error al renovar token de Mercado Pago";
     console.error("Mercado Pago refresh_token:", e);
+    const lower = raw.toLowerCase();
+    if (lower.includes("already used") || lower.includes("invalid_grant")) {
+      return {
+        ok: false,
+        code: "MP_REFRESH_REVOKED",
+        message:
+          "El enlace con Mercado Pago del vendedor ya no es válido (refresh usado o revocado). Debe volver a conectar Mercado Pago desde el panel (Perfil).",
+      };
+    }
     return {
       ok: false,
       code: "MP_TOKEN_REFRESH_FAILED",
-      message: `${msg}. El vendedor puede reconectar Mercado Pago desde el panel.`,
+      message: `${raw}. El vendedor puede reconectar Mercado Pago desde el panel.`,
     };
   }
+}
+
+/**
+ * Devuelve un access_token válido para la API de MP, renovando con refresh_token si hace falta
+ * y persistiendo en `seller_mercadopago`. Operaciones por `seller_id` van en cola para evitar
+ * doble uso del refresh_token (Mercado Pago lo invalida al canjearlo).
+ */
+export async function ensureSellerMpAccessToken(
+  supabase: SupabaseClient,
+  row: SellerMpRow,
+  opts?: { forceRefresh?: boolean }
+): Promise<EnsureSellerMpResult> {
+  const sellerId = row.seller_id?.trim();
+  if (!sellerId) {
+    return { ok: false, code: "SELLER_MP_NOT_CONNECTED", message: "seller_id inválido." };
+  }
+  return runSerializedForSellerMp(sellerId, () => ensureSellerMpAccessTokenImpl(supabase, sellerId, opts));
 }

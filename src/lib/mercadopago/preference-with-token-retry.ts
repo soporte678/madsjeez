@@ -50,15 +50,22 @@ export async function createCheckoutProPreferenceWithSellerTokenRetry(params: {
 }): Promise<MpPreferenceOk | MpPreferenceErr> {
   const first = await ensureSellerMpAccessToken(params.supabase, params.mpRow);
   if (!first.ok) {
+    const httpStatus =
+      first.code === "MP_TOKEN_REFRESH_FAILED" ||
+      first.code === "MP_TOKEN_PERSIST_FAILED" ||
+      first.code === "MP_REFRESH_REVOKED"
+        ? 502
+        : 400;
     return {
       ok: false,
-      httpStatus: 400,
+      httpStatus,
       body: { code: first.code, message: first.message },
       summarizedMessage: first.message,
     };
   }
 
   let accessToken = first.accessToken;
+  const didProactiveRefresh = first.refreshed;
 
   for (let attempt = 0; attempt < 2; attempt += 1) {
     const res = await fetch(MP_CHECKOUT_PREFERENCES_URL, {
@@ -83,7 +90,7 @@ export async function createCheckoutProPreferenceWithSellerTokenRetry(params: {
     }
 
     const badToken = mpResponseSuggestsInvalidSellerToken(res.status, parsed);
-    if (attempt === 0 && badToken) {
+    if (attempt === 0 && badToken && !didProactiveRefresh) {
       const { data: freshRow } = await params.supabase
         .from("seller_mercadopago")
         .select(params.mpSelect)
