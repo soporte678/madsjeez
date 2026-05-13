@@ -4,7 +4,8 @@ builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
 
 [deploy]
-# Archivo estático en /public: no pasa por API/RSC; útil si hay incidentes en rutas app.
+# Archivo estático en /public (ver `public/railway-health.txt`). El entrypoint arranca Next
+# enseguida y corre Prisma migrate en background para que este probe no falle por migrate lento.
 healthcheckPath = "/railway-health.txt"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"
