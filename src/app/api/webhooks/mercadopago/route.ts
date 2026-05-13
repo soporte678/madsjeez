@@ -3,6 +3,7 @@ import { OrderStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { supabaseService } from "@/lib/supabase/service";
 import { mergeSellerFulfillmentIntoShipping, parseSellerFulfillment } from "@/lib/orders/seller-fulfillment";
+import { tryCreateZipnovaShipmentForPaidOrder } from "@/lib/zipnova/create-shipment";
 import crypto from "crypto";
 
 const WEBHOOK_TS_SKEW_MS = 5 * 60 * 1000;
@@ -281,7 +282,7 @@ export async function POST(req: NextRequest) {
       if (orderStatus === "paid") {
         const { data: prevOrder } = await supabaseService
           .from("orders")
-          .select("shipping_address, status")
+          .select("shipping_address, status, seller_id, total_amount")
           .eq("id", orderId)
           .maybeSingle();
         const prevSt = typeof (prevOrder as { status?: string } | null)?.status === "string"
@@ -289,10 +290,21 @@ export async function POST(req: NextRequest) {
           : "";
         const prevFul = parseSellerFulfillment((prevOrder as { shipping_address?: unknown } | null)?.shipping_address);
         if (prevSt !== "paid" && !prevFul.paid_at) {
-          shippingPatch = mergeSellerFulfillmentIntoShipping(
+          let merged = mergeSellerFulfillmentIntoShipping(
             (prevOrder as { shipping_address?: unknown } | null)?.shipping_address,
             { paid_at: new Date().toISOString() }
           );
+          const po = prevOrder as { seller_id?: string; total_amount?: number | string | null } | null;
+          const sellerPid = typeof po?.seller_id === "string" ? po.seller_id.trim() : "";
+          if (sellerPid) {
+            merged = await tryCreateZipnovaShipmentForPaidOrder({
+              orderId,
+              shippingAddress: merged,
+              sellerProfileId: sellerPid,
+              declaredValue: Number(po?.total_amount ?? 0),
+            });
+          }
+          shippingPatch = merged;
         }
       }
 

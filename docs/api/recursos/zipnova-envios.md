@@ -1,6 +1,6 @@
-# Recurso: Zipnova Envíos (cotización marketplace)
+# Recurso: Zipnova Envíos (cotización y envío post-pago)
 
-Integración con [Zipnova Envíos](https://docs.zipnova.com/envios) para **cotizar** el costo de envío del carrito según destino. La cotización elegida (metadatos mínimos) puede persistirse en la orden al hacer checkout con Mercado Pago.
+Integración con [Zipnova Envíos](https://docs.zipnova.com/envios) para **cotizar** el costo de envío del carrito según destino y, tras un pago aprobado vía Mercado Pago, **crear el envío** cuando la orden trae metadatos de cotización en `shipping_address.zipnova`.
 
 Soporte operativo: [Centro de ayuda Zipnova (es-419)](https://ayuda-envios.zipnova.com/hc/es-419/).
 
@@ -12,8 +12,8 @@ Soporte operativo: [Centro de ayuda Zipnova (es-419)](https://ayuda-envios.zipno
 | Endpoint interno de preview `POST /api/shipping/zipnova/quote` | **Producción** |
 | Uso de cotización en `POST /api/checkout/mp` (monto envío + `zipnova` en `shipping_address`) | **Producción** |
 | UI checkout: debounce y totales alineados con cotización | **Producción** |
-| OAuth por vendedor (conectar cuenta Zipnova del seller a la app marketplace) | **Parcial** — flujo start/callback + persistencia de tokens; la cotización/checkout global sigue usando credenciales Basic del marketplace hasta migrar a Bearer por vendedor |
-| Creación de envío en Zipnova post-pago (`POST /v2/shipments` o equivalente) | **No implementado** — documentar cuando exista handler/job |
+| OAuth por vendedor (conectar cuenta Zipnova del seller a la app marketplace) | **Producción** — si el vendedor conectó OAuth, cotización y creación de envío usan su cuenta Zipnova (Bearer); si no, se usa Basic del marketplace (`ZIPNOVA_*`) cuando esté configurado |
+| Creación de envío en Zipnova post-pago (`POST …/shipments` vía API v2) | **Producción** — al primer pago aprobado, el webhook de Mercado Pago llama a Zipnova con la cotización guardada en `shipping_address.zipnova` y persiste `shipment_id`, tracking y errores de creación en el mismo objeto |
 
 ## Variables de entorno
 
@@ -67,23 +67,35 @@ Implementación: `src/app/api/shipping/zipnova/quote/route.ts`.
 
 ### `POST /api/checkout/mp`
 
-Inicio de pago marketplace Mercado Pago. Incluye resolución de envío con la misma lógica que la cotización (carrito + fragmento de dirección para quote).
+Inicio de pago marketplace Mercado Pago. Incluye resolución de envío con la misma lógica que la cotización (carrito + fragmento de dirección para quote). Cuando el pago queda **aprobado**, el webhook `POST /api/webhooks/mercadopago` intenta **crear el envío** en Zipnova (ver más abajo).
 
 | Aspecto | Detalle |
 |---------|---------|
 | **Auth** | Sesión + perfil comprador en Supabase. |
 | **Body** | Incluye `shipping` (objeto domicilio); ver `src/app/api/checkout/mp/route.ts`. |
 | **Envío** | Si Zipnova está configurado y hay ítems con envío pago, se cotiza; si falla: **502** con `code: "ZIPNOVA_QUOTE_FAILED"`. |
-| **Persistencia** | En inserción de orden, `shipping_address` puede incluir clave `zipnova` con metadatos de cotización (`quoted_at`, `logistic_type`, `service_type_code`, `carrier_id`, `point_id`, importes, etc.) para trazabilidad y futura creación de envío. |
+| **Persistencia** | En inserción de orden, `shipping_address` incluye `zipnova` con metadatos de cotización. Tras pago, el mismo objeto puede sumar `shipment_id`, `carrier_tracking_id`, `tracking` o `shipment_create_error` si la creación falla. |
 
 Documentación general del checkout: [Pedidos, carrito y checkout](./pedidos-checkout.md).
+
+### Webhook Mercado Pago → creación de envío Zipnova
+
+En `POST /api/webhooks/mercadopago`, cuando el pago pasa a **aprobado** por primera vez (`paid_at` en `seller_fulfillment`), después de fusionar esa marca en `shipping_address` se invoca `tryCreateZipnovaShipmentForPaidOrder` (`src/lib/zipnova/create-shipment.ts`):
+
+- Requisitos: orden persistida (no `tmp_*`), `order_items` en Supabase enlazados a productos Prisma, cotización previa en `shipping_address.zipnova` sin `shipment_id`, credenciales Zipnova (OAuth del vendedor o Basic del marketplace), email de destino (`guest_claim` / checkout).
+- Éxito: se guardan `shipment_id`, `shipment_external_id`, `shipment_created_at`, `carrier_tracking_id`, `tracking` dentro de `zipnova`.
+- Fallo: no se revierte el pago; se guardan `shipment_create_failed_at` y `shipment_create_error` para diagnóstico.
+
+Referencia API Zipnova: [Crear envíos](https://docs.zipnova.com/envios/recursos-api/envios/crear-envios.md).
 
 ## Código relacionado
 
 | Ruta / módulo | Rol |
 |---------------|-----|
 | `src/lib/zipnova/config.ts` | Lectura de env y cabecera Basic Auth. |
-| `src/lib/zipnova/quote-cart.ts` | Armado de ítems, llamada a quote Zipnova, selección de opción, `resolveCartShippingCost`. |
+| `src/lib/zipnova/quote-cart.ts` | Armado de ítems, llamada a quote Zipnova, selección de opción, `resolveCartShippingCost`, `resolveZipnovaQuoteConnection`. |
+| `src/lib/zipnova/create-shipment.ts` | Tras pago MP: `POST …/shipments` con cotización persistida; merge de resultado en `shipping_address.zipnova`. |
+| `src/app/api/webhooks/mercadopago/route.ts` | Webhook MP: al marcar `paid_at`, intenta crear envío Zipnova. |
 | `src/app/checkout/page.tsx` | Cliente: cotización con debounce al endpoint quote. |
 
 ## Contrato externo Zipnova

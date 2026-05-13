@@ -191,7 +191,8 @@ export async function resolveZipnovaQuoteConnection(
   return null;
 }
 
-function buildItemsFromLines(lines: CartLineForQuote[]): Array<Record<string, unknown>> {
+/** Expuesto para armar el mismo payload de ítems en creación de envío (`POST /shipments`). */
+export function buildItemsFromLines(lines: CartLineForQuote[]): Array<Record<string, unknown>> {
   const items: Array<Record<string, unknown>> = [];
   const w = Math.round(DEFAULT_WEIGHT_G);
   const dim = Math.round(DEFAULT_CM);
