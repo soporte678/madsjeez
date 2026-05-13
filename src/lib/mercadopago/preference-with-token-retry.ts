@@ -46,7 +46,8 @@ export async function createCheckoutProPreferenceWithSellerTokenRetry(params: {
   supabase: SupabaseClient;
   mpRow: SellerMpRow;
   mpSelect: string;
-  preference: Record<string, unknown>;
+  /** Cuerpo JSON de la preferencia (Checkout Pro marketplace). */
+  preference: object;
 }): Promise<MpPreferenceOk | MpPreferenceErr> {
   const first = await ensureSellerMpAccessToken(params.supabase, params.mpRow);
   if (!first.ok) {
