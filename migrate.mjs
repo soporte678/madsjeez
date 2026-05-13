@@ -1,7 +1,8 @@
 /**
  * Ejecuta `prisma migrate deploy`. Si `DATABASE_URL` es el pooler de Supabase (:6543),
- * usa `DIRECT_DATABASE_URL` (o `SUPABASE_DATABASE_URL` en :5432) solo para migraciones.
- * La app en runtime sigue usando las variables del proceso (no se modifica aquí fuera de execSync).
+ * usa `DIRECT_DATABASE_URL` / `SUPABASE_DATABASE_URL` en :5432 si existen; si no, intenta derivar
+ * `db.<ref>.supabase.co:5432` desde el URI del pooler (usuario `postgres.<project_ref>`).
+ * La app en runtime sigue usando las variables del proceso (no se modifica fuera de execSync).
  */
 import { execSync } from "child_process";
 import path from "path";
@@ -30,6 +31,42 @@ function hostPortHint(url) {
 }
 
 /**
+ * Pooler "Transaction" de Supabase: usuario `postgres.<project_ref>` y host `*.pooler.supabase.com`.
+ * La conexión directa para DDL/migrate es `db.<project_ref>.supabase.co:5432` con usuario `postgres`.
+ * @see https://supabase.com/docs/guides/database/connecting-to-postgres
+ */
+function deriveSupabaseDirectFromPooler(poolerUrl) {
+  if (!poolerUrl || typeof poolerUrl !== "string" || !looksLikePgPooler(poolerUrl)) return null;
+  try {
+    const normalized = poolerUrl.trim().replace(/^postgres:/i, "postgresql:");
+    const parsed = new URL(normalized.replace(/^postgresql:/i, "http:"));
+    if (!parsed.hostname.includes("pooler.supabase.com")) return null;
+
+    const userDecoded = decodeURIComponent((parsed.username || "").replace(/\+/g, " "));
+    let projectRef = "";
+    if (userDecoded.startsWith("postgres.")) {
+      projectRef = userDecoded.slice("postgres.".length).trim();
+    }
+    if (!projectRef || projectRef.length < 10) return null;
+
+    const password = parsed.password ? decodeURIComponent(parsed.password.replace(/\+/g, " ")) : "";
+    if (!password) return null;
+
+    const path = (parsed.pathname || "/postgres").replace(/\/+/g, "/") || "/postgres";
+    const qp = new URLSearchParams(parsed.search);
+    qp.delete("pgbouncer");
+    const qs = qp.toString();
+
+    const directHost = `db.${projectRef}.supabase.co`;
+    const u = encodeURIComponent("postgres");
+    const p = encodeURIComponent(password);
+    return `postgresql://${u}:${p}@${directHost}:5432${path}${qs ? `?${qs}` : ""}`;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Prisma `migrate deploy` con pooler Supabase (:6543) suele colgar o fallar.
  * Si existe una URL directa (:5432 / host db.*), usala solo para este proceso.
  */
@@ -54,6 +91,13 @@ function pickMigrateDatabaseUrl() {
     return { migrateUrl: supa, appUrl: appPrimary, source: "SUPABASE_DATABASE_URL" };
   }
 
+  if (appPrimary && looksLikePgPooler(appPrimary)) {
+    const derived = deriveSupabaseDirectFromPooler(appPrimary);
+    if (derived) {
+      return { migrateUrl: derived, appUrl: appPrimary, source: "derived_Supabase_pooler→db.*.supabase.co:5432" };
+    }
+  }
+
   if (appPrimary) {
     return { migrateUrl: appPrimary, appUrl: appPrimary, source: "DATABASE_URL|SUPABASE_DATABASE_URL" };
   }
@@ -64,8 +108,12 @@ function pickMigrateDatabaseUrl() {
 const { migrateUrl, appUrl, source } = pickMigrateDatabaseUrl();
 
 if (looksLikePgPooler(appUrl) && !looksLikePgPooler(migrateUrl)) {
+  const derivedNote =
+    source === "derived_Supabase_pooler→db.*.supabase.co:5432"
+      ? " (URI directa derivada del pooler: usuario postgres.<ref> de Supabase)."
+      : "";
   console.log(
-    `[migrate] URL de app parece pooler (${hostPortHint(appUrl)}); migrate deploy usa conexión directa (${hostPortHint(migrateUrl)}), origen: ${source}.`
+    `[migrate] Pooler para la app (${hostPortHint(appUrl)}); migrate deploy usa ${hostPortHint(migrateUrl)}${derivedNote}`
   );
 } else if (looksLikePgPooler(migrateUrl) && !process.env.PRISMA_MIGRATE_POOLER_OK) {
   console.warn(
