@@ -578,8 +578,19 @@ export default function Navbar() {
                 <Link href="/notifications" className="nav-link whitespace-nowrap shrink-0 hidden sm:inline">Alertas</Link>
                 <Link href="/subscriptions" className="nav-link whitespace-nowrap shrink-0 hidden md:inline">MADS+</Link>
                 <Link href="/seller/register" className="nav-link whitespace-nowrap shrink-0 hidden lg:inline">Vender</Link>
-                <Link href="/dashboard" className="nav-link whitespace-nowrap shrink-0 hidden xl:inline">Mi panel</Link>
-                <Link href="/help" className="nav-link whitespace-nowrap shrink-0">Ayuda</Link>
+                {/* Reservan el hueco del nav (visibility) sin mostrar ni enlazar */}
+                <span
+                  className="nav-link whitespace-nowrap shrink-0 hidden xl:inline invisible pointer-events-none select-none"
+                  aria-hidden="true"
+                >
+                  Mi panel
+                </span>
+                <span
+                  className="nav-link whitespace-nowrap shrink-0 invisible pointer-events-none select-none"
+                  aria-hidden="true"
+                >
+                  Ayuda
+                </span>
               </nav>
             </div>
 

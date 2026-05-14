@@ -19,6 +19,7 @@ import { resolveCartShippingCost } from "@/lib/zipnova/quote-cart";
 import type { SellerMpRow } from "@/lib/mercadopago/seller-access-token";
 import { createCheckoutProPreferenceWithSellerTokenRetry } from "@/lib/mercadopago/preference-with-token-retry";
 import { notifyPostgrestReloadSchema, ensureSupabaseOrdersSellerIdColumn } from "@/lib/supabase/postgrest-schema";
+import { randomUUID } from "crypto";
 
 function sleepMs(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
@@ -227,7 +228,10 @@ export async function POST(req: Request) {
       split.marketplaceSalesFeeAmount + split.affiliateCommissionAmount
     );
 
+    /** Supabase `public.orders` suele exigir `id` NOT NULL sin default; sin esto falla 23502 y se usa orden `tmp_`. */
+    const orderUuid = randomUUID();
     const baseOrderPayload = {
+      id: orderUuid,
       buyer_id: buyerUuid,
       seller_id: sellerUuid,
       status: "PENDING",
@@ -241,6 +245,7 @@ export async function POST(req: Request) {
       { ...baseOrderPayload, commission_amount: commissionProductTotal },
       { ...baseOrderPayload },
       {
+        id: orderUuid,
         buyer_id: buyerUuid,
         seller_id: sellerUuid,
         status: "PENDING",
@@ -249,6 +254,7 @@ export async function POST(req: Request) {
         notes: null,
       },
       {
+        id: orderUuid,
         buyer_id: buyerUuid,
         seller_id: sellerUuid,
         status: "PENDING",

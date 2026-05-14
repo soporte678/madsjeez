@@ -320,17 +320,37 @@ export async function POST(req: NextRequest) {
         console.error("Error updating order status:", orderError);
       }
 
-      const { error: paymentError } = await supabaseService
+      const paymentFullPatch = {
+        status: orderStatus,
+        mp_payment_id: String(paymentId),
+        mp_status: status,
+        updated_at: new Date().toISOString(),
+      };
+      let { error: paymentError } = await supabaseService
         .from("payments")
-        .update({
-          status: orderStatus,
-          mp_payment_id: String(paymentId),
-          mp_status: status,
-          updated_at: new Date().toISOString(),
-        })
+        .update(paymentFullPatch)
         .eq("order_id", orderId);
 
-      if (paymentError) {
+      const payErrCode = (paymentError as { code?: string } | null)?.code;
+      const payErrMsg = String((paymentError as { message?: string } | null)?.message ?? "");
+      if (
+        paymentError &&
+        (payErrCode === "PGRST204" || payErrMsg.includes("mp_payment_id"))
+      ) {
+        const { mp_payment_id: _mp, mp_status: _st, ...paymentFallbackPatch } = paymentFullPatch;
+        const retry = await supabaseService
+          .from("payments")
+          .update(paymentFallbackPatch)
+          .eq("order_id", orderId);
+        paymentError = retry.error;
+        if (paymentError) {
+          console.error("Error updating payment record:", paymentError);
+        } else {
+          console.warn(
+            "payments: actualizado sin mp_payment_id/mp_status (columnas ausentes en Supabase; agregalas o NOTIFY pgrst)."
+          );
+        }
+      } else if (paymentError) {
         console.error("Error updating payment record:", paymentError);
       }
 
