@@ -230,7 +230,7 @@ export async function POST(req: Request) {
     const baseOrderPayload = {
       buyer_id: buyerUuid,
       seller_id: sellerUuid,
-      status: "pending",
+      status: "PENDING",
       total_amount: split.totalBuyerCharged,
       shipping_cost: shippingCostFull,
       discount_amount: 0,
@@ -243,7 +243,7 @@ export async function POST(req: Request) {
       {
         buyer_id: buyerUuid,
         seller_id: sellerUuid,
-        status: "pending",
+        status: "PENDING",
         total_amount: split.totalBuyerCharged,
         shipping_address: shippingAddressOut,
         notes: null,
@@ -251,7 +251,7 @@ export async function POST(req: Request) {
       {
         buyer_id: buyerUuid,
         seller_id: sellerUuid,
-        status: "pending",
+        status: "PENDING",
         total_amount: split.totalBuyerCharged,
       },
     ];
@@ -302,7 +302,7 @@ export async function POST(req: Request) {
       console.error(
         "checkout mp insert order:",
         orderErr,
-        "| Si persiste PGRST204: redeploy con migrate.mjs actual, DIRECT_DATABASE_URL :5432, y/o ejecutá scripts/supabase-fix-orders-seller-id.sql en Supabase. MP: reconectar Mercado Pago del vendedor si hay invalid_grant."
+        "| Si persiste PGRST204 / enum OrderStatus: status debe coincidir con Postgres (PENDING). MP: reconectar Mercado Pago del vendedor si hay invalid_grant."
       );
       // Fallback operativo: no bloquear checkout por drift de esquema en Supabase.
       orderId = `tmp_${Date.now()}_${buyerPrismaId}`;
