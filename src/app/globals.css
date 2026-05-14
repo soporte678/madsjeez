@@ -33,8 +33,9 @@
   --warning-hover: #b45309;
   --warning-foreground: #ffffff;
 
-  --destructive: #dc2626;
-  --destructive-hover: #b91c1c;
+  /* Naranja intenso (menos “alarma roja” que el rojo puro, sigue leyéndose como acción fuerte) */
+  --destructive: #ea580c;
+  --destructive-hover: #c2410c;
   --destructive-foreground: #ffffff;
 
   --muted: #f1f5f9;
@@ -134,6 +135,9 @@
   --shell-header-bg: #0f172a;
   --shell-header-border: #1f2b3d;
   --shell-sidebar-active-bg: color-mix(in srgb, var(--primary) 22%, #0f172a);
+  --destructive: #fb923c;
+  --destructive-hover: #f97316;
+  --destructive-foreground: #0f172a;
 }
 
 @theme inline {

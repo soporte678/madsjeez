@@ -47,7 +47,7 @@ export default function FloatingFabDock() {
             >
               <Bot className="w-6 h-6 group-hover:rotate-12 transition-transform" />
               {/* Badge NO verde (evita confundir con WhatsApp) */}
-              <span className="absolute top-0 right-0 w-3 h-3 bg-rose-500 rounded-full border-2 border-white shadow-sm" />
+              <span className="absolute top-0 right-0 w-3 h-3 bg-orange-500 rounded-full border-2 border-white shadow-sm" />
             </button>
 
           <button
@@ -57,7 +57,7 @@ export default function FloatingFabDock() {
               aria-label="Abrir WhatsApp"
             >
               <MessageCircle className="w-7 h-7 text-white fill-white" />
-              <span className="absolute -top-0.5 -right-0.5 min-w-[1.25rem] h-5 px-1 bg-red-500 rounded-full flex items-center justify-center text-white text-[10px] font-bold border-2 border-white">
+              <span className="absolute -top-0.5 -right-0.5 min-w-[1.25rem] h-5 px-1 bg-orange-500 rounded-full flex items-center justify-center text-white text-[10px] font-bold border-2 border-white">
                 1
               </span>
             </button>

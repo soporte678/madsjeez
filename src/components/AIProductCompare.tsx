@@ -104,7 +104,7 @@ export default function AIProductCompare({ productIds, onClose }: Props) {
                 </div>
               ))}
               {pc.cons?.map((con: string, j: number) => (
-                <div key={`con-${j}`} className="flex items-start gap-1.5 text-xs text-red-600">
+                <div key={`con-${j}`} className="flex items-start gap-1.5 text-xs text-amber-800">
                   <ThumbsDown size={10} className="shrink-0 mt-0.5" /> {con}
                 </div>
               ))}

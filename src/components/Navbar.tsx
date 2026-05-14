@@ -254,7 +254,7 @@ export default function Navbar() {
         }
         
         .gradient-text {
-          background: linear-gradient(90deg, #ff4d2e, #ffb703, #00b4d8, #ff4d2e);
+          background: linear-gradient(90deg, #f97316, #ffb703, #00b4d8, #f97316);
           background-size: 200% auto;
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
@@ -279,10 +279,10 @@ export default function Navbar() {
             <Link href="/" className="flex items-center gap-2 cursor-pointer group w-[160px] flex-shrink-0">
               <div className="relative w-9 h-9 bg-gradient-to-br from-[#1a1a2e] to-[#16213e] rounded-lg flex items-center justify-center shadow-lg shadow-orange-500/30 overflow-hidden group-hover:shadow-xl group-hover:shadow-orange-500/40 transition-all duration-300">
                  <svg viewBox="0 0 100 100" className="w-6 h-6">
-                    <path d="M 15 80 L 35 30 L 55 55" stroke="#ff4d2e" fill="none" strokeWidth="15" strokeLinecap="round"/>
+                    <path d="M 15 80 L 35 30 L 55 55" stroke="#f97316" fill="none" strokeWidth="15" strokeLinecap="round"/>
                     <path d="M 85 80 L 65 30 L 45 65" stroke="#00b4d8" fill="none" strokeWidth="15" strokeLinecap="round"/>
                  </svg>
-                 <div className="absolute inset-0 bg-gradient-to-tr from-[#ff4d2e]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                 <div className="absolute inset-0 bg-gradient-to-tr from-[#f97316]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
               <div className="flex flex-col justify-center leading-none">
                 <span className="font-montserrat font-black text-[20px] tracking-tighter uppercase">
@@ -311,7 +311,7 @@ export default function Navbar() {
                 <div 
                   className={cn(
                     "flex items-center bg-white rounded-xl h-11 px-4 transition-all duration-300 search-glow border-2",
-                    isSearchOpen ? "border-[#ff4d2e] shadow-lg shadow-orange-500/20" : "border-transparent"
+                    isSearchOpen ? "border-[#f97316] shadow-lg shadow-orange-500/20" : "border-transparent"
                   )}
                 >
                   <input 
@@ -341,7 +341,7 @@ export default function Navbar() {
                   <div className="h-6 w-[1px] bg-slate-200 mx-2"></div>
                   <button 
                     type="button" 
-                    className="p-1.5 text-slate-400 hover:text-[#ff4d2e] transition-colors"
+                    className="p-1.5 text-slate-400 hover:text-[#f97316] transition-colors"
                     title="Búsqueda por voz"
                   >
                     <Mic size={18} />
@@ -355,7 +355,7 @@ export default function Navbar() {
                   </button>
                   <button 
                     type="submit" 
-                    className="bg-gradient-to-r from-[#ff4d2e] to-[#ff9100] text-white p-2 rounded-lg hover:from-[#ff9100] hover:to-[#ffb703] transition-all duration-300 shadow-md shadow-orange-500/30 hover:shadow-lg hover:shadow-orange-500/40 hover:scale-105"
+                    className="bg-gradient-to-r from-[#f97316] to-[#ff9100] text-white p-2 rounded-lg hover:from-[#ff9100] hover:to-[#ffb703] transition-all duration-300 shadow-md shadow-orange-500/30 hover:shadow-lg hover:shadow-orange-500/40 hover:scale-105"
                   >
                     <Search size={18} strokeWidth={2.5} />
                   </button>
@@ -368,7 +368,7 @@ export default function Navbar() {
                   {/* Loading state */}
                   {isLoading && (
                     <div className="p-4 flex items-center justify-center gap-2 text-slate-400">
-                      <div className="w-5 h-5 border-2 border-[#ff4d2e] border-t-transparent rounded-full animate-spin" />
+                      <div className="w-5 h-5 border-2 border-[#f97316] border-t-transparent rounded-full animate-spin" />
                       <span className="text-sm">Buscando...</span>
                     </div>
                   )}
@@ -378,8 +378,8 @@ export default function Navbar() {
                     <div className="max-h-[400px] overflow-y-auto">
                       {/* Título de sección */}
                       {searchQuery && (
-                        <div className="px-4 py-2 bg-gradient-to-r from-[#ff4d2e]/5 to-[#ffb703]/5 border-b border-slate-100">
-                          <span className="text-xs font-bold text-[#ff4d2e] uppercase tracking-wider flex items-center gap-1">
+                        <div className="px-4 py-2 bg-gradient-to-r from-[#f97316]/5 to-[#ffb703]/5 border-b border-slate-100">
+                          <span className="text-xs font-bold text-[#f97316] uppercase tracking-wider flex items-center gap-1">
                             <Sparkles size={12} />
                             Sugerencias inteligentes
                           </span>
@@ -398,7 +398,7 @@ export default function Navbar() {
                       
                       {/* Tendencias */}
                       {!searchQuery && (
-                        <div className="px-4 py-2 bg-gradient-to-r from-[#ffb703]/10 to-[#ff4d2e]/5 border-b border-slate-100">
+                        <div className="px-4 py-2 bg-gradient-to-r from-[#ffb703]/10 to-[#f97316]/5 border-b border-slate-100">
                           <span className="text-xs font-bold text-[#ffb703] uppercase tracking-wider flex items-center gap-1">
                             <TrendingUp size={12} />
                             Tendencias
@@ -421,7 +421,7 @@ export default function Navbar() {
                               <History size={16} className="text-slate-400 flex-shrink-0" />
                             )}
                             {suggestion.type === 'trending' && (
-                              <TrendingUp size={16} className="text-[#ff4d2e] flex-shrink-0" />
+                              <TrendingUp size={16} className="text-[#f97316] flex-shrink-0" />
                             )}
                             {suggestion.type === 'product' && (
                               <div className="w-8 h-8 rounded bg-slate-100 flex items-center justify-center flex-shrink-0">
@@ -433,12 +433,12 @@ export default function Navbar() {
                               </div>
                             )}
                             {suggestion.type === 'category' && (
-                              <div className="w-8 h-8 rounded bg-gradient-to-br from-[#ff4d2e]/10 to-[#ffb703]/10 flex items-center justify-center flex-shrink-0">
-                                <ArrowRight size={14} className="text-[#ff4d2e]" />
+                              <div className="w-8 h-8 rounded bg-gradient-to-br from-[#f97316]/10 to-[#ffb703]/10 flex items-center justify-center flex-shrink-0">
+                                <ArrowRight size={14} className="text-[#f97316]" />
                               </div>
                             )}
                             {suggestion.type === 'brand' && (
-                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#00b4d8]/10 to-[#ff4d2e]/10 flex items-center justify-center flex-shrink-0">
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#00b4d8]/10 to-[#f97316]/10 flex items-center justify-center flex-shrink-0">
                                 <Zap size={14} className="text-[#00b4d8]" />
                               </div>
                             )}
@@ -480,7 +480,7 @@ export default function Navbar() {
                               setSearchHistory([]);
                               localStorage.removeItem('madsjeez_search_history');
                             }}
-                            className="text-xs text-[#ff4d2e] hover:text-[#ff9100] font-medium"
+                            className="text-xs text-[#f97316] hover:text-[#ff9100] font-medium"
                           >
                             Borrar historial
                           </button>

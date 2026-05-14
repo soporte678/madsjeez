@@ -11,7 +11,7 @@ const buttonVariants = cva(
         default:
           "bg-gradient-to-r from-primary via-brand-flare to-secondary text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/35 hover:from-primary-hover hover:via-brand-flare hover:to-secondary-hover hover:-translate-y-0.5 btn-shine",
         destructive:
-          "bg-gradient-to-r from-destructive to-destructive-hover text-destructive-foreground shadow-lg shadow-red-500/30 hover:shadow-xl hover:shadow-red-500/40 hover:-translate-y-0.5",
+          "bg-gradient-to-r from-destructive to-destructive-hover text-destructive-foreground shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/40 hover:-translate-y-0.5",
         outline:
           "border-2 border-primary bg-transparent text-primary hover:bg-gradient-to-r hover:from-primary hover:via-brand-flare hover:to-secondary-hover hover:text-primary-foreground hover:border-transparent hover:shadow-lg hover:shadow-primary/25 transition-all duration-300",
         secondary:

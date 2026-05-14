@@ -9,8 +9,8 @@ interface ReputationBadgeProps {
 
 const colorConfig: Record<string, { bg: string; text: string; label: string; emoji: string }> = {
   red: {
-    bg: "bg-red-100",
-    text: "text-red-700",
+    bg: "bg-amber-100",
+    text: "text-amber-900",
     label: "Rojo",
     emoji: "🔴",
   },

@@ -52,7 +52,7 @@ export default function AISmartNotifications() {
   if (!show || notifications.length === 0) return null
 
   const urgencyColors: Record<"high" | "medium" | "low", string> = {
-    high: "border-l-red-500 bg-red-50",
+    high: "border-l-amber-500 bg-amber-50",
     medium: "border-l-orange-500 bg-orange-50",
     low: "border-l-blue-500 bg-blue-50",
   }
