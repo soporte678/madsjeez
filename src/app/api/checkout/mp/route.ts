@@ -287,7 +287,7 @@ export async function POST(req: Request) {
     }
     if (lastCode === "PGRST204") {
       console.warn(
-        "[checkout/mp] PGRST204 en orders tras NOTIFY: intentando ADD COLUMN seller_id idempotente + NOTIFY (DDL)."
+        "[checkout/mp] PGRST204 en orders tras NOTIFY: intentando ADD COLUMN seller_id / total_amount idempotente + NOTIFY (DDL)."
       );
       const ddlOk = await ensureSupabaseOrdersSellerIdColumn(prisma);
       if (ddlOk) await sleepMs(800);

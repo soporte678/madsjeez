@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 import { supabaseService } from "@/lib/supabase/service";
 import { verifyMpOAuthState } from "@/lib/mp-oauth-state";
+import { ensureMpOauthUsedNoncesTable } from "@/lib/supabase/postgrest-schema";
 
 interface MercadoPagoTokenResponse {
   access_token: string;
@@ -59,9 +61,19 @@ export async function GET(request: Request) {
       );
     }
 
-    const { error: nonceErr } = await supabaseService
+    let { error: nonceErr } = await supabaseService
       .from("mp_oauth_used_nonces")
       .insert({ nonce: payload.nonce });
+
+    const nonceCode = (nonceErr as { code?: string } | null)?.code;
+    if (nonceErr && (nonceCode === "PGRST205" || nonceCode === "PGRST204")) {
+      const ensured = await ensureMpOauthUsedNoncesTable(prisma);
+      if (ensured) {
+        ({ error: nonceErr } = await supabaseService
+          .from("mp_oauth_used_nonces")
+          .insert({ nonce: payload.nonce }));
+      }
+    }
 
     if (nonceErr) {
       console.warn("MP OAuth nonce replay or DB error:", nonceErr);
