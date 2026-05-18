@@ -19,6 +19,7 @@ import { resolveCartShippingCost } from "@/lib/zipnova/quote-cart";
 import type { SellerMpRow } from "@/lib/mercadopago/seller-access-token";
 import { createCheckoutProPreferenceWithSellerTokenRetry } from "@/lib/mercadopago/preference-with-token-retry";
 import { notifyPostgrestReloadSchema, ensureSupabaseOrdersSellerIdColumn } from "@/lib/supabase/postgrest-schema";
+import { isPrismaSchemaMissingError } from "@/lib/prisma/known-errors";
 import {
   markStockReserved,
   reservePrismaStock,
@@ -141,6 +142,35 @@ export async function POST(req: Request) {
     }
 
     const subtotal = roundMoney(lines.reduce((s, i) => s + i.price * i.quantity, 0));
+
+    try {
+      const sellerZipnova = await prisma.sellerZipnovaOAuth.findUnique({
+        where: { userId: sellerPrismaId },
+        select: { userId: true },
+      });
+      if (!sellerZipnova) {
+        return NextResponse.json(
+          {
+            code: "SELLER_ZIPNOVA_REQUIRED",
+            error:
+              "Este vendedor todavia no conecto Zipnova para gestionar envios. Pedile que conecte Zipnova desde su panel antes de comprar.",
+          },
+          { status: 409 }
+        );
+      }
+    } catch (e) {
+      if (isPrismaSchemaMissingError(e)) {
+        return NextResponse.json(
+          {
+            code: "SELLER_ZIPNOVA_SCHEMA_MISSING",
+            error:
+              "La tabla de conexion Zipnova todavia no esta aplicada en produccion. Ejecuta las migraciones antes de habilitar compras.",
+          },
+          { status: 503 }
+        );
+      }
+      throw e;
+    }
 
     const shippingForQuote = {
       city: String((shippingAddress as { city?: string }).city ?? ""),
