@@ -1,206 +1,232 @@
-"use client"
+import type { Metadata } from "next";
+import Link from "next/link";
+import {
+  ArrowRight,
+  Baby,
+  BookOpen,
+  Building2,
+  Camera,
+  Car,
+  Dumbbell,
+  Factory,
+  Film,
+  Gem,
+  HardHat,
+  HeartPulse,
+  Home,
+  Laptop,
+  MoreHorizontal,
+  Music,
+  Palette,
+  PartyPopper,
+  PawPrint,
+  Search,
+  Shirt,
+  Smartphone,
+  Sparkles,
+  Sprout,
+  Store,
+  Ticket,
+  ToyBrick,
+  TrendingUp,
+  Truck,
+  Tv,
+  Watch,
+  Wind,
+  Wrench,
+  Apple,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { getCategoryCatalog } from "@/lib/categoryCatalog";
 
-import Link from "next/link"
-import { useEffect, useState } from "react"
-import { 
-  Car, Sprout, Apple, PawPrint, Gem, Palette, Briefcase, 
-  Baby, Sparkles, Camera, Smartphone, Laptop, Gamepad2, 
-  HardHat, Dumbbell, Wind, Tv, Ticket, Wrench, Home, 
-  Factory, Building2, Music, Watch, ToyBrick, BookOpen, 
-  Film, Shirt, HeartPulse, Truck, PartyPopper, MoreHorizontal,
-  ArrowRight
-} from "lucide-react"
+export const dynamic = "force-dynamic";
 
-interface Category {
-  id: string
-  name: string
-  slug: string
-  productCount: number
-  children: {
-    id: string
-    name: string
-    slug: string
-  }[]
+export const metadata: Metadata = {
+  title: "Categorias para comprar y vender | MADSJEEZ",
+  description:
+    "Explora todas las categorias del marketplace MADSJEEZ en Argentina. Encuentra productos, vendedores y oportunidades para publicar tu catalogo.",
+};
+
+const categoryIcons: Record<string, LucideIcon> = {
+  "accesorios-para-vehiculos": Car,
+  agro: Sprout,
+  "alimentos-y-bebidas": Apple,
+  "animales-y-mascotas": PawPrint,
+  "antiguedades-y-colecciones": Gem,
+  "arte-libreria-y-merceria": Palette,
+  "autos-motos-y-otros": Car,
+  bebes: Baby,
+  "belleza-y-cuidado-personal": Sparkles,
+  "camaras-y-accesorios": Camera,
+  "celulares-y-telefonia": Smartphone,
+  computacion: Laptop,
+  "consolas-y-videojuegos": ToyBrick,
+  construccion: HardHat,
+  "deportes-y-fitness": Dumbbell,
+  "electrodomesticos-y-aires": Wind,
+  "electronica-audio-y-video": Tv,
+  "entradas-para-eventos": Ticket,
+  herramientas: Wrench,
+  "hogar-muebles-y-jardin": Home,
+  "industrias-y-oficinas": Factory,
+  inmuebles: Building2,
+  "instrumentos-musicales": Music,
+  "joyas-y-relojes": Watch,
+  "juegos-y-juguetes": ToyBrick,
+  "libros-revistas-y-comics": BookOpen,
+  "musica-peliculas-y-series": Film,
+  "ropa-y-accesorios": Shirt,
+  "salud-y-equipamiento-medico": HeartPulse,
+  servicios: Truck,
+  "souvenirs-cotillon-y-fiestas": PartyPopper,
+  otros: MoreHorizontal,
+};
+
+function formatCount(value: number) {
+  return value.toLocaleString("es-AR");
 }
 
-// Iconos por categoría
-const categoryIcons: Record<string, React.ReactNode> = {
-  "accesorios-para-vehiculos": <Car className="w-5 h-5" />,
-  "agro": <Sprout className="w-5 h-5" />,
-  "alimentos-y-bebidas": <Apple className="w-5 h-5" />,
-  "animales-y-mascotas": <PawPrint className="w-5 h-5" />,
-  "antiguedades-y-colecciones": <Gem className="w-5 h-5" />,
-  "arte-libreria-y-merceria": <Palette className="w-5 h-5" />,
-  "autos-motos-y-otros": <Car className="w-5 h-5" />,
-  "bebes": <Baby className="w-5 h-5" />,
-  "belleza-y-cuidado-personal": <Sparkles className="w-5 h-5" />,
-  "camaras-y-accesorios": <Camera className="w-5 h-5" />,
-  "celulares-y-telefonia": <Smartphone className="w-5 h-5" />,
-  "computacion": <Laptop className="w-5 h-5" />,
-  "consolas-y-videojuegos": <Gamepad2 className="w-5 h-5" />,
-  "construccion": <HardHat className="w-5 h-5" />,
-  "deportes-y-fitness": <Dumbbell className="w-5 h-5" />,
-  "electrodomesticos-y-aires": <Wind className="w-5 h-5" />,
-  "electronica-audio-y-video": <Tv className="w-5 h-5" />,
-  "entradas-para-eventos": <Ticket className="w-5 h-5" />,
-  "herramientas": <Wrench className="w-5 h-5" />,
-  "hogar-muebles-y-jardin": <Home className="w-5 h-5" />,
-  "industrias-y-oficinas": <Factory className="w-5 h-5" />,
-  "inmuebles": <Building2 className="w-5 h-5" />,
-  "instrumentos-musicales": <Music className="w-5 h-5" />,
-  "joyas-y-relojes": <Watch className="w-5 h-5" />,
-  "juegos-y-juguetes": <ToyBrick className="w-5 h-5" />,
-  "libros-revistas-y-comics": <BookOpen className="w-5 h-5" />,
-  "musica-peliculas-y-series": <Film className="w-5 h-5" />,
-  "ropa-y-accesorios": <Shirt className="w-5 h-5" />,
-  "salud-y-equipamiento-medico": <HeartPulse className="w-5 h-5" />,
-  "servicios": <Truck className="w-5 h-5" />,
-  "souvenirs-cotillon-y-fiestas": <PartyPopper className="w-5 h-5" />,
-  "otros": <MoreHorizontal className="w-5 h-5" />,
-}
-
-export default function CategoriesPage() {
-  const [categories, setCategories] = useState<Category[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    async function fetchCategories() {
-      try {
-        const response = await fetch("/api/categories")
-        if (response.ok) {
-          const data = await response.json()
-          setCategories(data)
-        }
-      } catch (error) {
-        console.error("Error fetching categories:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchCategories()
-  }, [])
+export default async function CategoriesPage() {
+  const categories = await getCategoryCatalog().catch((error) => {
+    console.error("Error loading categories page:", error);
+    return [];
+  });
+  const totalProducts = categories.reduce((total, category) => total + category.productCount, 0);
+  const totalSubcategories = categories.reduce((total, category) => total + category.children.length, 0);
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="bg-gradient-to-r from-[#ffb703] via-[#ffa60a] to-[#ffb703] border-b border-[#ff4d2e]/20">
+    <div className="min-h-screen bg-[#f5f5f5] text-slate-950">
+      <header className="bg-[#fff159] border-b border-[#e7d94b]">
         <div className="max-w-[1200px] mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="w-9 h-9 bg-gradient-to-br from-[#1a1a2e] to-[#16213e] rounded-lg flex items-center justify-center shadow-lg">
-                <svg viewBox="0 0 100 100" className="w-6 h-6">
-                  <path d="M 15 80 L 35 30 L 55 55" stroke="#ff4d2e" fill="none" strokeWidth="15" strokeLinecap="round"/>
-                  <path d="M 85 80 L 65 30 L 45 65" stroke="#00b4d8" fill="none" strokeWidth="15" strokeLinecap="round"/>
-                </svg>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <Link href="/" className="flex items-center gap-3 w-fit">
+              <div className="w-10 h-10 bg-slate-950 rounded-md flex items-center justify-center shadow-sm">
+                <Store className="w-5 h-5 text-[#fff159]" />
               </div>
-              <span className="font-black text-xl tracking-tighter text-[#2d3277]">MADSJEEZ</span>
+              <span className="font-black text-xl tracking-tight text-slate-950">MADSJEEZ</span>
             </Link>
-            <span className="text-slate-600">|</span>
-            <h1 className="text-lg font-medium text-slate-800">Categorías</h1>
+
+            <form action="/search" className="relative w-full lg:max-w-[560px]">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+              <input
+                name="q"
+                type="search"
+                placeholder="Buscar productos, marcas o categorias"
+                className="w-full h-12 rounded-md bg-white pl-12 pr-4 text-sm shadow-sm outline-none ring-1 ring-black/5 focus:ring-2 focus:ring-[#3483fa]"
+              />
+            </form>
+
+            <Link
+              href="/vender"
+              className="hidden lg:inline-flex items-center gap-2 rounded-md bg-slate-950 px-4 py-3 text-sm font-bold text-white hover:bg-slate-800"
+            >
+              Quiero vender
+              <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="max-w-[1200px] mx-auto px-4 py-8">
-        <h2 className="text-2xl font-bold text-slate-800 mb-8">
-          Categorías para comprar y vender
-        </h2>
+        <section className="mb-8 rounded-lg bg-white p-5 sm:p-7 shadow-sm border border-black/5">
+          <div className="grid gap-6 lg:grid-cols-[1fr_340px] lg:items-end">
+            <div>
+              <p className="text-sm font-semibold text-[#3483fa] mb-2">Catalogo navegable</p>
+              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-950">
+                Todas las categorias del marketplace
+              </h1>
+              <p className="mt-3 max-w-2xl text-sm sm:text-base text-slate-600">
+                Entra a una categoria principal o baja directo a una subcategoria. Cada enlace abre resultados reales y
+                tambien alimenta el SEO para que compradores y vendedores encuentren MADSJEEZ desde Google.
+              </p>
+            </div>
 
-        {loading ? (
-          <div className="space-y-12">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="animate-pulse">
-                <div className="h-6 bg-slate-200 rounded w-64 mb-4"></div>
-                <div className="grid grid-cols-4 gap-4">
-                  {[...Array(4)].map((_, j) => (
-                    <div key={j} className="h-4 bg-slate-100 rounded"></div>
-                  ))}
-                </div>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="rounded-md bg-slate-950 p-3 text-white">
+                <p className="text-2xl font-black">{formatCount(categories.length)}</p>
+                <p className="text-[11px] text-white/70">rubros</p>
               </div>
-            ))}
+              <div className="rounded-md bg-[#3483fa] p-3 text-white">
+                <p className="text-2xl font-black">{formatCount(totalSubcategories)}</p>
+                <p className="text-[11px] text-white/80">subcategorias</p>
+              </div>
+              <div className="rounded-md bg-[#00a650] p-3 text-white">
+                <p className="text-2xl font-black">{formatCount(totalProducts)}</p>
+                <p className="text-[11px] text-white/80">productos</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {categories.length > 0 ? (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {categories.map((category) => {
+              const Icon = categoryIcons[category.slug] || TrendingUp;
+
+              return (
+                <section key={category.id} className="rounded-lg bg-white shadow-sm border border-black/5 overflow-hidden">
+                  <Link
+                    href={`/category/${category.slug}`}
+                    className="group flex items-center gap-3 border-b border-slate-100 p-4 hover:bg-[#fffbe6]"
+                  >
+                    <span className="grid h-11 w-11 place-items-center rounded-md bg-[#3483fa]/10 text-[#3483fa] group-hover:bg-[#3483fa] group-hover:text-white transition-colors">
+                      <Icon className="w-5 h-5" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-base font-bold text-slate-950 group-hover:text-[#3483fa] truncate">
+                        {category.name}
+                      </span>
+                      <span className="text-xs text-slate-500">
+                        {formatCount(category.productCount)} productos disponibles
+                      </span>
+                    </span>
+                    <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-[#3483fa]" />
+                  </Link>
+
+                  <div className="p-4">
+                    {category.children.length > 0 ? (
+                      <div className="grid grid-cols-1 gap-1">
+                        {category.children.slice(0, 10).map((child) => (
+                          <Link
+                            key={child.id}
+                            href={`/category/${child.slug}`}
+                            className="flex items-center justify-between rounded-md px-2 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-[#3483fa]"
+                          >
+                            <span className="truncate">{child.name}</span>
+                            <span className="ml-3 text-[11px] text-slate-400">{formatCount(child.productCount)}</span>
+                          </Link>
+                        ))}
+                        {category.children.length > 10 && (
+                          <Link
+                            href={`/category/${category.slug}`}
+                            className="mt-1 inline-flex items-center gap-1 px-2 py-2 text-sm font-semibold text-[#3483fa] hover:underline"
+                          >
+                            Ver {category.children.length - 10} subcategorias mas
+                            <ArrowRight className="w-4 h-4" />
+                          </Link>
+                        )}
+                      </div>
+                    ) : (
+                      <Link
+                        href={`/search?category=${encodeURIComponent(category.id)}`}
+                        className="inline-flex items-center gap-2 text-sm font-semibold text-[#3483fa] hover:underline"
+                      >
+                        Ver publicaciones
+                        <ArrowRight className="w-4 h-4" />
+                      </Link>
+                    )}
+                  </div>
+                </section>
+              );
+            })}
           </div>
         ) : (
-          <div className="space-y-10">
-            {categories.map((category) => (
-              <section key={category.id} className="border-b border-slate-100 pb-10 last:border-0">
-                {/* Categoría Principal */}
-                <Link 
-                  href={`/category/${category.slug}`}
-                  className="group flex items-center gap-2 mb-4 hover:text-[#ff4d2e] transition-colors"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#ff4d2e]/10 to-[#ffb703]/10 flex items-center justify-center text-[#ff4d2e] group-hover:from-[#ff4d2e] group-hover:to-[#ff9100] group-hover:text-white transition-all">
-                    {categoryIcons[category.slug] || <ArrowRight className="w-5 h-5" />}
-                  </div>
-                  <h3 className="text-lg font-bold text-slate-900 group-hover:text-[#ff4d2e]">
-                    {category.name}
-                  </h3>
-                  <span className="text-sm text-slate-400 ml-2">
-                    ({category.productCount} productos)
-                  </span>
-                </Link>
-
-                {/* Subcategorías en 4 columnas */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-2">
-                  {category.children?.map((child) => (
-                    <Link
-                      key={child.id}
-                      href={`/category/${child.slug}`}
-                      className="text-sm text-slate-500 hover:text-[#ff4d2e] hover:underline py-1 transition-colors"
-                    >
-                      {child.name}
-                    </Link>
-                  )) || (
-                    <span className="text-sm text-slate-400 italic">
-                      No hay subcategorías
-                    </span>
-                  )}
-                </div>
-              </section>
-            ))}
-          </div>
-        )}
-
-        {!loading && categories.length === 0 && (
-          <div className="text-center py-16">
-            <p className="text-slate-500 text-lg">No hay categorías disponibles</p>
-            <p className="text-slate-400 text-sm mt-2">
-              Intenta recargar la página o contacta soporte
-            </p>
-          </div>
+          <section className="rounded-lg bg-white p-12 text-center shadow-sm border border-black/5">
+            <p className="text-lg font-semibold text-slate-950">Todavia no hay categorias disponibles</p>
+            <p className="mt-2 text-sm text-slate-500">Volvi a intentar en unos minutos.</p>
+          </section>
         )}
       </main>
-
-      {/* Footer Info - Estilo MercadoLibre */}
-      <footer className="bg-white border-t border-slate-200 mt-16">
-        <div className="max-w-[1200px] mx-auto px-4 py-6">
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-slate-500">
-            <Link href="/about" className="hover:text-[#ff4d2e] hover:underline">Trabajá con nosotros</Link>
-            <Link href="/legal/terminos" className="hover:text-[#ff4d2e] hover:underline">Términos y condiciones</Link>
-            <Link href="/promotions" className="hover:text-[#ff4d2e] hover:underline">Promociones</Link>
-            <Link href="/legal/privacidad" className="hover:text-[#ff4d2e] hover:underline">Cómo cuidamos tu privacidad</Link>
-            <Link href="/accessibility" className="hover:text-[#ff4d2e] hover:underline">Accesibilidad</Link>
-            <Link href="/legal/aviso-legal" className="hover:text-[#ff4d2e] hover:underline">Información al usuario financiero</Link>
-            <Link href="/help" className="hover:text-[#ff4d2e] hover:underline">Ayuda</Link>
-            <Link href="/defensa-del-consumidor" className="hover:text-[#ff4d2e] hover:underline">Defensa del Consumidor</Link>
-            <Link href="/insurance" className="hover:text-[#ff4d2e] hover:underline">Información sobre seguros</Link>
-          </div>
-          
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-slate-500 mt-3">
-            <Link href="/complaints" className="hover:text-[#ff4d2e] hover:underline">Libro de quejas online</Link>
-            <Link href="/affiliates" className="hover:text-[#ff4d2e] hover:underline">Programa de Afiliados</Link>
-          </div>
-
-          <div className="text-center mt-6 pt-4 border-t border-slate-100">
-            <p className="text-xs text-slate-400">
-              Copyright © 2026 MadsJeez Commerce Group S.R.L.
-            </p>
-            <p className="text-xs text-slate-400 mt-1">
-              Spegazzini / Buenos Aires / Argentina
-            </p>
-          </div>
-        </div>
-      </footer>
     </div>
-  )
+  );
 }

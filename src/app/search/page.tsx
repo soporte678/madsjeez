@@ -58,6 +58,10 @@ function buildCategoryPath(categories: Category[], categoryId: string): Category
   return path;
 }
 
+function findCategoryByParam(categories: Category[], value: string): Category | undefined {
+  return categories.find((category) => category.id === value || category.slug === value);
+}
+
 function FilterSwitch({
   title,
   subtitle,
@@ -94,12 +98,14 @@ function FilterList({
   title,
   items,
   showMore,
+  onShowMore,
   onItemClick,
   activeItem,
 }: {
   title: string;
   items: { label: string; value: string }[];
   showMore?: boolean;
+  onShowMore?: () => void;
   onItemClick?: (value: string) => void;
   activeItem?: string;
 }) {
@@ -120,7 +126,11 @@ function FilterList({
         ))}
         {showMore && (
           <li>
-            <button type="button" className="text-[#3483fa] font-semibold text-[12px] mt-1 hover:text-blue-700">
+            <button
+              type="button"
+              onClick={onShowMore}
+              className="text-[#3483fa] font-semibold text-[12px] mt-1 hover:text-blue-700"
+            >
               Mostrar más
             </button>
           </li>
@@ -167,6 +177,7 @@ function SearchContent() {
   const [sortBy, setSortBy] = useState(searchParams.get("sort") || "relevance");
   const [freeShipping, setFreeShipping] = useState(searchParams.get("free_shipping") === "true");
   const [arrivesTomorrow, setArrivesTomorrow] = useState(searchParams.get("arrives_tomorrow") === "true");
+  const [showAllCategories, setShowAllCategories] = useState(false);
   const [wholesale, setWholesale] = useState(false);
   const [invoiceA, setInvoiceA] = useState(false);
   const [intlShipping, setIntlShipping] = useState(false);
@@ -338,8 +349,19 @@ function SearchContent() {
 
   const categoryPath = useMemo(() => {
     if (!selectedCategory || !categories.length) return [];
-    return buildCategoryPath(categories, selectedCategory);
+    const selected = findCategoryByParam(categories, selectedCategory);
+    return buildCategoryPath(categories, selected?.id || selectedCategory);
   }, [selectedCategory, categories]);
+
+  const selectedCategoryId = useMemo(() => {
+    if (!selectedCategory) return "";
+    return findCategoryByParam(categories, selectedCategory)?.id || selectedCategory;
+  }, [selectedCategory, categories]);
+
+  const visibleCategories = useMemo(
+    () => (showAllCategories ? categories : categories.slice(0, 12)),
+    [categories, showAllCategories]
+  );
 
   const filteredProducts = useMemo(() => {
     let list = [...products];
@@ -447,8 +469,16 @@ function SearchContent() {
                   </span>
                 }
                 subtitle="Beneficios de envío"
-                isActive={false}
-                onToggle={() => {}}
+                isActive={freeShipping && arrivesTomorrow}
+                onToggle={() => {
+                  const next = !(freeShipping && arrivesTomorrow);
+                  setFreeShipping(next);
+                  setArrivesTomorrow(next);
+                  updateSearchParams({
+                    free_shipping: next ? "true" : null,
+                    arrives_tomorrow: next ? "true" : null,
+                  });
+                }}
               />
               <FilterSwitch title="Internacional" isActive={intlShipping} onToggle={() => setIntlShipping(!intlShipping)} />
               <FilterSwitch title="Envío local" isActive={localShipping} onToggle={() => setLocalShipping(!localShipping)} />
@@ -471,11 +501,12 @@ function SearchContent() {
               <div className="mt-4 space-y-4">
                 <FilterList
                   title="Categoría"
-                  items={categories.slice(0, 12).map((c) => ({ label: c.name, value: c.id }))}
-                  showMore={categories.length > 12}
-                  activeItem={selectedCategory}
+                  items={visibleCategories.map((c) => ({ label: c.name, value: c.id }))}
+                  showMore={!showAllCategories && categories.length > visibleCategories.length}
+                  onShowMore={() => setShowAllCategories(true)}
+                  activeItem={selectedCategoryId}
                   onItemClick={(id) => {
-                    const next = selectedCategory === id ? "" : id;
+                    const next = selectedCategoryId === id ? "" : id;
                     setSelectedCategory(next);
                     updateSearchParams({ category: next || null });
                   }}
