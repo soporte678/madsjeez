@@ -159,6 +159,8 @@ model User {
   collaboratorInvitesSent SellerCollaboratorInvite[] @relation("CollaboratorInvitesSent")
   collaboratorAccountsOwned SellerCollaborator[]      @relation("CollaboratorAccountsOwned")
   collaboratorMemberships SellerCollaborator[]      @relation("CollaboratorMemberships")
+  sellerInvitesOwned SellerInvite[]
+  sellerLeadProfile  SellerLead?
 
   // Reputación
   reputationHistory ReputationHistory[] @relation("ReputationHistory")
@@ -1155,4 +1157,56 @@ model FAQ {
   updatedAt   DateTime @updatedAt @map("updated_at")
   
   @@map("faqs")
+}
+
+enum SellerLeadStatus {
+  NEW
+  CONTACTED
+  ACTIVATED
+  SELLING
+}
+
+model SellerInvite {
+  id            String   @id @default(cuid())
+  code          String   @unique
+  ownerUserId   String?  @map("owner_user_id")
+  ownerUser     User?    @relation(fields: [ownerUserId], references: [id], onDelete: SetNull)
+  source        String   @default("direct")
+  campaignName  String?  @map("campaign_name")
+  clicks        Int      @default(0)
+  signups       Int      @default(0)
+  activations   Int      @default(0)
+  firstSales    Int      @default(0)
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  leads SellerLead[]
+
+  @@index([ownerUserId])
+  @@index([isActive])
+  @@map("seller_invites")
+}
+
+model SellerLead {
+  id             String           @id @default(cuid())
+  inviteCode     String?          @map("invite_code")
+  invite         SellerInvite?    @relation(fields: [inviteCode], references: [code], onDelete: SetNull)
+  email          String
+  fullName       String           @map("full_name")
+  phone          String?
+  businessName   String?          @map("business_name")
+  businessType   String?          @map("business_type")
+  monthlyCatalog Int?             @map("monthly_catalog")
+  message        String?          @db.Text
+  status         SellerLeadStatus @default(NEW)
+  userId         String?          @unique @map("user_id")
+  user           User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+
+  @@index([email])
+  @@index([status])
+  @@index([inviteCode])
+  @@map("seller_leads")
 }
