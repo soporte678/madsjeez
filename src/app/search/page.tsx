@@ -18,7 +18,6 @@ import {
   ImageIcon,
 } from "lucide-react";
 import { toast } from "sonner";
-import { createClient } from "@/lib/supabase/client";
 import { hasValidProductImageUrl } from "@/lib/productVisibility";
 
 interface Product {
@@ -165,7 +164,6 @@ function StarRating({ soldCount }: { soldCount: number }) {
 function SearchContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const supabase = createClient();
 
   const [query, setQuery] = useState(searchParams.get("q") || "");
   const [products, setProducts] = useState<Product[]>([]);
@@ -204,13 +202,39 @@ function SearchContent() {
   }, [searchParams]);
 
   const fetchCategories = useCallback(async () => {
-    const { data } = await supabase
-      .from("categories")
-      .select("id, name, slug, parent_id")
-      .eq("is_active", true)
-      .order("name");
-    if (data) setCategories(data as Category[]);
-  }, [supabase]);
+    try {
+      const response = await fetch("/api/categories");
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Error al cargar categorias");
+
+      const flatCategories = (data || []).flatMap(
+        (category: {
+          id: string;
+          name: string;
+          slug: string;
+          children?: Array<{ id: string; name: string; slug: string }>;
+        }) => [
+          {
+            id: category.id,
+            name: category.name,
+            slug: category.slug,
+            parent_id: null,
+          },
+          ...(category.children || []).map((child) => ({
+            id: child.id,
+            name: child.name,
+            slug: child.slug,
+            parent_id: category.id,
+          })),
+        ]
+      );
+
+      setCategories(flatCategories);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      setCategories([]);
+    }
+  }, []);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);

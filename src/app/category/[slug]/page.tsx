@@ -7,97 +7,73 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ChevronRight, Package, Search, SlidersHorizontal } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/prisma";
+import { seedCategoriesIfEmpty } from "@/lib/seed-categories";
 
-interface Category {
+type CategoryView = {
   id: string;
   name: string;
   slug: string;
   description: string | null;
-  parent_id: string | null;
-  icon: string | null;
-}
+  parentId: string | null;
+};
 
-interface Subcategory {
-  id: string;
-  name: string;
-  slug: string;
-  icon: string | null;
-}
-
-async function getCategory(slug: string): Promise<Category | null> {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("categories")
-    .select("id, name, slug, description, parent_id, icon")
-    .eq("slug", slug)
-    .eq("is_active", true)
-    .single();
-
-  return data;
+async function getCategory(slug: string): Promise<CategoryView | null> {
+  await seedCategoriesIfEmpty();
+  return prisma.category.findUnique({
+    where: { slug },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      description: true,
+      parentId: true,
+    },
+  });
 }
 
 async function getCategoryProducts(categoryIds: string[]) {
   if (categoryIds.length === 0) return [];
 
-  const supabase = await createClient();
-  const { data: products } = await supabase
-    .from("products")
-    .select(`
-      *,
-      product_images(url, is_primary),
-      profiles:seller_id(full_name),
-      reputation_scores:seller_id(color)
-    `)
-    .in("category_id", categoryIds)
-    .eq("is_active", true)
-    .order("updated_at", { ascending: false })
-    .order("created_at", { ascending: false });
+  const products = await prisma.product.findMany({
+    where: {
+      categoryId: { in: categoryIds },
+      isActive: true,
+    },
+    include: {
+      seller: { select: { id: true, name: true, sellerName: true } },
+      images: { orderBy: { order: "asc" }, take: 5 },
+    },
+    orderBy: [{ isBoosted: "desc" }, { updatedAt: "desc" }, { createdAt: "desc" }],
+    take: 96,
+  });
 
-  return (
-    products?.map((product: any) => {
-      const images = (product.product_images || [])
-        .filter((img: { url?: string }) => Boolean(img.url))
-        .map((img: { url: string }) => ({ url: img.url }));
-
-      return {
-        ...product,
-        images,
-        primary_image:
-          product.product_images?.find((img: { is_primary: boolean }) => img.is_primary)?.url ||
-          product.product_images?.[0]?.url,
-        seller: product.profiles
-          ? { id: product.seller_id, full_name: product.profiles.full_name }
-          : undefined,
-        seller_name: product.profiles?.full_name,
-        seller_reputation: product.reputation_scores?.color,
-      };
-    }) || []
-  );
+  return products.map((product) => ({
+    id: product.id,
+    title: product.title,
+    price: product.price,
+    images: product.images.map((image) => ({ url: image.url })),
+    seller: {
+      id: product.seller.id,
+      full_name: product.seller.sellerName || product.seller.name || "Vendedor MADSJEEZ",
+    },
+  }));
 }
 
-async function getSubcategories(parentId: string | null): Promise<Subcategory[]> {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("categories")
-    .select("id, name, slug, icon")
-    .eq("parent_id", parentId)
-    .eq("is_active", true)
-    .order("name");
-
-  return data || [];
+async function getSubcategories(parentId: string | null) {
+  return prisma.category.findMany({
+    where: { parentId },
+    select: { id: true, name: true, slug: true },
+    orderBy: { name: "asc" },
+  });
 }
 
 async function getParentCategory(parentId: string | null) {
   if (!parentId) return null;
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("categories")
-    .select("name, slug")
-    .eq("id", parentId)
-    .single();
-
-  return data;
+  return prisma.category.findUnique({
+    where: { id: parentId },
+    select: { name: true, slug: true },
+  });
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -124,7 +100,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
 
   const [subcategories, parentCategory] = await Promise.all([
     getSubcategories(category.id),
-    getParentCategory(category.parent_id),
+    getParentCategory(category.parentId),
   ]);
   const categoryIds = [category.id, ...subcategories.map((subcategory) => subcategory.id)];
   const products = await getCategoryProducts(categoryIds);
@@ -158,22 +134,15 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
         <div className="bg-white">
           <div className="container mx-auto px-4 py-8">
             <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-              <div className="flex items-center gap-4">
-                {category.icon && (
-                  <div className="w-16 h-16 bg-[#EBEBEB] rounded-full flex items-center justify-center text-3xl">
-                    {category.icon}
-                  </div>
+              <div>
+                <h1 className="text-3xl font-bold">{category.name}</h1>
+                {category.description && (
+                  <p className="text-gray-600 mt-1">{category.description}</p>
                 )}
-                <div>
-                  <h1 className="text-3xl font-bold">{category.name}</h1>
-                  {category.description && (
-                    <p className="text-gray-600 mt-1">{category.description}</p>
-                  )}
-                  <p className="text-sm text-gray-500 mt-2">
-                    {products.length} productos disponibles
-                    {subcategories.length > 0 ? ` en ${subcategories.length + 1} secciones` : ""}
-                  </p>
-                </div>
+                <p className="text-sm text-gray-500 mt-2">
+                  {products.length} productos disponibles
+                  {subcategories.length > 0 ? ` en ${subcategories.length + 1} secciones` : ""}
+                </p>
               </div>
 
               <Link href={searchHref}>
@@ -200,7 +169,6 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
                           href={`/category/${sub.slug}`}
                           className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
                         >
-                          {sub.icon && <span className="text-xl">{sub.icon}</span>}
                           <span>{sub.name}</span>
                         </Link>
                       ))}
@@ -290,7 +258,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
 
               {products.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {products.map((product: any) => (
+                  {products.map((product) => (
                     <ProductCard key={product.id} product={product} />
                   ))}
                 </div>
