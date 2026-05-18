@@ -1159,6 +1159,22 @@ model FAQ {
   @@map("faqs")
 }
 
+model WebVisit {
+  id          String   @id @default(cuid())
+  path        String
+  source      String
+  medium      String
+  campaign    String?
+  referrer    String?
+  userAgent   String?  @map("user_agent")
+  visitorHash String?  @map("visitor_hash")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@index([source, medium])
+  @@map("web_visits")
+}
+
 enum SellerLeadStatus {
   NEW
   CONTACTED

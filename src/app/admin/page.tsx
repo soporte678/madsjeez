@@ -29,6 +29,9 @@ interface DashboardStats {
   totalProductos: number
   totalOrdenes: number
   ingresosMes: number
+  visitas30d: number
+  organico30d: number
+  pago30d: number
 }
 
 export default function AdminDashboardPage() {
@@ -41,6 +44,9 @@ export default function AdminDashboardPage() {
     totalProductos: 0,
     totalOrdenes: 0,
     ingresosMes: 0,
+    visitas30d: 0,
+    organico30d: 0,
+    pago30d: 0,
   })
   const [loading, setLoading] = useState(true)
   const [lastUpdated, setLastUpdated] = useState<string>("")
@@ -113,6 +119,8 @@ export default function AdminDashboardPage() {
         .eq("status", "completed")
 
       const ingresosMes = revenueData?.reduce((acc, order) => acc + (order.total_amount || 0), 0) || 0
+      const trafficRes = await fetch("/api/admin/traffic/summary")
+      const traffic = trafficRes.ok ? await trafficRes.json() : { total: 0, organic: 0, paid: 0 }
 
       setStats({
         ventasDia,
@@ -123,6 +131,9 @@ export default function AdminDashboardPage() {
         totalProductos: totalProductos || 0,
         totalOrdenes: totalOrdenes || 0,
         ingresosMes,
+        visitas30d: traffic.total || 0,
+        organico30d: traffic.organic || 0,
+        pago30d: traffic.paid || 0,
       })
       setLastUpdated(new Date().toLocaleTimeString("es-AR"))
     } catch (error) {
@@ -188,6 +199,9 @@ export default function AdminDashboardPage() {
     { label: "Productos Activos", value: stats.totalProductos.toLocaleString(), icon: Package },
     { label: "Órdenes del Mes", value: stats.totalOrdenes.toLocaleString(), icon: DollarSign },
     { label: "Ingresos del Mes", value: formatCurrency(stats.ingresosMes), icon: TrendingUp },
+    { label: "Visitas 30 días", value: stats.visitas30d.toLocaleString(), icon: Users },
+    { label: "Orgánico 30 días", value: stats.organico30d.toLocaleString(), icon: ArrowUpRight },
+    { label: "Pago 30 días", value: stats.pago30d.toLocaleString(), icon: DollarSign },
   ]
 
   return (

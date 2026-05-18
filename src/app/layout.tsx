@@ -5,6 +5,7 @@ import { Providers } from "@/components/providers"
 import { ChatProvider } from "@/components/ChatContext"
 import FloatingBots from "@/components/FloatingBots"
 import ThemeToneInit from "@/components/theme/ThemeToneInit"
+import TrafficTracker from "@/components/TrafficTracker"
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -134,6 +135,7 @@ export default function RootLayout({
         <ThemeToneInit />
         <ChatProvider>
           <Providers>
+            <TrafficTracker />
             {children}
             <FloatingBots />
           </Providers>
