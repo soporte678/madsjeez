@@ -5,9 +5,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && prisma migrate deploy && next build",
+    "build": "prisma generate && next build",
     "start": "next start -H 0.0.0.0 -p ${PORT:-3000}",
-    "lint": "next lint",
+    "lint": "eslint",
+    "migrate:deploy": "prisma migrate deploy",
     "test": "vitest run",
     "migrate:resolve:access-key-applied": "prisma migrate resolve --applied 20260504174800_add_access_key",
     "migrate:resolve:access-key-rolled-back": "prisma migrate resolve --rolled-back 20260504174800_add_access_key",
@@ -16,7 +17,11 @@
     "migrate:resolve:meli-ads-history-applied": "prisma migrate resolve --applied 20260506141500_add_meli_ads_history",
     "migrate:resolve:meli-ads-history-rolled-back": "prisma migrate resolve --rolled-back 20260506141500_add_meli_ads_history",
     "migrate:resolve:last-catalog-import-applied": "prisma migrate resolve --applied 20260506203000_add_last_catalog_import_at",
-    "migrate:resolve:last-catalog-import-rolled-back": "prisma migrate resolve --rolled-back 20260506203000_add_last_catalog_import_at"
+    "migrate:resolve:last-catalog-import-rolled-back": "prisma migrate resolve --rolled-back 20260506203000_add_last_catalog_import_at",
+    "scrape:aliexpress": "tsx scripts/scrape-aliexpress-images.ts",
+    "download:meli-images": "tsx scripts/download-meli-images.ts",
+    "download:meli-seller": "tsx scripts/download-meli-seller.ts --store bullservice",
+    "download:meli-seller-eco": "tsx scripts/download-meli-seller.ts --store bullservice --resume --eco"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -73,6 +78,7 @@
     "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
+    "playwright": "^1.60.0",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
     "typescript": "^5",

@@ -5,6 +5,10 @@ import { prisma } from "@/lib/prisma";
 import { supabaseService } from "@/lib/supabase/service";
 import { getProfileUuidByEmail, getProfileUuidForPrismaUserId } from "@/lib/supabase-profile-map";
 import { mapSupabaseOrderStatus } from "@/lib/orders/merge-buyer-orders";
+import {
+  computeDispatchDelay,
+  FULFILLMENT_STAGE_LABEL,
+} from "@/lib/orders/seller-fulfillment";
 
 function pickRecipientFromShipping(sa: unknown): string | null {
   if (!sa || typeof sa !== "object") return null;
@@ -84,6 +88,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
             product:products (
               id,
               title,
+              seller_id,
               product_images ( url )
             )
           )
@@ -112,7 +117,12 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
           id: string;
           quantity: number;
           unit_price: number | string;
-          product: { id?: string; title: string; product_images?: Array<{ url: string }> | null } | null;
+          product: {
+            id?: string;
+            title: string;
+            seller_id?: string | null;
+            product_images?: Array<{ url: string }> | null;
+          } | null;
         }>;
       };
 
@@ -139,6 +149,25 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
       const perspective = isBuyer ? "buyer" : "seller";
       const ship = pickShippingFromJson(r.shipping_address);
       const orderNumber = `MP-${String(r.id).replace(/-/g, "").slice(0, 12).toUpperCase()}`;
+      const sellerProfileId =
+        r.seller_id ?? r.order_items?.find((it) => it.product?.seller_id)?.product?.seller_id ?? null;
+      let sellerDisplay: { id: string; name: string | null } | null = null;
+      if (sellerProfileId) {
+        const { data: sellerProfile } = await supabaseService
+          .from("profiles")
+          .select("id, email")
+          .eq("id", sellerProfileId)
+          .maybeSingle();
+        const sp = sellerProfile as { id?: string; email?: string | null } | null;
+        sellerDisplay = {
+          id: sp?.id ?? sellerProfileId,
+          name: sp?.email?.split("@")[0] ?? null,
+        };
+      }
+      const fulfillment = computeDispatchDelay({
+        mpStatus: String(r.status ?? ""),
+        shipping_address: r.shipping_address,
+      });
       const items = (r.order_items ?? []).map((it) => ({
         id: it.id,
         quantity: it.quantity,
@@ -147,7 +176,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
           id: it.product?.id ?? null,
           title: it.product?.title ?? "Producto",
           images: (it.product?.product_images ?? []).map((im) => ({ url: im.url })),
-          seller: null as { id: string; name: string | null } | null,
+          seller: sellerDisplay,
         },
       }));
 
@@ -158,7 +187,12 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
           status: mapSupabaseOrderStatus(String(r.status)),
           total: Number(r.total_amount),
           createdAt: new Date(r.created_at).toISOString(),
+          source: "supabase",
           perspective,
+          fulfillmentStage: fulfillment.fulfillment.stage,
+          fulfillmentStageLabel: FULFILLMENT_STAGE_LABEL[fulfillment.fulfillment.stage],
+          delayLabel: fulfillment.delayLabel,
+          delayDays: fulfillment.delayDays,
           shippingName: ship.shippingName,
           shippingCity: ship.shippingCity,
           shippingState: ship.shippingState,
@@ -256,6 +290,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
         status: order.status,
         total: Number(order.total),
         createdAt: order.createdAt.toISOString(),
+        source: "prisma",
         perspective,
         shippingName: order.shippingName,
         shippingCity: order.shippingCity,

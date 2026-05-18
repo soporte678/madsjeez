@@ -40,6 +40,22 @@ export type MergedBuyerOrder = {
   }>;
 };
 
+async function fetchProfileNames(ids: string[]): Promise<Map<string, { id: string; name: string | null }>> {
+  const unique = [...new Set(ids.filter(Boolean))];
+  const names = new Map<string, { id: string; name: string | null }>();
+  if (!unique.length) return names;
+
+  const { data } = await supabaseService.from("profiles").select("id, email").in("id", unique);
+  for (const profile of data ?? []) {
+    const row = profile as { id: string; email?: string | null };
+    names.set(row.id, {
+      id: row.id,
+      name: row.email?.split("@")[0] ?? null,
+    });
+  }
+  return names;
+}
+
 /**
  * Órdenes del comprador: Prisma + Supabase por `buyer_id` + pedidos vinculados por `guest_claim` (email/tel/doc).
  */
@@ -120,6 +136,7 @@ export async function fetchMergedBuyerOrders(
         .select(
           `
           id,
+          seller_id,
           total_amount,
           status,
           created_at,
@@ -141,6 +158,7 @@ export async function fetchMergedBuyerOrders(
       if (!error && sbRows?.length) {
         type SbRow = {
           id: string;
+          seller_id?: string | null;
           total_amount: number | string;
           status: string;
           created_at: string;
@@ -154,6 +172,10 @@ export async function fetchMergedBuyerOrders(
             } | null;
           }>;
         };
+
+        const sellerNames = await fetchProfileNames(
+          (sbRows as unknown as SbRow[]).map((row) => row.seller_id ?? "")
+        );
 
         const sbMapped: MergedBuyerOrder[] = (sbRows as unknown as SbRow[]).map((row) => ({
           id: `sb-${row.id}`,
@@ -172,7 +194,7 @@ export async function fetchMergedBuyerOrders(
             product: {
               title: it.product?.title ?? "Producto",
               images: (it.product?.product_images ?? []).map((im) => ({ url: im.url })),
-              seller: null,
+              seller: row.seller_id ? sellerNames.get(row.seller_id) ?? null : null,
             },
           })),
         }));
@@ -191,6 +213,7 @@ export async function fetchMergedBuyerOrders(
 
     type GuestOrderRow = {
       id: string;
+      seller_id?: string | null;
       total_amount: number | string;
       status: string;
       created_at: string;
@@ -212,6 +235,7 @@ export async function fetchMergedBuyerOrders(
         .select(
           `
           id,
+          seller_id,
           total_amount,
           status,
           created_at,
@@ -231,6 +255,9 @@ export async function fetchMergedBuyerOrders(
         .order("created_at", { ascending: false })
         .limit(80);
       if (err || !rows?.length) return;
+      const sellerNames = await fetchProfileNames(
+        (rows as unknown as GuestOrderRow[]).map((row) => row.seller_id ?? "")
+      );
       for (const row of rows as unknown as GuestOrderRow[]) {
         const sid = `sb-${row.id}`;
         if (seenGuest.has(sid)) continue;
@@ -254,7 +281,7 @@ export async function fetchMergedBuyerOrders(
             product: {
               title: it.product?.title ?? "Producto",
               images: (it.product?.product_images ?? []).map((im) => ({ url: im.url })),
-              seller: null,
+              seller: row.seller_id ? sellerNames.get(row.seller_id) ?? null : null,
             },
           })),
         });

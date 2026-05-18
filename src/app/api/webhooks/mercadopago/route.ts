@@ -3,6 +3,12 @@ import { OrderStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { supabaseService } from "@/lib/supabase/service";
 import { mergeSellerFulfillmentIntoShipping, parseSellerFulfillment } from "@/lib/orders/seller-fulfillment";
+import {
+  hasActiveStockReservation,
+  markStockReleased,
+  restorePrismaStock,
+  type StockReservationLine,
+} from "@/lib/orders/stock-reservation";
 import { tryCreateZipnovaShipmentForPaidOrder } from "@/lib/zipnova/create-shipment";
 import crypto from "crypto";
 
@@ -122,6 +128,25 @@ function prismaStatusFromSupabaseWebhook(status: string): OrderStatus | null {
     refunded: OrderStatus.REFUNDED,
   };
   return map[status] ?? null;
+}
+
+async function fetchSupabaseOrderStockLines(orderId: string): Promise<StockReservationLine[]> {
+  const { data, error } = await supabaseService
+    .from("order_items")
+    .select("product_id, quantity")
+    .eq("order_id", orderId);
+
+  if (error) {
+    console.warn("MercadoPago webhook: no se pudieron leer items para restaurar stock", error);
+    return [];
+  }
+
+  return (data ?? [])
+    .map((row) => ({
+      productId: typeof row.product_id === "string" ? row.product_id : "",
+      quantity: Number(row.quantity ?? 0),
+    }))
+    .filter((line) => line.productId && line.quantity > 0);
 }
 
 async function fetchMercadoPagoPaymentJson(
@@ -278,13 +303,14 @@ export async function POST(req: NextRequest) {
       };
       const orderStatus = statusMap[status] || "pending";
 
+      const { data: prevOrder } = await supabaseService
+        .from("orders")
+        .select("shipping_address, status, seller_id, total_amount")
+        .eq("id", orderId)
+        .maybeSingle();
+
       let shippingPatch: Record<string, unknown> | undefined;
       if (orderStatus === "paid") {
-        const { data: prevOrder } = await supabaseService
-          .from("orders")
-          .select("shipping_address, status, seller_id, total_amount")
-          .eq("id", orderId)
-          .maybeSingle();
         const prevSt = typeof (prevOrder as { status?: string } | null)?.status === "string"
           ? String((prevOrder as { status: string }).status).toLowerCase()
           : "";
@@ -305,6 +331,17 @@ export async function POST(req: NextRequest) {
             });
           }
           shippingPatch = merged;
+        }
+      } else if (
+        (orderStatus === "cancelled" || orderStatus === "refunded") &&
+        hasActiveStockReservation((prevOrder as { shipping_address?: unknown } | null)?.shipping_address)
+      ) {
+        const linesToRestore = await fetchSupabaseOrderStockLines(orderId);
+        if (linesToRestore.length) {
+          await restorePrismaStock(prisma, linesToRestore);
+          shippingPatch = markStockReleased(
+            (prevOrder as { shipping_address?: unknown } | null)?.shipping_address
+          );
         }
       }
 
@@ -337,7 +374,10 @@ export async function POST(req: NextRequest) {
         paymentError &&
         (payErrCode === "PGRST204" || payErrMsg.includes("mp_payment_id"))
       ) {
-        const { mp_payment_id: _mp, mp_status: _st, ...paymentFallbackPatch } = paymentFullPatch;
+        const paymentFallbackPatch = {
+          status: paymentFullPatch.status,
+          updated_at: paymentFullPatch.updated_at,
+        };
         const retry = await supabaseService
           .from("payments")
           .update(paymentFallbackPatch)

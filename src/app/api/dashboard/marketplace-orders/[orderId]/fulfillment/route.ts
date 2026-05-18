@@ -19,6 +19,8 @@ const ALLOWED: SellerFulfillmentStage[] = [
   "completed",
 ];
 
+const FULFILLMENT_MANAGEABLE_STATUSES = new Set(["paid", "preparing", "shipped", "delivered", "completed"]);
+
 function stripSb(id: string) {
   return id.startsWith("sb-") ? id.slice(3) : id;
 }
@@ -67,9 +69,15 @@ export async function PATCH(
       return NextResponse.json({ error: "Pedido no encontrado" }, { status: 404 });
     }
 
-    const r = row as { seller_id?: string; shipping_address?: unknown };
+    const r = row as { seller_id?: string; status?: string; shipping_address?: unknown };
     if (r.seller_id !== sellerUuid) {
       return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+    }
+    if (!FULFILLMENT_MANAGEABLE_STATUSES.has(String(r.status ?? "").toLowerCase())) {
+      return NextResponse.json(
+        { error: "El pedido todavia no esta pagado o no admite cambios operativos." },
+        { status: 409 }
+      );
     }
 
     const fulfillmentPatch: Partial<SellerFulfillment> = { stage };
