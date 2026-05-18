@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
-export default function VenderPage() {
+function VenderPageContent() {
   const params = useSearchParams();
   const inviteCode = useMemo(() => (params.get("inv") || "").toUpperCase(), [params]);
   const [ok, setOk] = useState(false);
@@ -67,5 +67,13 @@ export default function VenderPage() {
         )}
       </div>
     </main>
+  );
+}
+
+export default function VenderPage() {
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-[#f5f5f5] py-10 px-4" />}>
+      <VenderPageContent />
+    </Suspense>
   );
 }
