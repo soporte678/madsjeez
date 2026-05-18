@@ -1,11 +1,49 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { prisma } from "@/lib/prisma"
+
+interface WholesalePriceInput {
+  min_quantity: number
+  price: number
+  label?: string
+}
 
 function getSupabaseClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
+}
+
+async function assertCanManageWholesalePrices(productId: string) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) {
+    return {
+      error: NextResponse.json({ error: "No autorizado" }, { status: 401 }),
+    }
+  }
+
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+    select: { sellerId: true },
+  })
+
+  if (!product) {
+    return {
+      error: NextResponse.json({ error: "Producto no encontrado" }, { status: 404 }),
+    }
+  }
+
+  const isAdmin = (session.user as { role?: string }).role === "ADMIN"
+  if (!isAdmin && product.sellerId !== session.user.id) {
+    return {
+      error: NextResponse.json({ error: "No tienes permiso para modificar precios de este producto" }, { status: 403 }),
+    }
+  }
+
+  return { session, product }
 }
 
 // GET /api/products/wholesale?productId=xxx
@@ -47,6 +85,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid data" }, { status: 400 })
     }
 
+    const access = await assertCanManageWholesalePrices(productId)
+    if (access.error) return access.error
+
     const supabase = getSupabaseClient()
 
     // Delete existing prices for this product
@@ -56,10 +97,10 @@ export async function POST(request: Request) {
       .eq("product_id", productId)
 
     // Insert new prices (max 10)
-    const pricesToInsert = prices
+    const pricesToInsert = (prices as WholesalePriceInput[])
       .slice(0, 10)
-      .filter((p: any) => p.min_quantity > 0 && p.price > 0)
-      .map((p: any) => ({
+      .filter((p) => p.min_quantity > 0 && p.price > 0)
+      .map((p) => ({
         product_id: productId,
         min_quantity: p.min_quantity,
         price: p.price,
@@ -97,6 +138,9 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Product ID required" }, { status: 400 })
     }
 
+    const access = await assertCanManageWholesalePrices(productId)
+    if (access.error) return access.error
+
     const supabase = getSupabaseClient()
     const { error } = await supabase
       .from("product_wholesale_prices")
@@ -108,7 +152,7 @@ export async function DELETE(request: Request) {
     }
 
     return NextResponse.json({ success: true })
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

@@ -1,8 +1,19 @@
 import { NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
 
 // API para enviar mensajes de WhatsApp
 export async function POST(request: Request) {
   try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+    }
+
+    if ((session.user as { role?: string }).role !== "ADMIN") {
+      return NextResponse.json({ error: "Solo administradores pueden enviar mensajes manuales" }, { status: 403 })
+    }
+
     const { phoneNumber, templateName, languageCode, parameters } = await request.json()
 
     const ACCESS_TOKEN = process.env.META_ACCESS_TOKEN?.trim()
@@ -55,7 +66,8 @@ export async function POST(request: Request) {
       recipient: phoneNumber
     })
 
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Error interno"
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

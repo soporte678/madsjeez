@@ -3,6 +3,18 @@ import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 
+const ALLOWED_SHIPMENT_STATUS = new Set([
+  "pending",
+  "ready_to_ship",
+  "shipped",
+  "in_transit",
+  "out_for_delivery",
+  "delivered",
+  "exception",
+]);
+
+type ShipmentOrderItem = { product: { sellerId: string } };
+
 // PATCH /api/shipments/[id] - Actualizar estado de envío
 export async function PATCH(
   request: Request,
@@ -21,6 +33,12 @@ export async function PATCH(
     const { id } = params
     const body = await request.json()
     const { status, trackingNumber, labelUrl } = body
+    if (status && !ALLOWED_SHIPMENT_STATUS.has(String(status))) {
+      return NextResponse.json(
+        { error: "Estado de envio invalido" },
+        { status: 400 }
+      )
+    }
 
     // Verificar que el envío existe
     const shipment = await prisma.shipment.findUnique({
@@ -50,7 +68,7 @@ export async function PATCH(
 
     // Verificar que el usuario es el vendedor
     const isSeller = shipment.order.items.some(
-      (item: any) => item.product.sellerId === session.user.id
+      (item: ShipmentOrderItem) => item.product.sellerId === session.user.id
     )
 
     if (!isSeller) {
@@ -60,7 +78,12 @@ export async function PATCH(
       )
     }
 
-    const updateData: any = {}
+    const updateData: {
+      status?: string;
+      trackingNumber?: string;
+      labelUrl?: string;
+      labelGeneratedAt?: Date;
+    } = {}
     if (status) updateData.status = status
     if (trackingNumber) updateData.trackingNumber = trackingNumber
     if (labelUrl) {
@@ -134,6 +157,18 @@ export async function POST(
     const { id: shipmentId } = params
     const body = await request.json()
     const { status, description, location } = body
+    if (!status || !ALLOWED_SHIPMENT_STATUS.has(String(status))) {
+      return NextResponse.json(
+        { error: "Estado de envio invalido" },
+        { status: 400 }
+      )
+    }
+    if (!description || !String(description).trim()) {
+      return NextResponse.json(
+        { error: "Descripcion requerida" },
+        { status: 400 }
+      )
+    }
 
     // Verificar que el envío existe y pertenece al vendedor
     const shipment = await prisma.shipment.findUnique({
@@ -162,7 +197,7 @@ export async function POST(
     }
 
     const isSeller = shipment.order.items.some(
-      (item: any) => item.product.sellerId === session.user.id
+      (item: ShipmentOrderItem) => item.product.sellerId === session.user.id
     )
 
     if (!isSeller) {

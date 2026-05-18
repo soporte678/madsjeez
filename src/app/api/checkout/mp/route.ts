@@ -19,6 +19,12 @@ import { resolveCartShippingCost } from "@/lib/zipnova/quote-cart";
 import type { SellerMpRow } from "@/lib/mercadopago/seller-access-token";
 import { createCheckoutProPreferenceWithSellerTokenRetry } from "@/lib/mercadopago/preference-with-token-retry";
 import { notifyPostgrestReloadSchema, ensureSupabaseOrdersSellerIdColumn } from "@/lib/supabase/postgrest-schema";
+import {
+  markStockReserved,
+  reservePrismaStock,
+  restorePrismaStock,
+  type StockReservationLine,
+} from "@/lib/orders/stock-reservation";
 import { randomUUID } from "crypto";
 
 function sleepMs(ms: number): Promise<void> {
@@ -123,6 +129,17 @@ export async function POST(req: Request) {
     }
 
     const lines = cart.items;
+    const unavailable = lines.find((i) => !i.product.isActive || i.product.stock < i.quantity);
+    if (unavailable) {
+      return NextResponse.json(
+        {
+          code: "INSUFFICIENT_STOCK",
+          error: `No hay stock suficiente para "${unavailable.product.title}".`,
+        },
+        { status: 409 }
+      );
+    }
+
     const subtotal = roundMoney(lines.reduce((s, i) => s + i.price * i.quantity, 0));
 
     const shippingForQuote = {
@@ -227,6 +244,52 @@ export async function POST(req: Request) {
     const commissionProductTotal = roundMoney(
       split.marketplaceSalesFeeAmount + split.affiliateCommissionAmount
     );
+
+    const stockReservationLines: StockReservationLine[] = lines.map((item) => ({
+      productId: item.productId,
+      quantity: item.quantity,
+    }));
+    let prismaStockReserved = false;
+
+    async function restoreReservedStockIfNeeded() {
+      if (!prismaStockReserved) return;
+      try {
+        await restorePrismaStock(prisma, stockReservationLines);
+        prismaStockReserved = false;
+      } catch (restoreErr) {
+        console.error("checkout/mp restore Prisma stock:", restoreErr);
+      }
+    }
+
+    async function cleanupPersistedOrder(orderIdToCleanup: string) {
+      try {
+        await supabaseService
+          .from("orders")
+          .update({ status: "cancelled", updated_at: new Date().toISOString() })
+          .eq("id", orderIdToCleanup);
+      } catch (cancelErr) {
+        console.error("checkout/mp cancel Supabase order:", cancelErr);
+      }
+      try {
+        await supabaseService.from("orders").delete().eq("id", orderIdToCleanup);
+      } catch (deleteErr) {
+        console.error("checkout/mp delete Supabase order:", deleteErr);
+      }
+      await restoreReservedStockIfNeeded();
+    }
+
+    const reservation = await reservePrismaStock(prisma, stockReservationLines);
+    if (!reservation.ok) {
+      return NextResponse.json(
+        {
+          code: "INSUFFICIENT_STOCK",
+          error: "Otro comprador acaba de reservar stock de un producto del carrito. Recargá el carrito.",
+        },
+        { status: 409 }
+      );
+    }
+    prismaStockReserved = true;
+    shippingAddressOut = markStockReserved(shippingAddressOut);
 
     /** Supabase `public.orders` suele exigir `id` NOT NULL sin default; sin esto falla 23502 y se usa orden `tmp_`. */
     const orderUuid = randomUUID();
@@ -337,7 +400,7 @@ export async function POST(req: Request) {
         });
         if (liErr) {
           console.error("order_items insert:", liErr);
-          await supabaseService.from("orders").delete().eq("id", orderId);
+          await cleanupPersistedOrder(orderId);
           return NextResponse.json({ error: "No se pudieron guardar los ítems" }, { status: 500 });
         }
       }
@@ -372,7 +435,8 @@ export async function POST(req: Request) {
 
     if (!mpConnection?.mp_access_token) {
       if (mpLookupErr) console.error("seller_mercadopago lookup:", mpLookupErr);
-      if (persistedOrder) await supabaseService.from("orders").delete().eq("id", orderId);
+      if (persistedOrder) await cleanupPersistedOrder(orderId);
+      else await restoreReservedStockIfNeeded();
       return NextResponse.json(
         {
           code: "SELLER_MP_NOT_CONNECTED",
@@ -386,7 +450,8 @@ export async function POST(req: Request) {
     const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, "");
     const buyerEmail = String(body.buyer_email || session.user.email || "").trim();
     if (!buyerEmail) {
-      if (persistedOrder) await supabaseService.from("orders").delete().eq("id", orderId);
+      if (persistedOrder) await cleanupPersistedOrder(orderId);
+      else await restoreReservedStockIfNeeded();
       return NextResponse.json(
         {
           code: "BUYER_EMAIL_REQUIRED",
@@ -443,7 +508,8 @@ export async function POST(req: Request) {
 
     if (!mpPref.ok) {
       console.error("MP preference error:", mpPref.body);
-      if (persistedOrder) await supabaseService.from("orders").delete().eq("id", orderId);
+      if (persistedOrder) await cleanupPersistedOrder(orderId);
+      else await restoreReservedStockIfNeeded();
       const statusOut = mpPref.httpStatus >= 500 ? 502 : 400;
       return NextResponse.json(
         {

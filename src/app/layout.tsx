@@ -20,8 +20,50 @@ const montserrat = Montserrat({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.madsjeez.com.ar"),
-  title: "MadsJeez - El Nuevo Standard en Compras Globales",
-  description: "Tecnología, Moda y Hogar con el respaldo del Commerce Group líder en la región. Vende y compra con la mejor plataforma.",
+  title: {
+    default: "MadsJeez Marketplace | Compra y Vende Online en Argentina",
+    template: "%s | MadsJeez Marketplace",
+  },
+  description:
+    "Marketplace en Argentina para comprar y vender productos con pagos online, envios y gestion para vendedores.",
+  applicationName: "MadsJeez Marketplace",
+  keywords: [
+    "marketplace argentina",
+    "vender online",
+    "comprar online",
+    "tienda ecommerce argentina",
+    "publicar productos",
+    "madsjeez",
+  ],
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    locale: "es_AR",
+    url: "https://www.madsjeez.com.ar",
+    siteName: "MadsJeez Marketplace",
+    title: "MadsJeez Marketplace | Compra y Vende Online en Argentina",
+    description:
+      "Marketplace para comprar y vender en Argentina. Publica productos, gestiona ventas y escala tu negocio.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "MadsJeez Marketplace | Compra y Vende Online en Argentina",
+    description:
+      "Marketplace para comprar y vender en Argentina. Publica productos y gestiona tus ventas.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
 }
 
 export default function RootLayout({

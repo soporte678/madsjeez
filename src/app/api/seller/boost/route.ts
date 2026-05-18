@@ -37,7 +37,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json()
-    const { productId, duration = 7 } = body
+    const { productId } = body
 
     // Obtener producto y verificar propiedad
     const product = await prisma.product.findUnique({
@@ -127,8 +127,48 @@ export async function PUT(req: Request) {
       )
     }
 
+    if (!session.user.isSeller) {
+      return NextResponse.json(
+        { error: "Solo los vendedores pueden impulsar productos" },
+        { status: 403 }
+      )
+    }
+
     const body = await req.json()
-    const { productId, cost, duration = 7, stripeId } = body
+    const { productId, duration = 7, stripeId } = body
+
+    if (!productId || !stripeId) {
+      return NextResponse.json(
+        { error: "productId y stripeId son requeridos" },
+        { status: 400 }
+      )
+    }
+
+    const product = await prisma.product.findUnique({
+      where: { id: productId },
+      select: { sellerId: true },
+    })
+
+    if (!product || product.sellerId !== session.user.id) {
+      return NextResponse.json(
+        { error: "Producto no encontrado" },
+        { status: 404 }
+      )
+    }
+
+    const stripe = getStripeClient()
+    const paymentIntent = await stripe.paymentIntents.retrieve(stripeId)
+    if (
+      paymentIntent.status !== "succeeded" ||
+      paymentIntent.metadata?.type !== "boost" ||
+      paymentIntent.metadata?.productId !== productId ||
+      paymentIntent.metadata?.sellerId !== session.user.id
+    ) {
+      return NextResponse.json(
+        { error: "El pago del impulso no estÃ¡ confirmado" },
+        { status: 402 }
+      )
+    }
 
     const startDate = new Date()
     const endDate = new Date()
@@ -137,7 +177,7 @@ export async function PUT(req: Request) {
     // Crear registro de impulso
     await prisma.productBoost.create({
       data: {
-        cost,
+        cost: paymentIntent.amount,
         duration,
         startDate,
         endDate,

@@ -2,6 +2,14 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { ClaimStatus } from "@prisma/client"
+
+const RESOLUTION_ALLOWED_STATUSES = new Set<ClaimStatus>([
+  ClaimStatus.IN_REVIEW,
+  ClaimStatus.RESOLVED,
+  ClaimStatus.CLOSED,
+  ClaimStatus.CANCELLED,
+]);
 
 // GET /api/claims/[id] - Obtener detalle de reclamo
 export async function GET(
@@ -98,6 +106,18 @@ export async function PUT(
     const { id } = params
     const body = await request.json()
     const { status, resolution, resolutionNotes, refundAmount } = body
+    if (status && !RESOLUTION_ALLOWED_STATUSES.has(status as ClaimStatus)) {
+      return NextResponse.json(
+        { error: "Estado de reclamo invalido" },
+        { status: 400 }
+      )
+    }
+    if (refundAmount != null && (!Number.isFinite(Number(refundAmount)) || Number(refundAmount) < 0)) {
+      return NextResponse.json(
+        { error: "Monto de reembolso invalido" },
+        { status: 400 }
+      )
+    }
 
     const claim = await prisma.claim.findUnique({
       where: { id },
@@ -117,7 +137,7 @@ export async function PUT(
     }
 
     const isSeller = claim.sellerId === session.user.id
-    const isAdmin = (session.user as any).role === "ADMIN"
+    const isAdmin = (session.user as { role?: string }).role === "ADMIN"
 
     // Solo el vendedor o admin pueden resolver
     if (!isSeller && !isAdmin) {
@@ -130,10 +150,10 @@ export async function PUT(
     const updatedClaim = await prisma.claim.update({
       where: { id },
       data: {
-        status,
-        resolution,
-        resolutionNotes,
-        refundAmount,
+        status: (status as ClaimStatus | undefined) ?? claim.status,
+        resolution: typeof resolution === "string" ? resolution : undefined,
+        resolutionNotes: typeof resolutionNotes === "string" ? resolutionNotes : undefined,
+        refundAmount: refundAmount == null ? undefined : Number(refundAmount),
         resolvedAt: new Date(),
         resolvedBy: session.user.id
       }

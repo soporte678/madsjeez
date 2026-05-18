@@ -86,6 +86,10 @@ function statusLabel(status: string): string {
   return m[status] ?? status;
 }
 
+function canManageFulfillment(status: string): boolean {
+  return ["PAID", "PROCESSING", "SHIPPED", "DELIVERED"].includes(status);
+}
+
 function formatWhen(iso: string) {
   try {
     return new Date(iso).toLocaleString("es-AR", {
@@ -148,7 +152,9 @@ export default function VentasView() {
   }, []);
 
   useEffect(() => {
-    void loadOrders();
+    queueMicrotask(() => {
+      void loadOrders();
+    });
   }, [loadOrders]);
 
   const filtered = useMemo(() => {
@@ -316,7 +322,7 @@ export default function VentasView() {
                 order.buyer?.email?.split("@")[0] ||
                 order.shippingName ||
                 "Comprador";
-              const canOps = order.id.startsWith("sb-");
+              const canOps = order.id.startsWith("sb-") && canManageFulfillment(order.status);
               const stageVal = order.fulfillmentStage ?? "pending_pickup";
 
               return (
@@ -372,6 +378,16 @@ export default function VentasView() {
                       </Link>
                     </div>
                   </div>
+
+                  {order.id.startsWith("sb-") && !canOps && (
+                    <div className="border-t border-border px-4 py-3 bg-muted/20">
+                      <p className="text-[11px] text-muted-foreground">
+                        {order.status === "PENDING"
+                          ? "Las opciones de preparacion se activan cuando Mercado Pago confirme el pago."
+                          : "Este pedido no admite cambios operativos por su estado actual."}
+                      </p>
+                    </div>
+                  )}
 
                   {canOps && (
                     <div className="border-t border-border px-4 py-3 bg-muted/20 space-y-2">

@@ -11,6 +11,9 @@ import {
   Clock,
   XCircle,
   Loader2,
+  MessageSquare,
+  Headphones,
+  Star,
 } from "lucide-react";
 
 type OrderDetail = {
@@ -19,7 +22,12 @@ type OrderDetail = {
   status: string;
   total: number;
   createdAt: string;
+  source?: "prisma" | "supabase";
   perspective: "buyer" | "seller";
+  fulfillmentStage?: string | null;
+  fulfillmentStageLabel?: string | null;
+  delayLabel?: string | null;
+  delayDays?: number;
   shippingName: string;
   shippingCity: string;
   shippingState: string;
@@ -84,15 +92,19 @@ export default function PedidoDetallePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [order, setOrder] = useState<OrderDetail | null>(null);
+  const [supportBusy, setSupportBusy] = useState(false);
+  const [supportMessage, setSupportMessage] = useState("");
+  const [sellerStage, setSellerStage] = useState("pending_pickup");
+  const [sellerBusy, setSellerBusy] = useState(false);
 
   useEffect(() => {
     if (!rawId) {
-      setLoading(false);
-      setError("ID inválido");
+      queueMicrotask(() => setLoading(false));
+      queueMicrotask(() => setError("ID invalido"));
       return;
     }
     let cancelled = false;
-    setLoading(true);
+    queueMicrotask(() => setLoading(true));
     fetch(`/api/orders/${encodeURIComponent(rawId)}`)
       .then(async (r) => {
         const j = await r.json().catch(() => ({}));
@@ -102,6 +114,7 @@ export default function PedidoDetallePage() {
       .then((d) => {
         if (!cancelled) {
           setOrder(d.order);
+          setSellerStage(d.order.fulfillmentStage ?? "pending_pickup");
           setError(null);
         }
       })
@@ -118,6 +131,62 @@ export default function PedidoDetallePage() {
 
   const backHref =
     order?.perspective === "seller" ? "/dashboard#ventas-lista" : "/dashboard#compras";
+
+  async function createSupportTicket() {
+    if (!order || supportBusy) return;
+    setSupportBusy(true);
+    try {
+      const message =
+        supportMessage.trim() ||
+        `Necesito ayuda con el pedido #${order.orderNumber}. Estado actual: ${statusLabel(order.status)}.`;
+      const res = await fetch("/api/dashboard/support", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subject: `Ayuda con pedido #${order.orderNumber}`,
+          category: "PEDIDOS",
+          orderId: order.source === "prisma" ? order.id : null,
+          message,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "No se pudo crear la consulta");
+      setSupportMessage("");
+      alert("Consulta creada. Podes verla en Ayuda dentro del dashboard.");
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "No se pudo crear la consulta");
+    } finally {
+      setSupportBusy(false);
+    }
+  }
+
+  async function saveSellerStage() {
+    if (!order || order.source !== "supabase" || sellerBusy) return;
+    setSellerBusy(true);
+    try {
+      const res = await fetch(
+        `/api/dashboard/marketplace-orders/${encodeURIComponent(order.id)}/fulfillment`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ stage: sellerStage }),
+        }
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "No se pudo actualizar la gestion");
+      setOrder({
+        ...order,
+        fulfillmentStage: data.fulfillment?.stage ?? sellerStage,
+        fulfillmentStageLabel: sellerStageLabel(data.fulfillment?.stage ?? sellerStage),
+        delayLabel: data.delayLabel ?? null,
+        delayDays: data.delayDays ?? 0,
+      });
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "No se pudo actualizar la gestion");
+    } finally {
+      setSellerBusy(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -222,7 +291,126 @@ export default function PedidoDetallePage() {
             })}
           </ul>
         </div>
+
+        <div className="border-t border-border px-6 py-5 space-y-4">
+          <h2 className="text-sm font-semibold text-foreground">
+            {order.perspective === "seller" ? "Acciones del vendedor" : "Acciones de la compra"}
+          </h2>
+
+          {order.perspective === "buyer" && (
+            <>
+              <div className="flex flex-wrap gap-2">
+                {canContactSellerForOrder(order) && (
+                  <Link
+                    href={`/messages?seller=${encodeURIComponent(getFirstSeller(order)?.id ?? "")}${
+                      getFirstProductId(order) ? `&product=${encodeURIComponent(getFirstProductId(order))}` : ""
+                    }`}
+                    className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-semibold hover:bg-muted"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    Contactar vendedor
+                  </Link>
+                )}
+                <button
+                  type="button"
+                  onClick={() => void createSupportTicket()}
+                  disabled={supportBusy}
+                  className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-semibold hover:bg-muted disabled:opacity-50"
+                >
+                  <Headphones className="w-4 h-4" />
+                  {supportBusy ? "Creando consulta..." : "Pedir ayuda"}
+                </button>
+                {order.status === "DELIVERED" && (
+                  <Link
+                    href="/dashboard#opiniones"
+                    className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-semibold hover:bg-muted"
+                  >
+                    <Star className="w-4 h-4" />
+                    Opinar compra
+                  </Link>
+                )}
+              </div>
+              <textarea
+                value={supportMessage}
+                onChange={(e) => setSupportMessage(e.target.value)}
+                placeholder="Detalle opcional para soporte..."
+                className="w-full min-h-[74px] rounded-md border border-border bg-background p-2 text-sm"
+              />
+            </>
+          )}
+
+          {order.perspective === "seller" && (
+            <div className="space-y-3">
+              {order.fulfillmentStageLabel && (
+                <p className="text-sm text-muted-foreground">
+                  Gestion actual: <span className="font-medium text-foreground">{order.fulfillmentStageLabel}</span>
+                  {order.delayLabel ? ` · ${order.delayLabel}` : ""}
+                </p>
+              )}
+              {canManageSellerOrder(order) ? (
+                <div className="flex flex-wrap gap-2">
+                  <select
+                    value={sellerStage}
+                    onChange={(e) => setSellerStage(e.target.value)}
+                    className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+                  >
+                    <option value="pending_pickup">Pendiente de despacho</option>
+                    <option value="preparing">En proceso de preparacion</option>
+                    <option value="awaiting_stock">Por ingresar stock</option>
+                    <option value="dispatched">Despachado</option>
+                    <option value="sent">Enviado</option>
+                    <option value="completed">Entrega finalizada</option>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => void saveSellerStage()}
+                    disabled={sellerBusy}
+                    className="rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+                  >
+                    {sellerBusy ? "Guardando..." : "Guardar gestion"}
+                  </button>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Las opciones operativas se activan cuando el pago esta confirmado y el pedido admite gestion.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
+  );
+}
+
+function sellerStageLabel(stage: string): string {
+  const labels: Record<string, string> = {
+    pending_pickup: "Pendiente de despacho",
+    preparing: "En proceso de preparacion",
+    awaiting_stock: "Por ingresar stock",
+    dispatched: "Despachado",
+    sent: "Enviado",
+    completed: "Entrega finalizada",
+  };
+  return labels[stage] ?? stage;
+}
+
+function getFirstSeller(order: OrderDetail): { id: string; name: string | null } | null {
+  return order.items.find((it) => it.product.seller)?.product.seller ?? null;
+}
+
+function getFirstProductId(order: OrderDetail): string {
+  return order.items.find((it) => it.product.id)?.product.id ?? "";
+}
+
+function canContactSellerForOrder(order: OrderDetail): boolean {
+  return order.perspective === "buyer" && Boolean(getFirstSeller(order)?.id);
+}
+
+function canManageSellerOrder(order: OrderDetail): boolean {
+  return (
+    order.perspective === "seller" &&
+    order.source === "supabase" &&
+    ["PAID", "PROCESSING", "SHIPPED", "DELIVERED"].includes(order.status)
   );
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, Suspense } from "react"
+import { Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { CheckCircle, Package, ArrowRight } from "lucide-react"
@@ -41,10 +41,10 @@ function SuccessContent() {
           )}
 
           <div className="flex flex-col gap-3">
-            <Link href="/orders">
+            <Link href="/dashboard#compras">
               <Button className="w-full bg-[#3483FA] hover:bg-[#2968c8]">
                 <Package className="w-4 h-4 mr-2" />
-                Ver mis pedidos
+                Ver mi compra en el dashboard
               </Button>
             </Link>
             <Link href="/search">

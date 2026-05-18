@@ -25,9 +25,10 @@ type ApiOrder = {
     quantity: number
     price: number
     product: {
+      id?: string | null
       title: string
       images: Array<{ url: string }>
-      seller?: { name: string } | null
+      seller?: { id?: string; name: string } | null
     }
   }>
   shipment?: {
@@ -247,9 +248,9 @@ export default function OrdersPage() {
                     <p className="text-sm text-blue-700">Autorizá a otras personas a comprar en tu nombre</p>
                   </div>
                 </div>
-                <button className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors">
+                <Link href="/dashboard#perfil" className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors">
                   Gestionar
-                </button>
+                </Link>
               </div>
             </div>
 
@@ -384,23 +385,38 @@ export default function OrdersPage() {
                         </div>
                         <div className="flex flex-wrap items-center gap-3">
                           {order.status === "SHIPPED" && (
-                            <button
-                              type="button"
+                            <Link
+                              href={`/dashboard/pedido/${encodeURIComponent(order.id)}`}
                               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
                             >
                               <Truck size={16} />
-                              Seguir envío
-                            </button>
+                              Seguir envio
+                            </Link>
+                          )}
+                          {order.items[0]?.product?.seller?.id ? (
+                            <Link
+                              href={`/messages?seller=${encodeURIComponent(order.items[0].product.seller.id)}${
+                                order.items[0]?.product?.id
+                                  ? `&product=${encodeURIComponent(order.items[0].product.id)}`
+                                  : ""
+                              }`}
+                              className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
+                            >
+                              <MessageSquare size={16} />
+                              Contactar vendedor
+                            </Link>
+                          ) : (
+                            <Link
+                              href={`/dashboard/pedido/${encodeURIComponent(order.id)}`}
+                              className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
+                            >
+                              <MessageSquare size={16} />
+                              Ver detalle
+                            </Link>
                           )}
                           <button
                             type="button"
-                            className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
-                          >
-                            <MessageSquare size={16} />
-                            Contactar vendedor
-                          </button>
-                          <button
-                            type="button"
+                            onClick={() => window.print()}
                             className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
                           >
                             <Download size={16} />
