@@ -202,6 +202,25 @@ function Content() {
         </div>
       </section>
 
+      <section className="mx-auto max-w-7xl px-4 pb-16">
+        <div className="border border-cyan-300/20 bg-cyan-400/10 p-6 md:p-8">
+          <p className="text-sm font-bold uppercase tracking-[0.16em] text-cyan-100">Herramientas de captacion activadas</p>
+          <h2 className="mt-3 text-3xl font-black">No esperamos a que los vendedores lleguen solos: les damos una razon concreta para entrar.</h2>
+          <div className="mt-6 grid gap-3 md:grid-cols-3">
+            {[
+              ["/vender/auditoria", "Auditor gratis", "Diagnostico de potencial comercial y recomendaciones."],
+              ["/vender/importador", "Pre-importador", "Muestra que cargar catalogo puede ser rapido."],
+              ["/vender/ferreteria", "Landings por rubro", "SEO especifico para captar comercios por categoria."],
+            ].map(([href, title, text]) => (
+              <a key={href} href={href} className="border border-white/15 bg-white/10 p-5 transition hover:bg-white/15">
+                <p className="font-black">{title}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-200">{text}</p>
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="border-y border-white/10 bg-[#101827]">
         <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 md:grid-cols-[0.9fr_1.1fr] md:py-20">
           <div>

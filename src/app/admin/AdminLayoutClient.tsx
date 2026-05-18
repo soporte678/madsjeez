@@ -113,6 +113,7 @@ const menuGroups: MenuGroup[] = [
     items: [
       { id: "flash", label: "Campañas Flash", icon: Zap, href: "/admin/campanas" },
       { id: "publicidad", label: "Publicidad (Ads)", icon: Megaphone, href: "/admin/publicidad" },
+      { id: "leads", label: "Leads Vendedores", icon: Store, href: "/admin/leads" },
       { id: "suscripciones", label: "Suscripciones", icon: CreditCard, href: "/admin/suscripciones" },
     ],
   },
