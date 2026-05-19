@@ -169,25 +169,28 @@ export default async function CategoriesPage() {
                 icon: TrendingUp,
                 title: "SEO con estructura real",
                 copy: "Cada categoria abre caminos internos hacia subcategorias y productos, no queda como una pagina muerta.",
-                tone: "from-[#eff6ff] to-white text-[#3483fa]",
+                tone: "from-[#dbeafe] via-[#eff6ff] to-white text-[#2563eb]",
               },
               {
                 icon: Store,
                 title: "Atraer vendedores",
                 copy: "La pagina muestra demanda, rubros y puertas de entrada comerciales para convencer a nuevos comercios.",
-                tone: "from-[#fff7ed] to-white text-[#f97316]",
+                tone: "from-[#ffedd5] via-[#fff7ed] to-white text-[#ea580c]",
               },
               {
                 icon: Sparkles,
                 title: "Identidad de marca",
                 copy: "Mismo ADN visual del home: contraste fuerte, acentos vibrantes, relieve y una sensación premium.",
-                tone: "from-[#f0fdfa] to-white text-[#00b4d8]",
+                tone: "from-[#ccfbf1] via-[#ecfeff] to-white text-[#0891b2]",
               },
             ].map((item) => (
-              <div key={item.title} className={`rounded-2xl bg-gradient-to-br ${item.tone} p-5 shadow-sm`}>
-                <item.icon className="h-5 w-5" />
-                <h2 className="mt-3 text-lg font-black tracking-tight text-slate-950">{item.title}</h2>
-                <p className="mt-2 text-sm leading-6 text-slate-700">{item.copy}</p>
+              <div
+                key={item.title}
+                className={`rounded-2xl border border-white/90 bg-gradient-to-br ${item.tone} p-5 shadow-sm`}
+              >
+                <item.icon className="h-5 w-5" strokeWidth={2.3} />
+                <h2 className="mt-3 text-lg font-black tracking-tight text-[#0f172a]">{item.title}</h2>
+                <p className="mt-2 text-sm font-medium leading-6 text-[#334155]">{item.copy}</p>
               </div>
             ))}
           </div>
@@ -198,9 +201,9 @@ export default async function CategoriesPage() {
             {categories.map((category, index) => {
               const Icon = categoryIcons[category.slug] || TrendingUp;
               const accentStyles = [
-                "from-[#eff6ff] via-white to-[#f8fafc]",
-                "from-[#fff7ed] via-white to-[#fffaf0]",
-                "from-[#f0fdfa] via-white to-[#f8fafc]",
+                "from-[#dbeafe] via-[#eff6ff] to-white",
+                "from-[#ffedd5] via-[#fff7ed] to-white",
+                "from-[#ccfbf1] via-[#ecfeff] to-white",
               ];
               const accent = accentStyles[index % accentStyles.length];
 
@@ -220,16 +223,16 @@ export default async function CategoriesPage() {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <h2 className="text-lg font-black tracking-tight text-slate-900 group-hover:text-[#f97316]">
+                            <h2 className="text-lg font-black tracking-tight text-[#0f172a] group-hover:text-[#f97316]">
                               {category.name}
                             </h2>
-                            <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                            <p className="mt-1 text-xs font-bold uppercase tracking-[0.16em] text-[#64748b]">
                               {formatCount(category.productCount)} productos activos
                             </p>
                           </div>
                           <ArrowRight className="mt-1 h-4 w-4 text-slate-300 transition-all duration-300 group-hover:translate-x-1 group-hover:text-[#f97316]" />
                         </div>
-                        <p className="mt-3 text-sm leading-6 text-slate-700">
+                        <p className="mt-3 text-sm font-medium leading-6 text-[#475569]">
                           Entra a la categoria, descubre subrubros y abre una ruta directa hacia productos y oportunidades de venta.
                         </p>
                       </div>
@@ -243,10 +246,10 @@ export default async function CategoriesPage() {
                           <Link
                             key={child.id}
                             href={`/category/${child.slug}`}
-                            className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm text-slate-700 transition-colors hover:bg-slate-50 hover:text-[#3483fa]"
+                            className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium text-[#1e293b] transition-colors hover:bg-slate-50 hover:text-[#3483fa]"
                           >
                             <span className="truncate">{child.name}</span>
-                            <span className="ml-3 text-[11px] font-semibold text-slate-500">
+                            <span className="ml-3 text-[11px] font-bold text-[#64748b]">
                               {formatCount(child.productCount)}
                             </span>
                           </Link>
