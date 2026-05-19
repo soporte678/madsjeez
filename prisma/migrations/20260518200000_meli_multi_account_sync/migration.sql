@@ -1,6 +1,6 @@
 -- Mercado Libre: multi-cuenta por vendedor, categorías ML, payload sync y variaciones
 
-DROP INDEX IF EXISTS "seller_meli_oauth_user_id_key";
+-- En Postgres el unique de user_id suele ser CONSTRAINT (no índice suelto); DROP INDEX falla con 2BP01.
 ALTER TABLE "seller_meli_oauth" DROP CONSTRAINT IF EXISTS "seller_meli_oauth_user_id_key";
 
 ALTER TABLE "seller_meli_oauth" ADD COLUMN IF NOT EXISTS "nickname" TEXT;

@@ -16,7 +16,7 @@ import { spawnSync } from "child_process";
 import path from "path";
 import { existsSync } from "fs";
 
-const MIGRATE_SCRIPT_TAG = "migrate.mjs 20260519a (P3009 meli_multi_account_sync)";
+const MIGRATE_SCRIPT_TAG = "migrate.mjs 20260519b (meli_multi_account drop constraint)";
 
 try {
   const dotenv = await import("dotenv");
@@ -578,11 +578,28 @@ await (async function runMigrate() {
         combined.includes("P3018") &&
         !isPrismaMigrateAutoResolveP3009DriftDisabled() &&
         (/already exists/i.test(combined) ||
-          (/42701/i.test(combined) && /last_catalog_import_at/i.test(combined)))
+          (/42701/i.test(combined) && /last_catalog_import_at/i.test(combined)) ||
+          (/2BP01/i.test(combined) && /seller_meli_oauth_user_id_key/i.test(combined)))
       ) {
         const p3018Name = extractMigrationNameFromP3018(combined);
         let p3018Resolved = false;
-        if (p3018Name === "20260506120000_add_seller_meli_oauth" && /seller_meli_oauth/i.test(combined)) {
+        if (
+          p3018Name === "20260518200000_meli_multi_account_sync" &&
+          /seller_meli_oauth_user_id_key/i.test(combined)
+        ) {
+          console.warn(
+            `[migrate] P3018 meli_multi_account_sync: error al dropear índice/constraint user_id; ` +
+              `migrate resolve --rolled-back automático (reintenta con SQL corregido). ` +
+              "Desactivar: PRISMA_MIGRATE_AUTO_RESOLVE_P3009_DRIFT=0"
+          );
+          const { status: rs, combined: rc } = runPrismaMigrateResolve(tunedMigrateUrl, p3018Name, false);
+          if (rs === 0) {
+            console.warn("[migrate] migrate resolve OK; reintentando migrate deploy (mismo bucle).");
+            p3018Resolved = true;
+          } else {
+            console.error("[migrate] migrate resolve falló:", rc.slice(0, 900));
+          }
+        } else if (p3018Name === "20260506120000_add_seller_meli_oauth" && /seller_meli_oauth/i.test(combined)) {
           console.warn(
             `[migrate] P3018: objeto ya existente; migrate resolve --applied "${p3018Name}" automático. ` +
               "Desactivar: PRISMA_MIGRATE_AUTO_RESOLVE_P3009_DRIFT=0"
