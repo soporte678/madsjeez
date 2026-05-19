@@ -40,7 +40,18 @@ interface Offer {
   rating: number
   reviews_count: number
   installments: string
-  isDemo?: boolean
+  promotion_source?: "seller_campaign" | "seller_discount" | "seasonal"
+  promotion_name?: string | null
+  campaign_id?: string | null
+  seasonal_event?: string | null
+  ends_at?: string | null
+}
+
+type SeasonalChip = {
+  slug: string
+  name: string
+  badge: string
+  badgeColor: string
 }
 
 interface CategoryFilter {
@@ -49,12 +60,10 @@ interface CategoryFilter {
   count: number
 }
 
-const quickCategories = [
+const baseQuickCategories = [
   { name: "Todas las ofertas", icon: Package, slug: "all" },
-  { name: "Flash Madsjeez", icon: Zap, slug: "flash" },
-  { name: "Mejor precio", icon: Tag, slug: "best" },
-  { name: "Celulares", icon: null, slug: "celulares" },
-  { name: "Notebooks", icon: null, slug: "computacion" },
+  { name: "Flash vendedores", icon: Zap, slug: "flash" },
+  { name: "Mejor descuento", icon: Tag, slug: "best" },
   { name: "Liquidación", icon: Percent, slug: "clearance" },
 ]
 
@@ -86,7 +95,8 @@ export default function OffersPage() {
   })
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
-  const [stats, setStats] = useState<any>(null)
+  const [stats, setStats] = useState<Record<string, unknown> | null>(null)
+  const [seasonalEvents, setSeasonalEvents] = useState<SeasonalChip[]>([])
 
   // Función para cargar ofertas
   const loadOffers = useCallback(async () => {
@@ -112,7 +122,6 @@ export default function OffersPage() {
       params.set("minDiscount", filters.minDiscount.toString())
       params.set("sort", sortBy)
       params.set("page", page.toString())
-      params.set("demo", "true") // Siempre incluir demo para la vista
 
       const response = await fetch(`/api/offers?${params.toString()}`)
       
@@ -122,6 +131,7 @@ export default function OffersPage() {
         setCategories(data.categories || [])
         setTotalPages(data.pagination?.totalPages || 1)
         setStats(data.stats)
+        setSeasonalEvents(data.seasonalEvents || [])
       }
     } catch (error) {
       console.error("Error loading offers:", error)
@@ -147,6 +157,11 @@ export default function OffersPage() {
     ? Math.round(offers.reduce((sum, o) => sum + o.discount_percentage, 0) / offers.length)
     : 0
 
+  const quickCategories = [
+    ...baseQuickCategories,
+    ...seasonalEvents.map((e) => ({ name: e.name, icon: Sparkles, slug: e.slug })),
+  ]
+
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#0b1220_0%,#0f172a_42%,#111827_100%)] text-slate-100">
       <Navbar />
@@ -156,7 +171,9 @@ export default function OffersPage() {
           <div>
             <p className="text-[11px] font-black uppercase tracking-[0.2em] text-sky-300">Madsjeez Deals</p>
             <h1 className="mt-1 text-3xl font-black tracking-tight text-white md:text-4xl">Ofertas del marketplace</h1>
-            <p className="mt-2 max-w-xl text-sm text-slate-300">Descuentos de vendedores verificados en nuestra vitrina oficial.</p>
+            <p className="mt-2 max-w-xl text-sm text-slate-300">
+              Promociones que cargan los vendedores y descuentos de fechas especiales (Black Friday, Cyber Monday, Hot Sale y más).
+            </p>
           </div>
           <button
             type="button"
@@ -486,14 +503,14 @@ export default function OffersPage() {
               </div>
             )}
 
-            {/* Indicador de productos demo */}
-            {stats?.demo_offers_used > 0 && (
-              <div className="mt-6 p-4 bg-gradient-to-r from-[#ffb703]/20 to-[#f97316]/10 rounded-lg border border-[#ffb703]/30">
-                <p className="text-sm text-slate-200 flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-[#f97316]" />
+            {stats && !loading && offers.length > 0 && (
+              <div className="mt-6 rounded-[18px] border border-white/10 bg-white/[0.04] p-4 backdrop-blur-md">
+                <p className="flex items-center gap-2 text-sm text-slate-300">
+                  <Sparkles className="h-4 w-4 text-orange-400" />
                   <span>
-                    Mostrando <span className="font-bold text-[#f97316]">{stats.demo_offers_used}</span> ofertas de ejemplo. 
-                    ¡Publicá tus productos con descuentos para que aparezcan aquí!
+                    <strong className="text-white">{String(stats.total_offers)}</strong> ofertas reales ·{" "}
+                    <strong className="text-white">{String(stats.seller_campaigns)}</strong> por campaña de vendedores ·{" "}
+                    <strong className="text-white">{String(stats.seller_discounts)}</strong> con precio promocional
                   </span>
                 </p>
               </div>
@@ -608,12 +625,21 @@ function OfferCard({ offer }: { offer: Offer }) {
           </p>
 
           {/* Demo badge */}
-          {offer.isDemo && (
-            <p className="mt-2 text-[10px] italic text-orange-300/80">* Oferta de ejemplo</p>
+          {offer.promotion_name && (
+            <p className="mt-2 text-[11px] font-medium text-sky-300/90">
+              {offer.promotion_name}
+              {offer.ends_at && (
+                <span className="text-slate-500">
+                  {" "}
+                  · hasta {new Date(offer.ends_at).toLocaleDateString("es-AR")}
+                </span>
+              )}
+            </p>
           )}
         </div>
       </article>
     </Link>
   )
 }
+
 
