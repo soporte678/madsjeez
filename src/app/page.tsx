@@ -533,7 +533,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 5. CATEGORÍAS (Grilla 3 filas con scroll) */}
+      {/* 5. CATEGORÍAS (grilla completa, sin recorte) */}
       <section className="max-w-[1184px] mx-auto px-4">
         <CategoryCarousel categories={categoriesData} />
       </section>
