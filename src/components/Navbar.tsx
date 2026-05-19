@@ -9,6 +9,10 @@ import {
   Sparkles, TrendingUp, History, ArrowRight, Zap
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
+import {
+  hasSeenNovedadesPanelThisSession,
+  openNovedadesPanel,
+} from "@/lib/novedades-panel";
 
 interface SearchSuggestion {
   id: string;
@@ -641,9 +645,20 @@ export default function Navbar() {
               )}
               
               <div className="flex items-center gap-4 ml-1">
-                 <Link href="/notifications" className="relative cursor-pointer nav-icon">
+                 <button
+                   type="button"
+                   className="relative cursor-pointer nav-icon"
+                   aria-label="Novedades y alertas"
+                   onClick={() => {
+                     if (hasSeenNovedadesPanelThisSession()) {
+                       router.push("/notifications")
+                       return
+                     }
+                     openNovedadesPanel()
+                   }}
+                 >
                     <Bell size={18} strokeWidth={1.5} className="nav-icon" />
-                 </Link>
+                 </button>
                  <Link href="/cart" className="relative cursor-pointer nav-icon">
                     <ShoppingCart size={18} strokeWidth={1.5} className="nav-icon" />
                  </Link>

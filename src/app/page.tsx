@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import Image from "next/image"
 import Navbar from "@/components/Navbar"
 import AIRecommendations from "@/components/AIRecommendations"
-import AISmartNotifications from "@/components/AISmartNotifications"
 import Link from "next/link"
 import {
   ShoppingCart,
@@ -725,9 +724,6 @@ export default function Home() {
           <AIRecommendations />
         </div>
       </section>
-
-      {/* SMART NOTIFICATIONS */}
-      <AISmartNotifications />
 
       {/* FOOTER */}
       <footer className="bg-gradient-to-b from-[#1a1a2e] to-[#16213e] pt-20 pb-10 border-t-[10px] border-[#f97316]">
