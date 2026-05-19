@@ -1,11 +1,14 @@
 import type { Metadata } from "next"
 import { Outfit, Montserrat } from "next/font/google"
+import Script from "next/script"
 import "./globals.css"
 import { Providers } from "@/components/providers"
 import { ChatProvider } from "@/components/ChatContext"
 import FloatingBots from "@/components/FloatingBots"
 import ThemeToneInit from "@/components/theme/ThemeToneInit"
 import TrafficTracker from "@/components/TrafficTracker"
+
+const GTM_ID = "GTM-PT9H3H6K"
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -75,6 +78,15 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${outfit.variable} ${montserrat.variable} antialiased`}>
       <head>
+        <Script id="google-tag-manager" strategy="afterInteractive">
+          {`
+            (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+            new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+            j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+            'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+            })(window,document,'script','dataLayer','${GTM_ID}');
+          `}
+        </Script>
         <style>{`
           @keyframes assemble {
             0% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(1.5); opacity: 0; filter: blur(8px); }
@@ -132,6 +144,14 @@ export default function RootLayout({
         `}</style>
       </head>
       <body className="min-h-full flex flex-col font-outfit">
+        <noscript>
+          <iframe
+            src={`https://www.googletagmanager.com/ns.html?id=${GTM_ID}`}
+            height="0"
+            width="0"
+            style={{ display: "none", visibility: "hidden" }}
+          />
+        </noscript>
         <ThemeToneInit />
         <ChatProvider>
           <Providers>
