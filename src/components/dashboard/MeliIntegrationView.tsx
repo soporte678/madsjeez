@@ -16,6 +16,7 @@ import {
   ChevronRight,
   Upload,
   Download,
+  Check,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -156,6 +157,21 @@ function conditionLabelEs(condition: string): string {
   if (c === "refurbished") return "Reacondicionado";
   return condition;
 }
+
+const meliPanel =
+  "relative overflow-hidden rounded-2xl border border-white/10 bg-[linear-gradient(165deg,rgba(15,23,42,0.94)_0%,rgba(17,24,39,0.9)_50%,rgba(12,18,32,0.96)_100%)] shadow-[0_24px_56px_rgba(2,6,23,0.4)] backdrop-blur-xl";
+const meliGlowViolet =
+  "border-violet-500/35 shadow-[0_0_56px_rgba(139,92,246,0.22),inset_0_1px_0_rgba(255,255,255,0.06)]";
+const meliGlowCyan =
+  "border-cyan-400/35 shadow-[0_0_56px_rgba(34,211,238,0.18),inset_0_1px_0_rgba(255,255,255,0.06)]";
+const meliBtnGradient =
+  "inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 via-fuchsia-600 to-cyan-500 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_10px_32px_rgba(139,92,246,0.4)] transition-all hover:brightness-110 hover:shadow-[0_14px_40px_rgba(34,211,238,0.35)] disabled:opacity-50 disabled:pointer-events-none";
+const meliBtnTeal =
+  "inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_10px_32px_rgba(34,211,238,0.38)] transition-all hover:brightness-110 disabled:opacity-50 disabled:pointer-events-none";
+const meliBtnGhost =
+  "inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-medium text-slate-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-all hover:border-white/25 hover:bg-white/10 disabled:opacity-50";
+const meliInput =
+  "w-full rounded-xl border border-white/12 bg-slate-950/50 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] focus:border-violet-400/50 focus:outline-none focus:ring-2 focus:ring-violet-500/25";
 
 export default function MeliIntegrationView() {
   const { status } = useSession();
@@ -549,38 +565,66 @@ export default function MeliIntegrationView() {
     return <p className="text-muted-foreground">Iniciá sesión para usar Mercado Libre.</p>;
   }
 
-  return (
-    <div className="w-full max-w-7xl space-y-8 mx-auto">
-      <div>
-        <h2 className="text-xl font-bold text-foreground">Mercado Libre</h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Conectá una o varias cuentas ML. Importá publicaciones completas (categorías, atributos, variaciones e imágenes
-          en nuestra base) o enviá cambios a ML. El stock se sincroniza automáticamente; Mercado Libre es la referencia
-          principal cuando llegan notificaciones. No se importan duplicados: mismo título o mismo SKU en tu catálogo.
-        </p>
-        <p className="text-sm mt-2">
-          <a
-            href="/dashboard#meli-ads-studio"
-            className="text-primary font-medium hover:underline inline-flex items-center gap-1"
-          >
-            Mercado Libre Ads — datos en vivo y análisis
-            <ExternalLink className="w-3 h-3 opacity-70" />
-          </a>
-        </p>
-      </div>
+  const activeAccount = meliStatus?.accounts?.find((a) => a.id === selectedAccountId);
+  const linkedCount = activeAccount?.linkedProducts ?? 0;
 
-      <div className="rounded-xl border border-border bg-card p-6 shadow-sm space-y-4">
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div>
-            <p className="text-sm font-semibold text-foreground">Estado de conexión</p>
-            <p className="text-xs text-muted-foreground">
-              {meliStatus?.connected
-                ? `${meliStatus.accounts?.length ?? 1} cuenta(s) ML conectada(s)`
-                : "Sin conectar"}
+  return (
+    <div className="w-full max-w-7xl space-y-6 mx-auto pb-8">
+      <section className={`${meliPanel} ${meliGlowViolet} p-6 md:p-8`}>
+        <div
+          className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-violet-600/20 blur-3xl"
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute -left-10 bottom-0 h-40 w-40 rounded-full bg-cyan-500/10 blur-3xl"
+          aria-hidden
+        />
+        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-amber-400/40 bg-[linear-gradient(145deg,#ffe600_0%,#f5c400_100%)] text-lg font-black text-slate-900 shadow-[0_8px_24px_rgba(245,196,0,0.35)]">
+            ML
+          </div>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-2xl font-bold tracking-tight md:text-3xl">
+              <span className="bg-gradient-to-r from-white via-violet-100 to-cyan-200 bg-clip-text text-transparent">
+                Mercado Libre
+              </span>
+            </h2>
+            <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-300">
+              Conectá una o varias cuentas ML. Importá publicaciones completas (categorías, atributos, variaciones e
+              imágenes en nuestra base) o enviá cambios a ML. El stock se sincroniza automáticamente; Mercado Libre es la
+              referencia principal. No se duplican título ni SKU en tu catálogo.
             </p>
+            <a
+              href="/dashboard#meli-ads-studio"
+              className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-cyan-400 hover:text-cyan-300"
+            >
+              Mercado Libre Ads — datos en vivo y análisis
+              <ExternalLink className="h-3.5 w-3.5 opacity-80" />
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section className={`${meliPanel} ${meliGlowViolet} p-6`}>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-violet-300/90">Estado de conexión</p>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              {meliStatus?.connected ? (
+                <span className="inline-flex items-center rounded-full border border-emerald-400/40 bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-300">
+                  {meliStatus.accounts?.length ?? 1} cuenta(s) conectada(s)
+                </span>
+              ) : (
+                <span className="inline-flex items-center rounded-full border border-slate-500/40 bg-slate-500/10 px-3 py-1 text-xs font-semibold text-slate-400">
+                  Sin conectar
+                </span>
+              )}
+            </div>
             {meliStatus?.accounts && meliStatus.accounts.length > 0 && (
-              <div className="mt-3 space-y-2">
-                <label className="text-xs font-medium text-muted-foreground block">Cuenta activa</label>
+              <div className="mt-4 max-w-md space-y-2">
+                <label className="block text-xs font-medium uppercase tracking-wide text-slate-400">
+                  Cuenta activa
+                </label>
                 <select
                   value={selectedAccountId || ""}
                   onChange={(e) => {
@@ -588,7 +632,7 @@ export default function MeliIntegrationView() {
                     setImportPreview(null);
                     setSelectedPullIds(new Set());
                   }}
-                  className="w-full max-w-md rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                  className={meliInput}
                 >
                   {meliStatus.accounts.map((a) => (
                     <option key={a.id} value={a.id}>
@@ -599,18 +643,13 @@ export default function MeliIntegrationView() {
                 </select>
               </div>
             )}
-            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-              <span aria-hidden>⏱️</span>
-              Última importación exitosa a MADSJEEZ:{" "}
-              <span className="font-medium text-foreground">{formatRelativeSync(lastSuccessfulImportAt)}</span>
+            <p className="mt-3 text-xs text-slate-400">
+              Última importación exitosa:{" "}
+              <span className="font-medium text-slate-200">{formatRelativeSync(lastSuccessfulImportAt)}</span>
             </p>
           </div>
-          <button
-            type="button"
-            onClick={connectMeli}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-4 py-2 text-sm shadow-sm"
-          >
-            <Link2 className="w-4 h-4" />
+          <button type="button" onClick={connectMeli} className={meliBtnGradient}>
+            <Link2 className="h-4 w-4" />
             {meliStatus?.connected ? "Conectar otra cuenta ML" : "Conectar Mercado Libre"}
           </button>
         </div>
@@ -618,72 +657,93 @@ export default function MeliIntegrationView() {
           href="https://developers.mercadolibre.com.ar/es_ar/autenticacion-y-autorizacion"
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+          className="mt-4 inline-flex items-center gap-1 text-xs text-cyan-400/90 hover:text-cyan-300"
         >
-          Documentación OAuth ML <ExternalLink className="w-3 h-3" />
+          Documentación OAuth ML <ExternalLink className="h-3 w-3" />
         </a>
-      </div>
+      </section>
 
-      {/* Dirección de sincronización */}
-      <div className="flex rounded-xl border border-border bg-muted/40 p-1 gap-1 max-w-xl">
+      <div className="grid gap-4 sm:grid-cols-2">
         <button
           type="button"
           onClick={() => setSyncDirection("import")}
-          className={`flex-1 flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+          className={`group relative flex items-center gap-4 rounded-2xl border p-5 text-left transition-all ${
             syncDirection === "import"
-              ? "bg-card text-foreground shadow-sm border border-border"
-              : "text-muted-foreground hover:text-foreground"
+              ? `${meliPanel} ${meliGlowViolet} ring-1 ring-violet-400/40`
+              : "border-white/10 bg-slate-900/60 hover:border-violet-500/30 hover:bg-slate-900/80"
           }`}
         >
-          <Download className="w-4 h-4" />
-          Importar desde ML
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-violet-400/30 bg-violet-500/15 text-violet-300 shadow-[0_0_24px_rgba(139,92,246,0.25)]">
+            <Download className="h-6 w-6" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold text-white">Importar desde ML</p>
+            <p className="text-xs text-slate-400">Catálogo ML → MADSJEEZ</p>
+          </div>
+          <ChevronRight className="h-5 w-5 shrink-0 text-slate-500 transition-transform group-hover:translate-x-0.5 group-hover:text-violet-300" />
         </button>
         <button
           type="button"
           onClick={() => setSyncDirection("export")}
-          className={`flex-1 flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+          className={`group relative flex items-center gap-4 rounded-2xl border p-5 text-left transition-all ${
             syncDirection === "export"
-              ? "bg-card text-foreground shadow-sm border border-border"
-              : "text-muted-foreground hover:text-foreground"
+              ? `${meliPanel} ${meliGlowCyan} ring-1 ring-cyan-400/40`
+              : "border-white/10 bg-slate-900/60 hover:border-cyan-500/30 hover:bg-slate-900/80"
           }`}
         >
-          <Upload className="w-4 h-4" />
-          Exportar hacia ML
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-cyan-400/30 bg-cyan-500/15 text-cyan-300 shadow-[0_0_24px_rgba(34,211,238,0.22)]">
+            <Upload className="h-6 w-6" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold text-white">Exportar hacia ML</p>
+            <p className="text-xs text-slate-400">Precio y stock → Mercado Libre</p>
+          </div>
+          <ChevronRight className="h-5 w-5 shrink-0 text-slate-500 transition-transform group-hover:translate-x-0.5 group-hover:text-cyan-300" />
         </button>
       </div>
 
       {syncDirection === "import" && (
-        <div className="rounded-xl border border-border bg-card p-6 shadow-sm space-y-4">
-          <div className="flex items-center gap-2">
-            <ShoppingBag className="w-5 h-5 text-primary" />
-            <h3 className="font-semibold text-foreground">Importar publicaciones (Mercado Libre → MADSJEEZ)</h3>
+        <section className={`${meliPanel} ${meliGlowViolet} p-6 md:p-8 space-y-5`}>
+          <div className="flex items-start gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-violet-400/25 bg-violet-500/10 text-violet-300">
+              <ShoppingBag className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-white">
+                Importar publicaciones (Mercado Libre → MADSJEEZ)
+              </h3>
+              <p className="mt-1 text-sm text-slate-400">
+                Traé título, fotos, precio y stock desde Mercado Libre. Marcá solo las filas que querés aplicar.
+              </p>
+            </div>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Traé título, fotos, precio y stock desde Mercado Libre. Marcá solo las filas que querés aplicar: ideal para
-            pruebas con pocas publicaciones.
-          </p>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-3">
             <button
               type="button"
               disabled={!meliStatus?.connected || loadingImportPreview || importing}
               onClick={() => loadImportPreview()}
-              className="rounded-lg border border-border bg-background hover:bg-muted px-4 py-2 text-sm font-medium text-foreground disabled:opacity-50"
+              className={meliBtnGhost}
             >
+              {loadingImportPreview ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
               {loadingImportPreview ? "Leyendo catálogo..." : "Cargar / refrescar vista previa"}
             </button>
             <button
               type="button"
               disabled={!meliStatus?.connected || importing || !importPreview?.rows?.length}
               onClick={runImport}
-              className="inline-flex items-center gap-2 rounded-lg bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground font-medium px-4 py-2 text-sm shadow-sm"
+              className={meliBtnTeal}
             >
-              {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+              {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
               Aplicar seleccionadas ({selectedPullIds.size})
             </button>
           </div>
 
           {importPreview && (
-            <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4">
+            <div className="rounded-xl border border-white/10 bg-slate-950/40 p-4 space-y-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
               <p className="text-xs text-foreground font-medium">
                 Resumen: {importPreview.uniqueFound} publicaciones únicas escaneadas ({importPreview.totalFound}{" "}
                 registros en respuesta paginada de ML).
@@ -720,7 +780,7 @@ export default function MeliIntegrationView() {
                         setSearch(e.target.value);
                         setPage(1);
                       }}
-                      className="w-full rounded-lg border border-border bg-background pl-9 pr-3 py-2 text-sm text-foreground"
+                      className={`${meliInput} pl-9`}
                       placeholder="Ej. bujía, MLA123…"
                     />
                   </div>
@@ -959,17 +1019,17 @@ export default function MeliIntegrationView() {
               </p>
             </div>
           )}
-        </div>
+        </section>
       )}
 
       {syncDirection === "export" && (
         <div className="space-y-6">
-          <div className="rounded-xl border border-border bg-card p-6 shadow-sm space-y-4">
-            <h3 className="font-semibold text-foreground flex items-center gap-2">
-              <Upload className="w-5 h-5 text-primary" />
+          <section className={`${meliPanel} ${meliGlowCyan} p-6 space-y-4`}>
+            <h3 className="font-semibold text-white flex items-center gap-2">
+              <Upload className="w-5 h-5 text-cyan-400" />
               Catálogo solo en MADSJEEZ (sin ID Mercado Libre)
             </h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-slate-400">
               Para dar de alta una publicación nueva en Mercado Libre con categoría, tipo clásica/premium y fotos, usá el
               flujo de publicaciones del panel. Acá listamos artículos locales que aún no están vinculados a un MLA.
             </p>
@@ -1025,20 +1085,20 @@ export default function MeliIntegrationView() {
                 </table>
               </div>
             )}
-          </div>
+          </section>
 
-          <div className="rounded-xl border border-border bg-card p-6 shadow-sm space-y-4">
-            <h3 className="font-semibold text-foreground">Enviar precio y stock locales → Mercado Libre</h3>
-            <p className="text-sm text-muted-foreground">
+          <section className={`${meliPanel} ${meliGlowCyan} p-6 space-y-4`}>
+            <h3 className="font-semibold text-white">Enviar precio y stock locales → Mercado Libre</h3>
+            <p className="text-sm text-slate-400">
               Solo aplica a publicaciones que ya existen en ML y están vinculadas en tu cuenta. Mercado Libre puede
               rechazar cambios si la publicación no admite edición o falta un requisito; el error se muestra por fila.
             </p>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-3">
               <button
                 type="button"
                 disabled={!meliStatus?.connected || loadingImportPreview}
                 onClick={() => loadImportPreview()}
-                className="rounded-lg border border-border bg-background hover:bg-muted px-4 py-2 text-sm font-medium disabled:opacity-50"
+                className={meliBtnGhost}
               >
                 {loadingImportPreview ? "Leyendo..." : "Refrescar lista desde ML"}
               </button>
@@ -1046,7 +1106,7 @@ export default function MeliIntegrationView() {
                 type="button"
                 disabled={!meliStatus?.connected || pushing || selectedPushIds.size === 0}
                 onClick={runPushToMeli}
-                className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-medium disabled:opacity-50"
+                className={meliBtnTeal}
               >
                 {pushing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                 Enviar seleccionadas a ML ({selectedPushIds.size})
@@ -1155,26 +1215,25 @@ export default function MeliIntegrationView() {
                 Importar (filtros y paginación) si necesitás más.
               </p>
             )}
-          </div>
+          </section>
         </div>
       )}
 
-      <div className="rounded-xl border border-border bg-card p-6 shadow-sm space-y-4">
+      <section className={`${meliPanel} p-6 space-y-4`}>
         <div className="flex items-center gap-2">
-          <Megaphone className="w-5 h-5 text-primary" />
-          <h3 className="font-semibold text-foreground">Campañas con datos de ML</h3>
+          <Megaphone className="w-5 h-5 text-violet-400" />
+          <h3 className="font-semibold text-white">Campañas con datos de ML</h3>
         </div>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-slate-400">
           Lee las promociones que Mercado Libre devuelve para tu cuenta y creá o actualizá registros en{" "}
-          <strong>Campañas</strong> locales (fechas, tipo y descuento estimado). Podés inspeccionar el JSON crudo antes
-          de sincronizar.
+          <strong className="text-slate-200">Campañas</strong> locales (fechas, tipo y descuento estimado).
         </p>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-3">
           <button
             type="button"
             disabled={!meliStatus?.connected}
             onClick={loadPromotionsPreview}
-            className="rounded-lg border border-border bg-background hover:bg-muted px-4 py-2 text-sm font-medium disabled:opacity-50"
+            className={meliBtnGhost}
           >
             Ver JSON promociones ML
           </button>
@@ -1182,17 +1241,46 @@ export default function MeliIntegrationView() {
             type="button"
             disabled={!meliStatus?.connected || syncingCamp}
             onClick={syncCampaigns}
-            className="inline-flex items-center gap-2 rounded-lg border border-primary bg-primary/10 text-primary hover:bg-primary/15 disabled:opacity-50 font-semibold px-4 py-2 text-sm"
+            className={`${meliBtnGradient} w-full sm:w-auto`}
           >
             {syncingCamp ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
             Sincronizar con campañas MADSJEEZ
           </button>
         </div>
         {promoPreview && (
-          <pre className="text-[11px] bg-slate-950 text-slate-100 p-4 rounded-lg overflow-auto max-h-[320px] whitespace-pre-wrap">
+          <pre className="text-[11px] rounded-xl border border-white/10 bg-slate-950/90 p-4 text-slate-100 overflow-auto max-h-[320px] whitespace-pre-wrap">
             {promoPreview}
           </pre>
         )}
+      </section>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        {[
+          {
+            label: "Publicaciones detectadas",
+            value: importPreview ? String(importPreview.uniqueFound) : "Sin vista previa",
+            sub: importPreview ? "En catálogo ML escaneado" : "Cargá vista previa",
+          },
+          {
+            label: "Sincronizadas",
+            value: String(linkedCount),
+            sub: "Vinculadas a cuenta activa",
+          },
+          {
+            label: "Campañas activas",
+            value: "—",
+            sub: "Mercado Libre",
+          },
+        ].map((m) => (
+          <div
+            key={m.label}
+            className="rounded-xl border border-white/10 bg-slate-900/50 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
+          >
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{m.label}</p>
+            <p className="mt-1 text-2xl font-bold text-white">{m.value}</p>
+            <p className="mt-0.5 text-xs text-slate-500">{m.sub}</p>
+          </div>
+        ))}
       </div>
     </div>
   );
