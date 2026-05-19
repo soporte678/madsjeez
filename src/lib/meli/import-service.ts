@@ -1,35 +1,18 @@
 import { prisma } from "@/lib/prisma";
-import type { MeliItemDetail } from "./api";
+import type { MeliItemDetail } from "./types";
 import { meliGetItem, meliGetItemDescription, meliSearchUserItems } from "./api";
+import { ensureFallbackCategory, resolveCategoryForMeliId } from "./category-map";
+import { persistMeliImageBatch } from "./image-import";
+import {
+  aggregateStockFromMeliItem,
+  buildDescriptionFromMeliItem,
+  extractSellerSku,
+  mapCondition,
+  mapMeliItemToProductCore,
+  primaryPriceFromMeliItem,
+} from "./item-mapper";
 
-function mapCondition(raw?: string): string {
-  const c = (raw || "").toLowerCase();
-  if (c.includes("used") || c === "used") return "used";
-  if (c.includes("refurbished") || c.includes("reacondicion")) return "refurbished";
-  return "new";
-}
-
-function attrText(attrs?: MeliItemDetail["attributes"]): string {
-  if (!attrs?.length) return "";
-  const lines = attrs
-    .filter((a) => a.value_name)
-    .slice(0, 40)
-    .map((a) => `${a.name || a.id}: ${a.value_name}`);
-  return lines.join("\n");
-}
-
-/** SKU declarado por el vendedor en ML (atributos habituales). */
-export function extractSellerSku(item: MeliItemDetail): string | null {
-  const attrs = item.attributes || [];
-  const hit = attrs.find(
-    (a) =>
-      a.id === "SELLER_SKU" ||
-      a.id === "SKU" ||
-      (a.name || "").toLowerCase().includes("sku")
-  );
-  const v = hit?.value_name?.trim();
-  return v || null;
-}
+export { extractSellerSku };
 
 export type MeliImportPreviewRow = {
   id: string;
@@ -45,30 +28,91 @@ export type MeliImportPreviewRow = {
   listingType: string;
   sold: number;
   action: "create" | "update";
+  meliCategoryId: string | null;
+  hasVariations: boolean;
 };
 
 export type MeliImportItemResult = {
   itemId: string;
   ok: boolean;
+  productId?: string;
   error?: string;
 };
 
-async function ensureDefaultCategory() {
-  let cat = await prisma.category.findFirst({ where: { slug: "general" } });
-  if (!cat) {
-    cat = await prisma.category.create({
-      data: { name: "General", slug: "general", description: "Importación / general" },
+async function syncProductAttributes(productId: string, item: MeliItemDetail): Promise<void> {
+  const attrs = item.attributes?.filter((a) => a.value_name) || [];
+  await prisma.productAttribute.deleteMany({ where: { productId } });
+  if (!attrs.length) return;
+  await prisma.productAttribute.createMany({
+    data: attrs.slice(0, 80).map((a) => ({
+      productId,
+      name: (a.name || a.id || "Atributo").slice(0, 200),
+      value: String(a.value_name).slice(0, 500),
+    })),
+  });
+}
+
+async function syncProductVariations(productId: string, item: MeliItemDetail): Promise<void> {
+  await prisma.productVariation.deleteMany({ where: { productId } });
+  if (!item.variations?.length) return;
+
+  for (const v of item.variations) {
+    const attrs: Record<string, string> = {};
+    for (const ac of v.attribute_combinations || []) {
+      const key = (ac.name || ac.id || "attr").slice(0, 80);
+      attrs[key] = String(ac.value_name || "");
+    }
+    const picIds = v.picture_ids || [];
+    const urls =
+      picIds
+        .map((pid) => item.pictures?.find((p) => String(p.id) === String(pid)))
+        .filter(Boolean)
+        .map((p) => p!.secure_url || p!.url)
+        .filter((u): u is string => Boolean(u)) || [];
+
+    await prisma.productVariation.create({
+      data: {
+        productId,
+        meliVariationId: String(v.id),
+        sku: null,
+        attributes: attrs,
+        price: Number(v.price) || Number(item.price) || 0,
+        stock: Math.max(0, v.available_quantity ?? 0),
+        images: urls,
+        isActive: (v.available_quantity ?? 0) > 0,
+      },
     });
   }
-  return cat;
+}
+
+async function syncProductImages(
+  productId: string,
+  urls: string[],
+  title: string,
+  persistImages: boolean
+): Promise<void> {
+  await prisma.productImage.deleteMany({ where: { productId } });
+  const finalUrls = persistImages ? await persistMeliImageBatch(urls, productId) : urls;
+  for (let i = 0; i < finalUrls.length; i++) {
+    await prisma.productImage.create({
+      data: {
+        productId,
+        url: finalUrls[i],
+        alt: title,
+        order: i,
+      },
+    });
+  }
 }
 
 async function importSingleMeliItem(
   prismaUserId: string,
+  meliOAuthAccountId: string,
   accessToken: string,
   itemId: string,
   errors: string[],
-  itemResults: MeliImportItemResult[]
+  itemResults: MeliImportItemResult[],
+  options: { persistImages: boolean }
 ): Promise<{ kind: "imported" | "updated" | "skipped" }> {
   const itemRes = await meliGetItem(accessToken, itemId);
   if (!itemRes.ok || !(itemRes.data as MeliItemDetail)?.id) {
@@ -79,90 +123,81 @@ async function importSingleMeliItem(
   }
   const item = itemRes.data as MeliItemDetail;
 
-  let description = "";
+  let plainDescription = "";
   const descRes = await meliGetItemDescription(accessToken, itemId);
   if (descRes.ok) {
     const d = descRes.data as { plain_text?: string; text?: string };
-    description = (d.plain_text || d.text || "").trim();
-  }
-  if (!description) {
-    description = attrText(item.attributes) || item.title;
+    plainDescription = (d.plain_text || d.text || "").trim();
   }
 
-  const pics = item.pictures || [];
-  const urls = pics.map((p) => p.secure_url || p.url).filter(Boolean) as string[];
+  const description = buildDescriptionFromMeliItem(item, plainDescription);
+  const core = mapMeliItemToProductCore(item, description);
 
-  const condition = mapCondition(item.condition);
-  const stock = Math.max(0, item.available_quantity ?? 0);
-  const soldQty = Math.max(0, item.sold_quantity ?? 0);
-  const price = Number(item.price) || 0;
-  const freeShipping = Boolean(item.shipping?.free_shipping);
-  const sellerSku = extractSellerSku(item);
+  let categoryId: string;
+  try {
+    categoryId = item.category_id
+      ? await resolveCategoryForMeliId(item.category_id, accessToken)
+      : await ensureFallbackCategory();
+  } catch {
+    categoryId = await ensureFallbackCategory();
+  }
 
   try {
-    const defaultCategory = await ensureDefaultCategory();
     const existing = await prisma.product.findUnique({
       where: { meliItemId: item.id },
     });
 
+    const productData = {
+      title: core.title,
+      description: core.description,
+      price: core.price,
+      stock: core.stock,
+      sales: core.sales,
+      condition: core.condition,
+      freeShipping: core.freeShipping,
+      originalPrice: core.originalPrice ?? undefined,
+      isActive: core.isActive,
+      sku: core.sku,
+      categoryId,
+      meliOAuthAccountId,
+      meliCategoryId: core.meliCategoryId,
+      meliListingTypeId: core.meliListingTypeId,
+      meliStatus: core.meliStatus,
+      meliPermalink: core.meliPermalink,
+      meliCurrencyId: core.meliCurrencyId,
+      meliPayload: core.meliPayload,
+      meliLastSyncedAt: new Date(),
+      meliStockSyncEnabled: true,
+      hasVideo: core.hasVideo,
+    };
+
+    let productId: string;
+
     if (existing) {
       await prisma.product.update({
         where: { id: existing.id },
-        data: {
-          title: item.title,
-          description,
-          price,
-          stock,
-          sales: soldQty,
-          condition,
-          freeShipping,
-          originalPrice: existing.originalPrice,
-          isActive: stock > 0,
-          ...(sellerSku ? { sku: sellerSku } : {}),
-        },
+        data: productData,
       });
-      await prisma.productImage.deleteMany({ where: { productId: existing.id } });
-      for (let i = 0; i < urls.length; i++) {
-        await prisma.productImage.create({
-          data: {
-            productId: existing.id,
-            url: urls[i],
-            alt: item.title,
-            order: i,
-          },
-        });
-      }
-      itemResults.push({ itemId: item.id, ok: true });
+      productId = existing.id;
+      await syncProductImages(productId, core.pictureUrls, core.title, options.persistImages);
+      await syncProductAttributes(productId, item);
+      await syncProductVariations(productId, item);
+      itemResults.push({ itemId: item.id, ok: true, productId });
       return { kind: "updated" };
     }
 
     const created = await prisma.product.create({
       data: {
         sellerId: prismaUserId,
-        categoryId: defaultCategory.id,
-        title: item.title,
-        description,
-        price,
-        stock,
-        sales: soldQty,
-        condition,
         meliItemId: item.id,
-        freeShipping,
-        isActive: stock > 0,
-        sku: sellerSku || `MELI-${item.id}`,
+        ...productData,
       },
     });
-    for (let i = 0; i < urls.length; i++) {
-      await prisma.productImage.create({
-        data: {
-          productId: created.id,
-          url: urls[i],
-          alt: item.title,
-          order: i,
-        },
-      });
-    }
-    itemResults.push({ itemId: item.id, ok: true });
+    productId = created.id;
+    await syncProductImages(productId, core.pictureUrls, core.title, options.persistImages);
+    await syncProductAttributes(productId, item);
+    await syncProductVariations(productId, item);
+    itemResults.push({ itemId: item.id, ok: true, productId });
     return { kind: "imported" };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
@@ -174,16 +209,22 @@ async function importSingleMeliItem(
 
 export async function importMeliItemsForUser(
   prismaUserId: string,
+  meliOAuthAccountId: string,
   accessToken: string,
   meliUserId: string,
-  options?: { maxPages?: number; itemIds?: string[] }
+  options?: {
+    maxPages?: number;
+    itemIds?: string[];
+    persistImages?: boolean;
+  }
 ): Promise<{
   imported: number;
   updated: number;
   errors: string[];
   itemResults: MeliImportItemResult[];
 }> {
-  const maxPages = Math.min(Math.max(options?.maxPages ?? 20, 1), 50);
+  const maxPages = Math.min(Math.max(options?.maxPages ?? 50, 1), 100);
+  const persistImages = options?.persistImages !== false;
   const filterIds = options?.itemIds?.length
     ? [...new Set(options.itemIds.map((x) => String(x).trim()).filter(Boolean))]
     : null;
@@ -195,7 +236,15 @@ export async function importMeliItemsForUser(
 
   if (filterIds?.length) {
     for (const itemId of filterIds) {
-      const r = await importSingleMeliItem(prismaUserId, accessToken, itemId, errors, itemResults);
+      const r = await importSingleMeliItem(
+        prismaUserId,
+        meliOAuthAccountId,
+        accessToken,
+        itemId,
+        errors,
+        itemResults,
+        { persistImages }
+      );
       if (r.kind === "imported") imported++;
       if (r.kind === "updated") updated++;
     }
@@ -213,10 +262,7 @@ export async function importMeliItemsForUser(
       break;
     }
 
-    const payload = search.data as {
-      results?: string[];
-      scroll_id?: string;
-    };
+    const payload = search.data as { results?: string[]; scroll_id?: string };
     const ids = payload.results || [];
     scrollId = payload.scroll_id;
     pages++;
@@ -227,12 +273,20 @@ export async function importMeliItemsForUser(
       if (seenIds.has(itemId)) continue;
       seenIds.add(itemId);
 
-      const r = await importSingleMeliItem(prismaUserId, accessToken, itemId, errors, itemResults);
+      const r = await importSingleMeliItem(
+        prismaUserId,
+        meliOAuthAccountId,
+        accessToken,
+        itemId,
+        errors,
+        itemResults,
+        { persistImages }
+      );
       if (r.kind === "imported") imported++;
       if (r.kind === "updated") updated++;
     }
 
-    if (!scrollId || !ids.length) break;
+    if (!scrollId) break;
   }
 
   return { imported, updated, errors, itemResults };
@@ -253,14 +307,12 @@ export async function previewMeliItemsForUser(
     byCondition: Record<string, number>;
     byListingType: Record<string, number>;
   };
-  /** Todas las filas leídas en el barrido (para tabla paginada en UI). */
   rows: MeliImportPreviewRow[];
-  /** Primeras N filas (compatibilidad). */
   samples: MeliImportPreviewRow[];
   warnings: string[];
 }> {
-  const maxPages = Math.min(Math.max(options?.maxPages ?? 10, 1), 50);
-  const sampleCap = Math.min(Math.max(options?.sampleSize ?? 25, 5), 500);
+  const maxPages = Math.min(Math.max(options?.maxPages ?? 30, 1), 100);
+  const sampleCap = Math.min(Math.max(options?.sampleSize ?? 25, 5), 2000);
 
   let scrollId: string | undefined;
   let pages = 0;
@@ -332,15 +384,13 @@ export async function previewMeliItemsForUser(
       const pics = item.pictures || [];
       const thumb = pics[0]?.secure_url || pics[0]?.url || null;
       const local = existingMap.get(item.id);
-      const meliPrice = Number(item.price) || 0;
-      const meliStock = Math.max(0, item.available_quantity ?? 0);
 
       rows.push({
         id: item.id,
         title: item.title,
         thumbnailUrl: thumb,
-        meliPrice,
-        meliStock,
+        meliPrice: primaryPriceFromMeliItem(item),
+        meliStock: aggregateStockFromMeliItem(item),
         localPrice: local ? local.price : null,
         localStock: local ? local.stock : null,
         sellerSku: extractSellerSku(item) || local?.sku || null,
@@ -349,13 +399,13 @@ export async function previewMeliItemsForUser(
         listingType,
         sold: Math.max(0, item.sold_quantity ?? 0),
         action: exists ? "update" : "create",
+        meliCategoryId: item.category_id || null,
+        hasVariations: Boolean(item.variations?.length),
       });
     }
 
     if (!scrollId) break;
   }
-
-  const samples = rows.slice(0, sampleCap);
 
   return {
     totalFound,
@@ -365,7 +415,7 @@ export async function previewMeliItemsForUser(
     toUpdate,
     breakdown: { byStatus, byCondition, byListingType },
     rows,
-    samples,
+    samples: rows.slice(0, sampleCap),
     warnings,
   };
 }

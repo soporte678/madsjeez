@@ -13,7 +13,6 @@ function appBaseUrl() {
   );
 }
 
-/** Panel ML incrustado en /dashboard (Ventas → Mercado Libre). Evita depender de la ruta /dashboard/meli en prod. */
 function meliDashboardReturn(search: Record<string, string>) {
   const q = new URLSearchParams(search).toString();
   const path = q ? `/dashboard?${q}` : `/dashboard`;
@@ -46,24 +45,35 @@ export async function GET(req: Request) {
     if (!me.ok) {
       return NextResponse.redirect(meliDashboardReturn({ error: "users_me_failed" }));
     }
-    const meliUserId = String((me.data as { id?: string | number }).id ?? "");
+
+    const meData = me.data as { id?: string | number; nickname?: string };
+    const meliUserId = String(meData.id ?? "");
     if (!meliUserId) {
       return NextResponse.redirect(meliDashboardReturn({ error: "no_meli_user" }));
     }
 
     const expiresAt = new Date(Date.now() + tokens.expires_in * 1000);
+    const nickname = meData.nickname?.trim() || null;
+
+    const existingOtherAccounts = await prisma.sellerMeliOAuth.count({
+      where: { userId },
+    });
 
     await prisma.sellerMeliOAuth.upsert({
-      where: { userId },
+      where: {
+        userId_meliUserId: { userId, meliUserId },
+      },
       create: {
         userId,
         meliUserId,
+        nickname,
         accessToken: tokens.access_token,
         refreshToken: tokens.refresh_token ?? null,
         expiresAt,
+        isPrimary: existingOtherAccounts === 0,
       },
       update: {
-        meliUserId,
+        nickname: nickname ?? undefined,
         accessToken: tokens.access_token,
         refreshToken: tokens.refresh_token ?? undefined,
         expiresAt,
@@ -73,12 +83,12 @@ export async function GET(req: Request) {
     return NextResponse.redirect(meliDashboardReturn({ connected: "1" }));
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    const code =
+    const codeErr =
       /seller_meli_oauth|does not exist|P2021|P2022|column.*does not exist|relation.*does not exist/i.test(
         msg
       )
         ? "meli_db_schema"
         : "oauth_error";
-    return NextResponse.redirect(meliDashboardReturn({ error: code }));
+    return NextResponse.redirect(meliDashboardReturn({ error: codeErr }));
   }
 }

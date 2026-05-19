@@ -9,6 +9,7 @@ import {
   restorePrismaStock,
   type StockReservationLine,
 } from "@/lib/orders/stock-reservation";
+import { pushStockToMeliForProductIds } from "@/lib/meli/stock-sync";
 import { tryCreateZipnovaShipmentForPaidOrder } from "@/lib/zipnova/create-shipment";
 import crypto from "crypto";
 
@@ -339,6 +340,7 @@ export async function POST(req: NextRequest) {
         const linesToRestore = await fetchSupabaseOrderStockLines(orderId);
         if (linesToRestore.length) {
           await restorePrismaStock(prisma, linesToRestore);
+          void pushStockToMeliForProductIds(linesToRestore.map((l) => l.productId));
           shippingPatch = markStockReleased(
             (prevOrder as { shipping_address?: unknown } | null)?.shipping_address
           );

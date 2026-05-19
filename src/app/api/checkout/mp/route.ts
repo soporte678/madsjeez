@@ -26,6 +26,7 @@ import {
   restorePrismaStock,
   type StockReservationLine,
 } from "@/lib/orders/stock-reservation";
+import { pushStockToMeliForProductIds } from "@/lib/meli/stock-sync";
 import { randomUUID } from "crypto";
 
 function sleepMs(ms: number): Promise<void> {
@@ -320,6 +321,8 @@ export async function POST(req: Request) {
     }
     prismaStockReserved = true;
     shippingAddressOut = markStockReserved(shippingAddressOut);
+
+    void pushStockToMeliForProductIds(stockReservationLines.map((l) => l.productId));
 
     /** Supabase `public.orders` suele exigir `id` NOT NULL sin default; sin esto falla 23502 y se usa orden `tmp_`. */
     const orderUuid = randomUUID();

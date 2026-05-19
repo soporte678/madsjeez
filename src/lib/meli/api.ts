@@ -1,3 +1,5 @@
+import type { MeliItemDetail } from "./types";
+
 /** Mercado Libre API helpers (server-only). */
 
 export async function meliApi<T>(
@@ -46,25 +48,13 @@ export async function meliSearchUserItems(
   );
 }
 
-export type MeliItemPicture = { secure_url?: string; url?: string };
-export type MeliItemShipping = { free_shipping?: boolean };
-
-export type MeliItemDetail = {
-  id: string;
-  title: string;
-  price: number;
-  currency_id?: string;
-  status?: string;
-  listing_type_id?: string;
-  available_quantity?: number;
-  sold_quantity?: number;
-  condition?: string;
-  permalink?: string;
-  pictures?: MeliItemPicture[];
-  shipping?: MeliItemShipping;
-  category_id?: string;
-  attributes?: Array<{ id?: string; name?: string; value_name?: string | null }>;
-};
+export type {
+  MeliItemDetail,
+  MeliItemPicture,
+  MeliItemShipping,
+  MeliItemAttribute,
+  MeliItemVariation,
+} from "./types";
 
 export async function meliGetItem(accessToken: string, itemId: string) {
   return meliApi<MeliItemDetail>(accessToken, `/items/${itemId}`);

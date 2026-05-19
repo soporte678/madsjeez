@@ -152,7 +152,7 @@ model User {
   campaigns         Campaign[]
   coupons           Coupon[]
   cart              Cart?
-  sellerMeliOAuth     SellerMeliOAuth?
+  sellerMeliOAuthAccounts SellerMeliOAuth[]
   sellerZipnovaOAuth SellerZipnovaOAuth?
   meliAdsSnapshots  MeliAdsSnapshot[]
   meliAdsChanges    MeliAdsChange[]
@@ -182,9 +182,10 @@ model Category {
   parent      Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
   children    Category[] @relation("CategoryHierarchy")
   products    Product[]
-  
+  meliCategoryId String? @unique @map("meli_category_id")
+
   createdAt DateTime @default(now()) @map("created_at")
-  
+
   @@map("categories")
 }
 
@@ -237,31 +238,47 @@ model Product {
 
   /// ID publicación MLA/MLM/etc. en Mercado Libre (importación)
   meliItemId  String? @unique @map("meli_item_id")
-  
+  meliOAuthAccountId String? @map("meli_oauth_account_id")
+  meliOAuthAccount   SellerMeliOAuth? @relation(fields: [meliOAuthAccountId], references: [id], onDelete: SetNull)
+  meliCategoryId     String? @map("meli_category_id")
+  meliListingTypeId  String? @map("meli_listing_type_id")
+  meliStatus         String? @map("meli_status")
+  meliPermalink      String? @map("meli_permalink")
+  meliCurrencyId     String? @default("ARS") @map("meli_currency_id")
+  meliPayload        Json?   @map("meli_payload")
+  meliLastSyncedAt   DateTime? @map("meli_last_synced_at")
+  meliStockSyncEnabled Boolean @default(true) @map("meli_stock_sync_enabled")
+
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
-  
+
   @@index([sellerId])
   @@index([categoryId])
   @@index([isActive])
   @@index([isBoosted])
+  @@index([meliOAuthAccountId])
   @@map("products")
 }
 
-/// OAuth Mercado Libre por usuario (importar publicaciones y leer promociones)
+/// OAuth Mercado Libre — varias cuentas ML por vendedor Madsjeez
 model SellerMeliOAuth {
   id           String   @id @default(cuid())
-  userId       String   @unique @map("user_id")
+  userId       String   @map("user_id")
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   meliUserId   String   @map("meli_user_id")
+  nickname     String?  @map("nickname")
+  label        String?  @map("label")
+  isPrimary    Boolean  @default(false) @map("is_primary")
   accessToken  String   @db.Text @map("access_token")
   refreshToken String?  @db.Text @map("refresh_token")
   expiresAt    DateTime @map("expires_at")
-  /// Última importación exitosa del catálogo ML → MADSJEEZ (para UI de sincronización)
   lastCatalogImportAt DateTime? @map("last_catalog_import_at")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
+  products     Product[]
 
+  @@unique([userId, meliUserId])
+  @@index([userId])
   @@map("seller_meli_oauth")
 }
 
@@ -774,7 +791,8 @@ model ProductVariation {
   
   // Images specific to this variation
   images      String[] // Array of image URLs
-  
+  meliVariationId String? @unique @map("meli_variation_id")
+
   isActive    Boolean  @default(true) @map("is_active")
   
   createdAt   DateTime @default(now()) @map("created_at")

@@ -19,10 +19,23 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+type MeliAccountRow = {
+  id: string;
+  meliUserId: string;
+  nickname: string | null;
+  label: string | null;
+  isPrimary: boolean;
+  expiresAt: string;
+  lastCatalogImportAt: string | null;
+  linkedProducts: number;
+};
+
 type MeliStatus = {
   connected: boolean;
   meliUserId: string | null;
   expiresAt: string | null;
+  accountId?: string | null;
+  accounts?: MeliAccountRow[];
 };
 
 type PreviewRow = {
@@ -39,6 +52,8 @@ type PreviewRow = {
   listingType: string;
   sold: number;
   action: "create" | "update";
+  meliCategoryId?: string | null;
+  hasVariations?: boolean;
 };
 
 type ImportPreview = {
@@ -156,23 +171,40 @@ export default function MeliIntegrationView() {
   const [rowPushErrors, setRowPushErrors] = useState<Record<string, string>>({});
   const [localUnpublished, setLocalUnpublished] = useState<LocalUnpublished[]>([]);
   const [loadingLocal, setLoadingLocal] = useState(false);
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
 
   const loadStatus = useCallback(async () => {
     setLoadingStatus(true);
     try {
       const r = await fetch("/api/meli/status");
-      const d = await r.json();
-      if (r.ok) setMeliStatus(d);
-      else setMeliStatus({ connected: false, meliUserId: null, expiresAt: null });
+      const d = (await r.json()) as MeliStatus;
+      if (r.ok) {
+        setMeliStatus(d);
+        const primary = d.accounts?.find((a) => a.isPrimary) || d.accounts?.[0];
+        setSelectedAccountId((prev) => {
+          if (prev && d.accounts?.some((a) => a.id === prev)) return prev;
+          return d.accountId || primary?.id || null;
+        });
+      } else {
+        setMeliStatus({ connected: false, meliUserId: null, expiresAt: null });
+        setSelectedAccountId(null);
+      }
     } catch {
       setMeliStatus({ connected: false, meliUserId: null, expiresAt: null });
+      setSelectedAccountId(null);
     } finally {
       setLoadingStatus(false);
     }
   }, []);
 
   useEffect(() => {
-    if (status === "authenticated") loadStatus();
+    if (status === "authenticated") {
+      const t = setTimeout(() => {
+        void loadStatus();
+      }, 0);
+      return () => clearTimeout(t);
+    }
+    return;
   }, [status, loadStatus]);
 
   useEffect(() => {
@@ -243,7 +275,13 @@ export default function MeliIntegrationView() {
   }, []);
 
   useEffect(() => {
-    if (status === "authenticated" && syncDirection === "export") loadLocalUnpublished();
+    if (status === "authenticated" && syncDirection === "export") {
+      const t = setTimeout(() => {
+        void loadLocalUnpublished();
+      }, 0);
+      return () => clearTimeout(t);
+    }
+    return;
   }, [status, syncDirection, loadLocalUnpublished]);
 
   const connectMeli = () => {
@@ -251,9 +289,18 @@ export default function MeliIntegrationView() {
   };
 
   const loadImportPreview = async (preserveErrors = false) => {
+    if (!selectedAccountId) {
+      toast.error("Seleccioná una cuenta de Mercado Libre");
+      return;
+    }
     setLoadingImportPreview(true);
     try {
-      const r = await fetch("/api/meli/import?maxPages=15&sampleSize=500");
+      const qs = new URLSearchParams({
+        maxPages: "50",
+        sampleSize: "2000",
+        accountId: selectedAccountId,
+      });
+      const r = await fetch(`/api/meli/import?${qs.toString()}`);
       const d = await r.json();
       if (!r.ok) {
         toast.error(d.error || "No se pudo generar la vista previa");
@@ -319,10 +366,6 @@ export default function MeliIntegrationView() {
     return filteredRows.slice(start, start + pageSize);
   }, [filteredRows, page, pageSize, totalPages]);
 
-  useEffect(() => {
-    if (page > totalPages) setPage(totalPages);
-  }, [page, totalPages]);
-
   const togglePull = (id: string) => {
     setSelectedPullIds((prev) => {
       const n = new Set(prev);
@@ -368,7 +411,14 @@ export default function MeliIntegrationView() {
       const r = await fetch("/api/meli/import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ maxPages: 15, requireConfirm: true, confirmed: true, itemIds: ids }),
+        body: JSON.stringify({
+          maxPages: 50,
+          accountId: selectedAccountId,
+          persistImages: true,
+          requireConfirm: true,
+          confirmed: true,
+          itemIds: ids,
+        }),
       });
       const d = await r.json();
       if (!r.ok) {
@@ -387,6 +437,7 @@ export default function MeliIntegrationView() {
       }
       setRowPullErrors(errMap);
       await loadImportPreview(true);
+      await loadStatus();
       if (d.errorCount > 0) {
         toast.message(`${d.errorCount} avisos`, {
           description: (d.errors || []).slice(0, 3).join(" · "),
@@ -411,7 +462,7 @@ export default function MeliIntegrationView() {
       const r = await fetch("/api/meli/push-items", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ meliItemIds: ids }),
+        body: JSON.stringify({ meliItemIds: ids, accountId: selectedAccountId }),
       });
       const d = await r.json();
       if (!r.ok) {
@@ -489,8 +540,9 @@ export default function MeliIntegrationView() {
       <div>
         <h2 className="text-xl font-bold text-foreground">Mercado Libre</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Conectá tu cuenta para importar publicaciones a MADSJEEZ o enviar precio y stock de tu catálogo hacia Mercado
-          Libre. Podés elegir filas puntuales con las casillas de verificación.
+          Conectá una o varias cuentas ML. Importá publicaciones completas (categorías, atributos, variaciones e imágenes
+          en nuestra base) o enviá cambios a ML. El stock se sincroniza automáticamente; Mercado Libre es la referencia
+          principal cuando llegan notificaciones.
         </p>
         <p className="text-sm mt-2">
           <a
@@ -509,9 +561,30 @@ export default function MeliIntegrationView() {
             <p className="text-sm font-semibold text-foreground">Estado de conexión</p>
             <p className="text-xs text-muted-foreground">
               {meliStatus?.connected
-                ? `Conectado · usuario ML ${meliStatus.meliUserId}`
+                ? `${meliStatus.accounts?.length ?? 1} cuenta(s) ML conectada(s)`
                 : "Sin conectar"}
             </p>
+            {meliStatus?.accounts && meliStatus.accounts.length > 0 && (
+              <div className="mt-3 space-y-2">
+                <label className="text-xs font-medium text-muted-foreground block">Cuenta activa</label>
+                <select
+                  value={selectedAccountId || ""}
+                  onChange={(e) => {
+                    setSelectedAccountId(e.target.value || null);
+                    setImportPreview(null);
+                    setSelectedPullIds(new Set());
+                  }}
+                  className="w-full max-w-md rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                >
+                  {meliStatus.accounts.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.label || a.nickname || `ML ${a.meliUserId}`}
+                      {a.isPrimary ? " · principal" : ""} ({a.linkedProducts} vinculadas)
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
               <span aria-hidden>⏱️</span>
               Última importación exitosa a MADSJEEZ:{" "}
@@ -524,7 +597,7 @@ export default function MeliIntegrationView() {
             className="inline-flex items-center gap-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-4 py-2 text-sm shadow-sm"
           >
             <Link2 className="w-4 h-4" />
-            {meliStatus?.connected ? "Reconectar Mercado Libre" : "Conectar Mercado Libre"}
+            {meliStatus?.connected ? "Conectar otra cuenta ML" : "Conectar Mercado Libre"}
           </button>
         </div>
         <a
