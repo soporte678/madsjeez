@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma"
 
-const MELI_CATEGORIES = [
+export const MELI_CATEGORIES = [
   { name: "Accesorios para Vehículos", slug: "accesorios-para-vehiculos", children: ["Acc. para Motos y Cuatriciclos","Acc. para Camiones","Audio para Vehículos","Baterías y Cargadores","Cubiertas, Llantas y Accesorios","Estética y Cuidado","GPS y Accesorios","Herramientas para Vehículos","Instalación de Accesorios","Interior del Vehículo","Luces y Faros","Navegadores GPS","Performance","Porta Equipajes y Barras","Repuestos Autos y Camionetas","Repuestos Motos y Cuatriciclos","Seguridad para Vehículos","Tuning y Styling"] },
   { name: "Agro", slug: "agro", children: ["Agricultura de Precisión","Alambrados y Tranqueras","Alimentos para Animales","Bebederos y Comederos","Corrales y Mangas","Fertilizantes y Agroquímicos","Herramientas Agrícolas","Maquinaria Agrícola","Riego","Sanidad Animal","Semillas y Bulbos","Silos y Almacenaje"] },
   { name: "Alimentos y Bebidas", slug: "alimentos-y-bebidas", children: ["Aceites y Vinagres","Almacén","Bebidas Alcohólicas","Bebidas No Alcohólicas","Cafetería e Infusiones","Congelados","Conservas","Dietéticos y Suplementos","Dulces y Chocolates","Especias y Condimentos","Harinas y Panificados","Lácteos","Pastas","Snacks y Galletas","Yerba Mate"] },
@@ -35,7 +35,7 @@ const MELI_CATEGORIES = [
   { name: "Otros", slug: "otros", children: ["Otros"] },
 ]
 
-function slugify(text: string): string {
+export function slugifyCategory(text: string): string {
   return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-").replace(/-+/g, "-").trim()
 }
 
@@ -50,7 +50,7 @@ export async function seedCategoriesIfEmpty() {
       create: { name: cat.name, slug: cat.slug }
     })
     for (const childName of cat.children) {
-      const childSlug = `${cat.slug}-${slugify(childName)}`
+      const childSlug = `${cat.slug}-${slugifyCategory(childName)}`
       await prisma.category.upsert({
         where: { slug: childSlug },
         update: { name: childName, parentId: parent.id },

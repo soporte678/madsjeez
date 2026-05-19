@@ -32,27 +32,6 @@ import { CategoryCarousel } from "@/components/CategoryCarousel"
 import { RotatingProductCarousel } from "@/components/RotatingProductCarousel"
 import { PaidAdBannerSlot } from "@/components/ads/PaidAdBannerSlot"
 
-const categoriesData = [
-  { id: 1, name: 'Autos, Motos y Otros', image: 'https://cdn-icons-png.flaticon.com/512/3204/3204061.png', slug: 'autos-motos' },
-  { id: 2, name: 'Accesorios para Vehículos', image: 'https://cdn-icons-png.flaticon.com/512/3085/3085330.png', slug: 'accesorios-vehiculos' },
-  { id: 3, name: 'Hogar, Muebles y Jardín', image: 'https://cdn-icons-png.flaticon.com/512/2550/2550232.png', slug: 'hogar-muebles' },
-  { id: 4, name: 'Celulares y Teléfonos', image: 'https://cdn-icons-png.flaticon.com/512/3014/3014493.png', slug: 'celulares' },
-  { id: 5, name: 'Ropa y Accesorios', image: 'https://cdn-icons-png.flaticon.com/512/3159/3159614.png', slug: 'ropa-accesorios' },
-  { id: 6, name: 'Computación', image: 'https://cdn-icons-png.flaticon.com/512/3081/3081559.png', slug: 'computacion' },
-  { id: 7, name: 'Electrodomésticos y Aires Ac.', image: 'https://cdn-icons-png.flaticon.com/512/3613/3613243.png', slug: 'electrodomesticos' },
-  { id: 8, name: 'Deportes y Fitness', image: 'https://cdn-icons-png.flaticon.com/512/2964/2964514.png', slug: 'deportes' },
-  { id: 9, name: 'Inmuebles', image: 'https://cdn-icons-png.flaticon.com/512/2550/2550232.png', slug: 'inmuebles' },
-  { id: 10, name: 'Herramientas', image: 'https://cdn-icons-png.flaticon.com/512/2916/2916315.png', slug: 'herramientas' },
-  { id: 11, name: 'Belleza y Cuidado Personal', image: 'https://cdn-icons-png.flaticon.com/512/1005/1005769.png', slug: 'belleza' },
-  { id: 12, name: 'Electrónica, Audio y Video', image: 'https://cdn-icons-png.flaticon.com/512/1252/1252006.png', slug: 'electronica' },
-  { id: 13, name: 'Agro', image: 'https://cdn-icons-png.flaticon.com/512/2965/2965313.png', slug: 'agro' },
-  { id: 14, name: 'Alimentos y Bebidas', image: 'https://cdn-icons-png.flaticon.com/512/3082/3082008.png', slug: 'alimentos' },
-  { id: 15, name: 'Juegos y Juguetes', image: 'https://cdn-icons-png.flaticon.com/512/3082/3082060.png', slug: 'juguetes' },
-  { id: 16, name: 'Mascotas', image: 'https://cdn-icons-png.flaticon.com/512/3047/3047928.png', slug: 'mascotas' },
-  { id: 17, name: 'Construcción', image: 'https://cdn-icons-png.flaticon.com/512/3038/3038089.png', slug: 'construccion' },
-  { id: 18, name: 'Cámaras y Accesorios', image: 'https://cdn-icons-png.flaticon.com/512/3004/3004613.png', slug: 'camaras' },
-]
-
 // Configuración de letras para el logo cinético
 const logoLetters = [
   { char: "M", dx: "-30px", dy: "-40px", rot: "-45deg", delay: "0s" },
@@ -533,9 +512,9 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 5. CATEGORÍAS (grilla completa, sin recorte) */}
+      {/* 5. CATEGORÍAS (grilla 3×3 + carrusel automático) */}
       <section className="max-w-[1184px] mx-auto px-4">
-        <CategoryCarousel categories={categoriesData} />
+        <CategoryCarousel />
       </section>
 
       {/* 7. CARRUSEL: También puede interesarte */}
