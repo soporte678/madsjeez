@@ -26,6 +26,11 @@ export async function GET(req: Request) {
     const campaigns = await prisma.campaign.findMany({
       where,
       include: {
+        internalAd: {
+          include: {
+            events: true,
+          },
+        },
         products: {
           include: {
             product: {
@@ -67,6 +72,7 @@ export async function POST(req: Request) {
       minQuantity,
       maxBudget,
       productIds,
+      internalAd,
     } = body;
 
     if (!name || !type || !startDate || !endDate) {
@@ -96,8 +102,30 @@ export async function POST(req: Request) {
               })),
             }
           : undefined,
+        internalAd: internalAd
+          ? {
+              create: {
+                placement: internalAd.placement,
+                pricingModel: internalAd.pricingModel || "SOV",
+                shareOfVoice: internalAd.shareOfVoice ? parseInt(String(internalAd.shareOfVoice)) : null,
+                bannerTitle: internalAd.bannerTitle || null,
+                bannerSubtitle: internalAd.bannerSubtitle || null,
+                bannerImageUrl: internalAd.bannerImageUrl || null,
+                destinationUrl: internalAd.destinationUrl || null,
+                rotationIntervalSeconds: internalAd.rotationIntervalSeconds
+                  ? parseInt(String(internalAd.rotationIntervalSeconds))
+                  : 60,
+                isActive: internalAd.isActive ?? true,
+              },
+            }
+          : undefined,
       },
       include: {
+        internalAd: {
+          include: {
+            events: true,
+          },
+        },
         products: {
           include: {
             product: {

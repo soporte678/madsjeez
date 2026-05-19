@@ -821,6 +821,25 @@ enum CampaignStatus {
   CANCELLED
 }
 
+enum InternalAdPlacement {
+  HOME_LEADERBOARD
+  HOME_RECTANGLE
+  HOME_TILE
+  CATEGORY_LEADERBOARD
+  SEARCH_INLINE
+}
+
+enum InternalAdPricingModel {
+  SOV
+  CPM
+  CPC
+}
+
+enum InternalAdEventType {
+  IMPRESSION
+  CLICK
+}
+
 model Campaign {
   id          String         @id @default(cuid())
   
@@ -850,6 +869,7 @@ model Campaign {
   
   // Products in campaign
   products    CampaignProduct[]
+  internalAd  InternalAdCampaign?
 
   /// Promoción origen Mercado Libre (si se sincronizó desde ML)
   meliPromotionId String? @map("meli_promotion_id")
@@ -882,6 +902,42 @@ model CampaignProduct {
   @@unique([campaignId, productId])
   @@index([productId])
   @@map("campaign_products")
+}
+
+model InternalAdCampaign {
+  id                      String                 @id @default(cuid())
+  campaignId              String                 @unique @map("campaign_id")
+  campaign                Campaign               @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  placement               InternalAdPlacement
+  pricingModel            InternalAdPricingModel @default(SOV) @map("pricing_model")
+  shareOfVoice            Int?                   @map("share_of_voice")
+  bannerTitle             String?                @map("banner_title")
+  bannerSubtitle          String?                @map("banner_subtitle")
+  bannerImageUrl          String?                @map("banner_image_url")
+  destinationUrl          String?                @map("destination_url")
+  rotationIntervalSeconds Int                    @default(60) @map("rotation_interval_seconds")
+  isActive                Boolean                @default(true) @map("is_active")
+  events                  InternalAdEvent[]
+  createdAt               DateTime               @default(now()) @map("created_at")
+  updatedAt               DateTime               @updatedAt @map("updated_at")
+
+  @@index([placement, isActive])
+  @@map("internal_ad_campaigns")
+}
+
+model InternalAdEvent {
+  id                  String              @id @default(cuid())
+  internalAdCampaignId String             @map("internal_ad_campaign_id")
+  internalAdCampaign  InternalAdCampaign  @relation(fields: [internalAdCampaignId], references: [id], onDelete: Cascade)
+  eventType           InternalAdEventType @map("event_type")
+  slotKey             String?             @map("slot_key")
+  pagePath            String?             @map("page_path")
+  visitorHash         String?             @map("visitor_hash")
+  createdAt           DateTime            @default(now()) @map("created_at")
+
+  @@index([internalAdCampaignId, eventType])
+  @@index([pagePath, createdAt])
+  @@map("internal_ad_events")
 }
 
 // Cupones

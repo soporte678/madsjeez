@@ -30,6 +30,22 @@ type CampaignRecord = {
   spentBudget?: number | null;
   startDate: string;
   endDate: string;
+  internalAd?: {
+    id: string;
+    placement: string;
+    pricingModel: string;
+    shareOfVoice?: number | null;
+    bannerTitle?: string | null;
+    bannerSubtitle?: string | null;
+    bannerImageUrl?: string | null;
+    destinationUrl?: string | null;
+    rotationIntervalSeconds: number;
+    isActive: boolean;
+    events?: Array<{
+      id: string;
+      eventType: "IMPRESSION" | "CLICK";
+    }>;
+  } | null;
   products?: Array<{
     productId: string;
     product?: {
@@ -49,6 +65,7 @@ type SellerProduct = {
   price?: number | null;
   sales?: number | null;
   stock?: number | null;
+  images?: Array<{ url?: string | null }>;
 };
 
 type AdRow = {
@@ -86,6 +103,11 @@ export default function AdvertisingView() {
   const [statusFilter, setStatusFilter] = useState<CampaignStatusFilter>("all");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [campaignGoal, setCampaignGoal] = useState<CampaignGoal>("ventas");
+  const [placement, setPlacement] = useState("HOME_LEADERBOARD");
+  const [pricingModel, setPricingModel] = useState("SOV");
+  const [shareOfVoice, setShareOfVoice] = useState("25");
+  const [bannerTitle, setBannerTitle] = useState("");
+  const [bannerSubtitle, setBannerSubtitle] = useState("");
   const [reportType, setReportType] = useState("general");
   const [reportPeriod, setReportPeriod] = useState("ultimos30");
   const [reportGroup, setReportGroup] = useState("diaria");
@@ -128,6 +150,17 @@ export default function AdvertisingView() {
   const metricSummary = useMemo(() => {
     const invested = campaigns.reduce((sum, campaign) => sum + Number(campaign.spentBudget || 0), 0);
     const budget = campaigns.reduce((sum, campaign) => sum + Number(campaign.maxBudget || 0), 0);
+    const impressions = campaigns.reduce(
+      (sum, campaign) =>
+        sum +
+        (campaign.internalAd?.events?.filter((event) => event.eventType === "IMPRESSION").length || 0),
+      0
+    );
+    const clicks = campaigns.reduce(
+      (sum, campaign) =>
+        sum + (campaign.internalAd?.events?.filter((event) => event.eventType === "CLICK").length || 0),
+      0
+    );
     const adsSales = campaigns.reduce(
       (sum, campaign) =>
         sum +
@@ -139,10 +172,12 @@ export default function AdvertisingView() {
     return {
       invested,
       budget,
+      impressions,
+      clicks,
       adsSales,
       activeCount,
       visits,
-      exposure: Math.round(invested * 2.1),
+      exposure: impressions || Math.round(invested * 2.1),
       subscriptions: campaigns.filter((campaign) => campaign.type === "COUPON").length,
     };
   }, [campaigns]);
@@ -154,6 +189,9 @@ export default function AdvertisingView() {
   const adRows = useMemo<AdRow[]>(() => {
     const rows: AdRow[] = [];
     campaigns.forEach((campaign) => {
+      const impressionCount = campaign.internalAd?.events?.filter((event) => event.eventType === "IMPRESSION").length || 0;
+      const clickCount = campaign.internalAd?.events?.filter((event) => event.eventType === "CLICK").length || 0;
+      const productCount = Math.max(1, campaign.products?.length || 0);
       (campaign.products || []).forEach((entry, index) => {
         if (!entry.product) return;
         rows.push({
@@ -162,8 +200,8 @@ export default function AdvertisingView() {
           campaignId: campaign.id,
           campaignName: campaign.name,
           status: campaign.status,
-          impressions: 1200 + index * 150 + Math.round(Number(entry.product.sales || 0) * 8),
-          clicks: 40 + index * 6,
+          impressions: impressionCount ? Math.max(1, Math.round(impressionCount / productCount)) : 1200 + index * 150 + Math.round(Number(entry.product.sales || 0) * 8),
+          clicks: clickCount ? Math.max(1, Math.round(clickCount / productCount)) : 40 + index * 6,
           sales: Number(entry.product.sales || 0),
           cost: Number(campaign.spentBudget || 0) / Math.max(1, (campaign.products || []).length),
           image: entry.product.images?.[0]?.url || null,
@@ -224,30 +262,54 @@ export default function AdvertisingView() {
     if (!campaignGoal) return;
     setCreating(true);
     try {
-      const productIds = products.slice(0, 5).map((product) => product.id);
+      const eligibleProducts = products.filter((product) => Number(product.stock || 0) > 0 && product.images?.[0]?.url);
+      const productIds = eligibleProducts.slice(0, 5).map((product) => product.id);
+      const primaryProduct = eligibleProducts[0];
+      const budgetByModel = pricingModel === "CPM" ? 180000 : pricingModel === "CPC" ? 120000 : 90000;
+
+      if (!primaryProduct || !productIds.length) {
+        throw new Error("Necesitas productos activos con imagen para crear una campana publicitaria.");
+      }
+
       const res = await fetch("/api/campaigns", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: `Campaña ${campaignGoal} ${new Date().toLocaleDateString("es-AR")}`,
-          description: `Campaña automática para ${campaignGoal}`,
-          type: campaignGoal === "seguidores" ? "FOLLOWERS" : "COUPON",
+          name: `Campana ${campaignGoal} ${new Date().toLocaleDateString("es-AR")}`,
+          description: `Campana automatica para ${campaignGoal}`,
+          type: "COUPON",
           status: "ACTIVE",
           startDate: new Date().toISOString(),
           endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           discountType: "percentage",
           discountValue: campaignGoal === "ventas" ? 10 : 5,
-          maxBudget: 100000,
+          maxBudget: budgetByModel,
           productIds,
+          internalAd: {
+            placement,
+            pricingModel,
+            shareOfVoice: parseInt(shareOfVoice || "25"),
+            bannerTitle: bannerTitle || `Patrocinado: ${primaryProduct?.title || "Tu producto"}`,
+            bannerSubtitle: bannerSubtitle || "Campana activa dentro del marketplace",
+            bannerImageUrl: primaryProduct?.images?.[0]?.url || null,
+            destinationUrl: primaryProduct ? `/product/${primaryProduct.id}` : null,
+            rotationIntervalSeconds: 60,
+            isActive: true,
+          },
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "No pudimos crear la campaña.");
+      if (!res.ok) throw new Error(data.error || "No pudimos crear la campana.");
       setCampaigns((prev) => [data.campaign, ...prev]);
       setShowCreateModal(false);
-      setNotice("Campaña creada correctamente.");
+      setBannerTitle("");
+      setBannerSubtitle("");
+      setShareOfVoice("25");
+      setPlacement("HOME_LEADERBOARD");
+      setPricingModel("SOV");
+      setNotice("Campana creada correctamente.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No pudimos crear la campaña.");
+      setError(err instanceof Error ? err.message : "No pudimos crear la campana.");
     } finally {
       setCreating(false);
     }
@@ -387,6 +449,36 @@ export default function AdvertisingView() {
                 <p className="mt-2 text-sm leading-relaxed text-slate-300">
                   Vamos a usar productos reales de tu catálogo y presupuesto editable después del alta. Así podés salir a producción hoy mismo.
                 </p>
+                <div className="mt-4 grid gap-3">
+                  <div>
+                    <label className="mb-1 block text-xs uppercase tracking-[0.12em] text-slate-400">Placement</label>
+                    <select value={placement} onChange={(e) => setPlacement(e.target.value)} className="w-full rounded-xl border border-white/10 bg-[#111a2e] px-3 py-2 text-sm text-slate-200">
+                      <option value="HOME_LEADERBOARD">Home leaderboard</option>
+                      <option value="HOME_RECTANGLE">Home rectangle</option>
+                      <option value="HOME_TILE">Home tile</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs uppercase tracking-[0.12em] text-slate-400">Modelo de cobro</label>
+                    <select value={pricingModel} onChange={(e) => setPricingModel(e.target.value)} className="w-full rounded-xl border border-white/10 bg-[#111a2e] px-3 py-2 text-sm text-slate-200">
+                      <option value="SOV">Share of Voice</option>
+                      <option value="CPM">CPM</option>
+                      <option value="CPC">CPC</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs uppercase tracking-[0.12em] text-slate-400">Participación / peso</label>
+                    <input value={shareOfVoice} onChange={(e) => setShareOfVoice(e.target.value)} className="w-full rounded-xl border border-white/10 bg-[#111a2e] px-3 py-2 text-sm text-slate-200" placeholder="25" />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs uppercase tracking-[0.12em] text-slate-400">Título del banner</label>
+                    <input value={bannerTitle} onChange={(e) => setBannerTitle(e.target.value)} className="w-full rounded-xl border border-white/10 bg-[#111a2e] px-3 py-2 text-sm text-slate-200" placeholder="Patrocinado por tu marca" />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs uppercase tracking-[0.12em] text-slate-400">Bajada</label>
+                    <input value={bannerSubtitle} onChange={(e) => setBannerSubtitle(e.target.value)} className="w-full rounded-xl border border-white/10 bg-[#111a2e] px-3 py-2 text-sm text-slate-200" placeholder="Texto corto para captar clicks" />
+                  </div>
+                </div>
                 <div className="mt-5 flex gap-3">
                   <button onClick={() => setShowCreateModal(false)} className="rounded-xl border border-white/10 px-4 py-2 text-sm text-slate-300 hover:bg-white/5">
                     Cancelar
@@ -521,11 +613,13 @@ export default function AdvertisingView() {
                 <thead>
                   <tr className="border-b border-white/10 text-left text-xs uppercase tracking-[0.12em] text-slate-400">
                     <th className="p-3">Título</th>
+                    <th className="p-3">Placement</th>
                     <th className="p-3">Tipo</th>
                     <th className="p-3">Estado</th>
                     <th className="p-3">Presupuesto</th>
                     <th className="p-3">Invertido</th>
-                    <th className="p-3">Productos</th>
+                    <th className="p-3">Impresiones</th>
+                    <th className="p-3">Clicks</th>
                     <th className="p-3">Acciones</th>
                   </tr>
                 </thead>
@@ -537,6 +631,7 @@ export default function AdvertisingView() {
                           <div className="font-semibold text-white">{campaign.name}</div>
                           <div className="text-xs text-slate-400">{campaign.description || "Sin descripción"}</div>
                         </td>
+                        <td className="p-3 text-slate-300">{campaign.internalAd?.placement || "—"}</td>
                         <td className="p-3 text-slate-300">{campaign.type}</td>
                         <td className="p-3">
                           <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${statusTone[campaign.status] || statusTone.ENDED}`}>
@@ -545,7 +640,8 @@ export default function AdvertisingView() {
                         </td>
                         <td className="p-3">{money(Number(campaign.maxBudget || 0))}</td>
                         <td className="p-3">{money(Number(campaign.spentBudget || 0))}</td>
-                        <td className="p-3">{number(campaign.products?.length || 0)}</td>
+                        <td className="p-3">{number(campaign.internalAd?.events?.filter((event) => event.eventType === "IMPRESSION").length || 0)}</td>
+                        <td className="p-3">{number(campaign.internalAd?.events?.filter((event) => event.eventType === "CLICK").length || 0)}</td>
                         <td className="p-3">
                           <div className="flex flex-wrap gap-2">
                             {campaign.status === "ACTIVE" ? (
@@ -578,7 +674,7 @@ export default function AdvertisingView() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={7} className="p-8 text-center text-slate-400">
+                      <td colSpan={9} className="p-8 text-center text-slate-400">
                         No hay campañas para este filtro.
                       </td>
                     </tr>
