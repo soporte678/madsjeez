@@ -18,6 +18,8 @@
     "migrate:resolve:meli-ads-history-rolled-back": "prisma migrate resolve --rolled-back 20260506141500_add_meli_ads_history",
     "migrate:resolve:last-catalog-import-applied": "prisma migrate resolve --applied 20260506203000_add_last_catalog_import_at",
     "migrate:resolve:last-catalog-import-rolled-back": "prisma migrate resolve --rolled-back 20260506203000_add_last_catalog_import_at",
+    "migrate:resolve:meli-multi-account-applied": "prisma migrate resolve --applied 20260518200000_meli_multi_account_sync",
+    "migrate:resolve:meli-multi-account-rolled-back": "prisma migrate resolve --rolled-back 20260518200000_meli_multi_account_sync",
     "scrape:aliexpress": "tsx scripts/scrape-aliexpress-images.ts",
     "download:meli-images": "tsx scripts/download-meli-images.ts",
     "download:meli-seller": "tsx scripts/download-meli-seller.ts --store bullservice",

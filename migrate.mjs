@@ -8,7 +8,7 @@
  * @see https://supabase.com/docs/guides/database/connecting-to-postgres
  *
  * P3009 / deriva DDL: migraciones conocidas (`add_access_key`, `add_seller_meli_oauth`, `add_meli_ads_history`,
- * `add_last_catalog_import_at`) pueden quedar desalineadas; por defecto `migrate resolve` según probe y se reintenta deploy.
+ * `add_last_catalog_import_at`, `meli_multi_account_sync`) pueden quedar desalineadas; por defecto `migrate resolve` según probe y se reintenta deploy.
  * P3018 "already exists" (tabla, enum, columna): `resolve --applied` automático para esos nombres de migración.
  * Desactivar: `PRISMA_MIGRATE_AUTO_RESOLVE_P3009_DRIFT=0` o `PRISMA_MIGRATE_AUTO_RESOLVE_ACCESS_KEY=0` (alias).
  */
@@ -16,7 +16,7 @@ import { spawnSync } from "child_process";
 import path from "path";
 import { existsSync } from "fs";
 
-const MIGRATE_SCRIPT_TAG = "migrate.mjs 20260514i (P3018 last_catalog_import_at column drift)";
+const MIGRATE_SCRIPT_TAG = "migrate.mjs 20260519a (P3009 meli_multi_account_sync)";
 
 try {
   const dotenv = await import("dotenv");
@@ -371,6 +371,40 @@ async function probePublicColumnExists(dbUrl, tableName, columnName) {
     );
     await client.end();
     return { ok: true, exists: Boolean(r.rows[0]?.colExists) };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { ok: false, error: msg.slice(0, 320) };
+  }
+}
+
+/**
+ * Estado de `20260518200000_meli_multi_account_sync`: columnas clave en products y seller_meli_oauth.
+ * `safeApplied`: true solo si el DDL principal está completo (no marcar --applied a medias).
+ */
+async function probeMeliMultiAccountSyncMigrationState(dbUrl) {
+  if (!dbUrl || typeof dbUrl !== "string") return { ok: false, reason: "no-url" };
+  try {
+    const productsCol = await probePublicColumnExists(dbUrl, "products", "meli_oauth_account_id");
+    const sellerCol = await probePublicColumnExists(dbUrl, "seller_meli_oauth", "is_primary");
+    const categoriesCol = await probePublicColumnExists(dbUrl, "categories", "meli_category_id");
+    if (!productsCol.ok || !sellerCol.ok || !categoriesCol.ok) {
+      return {
+        ok: false,
+        error: [productsCol.error, sellerCol.error, categoriesCol.error]
+          .filter(Boolean)
+          .join("; ")
+          .slice(0, 320),
+      };
+    }
+    const safeApplied =
+      productsCol.exists === true && sellerCol.exists === true && categoriesCol.exists === true;
+    return {
+      ok: true,
+      productsMeliOAuthAccountId: productsCol.exists,
+      sellerIsPrimary: sellerCol.exists,
+      categoriesMeliCategoryId: categoriesCol.exists,
+      safeApplied,
+    };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return { ok: false, error: msg.slice(0, 320) };
@@ -815,6 +849,61 @@ await (async function runMigrate() {
           } else {
             console.error(
               "[migrate] P3009 add_last_catalog_import_at: probe falló:",
+              probe.error || probe.reason || "(sin detalle)"
+            );
+          }
+        } else if (failedName === "20260518200000_meli_multi_account_sync") {
+          const probe = await probeMeliMultiAccountSyncMigrationState(tunedMigrateUrl);
+          agentDebugLog({
+            hypothesisId: probe.ok && probe.safeApplied ? "H2" : probe.ok ? "H3" : "H5",
+            location: "migrate.mjs:p3009-probe-meli-multi-account",
+            message: "meli-multi-account-sync-state",
+            data: {
+              failedMigration: failedName,
+              probeOk: probe.ok,
+              safeApplied: probe.ok ? probe.safeApplied : null,
+              productsMeliOAuthAccountId: probe.ok ? probe.productsMeliOAuthAccountId : null,
+              sellerIsPrimary: probe.ok ? probe.sellerIsPrimary : null,
+              probeError: probe.ok ? undefined : probe.error ?? probe.reason,
+            },
+          });
+
+          if (probe.ok) {
+            const autoOff = isPrismaMigrateAutoResolveP3009DriftDisabled();
+            if (!autoOff && probe.safeApplied) {
+              console.warn(
+                "[migrate] P3009 meli_multi_account_sync: columnas ML presentes; migrate resolve --applied automático. " +
+                  "Desactivar: PRISMA_MIGRATE_AUTO_RESOLVE_P3009_DRIFT=0"
+              );
+              const { status: rs, combined: rc } = runPrismaMigrateResolve(tunedMigrateUrl, failedName, true);
+              if (rs === 0) {
+                console.warn("[migrate] migrate resolve OK; reintentando migrate deploy (mismo bucle).");
+                attempt -= 1;
+                continue attemptLoop;
+              }
+              console.error("[migrate] migrate resolve falló:", rc.slice(0, 900));
+            } else if (!autoOff && !probe.safeApplied) {
+              console.warn(
+                "[migrate] P3009 meli_multi_account_sync: columnas ML ausentes; migrate resolve --rolled-back automático."
+              );
+              const { status: rs, combined: rc } = runPrismaMigrateResolve(tunedMigrateUrl, failedName, false);
+              if (rs === 0) {
+                console.warn("[migrate] migrate resolve OK; reintentando migrate deploy (mismo bucle).");
+                attempt -= 1;
+                continue attemptLoop;
+              }
+              console.error("[migrate] migrate resolve falló:", rc.slice(0, 900));
+            } else {
+              console.error(
+                `[migrate] P3009 meli_multi_account_sync: products.meli_oauth_account_id=${probe.productsMeliOAuthAccountId} ` +
+                  `seller.is_primary=${probe.sellerIsPrimary}. ` +
+                  (autoOff ? "Auto-resolve desactivado. " : "") +
+                  "Manual: `npm run migrate:resolve:meli-multi-account-applied` o `migrate:resolve:meli-multi-account-rolled-back` y redeploy."
+              );
+            }
+          } else {
+            console.error(
+              "[migrate] P3009 meli_multi_account_sync: probe falló:",
               probe.error || probe.reason || "(sin detalle)"
             );
           }
