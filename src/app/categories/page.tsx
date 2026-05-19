@@ -239,17 +239,17 @@ export default async function CategoriesPage() {
                     </div>
                   </Link>
 
-                  <div className="p-5">
+                  <div className="surface-dark-panel border-t border-white/6 p-5">
                     {category.children.length > 0 ? (
                       <div className="space-y-1">
                         {category.children.slice(0, 8).map((child) => (
                           <Link
                             key={child.id}
                             href={`/category/${child.slug}`}
-                            className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium text-[#1e293b] transition-colors hover:bg-slate-50 hover:text-[#3483fa]"
+                            className="surface-dark-link flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium"
                           >
                             <span className="truncate">{child.name}</span>
-                            <span className="ml-3 text-[11px] font-bold text-[#64748b]">
+                            <span className="surface-dark-count ml-3 text-[11px] font-bold">
                               {formatCount(child.productCount)}
                             </span>
                           </Link>
@@ -257,7 +257,7 @@ export default async function CategoriesPage() {
                         {category.children.length > 8 && (
                           <Link
                             href={`/category/${category.slug}`}
-                            className="mt-2 inline-flex items-center gap-2 rounded-full bg-slate-50 px-3 py-2 text-sm font-bold text-[#3483fa] transition-colors hover:bg-slate-100"
+                            className="surface-dark-cta mt-2 inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-bold"
                           >
                             Ver {category.children.length - 8} subcategorias mas
                             <ArrowRight className="h-4 w-4" />
@@ -267,7 +267,7 @@ export default async function CategoriesPage() {
                     ) : (
                       <Link
                         href={`/search?category=${encodeURIComponent(category.id)}`}
-                        className="inline-flex items-center gap-2 rounded-full bg-slate-50 px-3 py-2 text-sm font-bold text-[#3483fa] transition-colors hover:bg-slate-100"
+                        className="surface-dark-cta inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-bold"
                       >
                         Ver publicaciones
                         <ArrowRight className="h-4 w-4" />

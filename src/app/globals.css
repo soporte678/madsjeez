@@ -181,6 +181,42 @@ body {
   font-family: var(--font-outfit);
 }
 
+.surface-dark-panel {
+  background: linear-gradient(180deg, #162033 0%, #111827 52%, #0f172a 100%);
+  color: #e5eefc;
+}
+
+.surface-dark-link {
+  color: #dbe7ff;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.surface-dark-link:hover {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.surface-dark-muted {
+  color: #94a3b8;
+}
+
+.surface-dark-count {
+  color: #93c5fd;
+}
+
+.surface-dark-cta {
+  background: rgba(255, 255, 255, 0.06);
+  color: #e0ecff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.surface-dark-cta:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border-color: rgba(125, 211, 252, 0.45);
+}
+
 /* Utilidades de marca — botones alineados al sistema de tokens */
 .btn-primary-solid {
   display: inline-flex;
