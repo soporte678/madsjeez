@@ -63,9 +63,11 @@ export async function resolveCategoryForMeliId(
     }
 
     const slugBase = slugify(node.name);
-    const slug = parentId ? `${slugBase}-${node.id.replace(/[^a-zA-Z0-9]/g, "").slice(-8).toLowerCase()}` : slugBase;
+    const slug: string = parentId
+      ? `${slugBase}-${node.id.replace(/[^a-zA-Z0-9]/g, "").slice(-8).toLowerCase()}`
+      : slugBase;
 
-    const created = await prisma.category.upsert({
+    const created: { id: string } = await prisma.category.upsert({
       where: { slug },
       update: { name: node.name, meliCategoryId: node.id, parentId },
       create: {
@@ -75,6 +77,7 @@ export async function resolveCategoryForMeliId(
         parentId,
         description: `Mercado Libre · ${node.id}`,
       },
+      select: { id: true },
     });
     parentId = created.id;
   }
