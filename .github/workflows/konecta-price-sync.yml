@@ -1,0 +1,39 @@
+name: Konecta price sync
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Solo simular (true/false)"
+        required: false
+        default: "false"
+  push:
+    branches: [main]
+    paths:
+      - "src/data/konecta-catalog-abril-2026.json"
+      - "src/lib/konecta/**"
+      - "scripts/run-konecta-price-sync.ts"
+      - ".github/workflows/konecta-price-sync.yml"
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx prisma generate
+
+      - name: Actualizar precios Konecta (vianferreteria)
+        run: npx tsx scripts/run-konecta-price-sync.ts
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          KONECTA_DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
