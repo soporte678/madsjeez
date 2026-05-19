@@ -217,6 +217,24 @@ body {
   border-color: rgba(125, 211, 252, 0.45);
 }
 
+.theme-accent-text {
+  color: var(--theme-accent-light);
+}
+
+.theme-accent-link {
+  color: var(--theme-accent-light);
+  transition: color 0.2s ease;
+}
+
+.theme-accent-link:hover {
+  color: color-mix(in srgb, var(--theme-accent-light) 85%, black 15%);
+}
+
+.theme-accent-bg {
+  background-color: var(--theme-accent-light);
+  color: #ffffff;
+}
+
 /* Utilidades de marca — botones alineados al sistema de tokens */
 .btn-primary-solid {
   display: inline-flex;
@@ -714,6 +732,57 @@ body {
 :root[data-theme="dark"] .hover\:text-slate-900:hover,
 :root[data-theme="dark"] .hover\:text-gray-800:hover {
   color: #f8fafc !important;
+}
+
+:root[data-theme="dark"] .theme-accent-text,
+:root[data-theme="dark"] .theme-accent-link {
+  color: var(--theme-accent-dark) !important;
+}
+
+:root[data-theme="dark"] .theme-accent-link:hover {
+  color: #ffffff !important;
+}
+
+:root[data-theme="dark"] .theme-accent-bg {
+  background-color: var(--theme-accent-dark) !important;
+  color: #08111f !important;
+}
+
+:root[data-theme="dark"] .text-\[\#3483fa\],
+:root[data-theme="dark"] .text-\[\#3483FA\],
+:root[data-theme="dark"] .text-blue-600,
+:root[data-theme="dark"] .text-blue-700,
+:root[data-theme="dark"] .text-purple-700 {
+  color: #93c5fd !important;
+}
+
+:root[data-theme="dark"] .hover\:text-\[\#3483fa\]:hover,
+:root[data-theme="dark"] .hover\:text-\[\#3483FA\]:hover,
+:root[data-theme="dark"] .hover\:text-blue-700:hover,
+:root[data-theme="dark"] .hover\:text-blue-600:hover {
+  color: #ffffff !important;
+}
+
+:root[data-theme="dark"] .bg-\[\#ebebeb\],
+:root[data-theme="dark"] .bg-\[\#f5f5f5\],
+:root[data-theme="dark"] .bg-\[\#f1f5f9\],
+:root[data-theme="dark"] .bg-blue-50 {
+  background-color: var(--background) !important;
+}
+
+:root[data-theme="dark"] .border-\[\#eee\],
+:root[data-theme="dark"] .border-\[\#ddd\],
+:root[data-theme="dark"] .border-\[\#eaeaea\] {
+  border-color: var(--border) !important;
+}
+
+:root[data-theme="dark"] .text-\[\#333\],
+:root[data-theme="dark"] .text-\[\#666\] {
+  color: #cbd5e1 !important;
+}
+
+:root[data-theme="dark"] .fill-\[\#3483fa\] {
+  fill: #93c5fd !important;
 }
 
 /* Sombras y bloques */

@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import type { CSSProperties } from "react";
 import { Header } from "@/components/Header";
 import { ProductCard } from "@/components/product/ProductCard";
 import { Card, CardContent } from "@/components/ui/card";
@@ -24,6 +25,30 @@ import { seedCategoriesIfEmpty } from "@/lib/seed-categories";
 import { buildCategorySeo } from "@/lib/categorySeo";
 
 const SITE_URL = "https://www.madsjeez.com.ar";
+
+function getDarkAccent(accent: string) {
+  const accentMap: Record<string, string> = {
+    "#2563eb": "#93c5fd",
+    "#16a34a": "#86efac",
+    "#ca8a04": "#fcd34d",
+    "#0891b2": "#67e8f9",
+    "#334155": "#cbd5e1",
+    "#0f766e": "#5eead4",
+    "#1d4ed8": "#93c5fd",
+    "#b45309": "#fdba74",
+    "#4f46e5": "#a5b4fc",
+    "#ea580c": "#fdba74",
+    "#7c3aed": "#c4b5fd",
+    "#475569": "#cbd5e1",
+    "#7c2d12": "#fdba74",
+    "#db2777": "#f9a8d4",
+    "#be185d": "#f9a8d4",
+    "#0284c7": "#7dd3fc",
+    "#3483fa": "#93c5fd",
+  };
+
+  return accentMap[accent] ?? "#93c5fd";
+}
 
 type CategoryView = {
   id: string;
@@ -173,6 +198,10 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
     },
     subcategories
   );
+  const accentVars = {
+    "--theme-accent-light": seo.theme.accent,
+    "--theme-accent-dark": getDarkAccent(seo.theme.accent),
+  } as CSSProperties;
 
   const breadcrumbJsonLd = {
     "@context": "https://schema.org",
@@ -242,7 +271,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f7f8fb]">
+    <div className="min-h-screen flex flex-col bg-[#f7f8fb]" style={accentVars}>
       <Header user={null} />
       <main className="flex-1">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(breadcrumbJsonLd) }} />
@@ -271,7 +300,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
           <div className="mx-auto grid max-w-[1280px] gap-8 px-4 pb-10 pt-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/80 px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm">
-                <Sparkles className="h-3.5 w-3.5" style={{ color: seo.theme.accent }} />
+                <Sparkles className="theme-accent-text h-3.5 w-3.5" />
                 Landing SEO de categoria
               </div>
               <h1 className="mt-4 max-w-4xl text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
@@ -289,7 +318,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
               </div>
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                 <Link href={searchHref}>
-                  <Button className="h-12 rounded-xl px-5 text-sm font-semibold text-white" style={{ backgroundColor: seo.theme.accent }}>
+                  <Button className="theme-accent-bg h-12 rounded-xl px-5 text-sm font-semibold">
                     <Search className="mr-2 h-4 w-4" />
                     Ver publicaciones de {category.name}
                   </Button>
@@ -337,7 +366,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
             <Card className="rounded-3xl border-0 bg-white shadow-sm">
               <CardContent className="p-6">
                 <div className="flex items-center gap-3">
-                  <Target className="h-5 w-5" style={{ color: seo.theme.accent }} />
+                  <Target className="theme-accent-text h-5 w-5" />
                   <h2 className="text-lg font-black text-slate-950">Por que esta categoria atrae compradores</h2>
                 </div>
                 <div className="mt-4 space-y-3">
@@ -354,7 +383,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
             <Card className="rounded-3xl border-0 bg-white shadow-sm">
               <CardContent className="p-6">
                 <div className="flex items-center gap-3">
-                  <LineChart className="h-5 w-5" style={{ color: seo.theme.accent }} />
+                  <LineChart className="theme-accent-text h-5 w-5" />
                   <h2 className="text-lg font-black text-slate-950">Por que ayuda a captar vendedores</h2>
                 </div>
                 <div className="mt-4 space-y-3">
@@ -371,7 +400,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
             <Card className="rounded-3xl border-0 bg-white shadow-sm">
               <CardContent className="p-6">
                 <div className="flex items-center gap-3">
-                  <ShieldCheck className="h-5 w-5" style={{ color: seo.theme.accent }} />
+                  <ShieldCheck className="theme-accent-text h-5 w-5" />
                   <h2 className="text-lg font-black text-slate-950">Roadmap para dominar el rubro</h2>
                 </div>
                 <div className="mt-4 space-y-3">
@@ -391,7 +420,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
             <Card className="rounded-3xl border-0 bg-white shadow-sm">
               <CardContent className="p-6">
                 <div className="flex items-center gap-3">
-                  <Compass className="h-5 w-5" style={{ color: seo.theme.accent }} />
+                  <Compass className="theme-accent-text h-5 w-5" />
                   <h2 className="text-2xl font-black text-slate-950">Busquedas que esta landing ataca</h2>
                 </div>
                 <p className="mt-2 text-sm leading-6 text-slate-600">{seo.editorialIntro}</p>
@@ -447,7 +476,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
                   {seo.faq.map((item) => (
                     <div key={item.question} className="rounded-2xl border border-slate-200 px-4 py-4">
                       <div className="flex items-start gap-3">
-                        <CircleHelp className="mt-0.5 h-5 w-5 flex-shrink-0" style={{ color: seo.theme.accent }} />
+                        <CircleHelp className="theme-accent-text mt-0.5 h-5 w-5 flex-shrink-0" />
                         <div>
                           <h3 className="text-sm font-bold text-slate-900">{item.question}</h3>
                           <p className="mt-2 text-sm leading-6 text-slate-600">{item.answer}</p>
@@ -465,7 +494,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
             <div className="rounded-[28px] border border-black/5 bg-white p-6 shadow-sm">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="text-sm font-semibold" style={{ color: seo.theme.accent }}>Catalogo activo</p>
+                <p className="theme-accent-text text-sm font-semibold">Catalogo activo</p>
                 <h2 className="mt-1 text-2xl font-black text-slate-950">Publicaciones destacadas de {category.name}</h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
                   La landing conecta con productos reales para que Google vea una categoria viva y el usuario encuentre
@@ -474,7 +503,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
               </div>
               <div className="flex items-center gap-3 text-sm text-slate-500">
                 <span>{formatCount(products.length)} resultados visibles</span>
-                <Link href={searchHref} className="font-semibold hover:underline" style={{ color: seo.theme.accent }}>
+                <Link href={searchHref} className="theme-accent-link font-semibold hover:underline">
                   Ir al buscador
                 </Link>
               </div>
@@ -482,7 +511,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
 
               <div className="mt-5 grid gap-4 rounded-3xl bg-slate-50 p-5 lg:grid-cols-[0.9fr_1.1fr]">
                 <div>
-                  <p className="text-sm font-semibold" style={{ color: seo.theme.accent }}>Oportunidad comercial</p>
+                  <p className="theme-accent-text text-sm font-semibold">Oportunidad comercial</p>
                   <h3 className="mt-2 text-xl font-black text-slate-950">Que tipo de vendedores deberiamos atraer primero</h3>
                   <p className="mt-3 text-sm leading-6 text-slate-600">{seo.editorialClosing}</p>
                 </div>
@@ -512,7 +541,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
                   </p>
                   <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
                     <Link href="/vender">
-                      <Button className="h-11 rounded-xl px-5 text-sm font-semibold text-white" style={{ backgroundColor: seo.theme.accent }}>
+                      <Button className="theme-accent-bg h-11 rounded-xl px-5 text-sm font-semibold">
                         Publicar en {category.name}
                       </Button>
                     </Link>
