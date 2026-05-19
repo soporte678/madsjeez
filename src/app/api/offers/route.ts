@@ -11,8 +11,8 @@ const DEMO_OFFERS = [
     price: 305821,
     original_price: 552000,
     discount_percentage: 45,
-    badge: "OFERTA IMPERDIBLE",
-    badge_color: "blue",
+    badge: "SUPER OFERTA",
+    badge_color: "hot",
     image: "https://images.unsplash.com/photo-1626428442728-c977e508e46a?w=400&h=400&fit=crop",
     seller: { id: "demo-seller-1", full_name: "GROPEK", reputation: "platinum" },
     category: { name: "Herramientas", slug: "herramientas" },
@@ -28,8 +28,8 @@ const DEMO_OFFERS = [
     price: 62662,
     original_price: 140000,
     discount_percentage: 75,
-    badge: "OFERTA DEL DÍA",
-    badge_color: "orange",
+    badge: "DESTACADO HOY",
+    badge_color: "day",
     image: "https://images.unsplash.com/photo-1581094794329-c8112c4e5c8b?w=400&h=400&fit=crop",
     seller: { id: "demo-seller-2", full_name: "RAISMAN", reputation: "gold" },
     category: { name: "Jardín", slug: "jardin" },
@@ -45,8 +45,8 @@ const DEMO_OFFERS = [
     price: 8999,
     original_price: 19998,
     discount_percentage: 55,
-    badge: "MÁS VENDIDO",
-    badge_color: "green",
+    badge: "TOP EN VENTAS",
+    badge_color: "top",
     image: "https://images.unsplash.com/photo-1598618827237-66c8bc62c8b3?w=400&h=400&fit=crop",
     seller: { id: "demo-seller-3", full_name: "ELECTROLAND", reputation: "platinum" },
     category: { name: "Belleza", slug: "belleza" },
@@ -62,8 +62,8 @@ const DEMO_OFFERS = [
     price: 127376,
     original_price: 241000,
     discount_percentage: 47,
-    badge: "OFERTA IMPERDIBLE",
-    badge_color: "blue",
+    badge: "SUPER OFERTA",
+    badge_color: "hot",
     image: "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=400&h=400&fit=crop",
     seller: { id: "demo-seller-4", full_name: "PIDEWEB", reputation: "gold" },
     category: { name: "Jardín", slug: "jardin" },
@@ -79,8 +79,8 @@ const DEMO_OFFERS = [
     price: 69550,
     original_price: 94000,
     discount_percentage: 26,
-    badge: "OFERTA DEL DÍA",
-    badge_color: "orange",
+    badge: "DESTACADO HOY",
+    badge_color: "day",
     image: "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&h=400&fit=crop",
     seller: { id: "demo-seller-5", full_name: "Alpine Color", reputation: "silver" },
     category: { name: "Hogar", slug: "hogar" },
@@ -96,8 +96,8 @@ const DEMO_OFFERS = [
     price: 101300,
     original_price: 126625,
     discount_percentage: 20,
-    badge: "MÁS VENDIDO",
-    badge_color: "green",
+    badge: "TOP EN VENTAS",
+    badge_color: "top",
     image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400&h=400&fit=crop",
     seller: { id: "demo-seller-6", full_name: "Alpine Natural", reputation: "platinum" },
     category: { name: "Salud", slug: "salud" },
@@ -113,8 +113,8 @@ const DEMO_OFFERS = [
     price: 537199,
     original_price: 849999,
     discount_percentage: 37,
-    badge: "OFERTA DEL DÍA",
-    badge_color: "orange",
+    badge: "DESTACADO HOY",
+    badge_color: "day",
     image: "https://images.unsplash.com/photo-1593784991095-a205069470b6?w=400&h=400&fit=crop",
     seller: { id: "demo-seller-7", full_name: "DIMAKER ACERCANDO OPORTUNIDADES", reputation: "gold" },
     category: { name: "Electrónica", slug: "electronica" },
@@ -130,8 +130,8 @@ const DEMO_OFFERS = [
     price: 191060,
     original_price: 248000,
     discount_percentage: 23,
-    badge: "OFERTA DEL DÍA",
-    badge_color: "orange",
+    badge: "DESTACADO HOY",
+    badge_color: "day",
     image: "https://images.unsplash.com/photo-1581147036324-c17ac41dd161?w=400&h=400&fit=crop",
     seller: { id: "demo-seller-8", full_name: "FASTSTORE", reputation: "platinum" },
     category: { name: "Herramientas", slug: "herramientas" },
@@ -147,8 +147,8 @@ const DEMO_OFFERS = [
     price: 183754,
     original_price: 549998,
     discount_percentage: 66,
-    badge: "OFERTA DEL DÍA",
-    badge_color: "orange",
+    badge: "DESTACADO HOY",
+    badge_color: "day",
     image: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=400&h=400&fit=crop",
     seller: { id: "demo-seller-9", full_name: "Sealy", reputation: "platinum" },
     category: { name: "Hogar", slug: "hogar" },
@@ -164,8 +164,8 @@ const DEMO_OFFERS = [
     price: 854999,
     original_price: 899999,
     discount_percentage: 5,
-    badge: "OFERTA DEL DÍA",
-    badge_color: "orange",
+    badge: "DESTACADO HOY",
+    badge_color: "day",
     image: "https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=400&h=400&fit=crop",
     seller: { id: "demo-seller-10", full_name: "Motorola", reputation: "platinum" },
     category: { name: "Celulares", slug: "celulares" },
@@ -181,8 +181,8 @@ const DEMO_OFFERS = [
     price: 310275,
     original_price: 565000,
     discount_percentage: 45,
-    badge: "OFERTA DEL DÍA",
-    badge_color: "orange",
+    badge: "DESTACADO HOY",
+    badge_color: "day",
     image: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400&h=400&fit=crop",
     seller: { id: "demo-seller-11", full_name: "EXO", reputation: "gold" },
     category: { name: "Computación", slug: "computacion" },
@@ -198,8 +198,8 @@ const DEMO_OFFERS = [
     price: 704999,
     original_price: 874998,
     discount_percentage: 19,
-    badge: "OFERTA DEL DÍA",
-    badge_color: "orange",
+    badge: "DESTACADO HOY",
+    badge_color: "day",
     image: "https://images.unsplash.com/photo-1591488320449-011701bb6704?w=400&h=400&fit=crop",
     seller: { id: "demo-seller-12", full_name: "COMPUFANSTORE", reputation: "platinum" },
     category: { name: "Computación", slug: "computacion" },
@@ -304,22 +304,21 @@ export async function GET(req: Request) {
         ? Math.round(((product.compare_price - product.price) / product.compare_price) * 100)
         : 0
 
-      // Determinar badge según descuento
-      let badge = "OFERTA"
-      let badgeColor = "blue"
-      
+      let badge = "OFERTA MADSJEEZ"
+      let badgeColor = "day"
+
       if (discountPercentage >= 50) {
-        badge = "OFERTA IMPERDIBLE"
-        badgeColor = "blue"
-      } else if (discountPercentage >= 30) {
-        badge = "OFERTA DEL DÍA"
-        badgeColor = "orange"
+        badge = "SUPER OFERTA"
+        badgeColor = "hot"
       } else if (product.is_flash_deal) {
-        badge = "OFERTA RELÁMPAGO"
-        badgeColor = "purple"
+        badge = "FLASH MADSJEEZ"
+        badgeColor = "flash"
+      } else if (discountPercentage >= 30) {
+        badge = "DESTACADO HOY"
+        badgeColor = "day"
       } else if (product.sales > 100) {
-        badge = "MÁS VENDIDO"
-        badgeColor = "green"
+        badge = "TOP EN VENTAS"
+        badgeColor = "top"
       }
 
       return {
