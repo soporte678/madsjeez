@@ -115,21 +115,21 @@ export default async function CategoriesPage() {
               </div>
               <h1 className="mt-5 max-w-4xl text-4xl font-black uppercase tracking-tight text-white md:text-6xl">
                 Todas las categorias
-                <span className="block text-white/35">del marketplace</span>
+                <span className="block text-white/60">del marketplace</span>
               </h1>
-              <p className="mt-5 max-w-3xl text-sm leading-7 text-white/72 md:text-base">
+              <p className="mt-5 max-w-3xl text-sm leading-7 text-white/85 md:text-base">
                 Explora cada rubro con la misma lógica comercial del home: entradas claras, foco en descubrimiento, enlaces
                 internos fuertes y una estructura pensada para captar compradores y también vendedores en Argentina.
               </p>
 
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
                 <form action="/search" className="relative w-full max-w-[560px]">
-                  <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/40" />
+                  <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/65" />
                   <input
                     name="q"
                     type="search"
                     placeholder="Buscar productos, marcas o categorias"
-                    className="h-13 w-full rounded-2xl border border-white/10 bg-white/8 pl-12 pr-4 text-sm text-white shadow-[0_20px_40px_rgba(0,0,0,0.2)] backdrop-blur-sm outline-none placeholder:text-white/45 focus:border-[#00b4d8]/50"
+                    className="h-13 w-full rounded-2xl border border-white/20 bg-white/14 pl-12 pr-4 text-sm font-medium text-white shadow-[0_20px_40px_rgba(0,0,0,0.2)] backdrop-blur-sm outline-none placeholder:text-white/65 focus:border-[#00b4d8]/60"
                   />
                 </form>
                 <Link
@@ -153,7 +153,7 @@ export default async function CategoriesPage() {
                   className={`rounded-3xl bg-gradient-to-br ${item.tone} p-4 text-white shadow-[0_24px_60px_rgba(0,0,0,0.28)]`}
                 >
                   <p className="text-3xl font-black tracking-tight">{item.value}</p>
-                  <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.18em] text-white/70">{item.label}</p>
+                  <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.18em] text-white/82">{item.label}</p>
                 </div>
               ))}
             </div>
@@ -184,10 +184,10 @@ export default async function CategoriesPage() {
                 tone: "from-[#f0fdfa] to-white text-[#00b4d8]",
               },
             ].map((item) => (
-              <div key={item.title} className={`rounded-2xl bg-gradient-to-br ${item.tone} p-5`}>
+              <div key={item.title} className={`rounded-2xl bg-gradient-to-br ${item.tone} p-5 shadow-sm`}>
                 <item.icon className="h-5 w-5" />
-                <h2 className="mt-3 text-lg font-black tracking-tight text-slate-900">{item.title}</h2>
-                <p className="mt-2 text-sm leading-6 text-slate-600">{item.copy}</p>
+                <h2 className="mt-3 text-lg font-black tracking-tight text-slate-950">{item.title}</h2>
+                <p className="mt-2 text-sm leading-6 text-slate-700">{item.copy}</p>
               </div>
             ))}
           </div>
@@ -223,13 +223,13 @@ export default async function CategoriesPage() {
                             <h2 className="text-lg font-black tracking-tight text-slate-900 group-hover:text-[#f97316]">
                               {category.name}
                             </h2>
-                            <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                            <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
                               {formatCount(category.productCount)} productos activos
                             </p>
                           </div>
                           <ArrowRight className="mt-1 h-4 w-4 text-slate-300 transition-all duration-300 group-hover:translate-x-1 group-hover:text-[#f97316]" />
                         </div>
-                        <p className="mt-3 text-sm leading-6 text-slate-600">
+                        <p className="mt-3 text-sm leading-6 text-slate-700">
                           Entra a la categoria, descubre subrubros y abre una ruta directa hacia productos y oportunidades de venta.
                         </p>
                       </div>
@@ -246,7 +246,7 @@ export default async function CategoriesPage() {
                             className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm text-slate-700 transition-colors hover:bg-slate-50 hover:text-[#3483fa]"
                           >
                             <span className="truncate">{child.name}</span>
-                            <span className="ml-3 text-[11px] font-semibold text-slate-400">
+                            <span className="ml-3 text-[11px] font-semibold text-slate-500">
                               {formatCount(child.productCount)}
                             </span>
                           </Link>
