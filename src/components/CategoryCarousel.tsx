@@ -50,8 +50,14 @@ const iconBySlug: Record<string, { Icon: React.ComponentType<{ className?: strin
   'camaras': { Icon: MonitorSmartphone, accent: 'text-indigo-200', ring: 'from-indigo-400/20 to-sky-500/10' },
 }
 
+const SCROLL_INTERVAL_MS = 15_000
+/** Cada cuántos desplazamientos se invierte el sentido (además del rebote en los bordes). */
+const REVERSE_EVERY_TICKS = 3
+
 export function CategoryCarousel({ categories }: CategoryCarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
+  const scrollDirectionRef = useRef<1 | -1>(1)
+  const ticksSinceReverseRef = useRef(0)
   const [showLeftArrow, setShowLeftArrow] = useState(false)
   const [showRightArrow, setShowRightArrow] = useState(true)
 
@@ -73,13 +79,36 @@ export function CategoryCarousel({ categories }: CategoryCarouselProps) {
     const el = scrollRef.current
     if (!el || categories.length <= 3) return
 
+    scrollDirectionRef.current = 1
+    ticksSinceReverseRef.current = 0
+
     const interval = setInterval(() => {
       const { scrollLeft, clientWidth, scrollWidth } = el
       const step = clientWidth * 0.75
-      const next = scrollLeft + step
-      const maxLeft = scrollWidth - clientWidth
-      el.scrollTo({ left: next >= maxLeft - 10 ? 0 : next, behavior: "smooth" })
-    }, 7000)
+      const maxLeft = Math.max(0, scrollWidth - clientWidth)
+      let direction = scrollDirectionRef.current
+
+      let next = scrollLeft + direction * step
+
+      if (next <= 0) {
+        next = 0
+        direction = 1
+        ticksSinceReverseRef.current = 0
+      } else if (next >= maxLeft - 8) {
+        next = maxLeft
+        direction = -1
+        ticksSinceReverseRef.current = 0
+      } else {
+        ticksSinceReverseRef.current += 1
+        if (ticksSinceReverseRef.current >= REVERSE_EVERY_TICKS) {
+          direction = direction === 1 ? -1 : 1
+          ticksSinceReverseRef.current = 0
+        }
+      }
+
+      scrollDirectionRef.current = direction
+      el.scrollTo({ left: next, behavior: "smooth" })
+    }, SCROLL_INTERVAL_MS)
 
     return () => clearInterval(interval)
   }, [categories.length])
