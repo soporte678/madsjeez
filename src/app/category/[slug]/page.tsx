@@ -271,14 +271,14 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f7f8fb]" style={accentVars}>
+    <div className="category-page min-h-screen flex flex-col bg-[#f7f8fb]" style={accentVars}>
       <Header user={null} />
       <main className="flex-1">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(breadcrumbJsonLd) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(faqJsonLd) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(itemListJsonLd) }} />
 
-        <section className={`border-b border-black/5 bg-gradient-to-br ${seo.theme.surface}`}>
+        <section className={`category-hero-surface border-b border-black/5 bg-gradient-to-br ${seo.theme.surface}`}>
           <div className="mx-auto max-w-[1280px] px-4 py-4 text-sm text-slate-500">
             <nav className="flex flex-wrap items-center gap-2">
               <Link href="/" className="hover:text-[#3483FA]">Inicio</Link>
