@@ -211,7 +211,7 @@ async function main() {
 
   const { data: seller, error: sellerErr } = await supabase
     .from("users")
-    .select("id, email, seller_name")
+    .select("id, email")
     .eq("email", SELLER_EMAIL)
     .maybeSingle();
 
