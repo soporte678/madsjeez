@@ -37,8 +37,8 @@ export function ProductCarousel({
   title,
   products,
   linkText,
-  autoRotate = false,
-  rotateIntervalMs = 12000,
+  autoRotate = true,
+  rotateIntervalMs = 6000,
 }: ProductCarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [showLeftArrow, setShowLeftArrow] = useState(false)
@@ -60,7 +60,7 @@ export function ProductCarousel({
 
   useEffect(() => {
     const el = scrollRef.current
-    if (!autoRotate || !el || products.length <= 4) return
+    if (!autoRotate || !el || products.length <= 1) return
 
     const rotate = () => {
       const { scrollLeft, clientWidth, scrollWidth } = el

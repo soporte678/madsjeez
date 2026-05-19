@@ -29,11 +29,8 @@ import {
   ShoppingBag,
   Users,
 } from "lucide-react"
-import { ProductCarousel } from "@/components/ProductCarousel"
 import { CategoryCarousel } from "@/components/CategoryCarousel"
 import { RotatingProductCarousel } from "@/components/RotatingProductCarousel"
-import { createClient } from "@/lib/supabase/client"
-import { hasValidProductImageUrl, primaryImageUrlFromRows } from "@/lib/productVisibility"
 import { PaidAdBannerSlot } from "@/components/ads/PaidAdBannerSlot"
 
 const categoriesData = [
@@ -154,10 +151,6 @@ const heroBanners = [
 
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0)
-  const [products, setProducts] = useState<any[]>([])
-  const [recentProducts, setRecentProducts] = useState<any[]>([])
-  const [repurchaseProducts, setRepurchaseProducts] = useState<any[]>([])
-  const [extraProducts, setExtraProducts] = useState<any[]>([])
 
   const heroSlideCount = heroBanners.length
 
@@ -168,71 +161,6 @@ export default function Home() {
     }, 6000)
     return () => clearInterval(timer)
   }, [heroSlideCount])
-
-  useEffect(() => {
-    let cancelled = false
-    async function fetchProducts() {
-      try {
-        const supabase = createClient()
-        const { data: prods, error } = await supabase
-          .from("products")
-          .select(
-            "id, title, price, original_price, free_shipping, sales, stock, product_images(url, is_primary, order)"
-          )
-          .eq("is_active", true)
-          .gt("stock", 0)
-          .order("created_at", { ascending: false })
-          .limit(120)
-
-        if (cancelled) return
-        if (error) {
-          console.error("Landing products:", error.message)
-          setProducts([])
-          setRecentProducts([])
-          setRepurchaseProducts([])
-          setExtraProducts([])
-          return
-        }
-        if (!prods?.length) {
-          setProducts([])
-          setRecentProducts([])
-          setRepurchaseProducts([])
-          setExtraProducts([])
-          return
-        }
-        const mapped = prods.map((p: Record<string, unknown>) => ({
-          id: p.id as string,
-          title: p.title as string,
-          price: p.price as number,
-          original_price: p.original_price as number | null,
-          free_shipping: p.free_shipping as boolean,
-          sales: (p.sales as number) || 0,
-          stock: (p.stock as number) || 0,
-          image: primaryImageUrlFromRows(
-            p.product_images as Array<{ url?: unknown; is_primary?: boolean; order?: number }> | null
-          ),
-        }))
-        const withImages = mapped.filter((p) => p.stock > 0 && hasValidProductImageUrl(p.image))
-        const sortedBySales = [...withImages].sort((a, b) => (b.sales || 0) - (a.sales || 0))
-        setProducts(withImages.slice(0, 12))
-        setRecentProducts(withImages.slice(12, 24))
-        setRepurchaseProducts(sortedBySales.slice(0, 12))
-        setExtraProducts(withImages.slice(24, 36))
-      } catch (e) {
-        if (!cancelled) {
-          console.error("Landing products fetch:", e)
-          setProducts([])
-          setRecentProducts([])
-          setRepurchaseProducts([])
-          setExtraProducts([])
-        }
-      }
-    }
-    void fetchProducts()
-    return () => {
-      cancelled = true
-    }
-  }, [])
 
   return (
     <main className="min-h-screen bg-mesh font-outfit text-slate-900 overflow-x-hidden">
@@ -372,26 +300,25 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Publicidad paga — demos con marca MADSJEEZ */}
+      {/* MADSJEEZ Ads: espacios patrocinados con campanas reales */}
       <section
         id="publicidad-madsjeez-ads"
         className="max-w-[1184px] mx-auto px-4 mb-12 scroll-mt-24 rounded-2xl border-2 border-[#3483FA]/35 bg-gradient-to-b from-sky-50/95 via-white to-white py-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]"
-        aria-label="Espacios publicitarios en venta — demos"
+        aria-label="Espacios publicitarios activos del marketplace"
       >
         <p className="mb-2 text-center text-xs font-black uppercase tracking-[0.2em] text-[#2968c8]">
           MADSJEEZ Ads
         </p>
         <p className="mb-6 text-center text-lg font-black text-slate-900 md:text-xl">
-          Publicidad en la tienda — espacios disponibles
+          Publicidad activa dentro del marketplace
         </p>
         <p className="mb-6 max-w-2xl mx-auto text-center text-sm text-slate-600 leading-relaxed">
-          Los bloques de abajo son <strong className="text-slate-900">demostraciones</strong>: cualquier vendedor o anunciante puede{" "}
-          <strong className="text-slate-900">contratar estos lugares</strong> para promocionar su marca o productos.
+          Los bloques de abajo muestran campanas activas de vendedores reales dentro del marketplace. La rotacion y la prioridad responden a la inversion de cada campana.
         </p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <PaidAdBannerSlot variant="tile" demoIndex={0} />
-          <PaidAdBannerSlot variant="tile" demoIndex={1} />
-          <PaidAdBannerSlot variant="tile" demoIndex={2} />
+          <PaidAdBannerSlot variant="tile" slotKey="home-tile-1" />
+          <PaidAdBannerSlot variant="tile" slotKey="home-tile-2" />
+          <PaidAdBannerSlot variant="tile" slotKey="home-tile-3" />
         </div>
       </section>
 
@@ -491,12 +418,12 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Franja publicitaria paga (demo — leaderboard) */}
+      {/* Franja publicitaria principal */}
       <section className="max-w-[1184px] mx-auto px-4 mb-10" aria-labelledby="ads-franja-1">
         <p id="ads-franja-1" className="sr-only">
-          Franja publicitaria tipo banner horizontal — demo MADSJEEZ Ads
+          Franja publicitaria horizontal de MADSJEEZ Ads
         </p>
-        <PaidAdBannerSlot variant="leaderboard" demoIndex={3} />
+        <PaidAdBannerSlot variant="leaderboard" slotKey="home-leaderboard-top" />
       </section>
 
       {/* MADS PRO BANNER */}
@@ -507,7 +434,7 @@ export default function Home() {
               <div className="bg-gradient-to-r from-[#db2777] to-[#ec4899] text-white px-4 py-1.5 rounded-full font-black italic text-lg tracking-tight shadow-lg shadow-pink-500/30 animate-pulse-glow">
                 mads+
               </div>
-              <span className="font-bold text-[15px] text-white">VIV?? MADSJEEZ COMO UN EXPERTO</span>
+              <span className="font-bold text-[15px] text-white">VIVI MADSJEEZ COMO UN EXPERTO</span>
             </div>
             <Link href="/subscriptions" className="bg-gradient-to-r from-[#f97316] to-[#ff9100] hover:from-[#ff9100] hover:to-[#ffb703] text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/50 transition-all duration-300 hover:-translate-y-1 btn-shine">
               Suscribirme desde $ 3.490
@@ -515,10 +442,10 @@ export default function Home() {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6">
             {[
-              { Icon: Package, color: 'text-fuchsia-300', bg: 'from-fuchsia-500/15 to-pink-500/10', text: 'Env??os gratis en productos desde $ 16.000' },
+              { Icon: Package, color: 'text-fuchsia-300', bg: 'from-fuchsia-500/15 to-pink-500/10', text: 'Envios gratis en productos desde $ 16.000' },
               { Icon: Tv, color: 'text-sky-300', bg: 'from-sky-500/15 to-blue-500/10', text: 'Las mejores plataformas de entretenimiento' },
               { Icon: CreditCard, color: 'text-violet-300', bg: 'from-violet-500/15 to-fuchsia-500/10', text: 'Hasta 3 cuotas extra en tus compras' },
-              { Icon: Utensils, color: 'text-orange-300', bg: 'from-orange-500/15 to-amber-500/10', text: 'Env??os gratis en pedidos de Restaurantes' },
+              { Icon: Utensils, color: 'text-orange-300', bg: 'from-orange-500/15 to-amber-500/10', text: 'Envios gratis en pedidos de restaurantes' },
             ].map((item, idx) => (
               <div key={idx} className="group flex flex-col items-center text-center cursor-pointer rounded-[22px] border border-white/8 bg-white/[0.02] px-4 py-5 transition-all duration-300 hover:-translate-y-1 hover:border-white/15 hover:bg-white/[0.04]">
                 <div className="w-24 h-24 mb-4 relative flex justify-center items-center">
@@ -532,7 +459,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 1. CARRUSEL: Productos rotativos - Cambia cada 1 minuto */}
+      {/* 1. CARRUSEL: Productos rotativos — catálogo completo en rotación automática */}
       <section className="max-w-[1184px] mx-auto px-4">
         <RotatingProductCarousel
           title="Productos destacados"
@@ -540,43 +467,45 @@ export default function Home() {
         />
       </section>
 
-      {/* 2. CARRUSEL: Relacionado con tus visitas (datos reales) */}
+      {/* 2. CARRUSEL: Relacionado con tus visitas */}
       <section className="max-w-[1184px] mx-auto px-4">
-        <ProductCarousel
+        <RotatingProductCarousel
           title="Relacionado con tus visitas"
-          products={products}
-          autoRotate
+          subtitle="Rotación automática en todo el catálogo"
+          offset={12}
         />
       </section>
 
-      {/* 3. CARRUSEL: Elegidos para vos (datos reales) */}
+      {/* 3. CARRUSEL: Elegidos para vos */}
       <section className="max-w-[1184px] mx-auto px-4">
-        <ProductCarousel
+        <RotatingProductCarousel
           title="Elegidos para vos"
-          products={recentProducts}
-          autoRotate
+          subtitle="Nuevas combinaciones cada pocos segundos"
+          offset={24}
         />
       </section>
 
-      <section className="max-w-[1184px] mx-auto px-4 mb-8" aria-label="Franja publicitaria entre carruseles — demo">
-        <PaidAdBannerSlot variant="leaderboard" demoIndex={0} />
+      <section className="max-w-[1184px] mx-auto px-4 mb-8" aria-label="Franja publicitaria entre carruseles">
+        <PaidAdBannerSlot variant="leaderboard" slotKey="home-leaderboard-middle" />
       </section>
 
-      {/* 4. CARRUSEL: MAs productos reales del marketplace */}
+      {/* 4. CARRUSEL: Herramientas (completa con otras categorías si faltan) */}
       <section className="max-w-[1184px] mx-auto px-4">
-        <ProductCarousel
-          title="Mas productos del marketplace"
-          products={extraProducts}
-          autoRotate
+        <RotatingProductCarousel
+          title="Herramientas y ferretería"
+          subtitle="Prioriza la categoría; si no hay stock, muestra el resto del catálogo"
+          offset={36}
+          categorySlug="herramientas"
         />
       </section>
 
-      {/* 5. CARRUSEL: Vuelven a comprar */}
+      {/* 5. CARRUSEL: Deportes */}
       <section className="max-w-[1184px] mx-auto px-4">
-        <ProductCarousel
-          title="Productos que otras personas vuelven a comprar"
-          products={repurchaseProducts}
-          autoRotate
+        <RotatingProductCarousel
+          title="Deportes y fitness"
+          subtitle="Rotación continua con respaldo de otras categorías"
+          offset={48}
+          categorySlug="deportes"
         />
       </section>
 
@@ -585,7 +514,7 @@ export default function Home() {
         <RotatingProductCarousel
           title="Más productos para vos"
           subtitle="Nuestra selección se renueva automáticamente"
-          offset={12}
+          offset={60}
         />
       </section>
 
@@ -594,14 +523,14 @@ export default function Home() {
           MADSJEEZ Ads
         </p>
         <p className="mb-2 text-center text-base font-bold text-white md:text-lg">
-          Sponsors & marcas ??? espacios rectangulares
+          Sponsors y marcas en espacios rectangulares
         </p>
         <p className="mb-5 text-center text-sm text-slate-300">
-          Espacios premium para anunciantes, marcas y campa??as dentro del home del marketplace.
+          Espacios premium para anunciantes, marcas y campanas activas dentro del home del marketplace.
         </p>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <PaidAdBannerSlot variant="rectangle" demoIndex={1} />
-          <PaidAdBannerSlot variant="rectangle" demoIndex={2} />
+          <PaidAdBannerSlot variant="rectangle" slotKey="home-rectangle-1" />
+          <PaidAdBannerSlot variant="rectangle" slotKey="home-rectangle-2" />
         </div>
       </section>
 
@@ -610,12 +539,13 @@ export default function Home() {
         <CategoryCarousel categories={categoriesData} />
       </section>
 
-      {/* 6. CARRUSEL: También puede interesarte */}
+      {/* 7. CARRUSEL: También puede interesarte */}
       <section className="max-w-[1184px] mx-auto px-4">
-        <ProductCarousel
+        <RotatingProductCarousel
           title="También puede interesarte"
-          products={[...recentProducts].reverse()}
-          autoRotate
+          subtitle="Más productos del marketplace en rotación"
+          offset={72}
+          categorySlug="computacion"
         />
       </section>
 
@@ -867,3 +797,4 @@ export default function Home() {
     </main>
   )
 }
+

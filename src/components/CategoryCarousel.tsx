@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import {
   CarFront,
   ChevronLeft,
@@ -68,6 +68,21 @@ export function CategoryCarousel({ categories }: CategoryCarouselProps) {
     setShowLeftArrow(scrollLeft > 0)
     setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 10)
   }
+
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el || categories.length <= 3) return
+
+    const interval = setInterval(() => {
+      const { scrollLeft, clientWidth, scrollWidth } = el
+      const step = clientWidth * 0.75
+      const next = scrollLeft + step
+      const maxLeft = scrollWidth - clientWidth
+      el.scrollTo({ left: next >= maxLeft - 10 ? 0 : next, behavior: "smooth" })
+    }, 7000)
+
+    return () => clearInterval(interval)
+  }, [categories.length])
 
   return (
     <div className="group relative mb-14 mt-6 w-full max-w-[1184px] rounded-[28px] border border-white/8 bg-[linear-gradient(180deg,rgba(15,23,42,0.62)_0%,rgba(15,23,42,0.34)_100%)] p-4 shadow-[0_24px_55px_rgba(2,6,23,0.16)] backdrop-blur-md md:p-5">

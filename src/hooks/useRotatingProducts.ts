@@ -1,85 +1,163 @@
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react";
 
-interface Product {
-  id: string
-  title: string
-  price: number
-  originalPrice?: number | null
-  freeShipping?: boolean
-  sales?: number
-  image?: string | null
-  category?: string
-  sellerName?: string
-  reputation?: string
+export type CatalogCarouselProduct = {
+  id: string;
+  title: string;
+  price: number;
+  originalPrice?: number | null;
+  freeShipping?: boolean;
+  sales?: number;
+  image?: string | null;
+  category?: string;
+  categorySlug?: string;
+  sellerName?: string;
+  reputation?: string;
+};
+
+const CAROUSEL_SIZE = 12;
+const ROTATION_INTERVAL_MS = 18_000;
+const POOL_REFETCH_MS = 4 * 60_000;
+const PAGE_SIZE = 300;
+
+function shuffleWithSeed<T>(items: T[], seed: number): T[] {
+  const arr = [...items];
+  let s = seed % 2147483647;
+  if (s <= 0) s += 2147483646;
+  for (let i = arr.length - 1; i > 0; i--) {
+    s = (s * 16807) % 2147483647;
+    const j = s % (i + 1);
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
 }
 
-const CAROUSEL_SIZE = 12 // Show 12 products at a time
-const ROTATION_INTERVAL = 60 * 1000 // 60 seconds
-const FETCH_INTERVAL = 5 * 60 * 1000 // Refetch every 5 minutes
+function timeSeed(): number {
+  const t = new Date();
+  return t.getFullYear() * 10000 + (t.getMonth() + 1) * 100 + t.getDate() * 10 + t.getHours();
+}
 
-export function useRotatingProducts(offset: number = 0) {
-  const [allProducts, setAllProducts] = useState<Product[]>([])
-  const [visibleProducts, setVisibleProducts] = useState<Product[]>([])
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [loading, setLoading] = useState(true)
-  const [totalCount, setTotalCount] = useState(0)
+function sliceRotated<T>(arr: T[], start: number, size: number): T[] {
+  if (arr.length === 0) return [];
+  const s = start % arr.length;
+  const out: T[] = [];
+  for (let i = 0; i < Math.min(size, arr.length); i++) {
+    out.push(arr[(s + i) % arr.length]);
+  }
+  return out;
+}
 
-  const effectiveOffset = offset % (allProducts.length || 1)
+type UseRotatingProductsOptions = {
+  offset?: number;
+  categorySlug?: string | null;
+  visibleCount?: number;
+};
 
-  const fetchProducts = useCallback(async () => {
-    try {
-      setLoading(true)
-      const res = await fetch("/api/products/carousel")
-      const data = await res.json()
-      if (data.products) {
-        setAllProducts(data.products)
-        setTotalCount(data.total || 0)
-        // Initial slice with offset applied
-        const start = offset % data.products.length
-        const rotated = [...data.products.slice(start), ...data.products.slice(0, start)]
-        setVisibleProducts(rotated.slice(0, CAROUSEL_SIZE))
-        setCurrentIndex(0)
+export function useRotatingProducts(options: UseRotatingProductsOptions = {}) {
+  const offset = options.offset ?? 0;
+  const categorySlug = options.categorySlug ?? null;
+  const visibleCount = options.visibleCount ?? CAROUSEL_SIZE;
+
+  const [pool, setPool] = useState<CatalogCarouselProduct[]>([]);
+  const [visibleProducts, setVisibleProducts] = useState<CatalogCarouselProduct[]>([]);
+  const [rotationStep, setRotationStep] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
+  const poolRef = useRef<CatalogCarouselProduct[]>([]);
+
+  const applyVisible = useCallback(
+    (source: CatalogCarouselProduct[], step: number) => {
+      if (source.length === 0) {
+        setVisibleProducts([]);
+        return;
       }
+      const start = (offset + step * visibleCount) % source.length;
+      setVisibleProducts(sliceRotated(source, start, visibleCount));
+    },
+    [offset, visibleCount]
+  );
+
+  const loadFullPool = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      if (categorySlug) {
+        const res = await fetch(
+          `/api/products/carousel?mode=pool&poolCap=1200&categorySlug=${encodeURIComponent(categorySlug)}`
+        );
+        const data = await res.json();
+        const list = (data.products || []) as CatalogCarouselProduct[];
+        poolRef.current = list;
+        setPool(list);
+        setTotalCount(data.total || list.length);
+        applyVisible(list, 0);
+        setRotationStep(0);
+        return;
+      }
+
+      const all: CatalogCarouselProduct[] = [];
+      let pageOffset = 0;
+      let total = 0;
+      let hasMore = true;
+
+      while (hasMore) {
+        const res = await fetch(
+          `/api/products/carousel?mode=page&pageSize=${PAGE_SIZE}&pageOffset=${pageOffset}`
+        );
+        const data = await res.json();
+        const batch = (data.products || []) as CatalogCarouselProduct[];
+        total = data.total || total;
+        all.push(...batch);
+        hasMore = Boolean(data.hasMore) && batch.length > 0;
+        pageOffset += batch.length;
+        if (batch.length === 0) break;
+        if (all.length >= 5000) break;
+      }
+
+      const shuffled = shuffleWithSeed(all, timeSeed() + offset);
+      poolRef.current = shuffled;
+      setPool(shuffled);
+      setTotalCount(total);
+      applyVisible(shuffled, 0);
+      setRotationStep(0);
     } catch (e) {
-      console.error("Failed to fetch carousel products:", e)
+      console.error("Failed to load carousel pool:", e);
+      poolRef.current = [];
+      setPool([]);
+      setVisibleProducts([]);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [offset])
+  }, [applyVisible, categorySlug, offset, visibleCount]);
 
-  // Initial fetch
   useEffect(() => {
-    fetchProducts()
-  }, [fetchProducts])
+    void loadFullPool();
+  }, [loadFullPool]);
 
-  // Periodic refetch
   useEffect(() => {
-    const interval = setInterval(fetchProducts, FETCH_INTERVAL)
-    return () => clearInterval(interval)
-  }, [fetchProducts])
+    const id = setInterval(() => void loadFullPool(), POOL_REFETCH_MS);
+    return () => clearInterval(id);
+  }, [loadFullPool]);
 
-  // Rotation every 60 seconds — each carousel rotates independently
   useEffect(() => {
-    if (allProducts.length <= CAROUSEL_SIZE) return
+    const source = poolRef.current;
+    if (source.length <= visibleCount) return;
 
     const interval = setInterval(() => {
-      setCurrentIndex(prev => {
-        const next = prev + CAROUSEL_SIZE
-        const maxStart = Math.max(0, allProducts.length - CAROUSEL_SIZE)
-        const newIndex = next > maxStart ? 0 : next
-        // Apply offset so each carousel shows different products
-        const effectiveStart = (newIndex + effectiveOffset) % allProducts.length
-        const rotated = [
-          ...allProducts.slice(effectiveStart),
-          ...allProducts.slice(0, effectiveStart)
-        ]
-        setVisibleProducts(rotated.slice(0, CAROUSEL_SIZE))
-        return newIndex
-      })
-    }, ROTATION_INTERVAL)
+      setRotationStep((prev) => {
+        const next = prev + 1;
+        applyVisible(source, next);
+        return next;
+      });
+    }, ROTATION_INTERVAL_MS);
 
-    return () => clearInterval(interval)
-  }, [allProducts, effectiveOffset])
+    return () => clearInterval(interval);
+  }, [pool.length, applyVisible, visibleCount]);
 
-  return { products: visibleProducts, allProducts, loading, totalCount }
+  return {
+    products: visibleProducts,
+    allProducts: pool,
+    loading,
+    totalCount,
+    rotationStep,
+  };
 }

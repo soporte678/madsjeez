@@ -10,10 +10,20 @@ interface RotatingProductCarouselProps {
   title: string
   subtitle?: string
   offset?: number
+  categorySlug?: string | null
+  autoScroll?: boolean
+  scrollIntervalMs?: number
 }
 
-export function RotatingProductCarousel({ title, subtitle, offset = 0 }: RotatingProductCarouselProps) {
-  const { products, loading, totalCount } = useRotatingProducts(offset)
+export function RotatingProductCarousel({
+  title,
+  subtitle,
+  offset = 0,
+  categorySlug = null,
+  autoScroll = true,
+  scrollIntervalMs = 5500,
+}: RotatingProductCarouselProps) {
+  const { products, loading, totalCount } = useRotatingProducts({ offset, categorySlug })
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
@@ -37,6 +47,24 @@ export function RotatingProductCarousel({ title, subtitle, offset = 0 }: Rotatin
       return () => el.removeEventListener("scroll", checkScroll)
     }
   }, [displayProducts])
+
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!autoScroll || !el || displayProducts.length <= 2) return
+
+    const tick = () => {
+      const { scrollLeft, clientWidth, scrollWidth } = el
+      const nextLeft = scrollLeft + clientWidth * 0.85
+      const maxLeft = scrollWidth - clientWidth
+      el.scrollTo({
+        left: nextLeft >= maxLeft - 8 ? 0 : nextLeft,
+        behavior: "smooth",
+      })
+    }
+
+    const interval = setInterval(tick, scrollIntervalMs)
+    return () => clearInterval(interval)
+  }, [autoScroll, displayProducts.length, scrollIntervalMs])
 
   const scroll = (direction: "left" | "right") => {
     if (scrollRef.current) {
