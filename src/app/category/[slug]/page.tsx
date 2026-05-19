@@ -5,10 +5,24 @@ import { Header } from "@/components/Header";
 import { ProductCard } from "@/components/product/ProductCard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { ChevronRight, Package, Search, SlidersHorizontal } from "lucide-react";
+import {
+  ArrowRight,
+  BadgeCheck,
+  ChevronRight,
+  CircleHelp,
+  LineChart,
+  Package,
+  Search,
+  ShieldCheck,
+  Sparkles,
+  Store,
+  Target,
+} from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { seedCategoriesIfEmpty } from "@/lib/seed-categories";
+import { buildCategorySeo } from "@/lib/categorySeo";
+
+const SITE_URL = "https://www.madsjeez.com.ar";
 
 type CategoryView = {
   id: string;
@@ -16,6 +30,12 @@ type CategoryView = {
   slug: string;
   description: string | null;
   parentId: string | null;
+};
+
+type Subcategory = {
+  id: string;
+  name: string;
+  slug: string;
 };
 
 async function getCategory(slug: string): Promise<CategoryView | null> {
@@ -60,7 +80,7 @@ async function getCategoryProducts(categoryIds: string[]) {
   }));
 }
 
-async function getSubcategories(parentId: string | null) {
+async function getSubcategories(parentId: string | null): Promise<Subcategory[]> {
   return prisma.category.findMany({
     where: { parentId },
     select: { id: true, name: true, slug: true },
@@ -76,6 +96,14 @@ async function getParentCategory(parentId: string | null) {
   });
 }
 
+function toJsonLd(data: unknown) {
+  return JSON.stringify(data).replace(/</g, "\\u003c");
+}
+
+function formatCount(value: number) {
+  return value.toLocaleString("es-AR");
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const category = await getCategory(slug);
@@ -84,9 +112,39 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     return { title: "Categoria no encontrada | MADSJEEZ" };
   }
 
+  const [subcategories, parentCategory] = await Promise.all([
+    getSubcategories(category.id),
+    getParentCategory(category.parentId),
+  ]);
+  const seo = buildCategorySeo(
+    {
+      name: category.name,
+      slug: category.slug,
+      description: category.description,
+      parentName: parentCategory?.name || null,
+    },
+    subcategories
+  );
+  const canonical = `${SITE_URL}/category/${category.slug}`;
+
   return {
-    title: `${category.name} | MADSJEEZ`,
-    description: category.description || `Compra y vende ${category.name} en MADSJEEZ Argentina.`,
+    title: seo.seoTitle,
+    description: seo.seoDescription,
+    keywords: seo.keywords,
+    alternates: { canonical },
+    openGraph: {
+      title: seo.seoTitle,
+      description: seo.seoDescription,
+      url: canonical,
+      siteName: "MADSJEEZ",
+      type: "website",
+      locale: "es_AR",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: seo.seoTitle,
+      description: seo.seoDescription,
+    },
   };
 }
 
@@ -105,180 +163,334 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
   const categoryIds = [category.id, ...subcategories.map((subcategory) => subcategory.id)];
   const products = await getCategoryProducts(categoryIds);
   const searchHref = `/search?category=${encodeURIComponent(category.id)}`;
+  const seo = buildCategorySeo(
+    {
+      name: category.name,
+      slug: category.slug,
+      description: category.description,
+      parentName: parentCategory?.name || null,
+    },
+    subcategories
+  );
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Inicio",
+        item: SITE_URL,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Categorias",
+        item: `${SITE_URL}/categories`,
+      },
+      ...(parentCategory
+        ? [
+            {
+              "@type": "ListItem",
+              position: 3,
+              name: parentCategory.name,
+              item: `${SITE_URL}/category/${parentCategory.slug}`,
+            },
+            {
+              "@type": "ListItem",
+              position: 4,
+              name: category.name,
+              item: `${SITE_URL}/category/${category.slug}`,
+            },
+          ]
+        : [
+            {
+              "@type": "ListItem",
+              position: 3,
+              name: category.name,
+              item: `${SITE_URL}/category/${category.slug}`,
+            },
+          ]),
+    ],
+  };
+
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: seo.faq.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.answer,
+      },
+    })),
+  };
+
+  const itemListJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: `Productos de ${category.name} en MADSJEEZ`,
+    itemListElement: products.slice(0, 12).map((product, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      url: `${SITE_URL}/product/${product.id}`,
+      name: product.title,
+    })),
+  };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-[#f7f8fb]">
       <Header user={null} />
+      <main className="flex-1">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(breadcrumbJsonLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(faqJsonLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(itemListJsonLd) }} />
 
-      <main className="flex-1 bg-[#EBEBEB]">
-        <div className="bg-white border-b">
-          <div className="container mx-auto px-4 py-3">
-            <nav className="flex items-center gap-2 text-sm text-gray-500">
+        <section className={`border-b border-black/5 bg-gradient-to-br ${seo.theme.surface}`}>
+          <div className="mx-auto max-w-[1280px] px-4 py-4 text-sm text-slate-500">
+            <nav className="flex flex-wrap items-center gap-2">
               <Link href="/" className="hover:text-[#3483FA]">Inicio</Link>
               <ChevronRight className="h-4 w-4" />
               <Link href="/categories" className="hover:text-[#3483FA]">Categorias</Link>
-              <ChevronRight className="h-4 w-4" />
               {parentCategory && (
                 <>
+                  <ChevronRight className="h-4 w-4" />
                   <Link href={`/category/${parentCategory.slug}`} className="hover:text-[#3483FA]">
                     {parentCategory.name}
                   </Link>
-                  <ChevronRight className="h-4 w-4" />
                 </>
               )}
-              <span className="text-gray-900 font-medium">{category.name}</span>
+              <ChevronRight className="h-4 w-4" />
+              <span className="font-medium text-slate-800">{category.name}</span>
             </nav>
           </div>
-        </div>
 
-        <div className="bg-white">
-          <div className="container mx-auto px-4 py-8">
-            <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-              <div>
-                <h1 className="text-3xl font-bold">{category.name}</h1>
-                {category.description && (
-                  <p className="text-gray-600 mt-1">{category.description}</p>
-                )}
-                <p className="text-sm text-gray-500 mt-2">
-                  {products.length} productos disponibles
-                  {subcategories.length > 0 ? ` en ${subcategories.length + 1} secciones` : ""}
-                </p>
+          <div className="mx-auto grid max-w-[1280px] gap-8 px-4 pb-10 pt-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/80 px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm">
+                <Sparkles className="h-3.5 w-3.5" style={{ color: seo.theme.accent }} />
+                Landing SEO de categoria
+              </div>
+              <h1 className="mt-4 max-w-4xl text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
+                {seo.heroTitle}
+              </h1>
+              <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600 sm:text-lg">
+                {seo.heroDescription}
+              </p>
+              <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                {seo.marketHighlights.map((item) => (
+                  <div key={item} className="rounded-2xl border border-white/70 bg-white/80 p-4 shadow-sm">
+                    <p className="text-sm font-semibold text-slate-900">{item}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                <Link href={searchHref}>
+                  <Button className="h-12 rounded-xl px-5 text-sm font-semibold text-white" style={{ backgroundColor: seo.theme.accent }}>
+                    <Search className="mr-2 h-4 w-4" />
+                    Ver publicaciones de {category.name}
+                  </Button>
+                </Link>
+                <Link href="/vender">
+                  <Button variant="outline" className="h-12 rounded-xl border-slate-300 bg-white/90 px-5 text-sm font-semibold text-slate-900">
+                    <Store className="mr-2 h-4 w-4" />
+                    Quiero vender en esta categoria
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className={`rounded-3xl bg-gradient-to-br ${seo.theme.glow} p-6 text-white shadow-xl sm:col-span-2`}>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/70">Potencial comercial</p>
+                <p className="mt-3 text-2xl font-black">Pagina pensada para atraer trafico organico y convertirlo en demanda real.</p>
+                <div className="mt-5 grid grid-cols-3 gap-3">
+                  <div className="rounded-2xl bg-white/10 p-4">
+                    <p className="text-2xl font-black">{formatCount(products.length)}</p>
+                    <p className="text-xs text-white/70">publicaciones visibles</p>
+                  </div>
+                  <div className="rounded-2xl bg-white/10 p-4">
+                    <p className="text-2xl font-black">{formatCount(subcategories.length)}</p>
+                    <p className="text-xs text-white/70">subcategorias enlazadas</p>
+                  </div>
+                  <div className="rounded-2xl bg-white/10 p-4">
+                    <p className="text-2xl font-black">SEO</p>
+                    <p className="text-xs text-white/70">metadata y FAQs activas</p>
+                  </div>
+                </div>
               </div>
 
-              <Link href={searchHref}>
-                <Button className="bg-[#3483FA] hover:bg-[#2968c8]">
-                  <Search className="h-4 w-4 mr-2" />
-                  Buscar en esta categoria
-                </Button>
-              </Link>
+              {seo.theme.heroLines.map((line) => (
+                <div key={line} className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
+                  <p className="text-sm leading-6 text-slate-700">{line}</p>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
+        </section>
 
-        <div className="container mx-auto px-4 py-6">
-          <div className="grid lg:grid-cols-4 gap-6">
-            <div className="space-y-4">
-              {subcategories.length > 0 && (
-                <Card>
-                  <CardContent className="p-4">
-                    <h3 className="font-semibold mb-4">Subcategorias</h3>
-                    <div className="space-y-2">
-                      {subcategories.map((sub) => (
-                        <Link
-                          key={sub.id}
-                          href={`/category/${sub.slug}`}
-                          className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                        >
-                          <span>{sub.name}</span>
-                        </Link>
-                      ))}
+        <section className="mx-auto max-w-[1280px] px-4 py-8">
+          <div className="grid gap-5 lg:grid-cols-3">
+            <Card className="rounded-3xl border-0 bg-white shadow-sm">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3">
+                  <Target className="h-5 w-5" style={{ color: seo.theme.accent }} />
+                  <h2 className="text-lg font-black text-slate-950">Por que esta categoria atrae compradores</h2>
+                </div>
+                <div className="mt-4 space-y-3">
+                  {seo.theme.buyerBenefits.map((benefit) => (
+                    <div key={benefit} className="flex gap-3">
+                      <BadgeCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#00a650]" />
+                      <p className="text-sm leading-6 text-slate-600">{benefit}</p>
                     </div>
-                  </CardContent>
-                </Card>
-              )}
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
 
-              <Card>
-                <CardContent className="p-4">
-                  <h3 className="font-semibold mb-4 flex items-center gap-2">
-                    <SlidersHorizontal className="h-4 w-4" />
-                    Filtros rapidos
-                  </h3>
-
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-sm font-medium mb-2">Explorar</p>
-                      <div className="space-y-2">
-                        <Link
-                          href={searchHref}
-                          className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm hover:border-[#3483FA] hover:text-[#3483FA]"
-                        >
-                          <Search className="h-4 w-4" />
-                          Abrir en buscador
-                        </Link>
-                        <Link
-                          href={`${searchHref}&sort=price_asc`}
-                          className="block rounded-md border px-3 py-2 text-sm hover:border-[#3483FA] hover:text-[#3483FA]"
-                        >
-                          Menor precio
-                        </Link>
-                        <Link
-                          href={`${searchHref}&sort=newest`}
-                          className="block rounded-md border px-3 py-2 text-sm hover:border-[#3483FA] hover:text-[#3483FA]"
-                        >
-                          Mas recientes
-                        </Link>
-                      </div>
+            <Card className="rounded-3xl border-0 bg-white shadow-sm">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3">
+                  <LineChart className="h-5 w-5" style={{ color: seo.theme.accent }} />
+                  <h2 className="text-lg font-black text-slate-950">Por que ayuda a captar vendedores</h2>
+                </div>
+                <div className="mt-4 space-y-3">
+                  {seo.theme.sellerBenefits.map((benefit) => (
+                    <div key={benefit} className="flex gap-3">
+                      <ArrowRight className="mt-0.5 h-4 w-4 flex-shrink-0 text-slate-400" />
+                      <p className="text-sm leading-6 text-slate-600">{benefit}</p>
                     </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
 
-                    <Separator />
-
-                    <div>
-                      <p className="text-sm font-medium mb-2">Condicion</p>
-                      <div className="space-y-2">
-                        <Link href={`${searchHref}&condition=new`} className="block text-sm hover:text-[#3483FA]">
-                          Nuevo
-                        </Link>
-                        <Link href={`${searchHref}&condition=used`} className="block text-sm hover:text-[#3483FA]">
-                          Usado
-                        </Link>
-                        <Link href={`${searchHref}&condition=refurbished`} className="block text-sm hover:text-[#3483FA]">
-                          Reacondicionado
-                        </Link>
-                      </div>
+            <Card className="rounded-3xl border-0 bg-white shadow-sm">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3">
+                  <ShieldCheck className="h-5 w-5" style={{ color: seo.theme.accent }} />
+                  <h2 className="text-lg font-black text-slate-950">Roadmap para dominar el rubro</h2>
+                </div>
+                <div className="mt-4 space-y-3">
+                  {seo.theme.roadmap.map((item) => (
+                    <div key={item} className="rounded-2xl bg-slate-50 px-4 py-3">
+                      <p className="text-sm font-medium text-slate-700">{item}</p>
                     </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
 
-                    <Separator />
-
-                    <div>
-                      <p className="text-sm font-medium mb-2">Envio</p>
-                      <Link href={`${searchHref}&free_shipping=true`} className="block text-sm hover:text-[#3483FA]">
-                        Envio gratis
+        <section className="mx-auto max-w-[1280px] px-4 pb-8">
+          <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+            <Card className="rounded-3xl border-0 bg-white shadow-sm">
+              <CardContent className="p-6">
+                <h2 className="text-2xl font-black text-slate-950">Explora subcategorias y entradas internas</h2>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  Cada enlace interno ayuda a posicionar mejor la categoria y al mismo tiempo empuja al usuario hacia resultados
+                  con mas intencion de compra.
+                </p>
+                <div className="mt-5 grid gap-2 sm:grid-cols-2">
+                  {subcategories.length > 0 ? (
+                    subcategories.map((subcategory) => (
+                      <Link
+                        key={subcategory.id}
+                        href={`/category/${subcategory.slug}`}
+                        className="group flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 hover:border-slate-300 hover:bg-white"
+                      >
+                        <span>{subcategory.name}</span>
+                        <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-slate-700" />
                       </Link>
+                    ))
+                  ) : (
+                    <Link
+                      href={searchHref}
+                      className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 hover:border-slate-300 hover:bg-white"
+                    >
+                      <span>Explorar publicaciones de {category.name}</span>
+                      <ArrowRight className="h-4 w-4 text-slate-400" />
+                    </Link>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-3xl border-0 bg-white shadow-sm">
+              <CardContent className="p-6">
+                <h2 className="text-2xl font-black text-slate-950">Preguntas frecuentes sobre {category.name}</h2>
+                <div className="mt-5 space-y-3">
+                  {seo.faq.map((item) => (
+                    <div key={item.question} className="rounded-2xl border border-slate-200 px-4 py-4">
+                      <div className="flex items-start gap-3">
+                        <CircleHelp className="mt-0.5 h-5 w-5 flex-shrink-0" style={{ color: seo.theme.accent }} />
+                        <div>
+                          <h3 className="text-sm font-bold text-slate-900">{item.question}</h3>
+                          <p className="mt-2 text-sm leading-6 text-slate-600">{item.answer}</p>
+                        </div>
+                      </div>
                     </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-[1280px] px-4 pb-10">
+          <div className="rounded-[28px] border border-black/5 bg-white p-6 shadow-sm">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold" style={{ color: seo.theme.accent }}>Catalogo activo</p>
+                <h2 className="mt-1 text-2xl font-black text-slate-950">Publicaciones destacadas de {category.name}</h2>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+                  La landing conecta con productos reales para que Google vea una categoria viva y el usuario encuentre
+                  inventario apenas aterriza.
+                </p>
+              </div>
+              <div className="flex items-center gap-3 text-sm text-slate-500">
+                <span>{formatCount(products.length)} resultados visibles</span>
+                <Link href={searchHref} className="font-semibold hover:underline" style={{ color: seo.theme.accent }}>
+                  Ir al buscador
+                </Link>
+              </div>
+            </div>
+
+            {products.length > 0 ? (
+              <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+                {products.slice(0, 12).map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            ) : (
+              <Card className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50 shadow-none">
+                <CardContent className="p-12 text-center">
+                  <Package className="mx-auto h-16 w-16 text-slate-300" />
+                  <h3 className="mt-4 text-xl font-black text-slate-900">Esta categoria esta lista para crecer</h3>
+                  <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+                    Ya quedo preparada para indexar, atraer trafico organico y recibir vendedores. El siguiente salto es sumar
+                    mas inventario y reforzar subcategorias con contenido y publicaciones.
+                  </p>
+                  <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+                    <Link href="/vender">
+                      <Button className="h-11 rounded-xl px-5 text-sm font-semibold text-white" style={{ backgroundColor: seo.theme.accent }}>
+                        Publicar en {category.name}
+                      </Button>
+                    </Link>
+                    <Link href="/vender/importador">
+                      <Button variant="outline" className="h-11 rounded-xl border-slate-300 bg-white px-5 text-sm font-semibold text-slate-900">
+                        Importar catalogo
+                      </Button>
+                    </Link>
                   </div>
                 </CardContent>
               </Card>
-            </div>
-
-            <div className="lg:col-span-3">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
-                <p className="text-sm text-gray-500">
-                  Mostrando {products.length} resultados
-                </p>
-                <div className="flex items-center gap-2">
-                  <Link href={`${searchHref}&sort=price_asc`} className="text-sm text-[#3483FA] hover:underline">
-                    Menor precio
-                  </Link>
-                  <span className="text-gray-300">|</span>
-                  <Link href={`${searchHref}&sort=newest`} className="text-sm text-[#3483FA] hover:underline">
-                    Mas recientes
-                  </Link>
-                </div>
-              </div>
-
-              {products.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {products.map((product) => (
-                    <ProductCard key={product.id} product={product} />
-                  ))}
-                </div>
-              ) : (
-                <Card>
-                  <CardContent className="p-12 text-center">
-                    <Package className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-                    <h2 className="text-xl font-semibold mb-2">No hay productos publicados</h2>
-                    <p className="text-gray-500 mb-6">
-                      Esta categoria esta lista para recibir vendedores. Publica el primer producto y empeza a captar demanda.
-                    </p>
-                    <Link href="/vender">
-                      <Button className="bg-[#3483FA] hover:bg-[#2968c8]">Quiero vender en MADSJEEZ</Button>
-                    </Link>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+            )}
           </div>
-        </div>
+        </section>
       </main>
     </div>
   );
