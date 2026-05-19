@@ -1,7 +1,21 @@
 "use client"
 
 import React, { useRef, useState } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import {
+  CarFront,
+  ChevronLeft,
+  ChevronRight,
+  Dumbbell,
+  Gem,
+  Hammer,
+  Home,
+  Laptop,
+  MonitorSmartphone,
+  Shirt,
+  Smartphone,
+  Sparkles,
+  Tv,
+} from 'lucide-react'
 import Link from 'next/link'
 
 export interface CategoryItem {
@@ -13,6 +27,27 @@ export interface CategoryItem {
 
 interface CategoryCarouselProps {
   categories: CategoryItem[]
+}
+
+const iconBySlug: Record<string, { Icon: React.ComponentType<{ className?: string }>; accent: string; ring: string }> = {
+  'autos-motos': { Icon: CarFront, accent: 'text-sky-300', ring: 'from-sky-400/20 to-blue-500/10' },
+  'accesorios-vehiculos': { Icon: CarFront, accent: 'text-orange-300', ring: 'from-orange-400/20 to-amber-500/10' },
+  'hogar-muebles': { Icon: Home, accent: 'text-cyan-200', ring: 'from-cyan-400/20 to-slate-500/10' },
+  'celulares': { Icon: Smartphone, accent: 'text-amber-200', ring: 'from-amber-300/20 to-yellow-500/10' },
+  'ropa-accesorios': { Icon: Shirt, accent: 'text-slate-100', ring: 'from-fuchsia-400/20 to-pink-500/10' },
+  'computacion': { Icon: Laptop, accent: 'text-rose-200', ring: 'from-rose-400/20 to-orange-500/10' },
+  'electrodomesticos': { Icon: Tv, accent: 'text-violet-200', ring: 'from-violet-400/20 to-fuchsia-500/10' },
+  'deportes': { Icon: Dumbbell, accent: 'text-cyan-200', ring: 'from-cyan-400/20 to-sky-500/10' },
+  'inmuebles': { Icon: Home, accent: 'text-blue-100', ring: 'from-blue-400/20 to-cyan-500/10' },
+  'herramientas': { Icon: Hammer, accent: 'text-amber-100', ring: 'from-amber-300/20 to-orange-500/10' },
+  'belleza': { Icon: Sparkles, accent: 'text-pink-200', ring: 'from-pink-400/20 to-rose-500/10' },
+  'electronica': { Icon: MonitorSmartphone, accent: 'text-emerald-200', ring: 'from-emerald-400/20 to-cyan-500/10' },
+  'agro': { Icon: Home, accent: 'text-lime-200', ring: 'from-lime-400/20 to-emerald-500/10' },
+  'alimentos': { Icon: Gem, accent: 'text-yellow-100', ring: 'from-yellow-400/20 to-orange-500/10' },
+  'juguetes': { Icon: Sparkles, accent: 'text-fuchsia-200', ring: 'from-fuchsia-400/20 to-violet-500/10' },
+  'mascotas': { Icon: Sparkles, accent: 'text-teal-200', ring: 'from-teal-400/20 to-cyan-500/10' },
+  'construccion': { Icon: Hammer, accent: 'text-orange-200', ring: 'from-orange-400/20 to-yellow-500/10' },
+  'camaras': { Icon: MonitorSmartphone, accent: 'text-indigo-200', ring: 'from-indigo-400/20 to-sky-500/10' },
 }
 
 export function CategoryCarousel({ categories }: CategoryCarouselProps) {
@@ -74,10 +109,22 @@ export function CategoryCarousel({ categories }: CategoryCarouselProps) {
             >
               <div className="absolute inset-y-0 left-0 w-[4px] bg-gradient-to-b from-[#38bdf8] via-[#3b82f6] to-[#f97316] opacity-80 transition-opacity group-hover/cat:opacity-100" />
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.08),transparent_45%)] opacity-90" />
-              <div className="relative flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.06] to-transparent opacity-70" />
-                <img src={cat.image} alt={cat.name} className="relative h-10 w-10 object-contain drop-shadow-[0_6px_14px_rgba(0,0,0,0.35)]" />
-              </div>
+              {(() => {
+                const slug = cat.slug || cat.name.toLowerCase().replace(/\s+/g, '-')
+                const iconConfig = iconBySlug[slug]
+                const Icon = iconConfig?.Icon
+
+                return (
+                  <div className={`relative flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-gradient-to-br ${iconConfig?.ring || 'from-white/[0.08] to-white/[0.02]'} shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]`}>
+                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.06] to-transparent opacity-70" />
+                    {Icon ? (
+                      <Icon className={`relative h-8 w-8 ${iconConfig.accent} drop-shadow-[0_6px_14px_rgba(0,0,0,0.35)]`} />
+                    ) : (
+                      <img src={cat.image} alt={cat.name} className="relative h-10 w-10 object-contain brightness-125 contrast-125 drop-shadow-[0_6px_14px_rgba(0,0,0,0.35)]" />
+                    )}
+                  </div>
+                )
+              })()}
               <div className="relative ml-4 flex min-w-0 flex-1 flex-col">
                 <span className="text-[16px] font-bold leading-tight text-white transition-colors group-hover/cat:text-sky-100">
                   {cat.name}
