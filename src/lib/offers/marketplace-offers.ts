@@ -7,6 +7,7 @@ import {
   type SeasonalEvent,
   type SeasonalEventSlug,
 } from "@/lib/offers/seasonal-events";
+import { isValidFlashSaleWindow } from "@/lib/offers/flash-sales";
 
 export type MarketplaceOfferDto = {
   id: string;
@@ -36,6 +37,8 @@ export type MarketplaceOfferDto = {
   campaign_type: string | null;
   seasonal_event: SeasonalEventSlug | null;
   ends_at: string | null;
+  starts_at: string | null;
+  is_flash_sale: boolean;
   isDemo: false;
 };
 
@@ -62,6 +65,8 @@ export type GetMarketplaceOffersOptions = {
   maxPrice?: number | null;
   freeShipping?: boolean;
   flash?: boolean;
+  /** Solo ofertas relámpago de vendedores (FLASH_SALE activas en ventana corta). */
+  flashRelampagoOnly?: boolean;
   sort?: string;
   page?: number;
   limit?: number;
@@ -103,7 +108,7 @@ function resolveListAndSalePrice(
 function badgeForCampaignType(type: CampaignType): { badge: string; color: string } {
   switch (type) {
     case CampaignType.FLASH_SALE:
-      return { badge: "FLASH MADSJEEZ", color: "flash" };
+      return { badge: "OFERTA RELÁMPAGO", color: "flash" };
     case CampaignType.DAILY_DEAL:
       return { badge: "DESTACADO HOY", color: "day" };
     case CampaignType.QUANTITY_DISCOUNT:
@@ -141,6 +146,7 @@ function mapProductToOffer(
     campaign_id: string | null;
     campaign_type: string | null;
     ends_at: Date | null;
+    starts_at: Date | null;
     badge: string;
     badge_color: string;
     seasonal_event: SeasonalEventSlug | null;
@@ -180,6 +186,8 @@ function mapProductToOffer(
     campaign_type: meta.campaign_type,
     seasonal_event: meta.seasonal_event,
     ends_at: meta.ends_at?.toISOString() ?? null,
+    starts_at: meta.starts_at?.toISOString() ?? null,
+    is_flash_sale: meta.campaign_type === CampaignType.FLASH_SALE,
     isDemo: false,
   };
 }
@@ -218,7 +226,11 @@ export async function getMarketplaceOffers(options: GetMarketplaceOffersOptions 
   })) as CampaignWithProducts[];
 
   for (const campaign of campaigns) {
-    if (options.flash && campaign.type !== CampaignType.FLASH_SALE) continue;
+    if (options.flashRelampagoOnly) {
+      if (!isValidFlashSaleWindow(campaign, now)) continue;
+    } else if (options.flash && campaign.type !== CampaignType.FLASH_SALE) {
+      continue;
+    }
 
     const eventFilter = options.event;
     if (eventFilter && eventFilter !== "flash" && eventFilter !== "all") {
@@ -259,6 +271,7 @@ export async function getMarketplaceOffers(options: GetMarketplaceOffersOptions 
         campaign_id: campaign.id,
         campaign_type: campaign.type,
         ends_at: campaign.endDate,
+        starts_at: campaign.startDate,
         badge: typeBadge.badge,
         badge_color: typeBadge.color,
         seasonal_event: null,
@@ -266,9 +279,46 @@ export async function getMarketplaceOffers(options: GetMarketplaceOffersOptions 
 
       if (!offer || offer.discount_percentage < minDiscount) continue;
 
-      applySeasonalBadge(offer, campaign.name, offer.discount_percentage, activeSeasonal);
+      if (!options.flashRelampagoOnly) {
+        applySeasonalBadge(offer, campaign.name, offer.discount_percentage, activeSeasonal);
+      }
       offerMap.set(product.id, offer);
     }
+  }
+
+  if (options.flashRelampagoOnly) {
+    let flashOffers = Array.from(offerMap.values());
+    flashOffers.sort((a, b) => {
+      const ea = a.ends_at ? new Date(a.ends_at).getTime() : 0;
+      const eb = b.ends_at ? new Date(b.ends_at).getTime() : 0;
+      return ea - eb;
+    });
+
+    const total = flashOffers.length;
+    const start = (page - 1) * limit;
+    const pageOffers = flashOffers.slice(start, start + limit);
+
+    const categoriesMap = new Map<string, { name: string; slug: string; count: number }>();
+    for (const o of flashOffers) {
+      const cur = categoriesMap.get(o.category.slug);
+      if (cur) cur.count += 1;
+      else categoriesMap.set(o.category.slug, { name: o.category.name, slug: o.category.slug, count: 1 });
+    }
+
+    return {
+      offers: pageOffers,
+      total,
+      categories: Array.from(categoriesMap.values()),
+      activeSeasonalEvents: [],
+      stats: {
+        total_offers: total,
+        flash_relampago: total,
+        seller_campaigns: total,
+        seller_discounts: 0,
+        seasonal_active: [],
+        has_real_offers: total > 0,
+      },
+    };
   }
 
   const discountedProducts = await prisma.product.findMany({
@@ -319,6 +369,7 @@ export async function getMarketplaceOffers(options: GetMarketplaceOffersOptions 
       campaign_id: null,
       campaign_type: null,
       ends_at: null,
+      starts_at: null,
       badge: pricing.sale / list <= 0.5 ? "SUPER OFERTA" : "OFERTA VENDEDOR",
       badge_color: pricing.sale / list <= 0.5 ? "hot" : "day",
       seasonal_event: null,

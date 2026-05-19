@@ -1,9 +1,11 @@
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from "next/server";
+import { CampaignType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { MAX_FLASH_SALE_MS, MIN_FLASH_SALE_MS } from "@/lib/offers/flash-sales";
 
 // GET /api/campaigns - Listar campañas del vendedor logueado
 export async function GET(req: Request) {
@@ -82,6 +84,34 @@ export async function POST(req: Request) {
       );
     }
 
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const durationMs = end.getTime() - start.getTime();
+
+    if (type === CampaignType.FLASH_SALE) {
+      if (!productIds?.length) {
+        return NextResponse.json(
+          { error: "Seleccioná al menos un producto para la oferta relámpago" },
+          { status: 400 }
+        );
+      }
+      if (durationMs < MIN_FLASH_SALE_MS || durationMs > MAX_FLASH_SALE_MS) {
+        return NextResponse.json(
+          {
+            error:
+              "La oferta relámpago debe durar entre 1 y 48 horas. Definí inicio y fin en el mismo día u horario.",
+          },
+          { status: 400 }
+        );
+      }
+      if (end <= start) {
+        return NextResponse.json(
+          { error: "La fecha de fin debe ser posterior al inicio" },
+          { status: 400 }
+        );
+      }
+    }
+
     const campaign = await prisma.campaign.create({
       data: {
         sellerId: (session.user as any).id,
@@ -89,8 +119,8 @@ export async function POST(req: Request) {
         description,
         type,
         status,
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
+        startDate: start,
+        endDate: end,
         discountType,
         discountValue: discountValue ? parseFloat(discountValue) : 0,
         minQuantity: minQuantity ? parseInt(minQuantity) : null,

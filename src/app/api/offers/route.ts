@@ -17,9 +17,14 @@ export async function GET(req: Request) {
     const limit = parseInt(searchParams.get("limit") || "12", 10);
 
     let categorySlug: string | null = null;
+    const subcategory = searchParams.get("subcategory");
     let flashOnly = flash;
+    let flashRelampagoOnly = searchParams.get("mode") === "flash" || category === "flash";
 
-    if (category === "flash") {
+    if (flashRelampagoOnly) {
+      flashOnly = false;
+      if (subcategory) categorySlug = subcategory;
+    } else if (category === "flash") {
       flashOnly = true;
     } else if (category === "clearance") {
       event = event || "liquidacion";
@@ -36,7 +41,8 @@ export async function GET(req: Request) {
       maxPrice: maxPrice ? parseFloat(maxPrice) : null,
       freeShipping,
       flash: flashOnly,
-      sort: category === "best" ? "discount_desc" : sort,
+      flashRelampagoOnly,
+      sort: flashRelampagoOnly ? "ending_soon" : category === "best" ? "discount_desc" : sort,
       page,
       limit,
     });

@@ -17,6 +17,7 @@ import {
   Sparkles,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { FlashCountdown } from "@/components/offers/FlashCountdown"
 
 interface Offer {
   id: string
@@ -43,8 +44,11 @@ interface Offer {
   promotion_source?: "seller_campaign" | "seller_discount" | "seasonal"
   promotion_name?: string | null
   campaign_id?: string | null
+  campaign_type?: string | null
   seasonal_event?: string | null
   ends_at?: string | null
+  starts_at?: string | null
+  is_flash_sale?: boolean
 }
 
 type SeasonalChip = {
@@ -62,7 +66,7 @@ interface CategoryFilter {
 
 const baseQuickCategories = [
   { name: "Todas las ofertas", icon: Package, slug: "all" },
-  { name: "Flash vendedores", icon: Zap, slug: "flash" },
+  { name: "Ofertas relámpago", icon: Zap, slug: "flash" },
   { name: "Mejor descuento", icon: Tag, slug: "best" },
   { name: "Liquidación", icon: Percent, slug: "clearance" },
 ]
@@ -83,6 +87,7 @@ export default function OffersPage() {
   const [categories, setCategories] = useState<CategoryFilter[]>([])
   const [loading, setLoading] = useState(true)
   const [activeCategory, setActiveCategory] = useState("all")
+  const [flashCategoryFilter, setFlashCategoryFilter] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [showSearchBar, setShowSearchBar] = useState(false)
   const [sortBy, setSortBy] = useState("discount_desc")
@@ -109,8 +114,10 @@ export default function OffersPage() {
         params.set("search", searchQuery)
       }
       
-      // Si hay categoría seleccionada (y no es "all")
-      if (activeCategory && activeCategory !== "all") {
+      if (activeCategory === "flash") {
+        params.set("category", "flash")
+        if (flashCategoryFilter) params.set("subcategory", flashCategoryFilter)
+      } else if (activeCategory && activeCategory !== "all") {
         params.set("category", activeCategory)
       }
       
@@ -138,7 +145,7 @@ export default function OffersPage() {
     } finally {
       setLoading(false)
     }
-  }, [searchQuery, activeCategory, filters, sortBy, page])
+  }, [searchQuery, activeCategory, flashCategoryFilter, filters, sortBy, page])
 
   // Cargar ofertas al inicio y cuando cambian los filtros
   useEffect(() => {
@@ -162,17 +169,37 @@ export default function OffersPage() {
     ...seasonalEvents.map((e) => ({ name: e.name, icon: Sparkles, slug: e.slug })),
   ]
 
+  const isFlashTab = activeCategory === "flash"
+
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#0b1220_0%,#0f172a_42%,#111827_100%)] text-slate-100">
       <Navbar />
 
-      <section className="border-b border-white/10 bg-[linear-gradient(90deg,rgba(249,115,22,0.14)_0%,rgba(56,189,248,0.1)_48%,transparent_100%)]">
+      <section
+        className={cn(
+          "border-b border-white/10",
+          isFlashTab
+            ? "bg-[linear-gradient(90deg,rgba(139,92,246,0.22)_0%,rgba(249,115,22,0.12)_50%,transparent_100%)]"
+            : "bg-[linear-gradient(90deg,rgba(249,115,22,0.14)_0%,rgba(56,189,248,0.1)_48%,transparent_100%)]"
+        )}
+      >
         <div className="mx-auto flex max-w-[1200px] flex-col gap-3 px-4 py-8 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-sky-300">Madsjeez Deals</p>
-            <h1 className="mt-1 text-3xl font-black tracking-tight text-white md:text-4xl">Ofertas del marketplace</h1>
+            <p
+              className={cn(
+                "text-[11px] font-black uppercase tracking-[0.2em]",
+                isFlashTab ? "text-violet-300" : "text-sky-300"
+              )}
+            >
+              {isFlashTab ? "Madsjeez Flash" : "Madsjeez Deals"}
+            </p>
+            <h1 className="mt-1 text-3xl font-black tracking-tight text-white md:text-4xl">
+              {isFlashTab ? "Ofertas relámpago" : "Ofertas del marketplace"}
+            </h1>
             <p className="mt-2 max-w-xl text-sm text-slate-300">
-              Promociones que cargan los vendedores y descuentos de fechas especiales (Black Friday, Cyber Monday, Hot Sale y más).
+              {isFlashTab
+                ? "Promociones cortas creadas por vendedores: productos especiales con descuento por horario limitado (hasta 48 h)."
+                : "Promociones que cargan los vendedores y descuentos de fechas especiales (Black Friday, Cyber Monday, Hot Sale y más)."}
             </p>
           </div>
           <button
@@ -227,14 +254,27 @@ export default function OffersPage() {
       <main className="max-w-[1200px] mx-auto px-4 py-6">
         <div className="mb-6 overflow-hidden rounded-[22px] border border-white/10 bg-white/[0.04] shadow-[0_18px_40px_rgba(2,6,23,0.2)] backdrop-blur-md">
           <div className="flex overflow-x-auto scrollbar-hide">
-            {quickCategories.map((cat, idx) => (
+            {quickCategories.map((cat) => (
               <button
                 key={cat.slug}
-                onClick={() => { setActiveCategory(cat.slug === activeCategory ? "all" : cat.slug); setPage(1); }}
+                onClick={() => {
+                  const next = cat.slug === activeCategory ? "all" : cat.slug
+                  setActiveCategory(next)
+                  if (next === "flash") {
+                    setFilters((f) => ({ ...f, minDiscount: 1, flash: false }))
+                    setSortBy("ending_soon")
+                    setFlashCategoryFilter(null)
+                  } else {
+                    setFlashCategoryFilter(null)
+                  }
+                  setPage(1)
+                }}
                 className={cn(
                   "flex flex-col items-center gap-2 px-6 py-4 min-w-[120px] transition-colors border-b-2 whitespace-nowrap",
-                  activeCategory === cat.slug 
-                    ? "border-orange-400 bg-orange-500/10 text-orange-300"
+                  activeCategory === cat.slug
+                    ? cat.slug === "flash"
+                      ? "border-violet-400 bg-violet-500/10 text-violet-300"
+                      : "border-orange-400 bg-orange-500/10 text-orange-300"
                     : "border-transparent text-slate-300 hover:bg-white/5"
                 )}
               >
@@ -255,13 +295,22 @@ export default function OffersPage() {
                 <span className="font-semibold text-white">Filtros</span>
               </div>
 
+              {isFlashTab && (
+                <div className="mb-4 rounded-lg border border-violet-400/30 bg-violet-500/10 p-3 text-xs leading-relaxed text-violet-200">
+                  Promos creadas por vendedores, vigentes entre 1 y 48 horas. Ordenadas por las que terminan antes.
+                </div>
+              )}
+
               {/* Resultados */}
               <div className="mb-4 pb-4 border-b border-white/10">
                 <p className="text-sm text-slate-300">
                   <span className="font-bold text-white">{offers.length}</span> resultados
                 </p>
                 <p className="text-xs text-slate-400 mt-1">
-                  Descuento promedio: <span className="text-[#f97316] font-bold">{avgDiscount}%</span>
+                  Descuento promedio:{" "}
+                  <span className={cn("font-bold", isFlashTab ? "text-violet-300" : "text-[#f97316]")}>
+                    {avgDiscount}%
+                  </span>
                 </p>
               </div>
 
@@ -283,7 +332,8 @@ export default function OffersPage() {
                 </label>
               </div>
 
-              {/* Tiempo de entrega */}
+              {!isFlashTab && (
+              <>
               <div className="mb-4 pb-4 border-b border-white/10">
                 <p className="font-semibold text-slate-200 mb-2 text-sm">Tiempo de entrega</p>
                 <div className="space-y-1">
@@ -317,6 +367,8 @@ export default function OffersPage() {
                   </label>
                 </div>
               </div>
+              </>
+              )}
 
               {/* Categorías */}
               <div className="mb-4 pb-4 border-b border-white/10">
@@ -327,9 +379,18 @@ export default function OffersPage() {
                       key={cat.slug}
                       className={cn(
                         "flex items-center justify-between text-sm cursor-pointer hover:text-[#f97316]",
-                        activeCategory === cat.slug ? "text-[#f97316] font-medium" : "text-slate-300"
+                        (isFlashTab ? flashCategoryFilter === cat.slug : activeCategory === cat.slug)
+                          ? "text-[#f97316] font-medium"
+                          : "text-slate-300"
                       )}
-                      onClick={() => { setActiveCategory(cat.slug); setPage(1); }}
+                      onClick={() => {
+                        if (isFlashTab) {
+                          setFlashCategoryFilter((prev) => (prev === cat.slug ? null : cat.slug))
+                        } else {
+                          setActiveCategory(cat.slug)
+                        }
+                        setPage(1)
+                      }}
                     >
                       <span>{cat.name}</span>
                       <span className="text-slate-400">({cat.count})</span>
@@ -421,13 +482,20 @@ export default function OffersPage() {
                 <select
                   value={sortBy}
                   onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
-                  className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-[#f97316]"
+                  disabled={isFlashTab}
+                  className="text-sm border border-white/15 bg-slate-900/50 rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-[#f97316] disabled:opacity-60"
                 >
-                  <option value="discount_desc">Mayor descuento</option>
-                  <option value="price_asc">Menor precio</option>
-                  <option value="price_desc">Mayor precio</option>
-                  <option value="newest">Más reciente</option>
-                  <option value="popular">Más popular</option>
+                  {isFlashTab ? (
+                    <option value="ending_soon">Termina antes</option>
+                  ) : (
+                    <>
+                      <option value="discount_desc">Mayor descuento</option>
+                      <option value="price_asc">Menor precio</option>
+                      <option value="price_desc">Mayor precio</option>
+                      <option value="newest">Más reciente</option>
+                      <option value="popular">Más popular</option>
+                    </>
+                  )}
                 </select>
               </div>
             </div>
@@ -488,18 +556,38 @@ export default function OffersPage() {
                 )}
               </>
             ) : (
-              <div className="rounded-[22px] border border-white/10 bg-white/[0.04] p-12 backdrop-blur-md text-center">
-                <p className="text-slate-500 text-lg">No encontramos ofertas con esos filtros</p>
-                <button
-                  onClick={() => {
-                    setFilters({ freeShipping: false, minDiscount: 10, minPrice: "", maxPrice: "", flash: false })
-                    setActiveCategory("all")
-                    setSearchQuery("")
-                  }}
-                  className="mt-4 px-6 py-2 bg-[#f97316] text-white rounded-lg hover:bg-[#ff9100] transition-colors"
-                >
-                  Ver todas las ofertas
-                </button>
+              <div className="rounded-[22px] border border-white/10 bg-white/[0.04] p-12 text-center backdrop-blur-md">
+                <p className="text-lg text-slate-300">
+                  {isFlashTab
+                    ? "No hay ofertas relámpago activas en este momento"
+                    : "No encontramos ofertas con esos filtros"}
+                </p>
+                {isFlashTab && (
+                  <p className="mt-2 text-sm text-slate-400">
+                    Los vendedores crean ofertas relámpago de 1 a 48 horas desde su panel.
+                  </p>
+                )}
+                <div className="mt-4 flex flex-wrap justify-center gap-3">
+                  {isFlashTab && (
+                    <Link
+                      href="/dashboard"
+                      className="rounded-lg bg-gradient-to-r from-violet-500 to-fuchsia-500 px-6 py-2 text-sm font-semibold text-white"
+                    >
+                      Soy vendedor — crear relámpago
+                    </Link>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFilters({ freeShipping: false, minDiscount: 10, minPrice: "", maxPrice: "", flash: false })
+                      setActiveCategory("all")
+                      setSearchQuery("")
+                    }}
+                    className="rounded-lg border border-white/15 bg-white/5 px-6 py-2 text-white hover:bg-white/10"
+                  >
+                    Ver todas las ofertas
+                  </button>
+                </div>
               </div>
             )}
 
@@ -586,7 +674,8 @@ function OfferCard({ offer }: { offer: Offer }) {
             </span>
           </div>
 
-          {/* Cuotas */}
+          {offer.is_flash_sale && offer.ends_at && <FlashCountdown endsAt={offer.ends_at} />}
+
           <p className="mb-2 text-sm text-sky-300/90">{offer.installments}</p>
 
           {offer.shipping === "free" && (
