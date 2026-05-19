@@ -11,6 +11,21 @@ declare global {
   }
 }
 
+function ensureGtag() {
+  if (typeof window === "undefined") return null;
+
+  window.dataLayer = window.dataLayer || [];
+
+  if (typeof window.gtag !== "function") {
+    window.gtag = ((...args: unknown[]) => {
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push(args as unknown as Record<string, unknown>);
+    }) as Window["gtag"];
+  }
+
+  return window.gtag;
+}
+
 export type AnalyticsItem = {
   item_id: string;
   item_name: string;
@@ -52,12 +67,16 @@ export function trackEvent(
       : null;
 
   window.dataLayer = window.dataLayer || [];
+  if (ecommerce) {
+    window.dataLayer.push({ ecommerce: null });
+  }
   window.dataLayer.push({
     event: eventName,
     ...params,
   });
 
-  if (typeof window.gtag === "function") {
-    window.gtag("event", eventName, ecommerce ? { ...params, ...ecommerce } : params);
+  const gtag = ensureGtag();
+  if (typeof gtag === "function") {
+    gtag("event", eventName, ecommerce ? { ...params, ...ecommerce } : params);
   }
 }
