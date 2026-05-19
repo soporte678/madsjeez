@@ -1,5 +1,6 @@
 "use client";
 
+import { CATEGORY_ICON_NAMES } from "@/lib/category-icon-names";
 import type { LucideIcon } from "lucide-react";
 import {
   Activity,
@@ -189,6 +190,7 @@ import {
   Minus,
   Monitor,
   Moon,
+  MoreHorizontal,
   Mountain,
   Mouse,
   Music,
@@ -556,6 +558,7 @@ const ICONS: Record<string, LucideIcon> = {
   Minus,
   Monitor,
   Moon,
+  MoreHorizontal,
   Mountain,
   Mouse,
   Music,
@@ -735,6 +738,14 @@ const ICONS: Record<string, LucideIcon> = {
   ZoomIn,
 };
 
+function hashIconName(name: string): number {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) {
+    h = (Math.imul(31, h) + name.charCodeAt(i)) | 0;
+  }
+  return Math.abs(h);
+}
+
 export function CategoryIcon({
   name,
   className,
@@ -742,6 +753,9 @@ export function CategoryIcon({
   name: string;
   className?: string;
 }) {
-  const Icon = ICONS[name] || Package;
+  const Icon =
+    ICONS[name] ||
+    ICONS[CATEGORY_ICON_NAMES[hashIconName(name) % CATEGORY_ICON_NAMES.length]] ||
+    Package;
   return <Icon className={className} />;
 }

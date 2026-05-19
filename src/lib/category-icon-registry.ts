@@ -1,5 +1,9 @@
 import "server-only";
 import { icons, type LucideIcon } from "lucide-react";
+import {
+  CATEGORY_ICON_NAMES,
+  CATEGORY_ICON_SET,
+} from "@/lib/category-icon-names";
 import { MELI_CATEGORIES, slugifyCategory } from "@/lib/seed-categories";
 
 export type CategoryVisual = {
@@ -78,10 +82,6 @@ const MAIN_ICON_NAMES: Record<string, string> = {
   otros: "MoreHorizontal",
 };
 
-const ICON_NAMES = Object.keys(icons)
-  .filter((name) => /^[A-Z]/.test(name) && name in icons)
-  .sort();
-
 function hashSlug(slug: string): number {
   let h = 0;
   for (let i = 0; i < slug.length; i++) {
@@ -90,23 +90,28 @@ function hashSlug(slug: string): number {
   return Math.abs(h);
 }
 
+function lucideByName(name: string): LucideIcon {
+  return (icons[name as keyof typeof icons] as LucideIcon) || icons.Package;
+}
+
 function pickLucideIcon(slug: string, used: Set<string>): { Icon: LucideIcon; name: string } {
   const preferred = MAIN_ICON_NAMES[slug];
-  if (preferred && preferred in icons && !used.has(preferred)) {
+  if (preferred && CATEGORY_ICON_SET.has(preferred) && !used.has(preferred)) {
     used.add(preferred);
-    return { Icon: icons[preferred as keyof typeof icons] as LucideIcon, name: preferred };
+    return { Icon: lucideByName(preferred), name: preferred };
   }
 
-  const start = hashSlug(slug) % ICON_NAMES.length;
-  for (let i = 0; i < ICON_NAMES.length; i++) {
-    const name = ICON_NAMES[(start + i) % ICON_NAMES.length];
+  const start = hashSlug(slug) % CATEGORY_ICON_NAMES.length;
+  for (let i = 0; i < CATEGORY_ICON_NAMES.length; i++) {
+    const name = CATEGORY_ICON_NAMES[(start + i) % CATEGORY_ICON_NAMES.length];
     if (!used.has(name)) {
       used.add(name);
-      return { Icon: icons[name as keyof typeof icons] as LucideIcon, name };
+      return { Icon: lucideByName(name), name };
     }
   }
 
-  return { Icon: icons.Package as LucideIcon, name: "Package" };
+  const fallback = CATEGORY_ICON_NAMES[hashSlug(slug) % CATEGORY_ICON_NAMES.length];
+  return { Icon: lucideByName(fallback), name: fallback };
 }
 
 function buildRegistry(): Map<string, CategoryVisual> {
@@ -149,9 +154,9 @@ export function getCategoryVisual(slug: string): CategoryVisual {
   if (hit) return hit;
 
   const h = hashSlug(slug);
-  const fallbackName = ICON_NAMES[h % ICON_NAMES.length];
+  const fallbackName = CATEGORY_ICON_NAMES[h % CATEGORY_ICON_NAMES.length];
   return {
-    Icon: (icons[fallbackName as keyof typeof icons] as LucideIcon) || icons.Package,
+    Icon: lucideByName(fallbackName),
     accent: ACCENTS[h % ACCENTS.length],
     ring: RINGS[h % RINGS.length],
     iconName: fallbackName,
