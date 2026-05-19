@@ -191,8 +191,13 @@ export default function Navbar() {
         }
 
         .mads-pro-shell {
-          background: var(--card);
-          border: 1px solid var(--border);
+          background:
+            linear-gradient(180deg, rgba(15, 23, 42, 0.94), rgba(15, 23, 42, 0.82)),
+            radial-gradient(circle at top left, rgba(59, 130, 246, 0.12), transparent 58%);
+          border: 1px solid rgba(148, 163, 184, 0.18);
+          box-shadow:
+            inset 0 1px 0 rgba(255,255,255,0.05),
+            0 10px 30px rgba(2, 6, 23, 0.25);
         }
 
         .mads-pro-badge::after {
@@ -233,11 +238,28 @@ export default function Navbar() {
         .animate-wipe-in { animation: wipeIn2 8s infinite cubic-bezier(0.64, 0, 0.36, 1); }
 
         .search-shadow { box-shadow: 0 1px 2px 0 rgba(0,0,0,0.2); }
-        .nav-link { cursor: pointer; color: rgba(226, 232, 240, 0.92); transition: all 0.2s ease; }
-        .nav-link:hover { color: #fcd34d; transform: translateY(-1px); }
+        .nav-link {
+          cursor: pointer;
+          color: rgba(226, 232, 240, 0.88);
+          transition: color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+        }
+        .nav-link:hover { color: #ffffff; transform: translateY(-1px); }
+        .nav-link-muted {
+          color: rgba(148, 163, 184, 0.82);
+          transition: color 0.2s ease, opacity 0.2s ease;
+        }
+        .nav-link-muted:hover { color: rgba(255,255,255,0.94); }
+        .nav-icon {
+          color: rgba(226, 232, 240, 0.92);
+          transition: color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+        }
+        .nav-icon:hover {
+          color: #ffffff;
+          transform: translateY(-1px);
+        }
         
         .search-glow:focus-within { 
-          box-shadow: 0 0 0 3px rgba(255, 77, 46, 0.16), 0 4px 20px rgba(255, 77, 46, 0.11); 
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16), 0 8px 28px rgba(14, 116, 244, 0.16); 
         }
         
         .suggestion-item { 
@@ -269,7 +291,7 @@ export default function Navbar() {
       `}</style>
 
       {/* Barra oscura: logo y enlaces legibles; acento ámbar solo en borde */}
-      <header className="bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#0f172a] w-full sticky top-0 z-[100] border-b-2 border-[#ffb703]/50 h-[100px] flex flex-col justify-center font-outfit shadow-lg shadow-black/25">
+      <header className="w-full sticky top-0 z-[100] flex h-[100px] flex-col justify-center border-b border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.98)_0%,rgba(15,23,42,0.95)_46%,rgba(17,24,39,0.94)_100%)] font-outfit shadow-[0_18px_40px_rgba(2,6,23,0.34)] backdrop-blur-xl">
         <div className="max-w-[1200px] mx-auto px-4 lg:px-0 w-full">
           
           {/* --- FILA 1: LOGO | BÚSQUEDA | BOTÓN MADS PRO ANIMADO --- */}
@@ -277,7 +299,7 @@ export default function Navbar() {
             
             {/* LOGO - NUEVA PALETA */}
             <Link href="/" className="flex items-center gap-2 cursor-pointer group w-[160px] flex-shrink-0">
-              <div className="relative w-9 h-9 bg-gradient-to-br from-[#1a1a2e] to-[#16213e] rounded-lg flex items-center justify-center shadow-lg shadow-orange-500/30 overflow-hidden group-hover:shadow-xl group-hover:shadow-orange-500/40 transition-all duration-300">
+              <div className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg border border-white/10 bg-gradient-to-br from-[#162032] via-[#0f172a] to-[#16213e] shadow-lg shadow-sky-900/20 transition-all duration-300 group-hover:border-white/20 group-hover:shadow-xl group-hover:shadow-sky-900/30">
                  <svg viewBox="0 0 100 100" className="w-6 h-6">
                     <path d="M 15 80 L 35 30 L 55 55" stroke="#f97316" fill="none" strokeWidth="15" strokeLinecap="round"/>
                     <path d="M 85 80 L 65 30 L 45 65" stroke="#00b4d8" fill="none" strokeWidth="15" strokeLinecap="round"/>
@@ -310,15 +332,17 @@ export default function Navbar() {
               <form onSubmit={handleSearch}>
                 <div 
                   className={cn(
-                    "flex items-center bg-white rounded-xl h-11 px-4 transition-all duration-300 search-glow border-2",
-                    isSearchOpen ? "border-[#f97316] shadow-lg shadow-orange-500/20" : "border-transparent"
+                    "search-glow flex h-11 items-center rounded-2xl border bg-[rgba(15,23,42,0.72)] px-4 transition-all duration-300 backdrop-blur-xl",
+                    isSearchOpen
+                      ? "border-[#60a5fa] shadow-lg shadow-sky-500/20"
+                      : "border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
                   )}
                 >
                   <input 
                     ref={inputRef}
                     type="text" 
                     placeholder="Buscar productos, marcas y más..." 
-                    className="flex-1 outline-none text-[16px] text-slate-800 placeholder-slate-400 font-light bg-transparent"
+                    className="flex-1 bg-transparent text-[16px] font-light text-slate-50 placeholder:text-slate-400 outline-none"
                     value={searchQuery}
                     onChange={(e) => {
                       setSearchQuery(e.target.value);
@@ -333,29 +357,29 @@ export default function Navbar() {
                     <button 
                       type="button"
                       onClick={clearSearch}
-                      className="p-1 hover:bg-slate-100 rounded-full transition-colors mr-1"
+                      className="mr-1 rounded-full p-1 transition-colors hover:bg-white/10"
                     >
                       <X size={16} className="text-slate-400" />
                     </button>
                   )}
-                  <div className="h-6 w-[1px] bg-slate-200 mx-2"></div>
+                  <div className="mx-2 h-6 w-[1px] bg-white/10"></div>
                   <button 
                     type="button" 
-                    className="p-1.5 text-slate-400 hover:text-[#f97316] transition-colors"
+                    className="p-1.5 text-slate-400 transition-colors hover:text-slate-100"
                     title="Búsqueda por voz"
                   >
                     <Mic size={18} />
                   </button>
                   <button 
                     type="button" 
-                    className="p-1.5 text-slate-400 hover:text-[#00b4d8] transition-colors mr-1"
+                    className="mr-1 p-1.5 text-slate-400 transition-colors hover:text-slate-100"
                     title="Búsqueda por imagen"
                   >
                     <Camera size={18} />
                   </button>
                   <button 
                     type="submit" 
-                    className="bg-gradient-to-r from-[#f97316] to-[#ff9100] text-white p-2 rounded-lg hover:from-[#ff9100] hover:to-[#ffb703] transition-all duration-300 shadow-md shadow-orange-500/30 hover:shadow-lg hover:shadow-orange-500/40 hover:scale-105"
+                    className="rounded-xl bg-gradient-to-r from-[#f97316] via-[#ff9100] to-[#ffb703] p-2 text-white shadow-md shadow-orange-500/30 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-orange-500/40"
                   >
                     <Search size={18} strokeWidth={2.5} />
                   </button>
@@ -494,16 +518,16 @@ export default function Navbar() {
 
             {/* BOTÓN DESLIZANTE MADS PRO (Efecto Borrador) */}
             <div className="flex-1 flex items-center justify-end">
-              <div className="mads-pro-shell relative overflow-hidden w-[340px] h-[36px] hover:shadow-md transition-shadow rounded-full shadow-sm cursor-pointer flex items-center px-1.5">
+              <div className="mads-pro-shell relative flex h-[38px] w-[340px] cursor-pointer items-center overflow-hidden rounded-full px-1.5 transition-all duration-300 hover:-translate-y-[1px] hover:border-white/20 hover:shadow-[0_14px_36px_rgba(2,6,23,0.32)]">
                  
                  {/* 1. TEXTO DE LA IZQUIERDA (Aparece cuando el botón está a la derecha) */}
                  <div className="absolute left-6 w-[230px] flex items-center justify-center animate-wipe-out">
-                    <span className="text-[var(--foreground)] font-black text-[19px] tracking-tight drop-shadow-sm">Suscribite a</span>
+                    <span className="font-black tracking-tight text-white/92 drop-shadow-sm text-[18px]">Suscribite a</span>
                  </div>
 
                  {/* 2. TEXTOS DE LA DERECHA (Aparecen cuando el botón está a la izquierda) */}
                  <div className="absolute left-[92px] w-auto flex items-center gap-1.5 animate-wipe-in">
-                    <span className="text-[var(--foreground)] font-semibold text-[12px] whitespace-nowrap">y disfrutá</span>
+                    <span className="whitespace-nowrap text-[12px] font-semibold text-slate-200">y disfrutá</span>
                     
                     {/* Contenedor Caja + Envíos Reparado (Sin superposición) */}
                     <div className="flex items-center gap-1">
@@ -534,9 +558,9 @@ export default function Navbar() {
                        </div>
                        
                        {/* Texto de envíos (Separado y legible) */}
-                       <div className="flex flex-col leading-[1.05] justify-center border-l border-slate-200 pl-1.5 py-0.5">
-                          <span className="text-[var(--foreground)] font-black text-[8.5px] uppercase tracking-wider">Envíos gratis</span>
-                          <span className="text-[var(--foreground)] font-black text-[8.5px] uppercase tracking-wider mt-[1px]">en tus compras</span>
+                       <div className="flex flex-col justify-center border-l border-white/12 py-0.5 pl-1.5 leading-[1.05]">
+                          <span className="text-[8.5px] font-black uppercase tracking-wider text-slate-100">Envíos gratis</span>
+                          <span className="mt-[1px] text-[8.5px] font-black uppercase tracking-wider text-slate-100">en tus compras</span>
                        </div>
                     </div>
                  </div>
@@ -559,10 +583,10 @@ export default function Navbar() {
               
               {/* Ubicación (Ancho fijo alineado con el Logo) */}
               <div className="flex items-center gap-1 cursor-pointer w-[160px] flex-shrink-0 group">
-                <MapPin size={18} className="text-slate-400 group-hover:text-[#fcd34d]" />
+                <MapPin size={18} className="text-slate-500 transition-colors group-hover:text-slate-200" />
                 <div className="flex flex-col leading-none">
-                  <span className="text-[10px] text-slate-400 group-hover:text-slate-300 whitespace-nowrap">Enviar a Capital Federal</span>
-                  <span className="text-[12px] text-slate-200 font-normal truncate group-hover:text-white">Av. Corrientes 1234, CABA</span>
+                  <span className="nav-link-muted whitespace-nowrap text-[10px]">Enviar a Capital Federal</span>
+                  <span className="truncate text-[12px] font-medium text-slate-100 transition-colors group-hover:text-white">Av. Corrientes 1234, CABA</span>
                 </div>
               </div>
 
@@ -605,7 +629,7 @@ export default function Navbar() {
               ) : (
                 <>
                   <Link href="/dashboard" className="flex items-center gap-1.5 cursor-pointer nav-link group flex-shrink-0">
-                    <User size={16} className="text-slate-300 group-hover:text-[#fcd34d]" />
+                    <User size={16} className="text-slate-300 transition-colors group-hover:text-white" />
                     <span className="whitespace-nowrap font-normal">{session.user?.name || "Mi cuenta"}</span>
                     <ChevronDown size={10} className="opacity-50 group-hover:rotate-180 transition-transform" />
                   </Link>
@@ -617,11 +641,11 @@ export default function Navbar() {
               )}
               
               <div className="flex items-center gap-4 ml-1">
-                 <Link href="/notifications" className="relative cursor-pointer nav-link">
-                    <Bell size={18} strokeWidth={1.5} className="text-slate-200 hover:text-[#fcd34d]" />
+                 <Link href="/notifications" className="relative cursor-pointer nav-icon">
+                    <Bell size={18} strokeWidth={1.5} className="nav-icon" />
                  </Link>
-                 <Link href="/cart" className="cursor-pointer nav-link relative">
-                    <ShoppingCart size={18} strokeWidth={1.5} className="text-slate-200 hover:text-[#fcd34d]" />
+                 <Link href="/cart" className="relative cursor-pointer nav-icon">
+                    <ShoppingCart size={18} strokeWidth={1.5} className="nav-icon" />
                  </Link>
               </div>
             </div>
