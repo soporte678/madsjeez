@@ -4,6 +4,12 @@ import { meliGetItem, meliGetItemDescription, meliSearchUserItems } from "./api"
 import { ensureFallbackCategory, resolveCategoryForMeliId } from "./category-map";
 import { persistMeliImageBatch } from "./image-import";
 import {
+  checkImportDuplicate,
+  createSellerDedupeIndex,
+  registerProductInDedupeIndex,
+  type SellerDedupeIndex,
+} from "./dedupe";
+import {
   aggregateStockFromMeliItem,
   buildDescriptionFromMeliItem,
   extractSellerSku,
@@ -27,7 +33,8 @@ export type MeliImportPreviewRow = {
   condition: string;
   listingType: string;
   sold: number;
-  action: "create" | "update";
+  action: "create" | "update" | "skip";
+  skipReason?: string;
   meliCategoryId: string | null;
   hasVariations: boolean;
 };
@@ -112,7 +119,8 @@ async function importSingleMeliItem(
   itemId: string,
   errors: string[],
   itemResults: MeliImportItemResult[],
-  options: { persistImages: boolean }
+  options: { persistImages: boolean },
+  dedupe: SellerDedupeIndex
 ): Promise<{ kind: "imported" | "updated" | "skipped" }> {
   const itemRes = await meliGetItem(accessToken, itemId);
   if (!itemRes.ok || !(itemRes.data as MeliItemDetail)?.id) {
@@ -174,16 +182,38 @@ async function importSingleMeliItem(
     let productId: string;
 
     if (existing) {
+      const dupOnUpdate = checkImportDuplicate(
+        dedupe,
+        core.title,
+        core.sku,
+        existing.id
+      );
+      if (dupOnUpdate.duplicate) {
+        const msg = dupOnUpdate.reason;
+        errors.push(`${itemId}: ${msg}`);
+        itemResults.push({ itemId: item.id, ok: false, error: msg });
+        return { kind: "skipped" };
+      }
+
       await prisma.product.update({
         where: { id: existing.id },
         data: productData,
       });
       productId = existing.id;
+      registerProductInDedupeIndex(dedupe, productId, core.title, core.sku);
       await syncProductImages(productId, core.pictureUrls, core.title, options.persistImages);
       await syncProductAttributes(productId, item);
       await syncProductVariations(productId, item);
       itemResults.push({ itemId: item.id, ok: true, productId });
       return { kind: "updated" };
+    }
+
+    const dup = checkImportDuplicate(dedupe, core.title, core.sku);
+    if (dup.duplicate) {
+      const msg = dup.reason;
+      errors.push(`${itemId}: ${msg}`);
+      itemResults.push({ itemId: item.id, ok: false, error: msg });
+      return { kind: "skipped" };
     }
 
     const created = await prisma.product.create({
@@ -194,6 +224,7 @@ async function importSingleMeliItem(
       },
     });
     productId = created.id;
+    registerProductInDedupeIndex(dedupe, productId, core.title, core.sku);
     await syncProductImages(productId, core.pictureUrls, core.title, options.persistImages);
     await syncProductAttributes(productId, item);
     await syncProductVariations(productId, item);
@@ -220,6 +251,7 @@ export async function importMeliItemsForUser(
 ): Promise<{
   imported: number;
   updated: number;
+  skipped: number;
   errors: string[];
   itemResults: MeliImportItemResult[];
 }> {
@@ -229,10 +261,17 @@ export async function importMeliItemsForUser(
     ? [...new Set(options.itemIds.map((x) => String(x).trim()).filter(Boolean))]
     : null;
 
+  const sellerProducts = await prisma.product.findMany({
+    where: { sellerId: prismaUserId },
+    select: { id: true, title: true, sku: true },
+  });
+  const dedupe = createSellerDedupeIndex(sellerProducts);
+
   const errors: string[] = [];
   const itemResults: MeliImportItemResult[] = [];
   let imported = 0;
   let updated = 0;
+  let skipped = 0;
 
   if (filterIds?.length) {
     for (const itemId of filterIds) {
@@ -243,12 +282,14 @@ export async function importMeliItemsForUser(
         itemId,
         errors,
         itemResults,
-        { persistImages }
+        { persistImages },
+        dedupe
       );
       if (r.kind === "imported") imported++;
       if (r.kind === "updated") updated++;
+      if (r.kind === "skipped") skipped++;
     }
-    return { imported, updated, errors, itemResults };
+    return { imported, updated, skipped, errors, itemResults };
   }
 
   let scrollId: string | undefined;
@@ -280,19 +321,22 @@ export async function importMeliItemsForUser(
         itemId,
         errors,
         itemResults,
-        { persistImages }
+        { persistImages },
+        dedupe
       );
       if (r.kind === "imported") imported++;
       if (r.kind === "updated") updated++;
+      if (r.kind === "skipped") skipped++;
     }
 
     if (!scrollId) break;
   }
 
-  return { imported, updated, errors, itemResults };
+  return { imported, updated, skipped, errors, itemResults };
 }
 
 export async function previewMeliItemsForUser(
+  prismaUserId: string,
   accessToken: string,
   meliUserId: string,
   options?: { maxPages?: number; sampleSize?: number }
@@ -302,6 +346,7 @@ export async function previewMeliItemsForUser(
   alreadyLinked: number;
   toCreate: number;
   toUpdate: number;
+  skippedDuplicates: number;
   breakdown: {
     byStatus: Record<string, number>;
     byCondition: Record<string, number>;
@@ -327,6 +372,13 @@ export async function previewMeliItemsForUser(
   let alreadyLinked = 0;
   let toCreate = 0;
   let toUpdate = 0;
+  let skippedDuplicates = 0;
+
+  const sellerProducts = await prisma.product.findMany({
+    where: { sellerId: prismaUserId },
+    select: { id: true, title: true, sku: true },
+  });
+  const dedupe = createSellerDedupeIndex(sellerProducts);
 
   while (pages < maxPages) {
     const search = await meliSearchUserItems(accessToken, meliUserId, scrollId);
@@ -352,7 +404,7 @@ export async function previewMeliItemsForUser(
 
     const existingRows = await prisma.product.findMany({
       where: { meliItemId: { in: batchIds } },
-      select: { meliItemId: true, price: true, stock: true, sku: true },
+      select: { id: true, meliItemId: true, price: true, stock: true, sku: true, title: true },
     });
     const existingMap = new Map(
       existingRows.filter((r) => r.meliItemId).map((r) => [r.meliItemId as string, r])
@@ -374,16 +426,45 @@ export async function previewMeliItemsForUser(
       byListingType[listingType] = (byListingType[listingType] || 0) + 1;
 
       const exists = existingMap.has(item.id);
+      const local = existingMap.get(item.id);
+      const sellerSku = extractSellerSku(item) || local?.sku || null;
+      const existingProductId = local?.id;
+
+      let action: MeliImportPreviewRow["action"] = exists ? "update" : "create";
+      let skipReason: string | undefined;
+
       if (exists) {
-        alreadyLinked++;
-        toUpdate++;
+        const dupOnUpdate = checkImportDuplicate(
+          dedupe,
+          item.title,
+          sellerSku,
+          existingProductId
+        );
+        if (dupOnUpdate.duplicate) {
+          action = "skip";
+          skipReason = dupOnUpdate.reason;
+          skippedDuplicates++;
+        } else {
+          alreadyLinked++;
+          toUpdate++;
+          if (existingProductId) {
+            registerProductInDedupeIndex(dedupe, existingProductId, item.title, sellerSku);
+          }
+        }
       } else {
-        toCreate++;
+        const dup = checkImportDuplicate(dedupe, item.title, sellerSku);
+        if (dup.duplicate) {
+          action = "skip";
+          skipReason = dup.reason;
+          skippedDuplicates++;
+        } else {
+          toCreate++;
+          registerProductInDedupeIndex(dedupe, `preview-${item.id}`, item.title, sellerSku);
+        }
       }
 
       const pics = item.pictures || [];
       const thumb = pics[0]?.secure_url || pics[0]?.url || null;
-      const local = existingMap.get(item.id);
 
       rows.push({
         id: item.id,
@@ -393,12 +474,13 @@ export async function previewMeliItemsForUser(
         meliStock: aggregateStockFromMeliItem(item),
         localPrice: local ? local.price : null,
         localStock: local ? local.stock : null,
-        sellerSku: extractSellerSku(item) || local?.sku || null,
+        sellerSku,
         status,
         condition,
         listingType,
         sold: Math.max(0, item.sold_quantity ?? 0),
-        action: exists ? "update" : "create",
+        action,
+        skipReason,
         meliCategoryId: item.category_id || null,
         hasVariations: Boolean(item.variations?.length),
       });
@@ -413,6 +495,7 @@ export async function previewMeliItemsForUser(
     alreadyLinked,
     toCreate,
     toUpdate,
+    skippedDuplicates,
     breakdown: { byStatus, byCondition, byListingType },
     rows,
     samples: rows.slice(0, sampleCap),

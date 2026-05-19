@@ -33,7 +33,10 @@ export async function GET(req: Request) {
       select: { lastCatalogImportAt: true, meliUserId: true, nickname: true, label: true },
     });
 
-    const preview = await previewMeliItemsForUser(tok.accessToken, tok.meliUserId, { maxPages, sampleSize });
+    const preview = await previewMeliItemsForUser(session.user.id, tok.accessToken, tok.meliUserId, {
+      maxPages,
+      sampleSize,
+    });
 
     return NextResponse.json({
       ok: true,
@@ -82,7 +85,7 @@ export async function POST(req: Request) {
     }
 
     if (requireConfirm && !confirmed) {
-      const preview = await previewMeliItemsForUser(tok.accessToken, tok.meliUserId, {
+      const preview = await previewMeliItemsForUser(session.user.id, tok.accessToken, tok.meliUserId, {
         maxPages,
         sampleSize: 50,
       });
@@ -119,6 +122,7 @@ export async function POST(req: Request) {
       accountId: tok.accountId,
       imported: result.imported,
       updated: result.updated,
+      skipped: result.skipped,
       errors: result.errors.slice(0, 50),
       errorCount: result.errors.length,
       itemResults: result.itemResults,

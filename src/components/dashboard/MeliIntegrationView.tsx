@@ -51,7 +51,8 @@ type PreviewRow = {
   condition: string;
   listingType: string;
   sold: number;
-  action: "create" | "update";
+  action: "create" | "update" | "skip";
+  skipReason?: string;
   meliCategoryId?: string | null;
   hasVariations?: boolean;
 };
@@ -62,6 +63,7 @@ type ImportPreview = {
   alreadyLinked: number;
   toCreate: number;
   toUpdate: number;
+  skippedDuplicates: number;
   breakdown: {
     byStatus: Record<string, number>;
     byCondition: Record<string, number>;
@@ -82,7 +84,14 @@ type LocalUnpublished = {
   thumbnailUrl: string | null;
 };
 
-type QuickFilter = "all" | "active_only" | "updates_only" | "new_only" | "price_diff" | "stock_diff";
+type QuickFilter =
+  | "all"
+  | "active_only"
+  | "updates_only"
+  | "new_only"
+  | "skip_only"
+  | "price_diff"
+  | "stock_diff";
 
 const fmtMoney = (n: number) =>
   new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
@@ -314,7 +323,7 @@ export default function MeliIntegrationView() {
         setRowPushErrors({});
       }
       if (preview?.rows?.length) {
-        setSelectedPullIds(new Set(preview.rows.map((x) => x.id)));
+        setSelectedPullIds(new Set(preview.rows.filter((x) => x.action !== "skip").map((x) => x.id)));
         setSelectedPushIds(new Set());
         setPage(1);
         toast.success(`Catálogo leído: ${preview.rows.length} publicaciones en esta vista previa.`);
@@ -337,6 +346,7 @@ export default function MeliIntegrationView() {
     if (quickFilter === "active_only") rows = rows.filter((x) => x.status.toLowerCase() === "active");
     if (quickFilter === "updates_only") rows = rows.filter((x) => x.action === "update");
     if (quickFilter === "new_only") rows = rows.filter((x) => x.action === "create");
+    if (quickFilter === "skip_only") rows = rows.filter((x) => x.action === "skip");
     if (quickFilter === "price_diff") {
       rows = rows.filter(
         (x) => x.localPrice != null && Math.abs(Number(x.localPrice) - Number(x.meliPrice)) > 0.009
@@ -385,7 +395,7 @@ export default function MeliIntegrationView() {
   };
 
   const selectAllFilteredPull = () => {
-    setSelectedPullIds(new Set(filteredRows.map((x) => x.id)));
+    setSelectedPullIds(new Set(filteredRows.filter((x) => x.action !== "skip").map((x) => x.id)));
   };
 
   const clearPullSelection = () => setSelectedPullIds(new Set());
@@ -430,7 +440,11 @@ export default function MeliIntegrationView() {
         toast.message("Confirmá la importación luego de revisar la vista previa.");
         return;
       }
-      toast.success(`Importadas: ${d.imported}, actualizadas: ${d.updated}`);
+      const skippedN = Number(d.skipped) || 0;
+      toast.success(
+        `Importadas: ${d.imported}, actualizadas: ${d.updated}` +
+          (skippedN > 0 ? `, omitidas (duplicado): ${skippedN}` : "")
+      );
       const errMap: Record<string, string> = {};
       for (const ir of (d.itemResults || []) as Array<{ itemId: string; ok: boolean; error?: string }>) {
         if (!ir.ok && ir.error) errMap[ir.itemId] = ir.error;
@@ -542,7 +556,7 @@ export default function MeliIntegrationView() {
         <p className="text-sm text-muted-foreground mt-1">
           Conectá una o varias cuentas ML. Importá publicaciones completas (categorías, atributos, variaciones e imágenes
           en nuestra base) o enviá cambios a ML. El stock se sincroniza automáticamente; Mercado Libre es la referencia
-          principal cuando llegan notificaciones.
+          principal cuando llegan notificaciones. No se importan duplicados: mismo título o mismo SKU en tu catálogo.
         </p>
         <p className="text-sm mt-2">
           <a
@@ -674,7 +688,7 @@ export default function MeliIntegrationView() {
                 Resumen: {importPreview.uniqueFound} publicaciones únicas escaneadas ({importPreview.totalFound}{" "}
                 registros en respuesta paginada de ML).
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                 <div className="rounded bg-card border border-border p-2">
                   <span className="text-muted-foreground">Nuevas en MADSJEEZ</span>
                   <div className="text-base font-bold text-emerald-700 dark:text-emerald-400">{importPreview.toCreate}</div>
@@ -682,6 +696,12 @@ export default function MeliIntegrationView() {
                 <div className="rounded bg-card border border-border p-2">
                   <span className="text-muted-foreground">Actualizar desde ML</span>
                   <div className="text-base font-bold text-primary">{importPreview.toUpdate}</div>
+                </div>
+                <div className="rounded bg-card border border-border p-2">
+                  <span className="text-muted-foreground">Omitidas (duplicado)</span>
+                  <div className="text-base font-bold text-amber-700 dark:text-amber-400">
+                    {importPreview.skippedDuplicates ?? 0}
+                  </div>
                 </div>
                 <div className="rounded bg-card border border-border p-2">
                   <span className="text-muted-foreground">Ya vinculadas</span>
@@ -719,6 +739,7 @@ export default function MeliIntegrationView() {
                     <option value="active_only">Solo activas</option>
                     <option value="updates_only">Solo para actualizar</option>
                     <option value="new_only">Solo nuevas (crear)</option>
+                    <option value="skip_only">Omitidas (duplicado título/SKU)</option>
                     <option value="price_diff">Precio distinto al local</option>
                     <option value="stock_diff">Stock distinto al local</option>
                   </select>
@@ -798,13 +819,23 @@ export default function MeliIntegrationView() {
                       const stockDiff =
                         s.localStock != null && Number(s.localStock) !== Number(s.meliStock);
                       return (
-                        <tr key={s.id} className={pullErr ? "bg-destructive/10" : undefined}>
+                        <tr
+                          key={s.id}
+                          className={
+                            pullErr
+                              ? "bg-destructive/10"
+                              : s.action === "skip"
+                                ? "bg-amber-500/5 opacity-75"
+                                : undefined
+                          }
+                        >
                           <td className="px-2 py-2 align-middle">
                             <input
                               type="checkbox"
                               checked={selectedPullIds.has(s.id)}
+                              disabled={s.action === "skip"}
                               onChange={() => togglePull(s.id)}
-                              className="rounded border-border"
+                              className="rounded border-border disabled:opacity-40"
                             />
                           </td>
                           <td className="px-2 py-2 align-middle">
@@ -868,12 +899,27 @@ export default function MeliIntegrationView() {
                               {listingLabelEs(s.listingType)}
                             </span>
                           </td>
-                          <td className={`px-2 py-2 align-middle font-semibold ${s.action === "create" ? "text-emerald-700 dark:text-emerald-400" : "text-primary"}`}>
-                            {s.action === "create" ? "Crear" : "Actualizar"}
+                          <td
+                            className={`px-2 py-2 align-middle font-semibold ${
+                              s.action === "create"
+                                ? "text-emerald-700 dark:text-emerald-400"
+                                : s.action === "skip"
+                                  ? "text-amber-700 dark:text-amber-400"
+                                  : "text-primary"
+                            }`}
+                          >
+                            {s.action === "create"
+                              ? "Crear"
+                              : s.action === "skip"
+                                ? "Omitir"
+                                : "Actualizar"}
                           </td>
                           <td className="px-2 py-2 align-middle text-center">
-                            {pullErr ? (
-                              <span className="inline-flex items-center justify-center text-destructive" title={pullErr}>
+                            {pullErr || s.skipReason ? (
+                              <span
+                                className={`inline-flex items-center justify-center ${pullErr ? "text-destructive" : "text-amber-600"}`}
+                                title={pullErr || s.skipReason}
+                              >
                                 <AlertTriangle className="w-4 h-4" />
                               </span>
                             ) : (
