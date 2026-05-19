@@ -23,6 +23,11 @@ import {
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  ANALYTICS_CURRENCY,
+  buildAnalyticsItem,
+  trackEvent,
+} from "@/lib/analytics";
 
 interface CartItem {
   id: string;
@@ -117,6 +122,7 @@ function CheckoutContent() {
   const [shippingQuoteLoading, setShippingQuoteLoading] = useState(false);
   const [shippingQuoteError, setShippingQuoteError] = useState<string | null>(null);
   const quoteAbortRef = useRef<AbortController | null>(null);
+  const beginCheckoutTrackedRef = useRef(false);
 
   const fetchCart = useCallback(async () => {
     setLoading(true);
@@ -308,6 +314,36 @@ function CheckoutContent() {
 
   const sellerIds = new Set(cartItems.map((i) => i.product.seller_id));
   const multiSeller = sellerIds.size > 1;
+
+  useEffect(() => {
+    if (
+      loading ||
+      status !== "authenticated" ||
+      cartItems.length === 0 ||
+      beginCheckoutTrackedRef.current
+    ) {
+      return;
+    }
+
+    beginCheckoutTrackedRef.current = true;
+    trackEvent("begin_checkout", {
+      currency: ANALYTICS_CURRENCY,
+      value: Number(subtotal || 0),
+      ecommerce: {
+        currency: ANALYTICS_CURRENCY,
+        value: Number(subtotal || 0),
+        items: cartItems.map((item) =>
+          buildAnalyticsItem({
+            id: item.product.id,
+            name: item.product.title,
+            price: item.product.price,
+            quantity: item.quantity,
+            brand: item.product.seller_name,
+          })
+        ),
+      },
+    });
+  }, [cartItems, loading, status, subtotal]);
 
   const shippingDraftKey = `madsjeez_checkout_shipping_${
     session?.user?.email?.toLowerCase() || "anon"

@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import RainbowLogo from "@/components/brand/RainbowLogo"
 import { Lock, Mail, Shield } from "lucide-react"
+import { trackEvent } from "@/lib/analytics"
 
 function oauthErrorMessage(code: string | null): string | null {
   if (!code) return null
@@ -57,6 +58,9 @@ function LoginForm() {
         throw new Error(result.error)
       }
 
+      trackEvent("login", {
+        method: "credentials",
+      })
       router.push("/")
       router.refresh()
     } catch (err: unknown) {

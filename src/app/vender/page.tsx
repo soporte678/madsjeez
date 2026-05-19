@@ -2,6 +2,7 @@
 
 import { Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { trackEvent } from "@/lib/analytics";
 import {
   ArrowRight,
   BarChart3,
@@ -134,6 +135,13 @@ function Content() {
     });
     setLoading(false);
     if (!res.ok) return setError("No se pudo enviar tu solicitud.");
+    trackEvent("generate_lead", {
+      lead_type: "seller_registration",
+      source: "vender_page",
+      business_type: form.businessType || undefined,
+      invite_code: inviteCode || undefined,
+      estimated_catalog: form.monthlyCatalog ? Number(form.monthlyCatalog) : undefined,
+    });
     setOk(true);
   };
 

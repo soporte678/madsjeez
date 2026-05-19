@@ -24,6 +24,7 @@ import { ProductQuestions } from "@/components/product/ProductQuestions";
 import { getPrismaProductDetailBundle } from "@/lib/product/prisma-detail-for-page";
 import { ProductDetailClient } from "@/components/product/ProductDetailClient";
 import { BuyBox } from "@/components/product/BuyBox";
+import { ProductViewTracker } from "@/components/analytics/ProductViewTracker";
 
 function hasValidSupabaseConfig() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -238,6 +239,13 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
+      <ProductViewTracker
+        productId={product.id}
+        title={product.title}
+        price={Number(product.price || 0)}
+        categoryName={product.categories?.name || null}
+        sellerName={sellerName}
+      />
 
       <div className="min-h-screen bg-background font-sans text-foreground pb-20">
         {/* Top Banner */}

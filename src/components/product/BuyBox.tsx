@@ -7,6 +7,11 @@ import { useSession } from "next-auth/react"
 import { Truck, ShieldCheck, Award, MapPin, MessageCircle, Package } from "lucide-react"
 import { toast } from "sonner"
 import { WholesalePriceDisplay } from "./WholesalePriceDisplay"
+import {
+  ANALYTICS_CURRENCY,
+  buildAnalyticsItem,
+  trackEvent,
+} from "@/lib/analytics"
 
 interface BuyBoxProps {
   productId: string
@@ -150,6 +155,24 @@ export function BuyBox({
         })
         toast.success("Agregado al carrito")
       }
+
+      trackEvent("add_to_cart", {
+        currency: ANALYTICS_CURRENCY,
+        value: Number(unitPrice * quantity),
+        ecommerce: {
+          currency: ANALYTICS_CURRENCY,
+          value: Number(unitPrice * quantity),
+          items: [
+            buildAnalyticsItem({
+              id: productId,
+              name: productTitle,
+              price: unitPrice,
+              quantity,
+              brand: sellerName,
+            }),
+          ],
+        },
+      })
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "Error al agregar")
     } finally {
@@ -171,6 +194,23 @@ export function BuyBox({
     try {
       if (status === "authenticated") {
         await addViaApi(quantity)
+        trackEvent("add_to_cart", {
+          currency: ANALYTICS_CURRENCY,
+          value: Number(unitPrice * quantity),
+          ecommerce: {
+            currency: ANALYTICS_CURRENCY,
+            value: Number(unitPrice * quantity),
+            items: [
+              buildAnalyticsItem({
+                id: productId,
+                name: productTitle,
+                price: unitPrice,
+                quantity,
+                brand: sellerName,
+              }),
+            ],
+          },
+        })
         router.push("/checkout")
       } else {
         upsertGuestCartItem({
@@ -182,6 +222,23 @@ export function BuyBox({
           sellerId,
           sellerName,
           maxStock: stock,
+        })
+        trackEvent("add_to_cart", {
+          currency: ANALYTICS_CURRENCY,
+          value: Number(unitPrice * quantity),
+          ecommerce: {
+            currency: ANALYTICS_CURRENCY,
+            value: Number(unitPrice * quantity),
+            items: [
+              buildAnalyticsItem({
+                id: productId,
+                name: productTitle,
+                price: unitPrice,
+                quantity,
+                brand: sellerName,
+              }),
+            ],
+          },
         })
         router.push("/auth/login?redirect=/checkout")
       }
