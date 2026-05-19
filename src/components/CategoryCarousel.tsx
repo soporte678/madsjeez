@@ -35,12 +35,28 @@ export function CategoryCarousel({ categories }: CategoryCarouselProps) {
   }
 
   return (
-    <div className="w-full max-w-[1184px] bg-transparent rounded relative group mb-12 mt-4">
-      <div className="flex items-center gap-4 px-2 mb-4">
-        <h2 className="text-[22px] font-normal text-foreground">Categorías</h2>
-        <Link href="/search" className="text-[14px] text-primary font-normal hover:text-primary/80 transition-colors mt-1">
-          Mostrar todas las categorías
+    <div className="group relative mb-14 mt-6 w-full max-w-[1184px] rounded-[28px] border border-white/8 bg-[linear-gradient(180deg,rgba(15,23,42,0.62)_0%,rgba(15,23,42,0.34)_100%)] p-4 shadow-[0_24px_55px_rgba(2,6,23,0.16)] backdrop-blur-md md:p-5">
+      <div className="mb-5 flex items-end justify-between gap-4 px-2">
+        <div>
+          <p className="text-[11px] font-black uppercase tracking-[0.18em] text-sky-300/90">Mapa comercial</p>
+          <div className="mt-1 flex items-center gap-4">
+            <h2 className="text-[26px] font-black tracking-tight text-white">Categorías</h2>
+            <span className="hidden rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-300 md:inline-flex">
+              18 accesos rápidos
+            </span>
+          </div>
+        </div>
+        <Link
+          href="/categories"
+          className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[13px] font-semibold text-slate-200 transition-all hover:border-sky-400/30 hover:bg-white/10 hover:text-white"
+        >
+          Ver catálogo completo
+          <ChevronRight size={14} />
         </Link>
+      </div>
+
+      <div className="mb-4 rounded-2xl border border-white/8 bg-black/10 px-4 py-3 text-[13px] text-slate-300">
+        Entrá rápido a los rubros con más intención de compra y llevá a los usuarios directo a las landings del marketplace.
       </div>
 
       <div
@@ -49,19 +65,28 @@ export function CategoryCarousel({ categories }: CategoryCarouselProps) {
         className="overflow-x-auto scroll-smooth pb-2"
         style={{ scrollbarWidth: 'none' }}
       >
-        <div className="grid grid-rows-3 grid-flow-col gap-x-3 gap-y-3 auto-cols-max">
+        <div className="grid auto-cols-max grid-flow-col grid-rows-3 gap-x-4 gap-y-4">
           {categories.map((cat) => (
             <Link
               key={cat.id}
               href={`/category/${cat.slug || cat.name.toLowerCase().replace(/\s+/g, '-')}`}
-              className="w-[280px] h-[90px] bg-card border border-border rounded flex items-center px-6 cursor-pointer hover:shadow-[0_2px_4px_0_rgba(0,0,0,.1)] hover:border-primary/30 transition-all group/cat"
+              className="group/cat relative flex h-[104px] w-[292px] items-center overflow-hidden rounded-[22px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.82)_0%,rgba(15,23,42,0.94)_100%)] px-5 shadow-[0_14px_34px_rgba(2,6,23,0.18)] transition-all duration-300 hover:-translate-y-1 hover:border-sky-400/30 hover:shadow-[0_18px_40px_rgba(14,116,244,0.16)]"
             >
-              <div className="w-14 h-14 bg-muted rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 border border-border/80">
-                <img src={cat.image} alt={cat.name} className="w-10 h-10 object-contain" />
+              <div className="absolute inset-y-0 left-0 w-[4px] bg-gradient-to-b from-[#38bdf8] via-[#3b82f6] to-[#f97316] opacity-80 transition-opacity group-hover/cat:opacity-100" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.08),transparent_45%)] opacity-90" />
+              <div className="relative flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.06] to-transparent opacity-70" />
+                <img src={cat.image} alt={cat.name} className="relative h-10 w-10 object-contain drop-shadow-[0_6px_14px_rgba(0,0,0,0.35)]" />
               </div>
-              <span className="ml-4 text-[15px] text-foreground font-normal leading-tight group-hover/cat:text-primary transition-colors">
-                {cat.name}
-              </span>
+              <div className="relative ml-4 flex min-w-0 flex-1 flex-col">
+                <span className="text-[16px] font-bold leading-tight text-white transition-colors group-hover/cat:text-sky-100">
+                  {cat.name}
+                </span>
+                <span className="mt-2 inline-flex w-fit items-center gap-1 text-[12px] font-semibold text-slate-400 transition-colors group-hover/cat:text-slate-200">
+                  Explorar categoría
+                  <ChevronRight size={14} className="transition-transform duration-300 group-hover/cat:translate-x-1" />
+                </span>
+              </div>
             </Link>
           ))}
         </div>
@@ -70,17 +95,17 @@ export function CategoryCarousel({ categories }: CategoryCarouselProps) {
       {showLeftArrow && (
         <button
           onClick={() => scroll('left')}
-          className="absolute left-[-24px] top-[60%] -translate-y-1/2 bg-card border border-border w-16 h-16 rounded-full shadow-[0_2px_4px_0_rgba(0,0,0,.19)] flex items-center justify-center text-primary hover:shadow-[0_4px_8px_0_rgba(0,0,0,.19)] transition-shadow z-10"
+          className="absolute left-[-18px] top-[60%] z-10 flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-[rgba(15,23,42,0.92)] text-slate-100 shadow-[0_16px_38px_rgba(2,6,23,0.28)] backdrop-blur-xl transition-all hover:border-sky-400/30 hover:text-white"
         >
-          <ChevronLeft size={32} strokeWidth={2} />
+          <ChevronLeft size={28} strokeWidth={2.1} />
         </button>
       )}
       {showRightArrow && (
         <button
           onClick={() => scroll('right')}
-          className="absolute right-[-24px] top-[60%] -translate-y-1/2 bg-card border border-border w-16 h-16 rounded-full shadow-[0_2px_4px_0_rgba(0,0,0,.19)] flex items-center justify-center text-primary hover:shadow-[0_4px_8px_0_rgba(0,0,0,.19)] transition-shadow z-10 opacity-0 group-hover:opacity-100"
+          className="absolute right-[-18px] top-[60%] z-10 flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-[rgba(15,23,42,0.92)] text-slate-100 opacity-0 shadow-[0_16px_38px_rgba(2,6,23,0.28)] backdrop-blur-xl transition-all hover:border-sky-400/30 hover:text-white group-hover:opacity-100"
         >
-          <ChevronRight size={32} strokeWidth={2} />
+          <ChevronRight size={28} strokeWidth={2.1} />
         </button>
       )}
     </div>
