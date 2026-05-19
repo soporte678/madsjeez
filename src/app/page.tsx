@@ -36,23 +36,6 @@ import { createClient } from "@/lib/supabase/client"
 import { hasValidProductImageUrl, primaryImageUrlFromRows } from "@/lib/productVisibility"
 import { PaidAdBannerSlot } from "@/components/ads/PaidAdBannerSlot"
 
-const demoClothing = [
-  { id: 'd1', title: '12 Soquetes Medias Unisex Docena Talle Adultos', price: 16999, installments: 'Mismo precio 6 cuotas de $ 2.833', shipping: 'Llega mañana', image: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=300&q=80' },
-  { id: 'd2', title: 'Remera Algodón Premium Oversize Unisex Lisa', price: 24800, installments: 'Mismo precio 6 cuotas de $ 4.133', shipping: 'Llega mañana', image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=300&q=80' },
-  { id: 'd3', title: 'Zapatillas Urbanas Running Deportivas Unisex', originalPrice: 45000, price: 38250, discount: '15% OFF', shipping: 'Llega mañana', isFlash: true, image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=300&q=80' },
-  { id: 'd4', title: 'Campera Rompeviento Impermeable Capucha Hombre', price: 32990, installments: 'Mismo precio 6 cuotas de $ 5.498', shipping: 'Llega mañana', image: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=300&q=80' },
-  { id: 'd5', title: 'Jean Chupin Elastizado Hombre Premium Calidad', price: 27500, shipping: 'Llega gratis mañana', isFlash: true, image: 'https://images.unsplash.com/photo-1542272454315-4c01d7abdf4a?auto=format&fit=crop&w=300&q=80' },
-  { id: 'd6', title: 'Mochila Urbana Notebook 17 Pulgadas Impermeable', price: 19900, volumePrice: '$ 18.905 llevando 3 o más', exclusive: true, shipping: 'Llega mañana', image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=300&q=80' },
-]
-
-const demoRepurchase = [
-  { id: 'r1', title: 'Papel Higiénico Doble Hoja Premium Pack x30', price: 12990, installments: 'Mismo precio 6 cuotas de $ 2.165', shipping: 'Llega gratis mañana', image: 'https://images.unsplash.com/photo-1584556812952-905ffd0c611a?auto=format&fit=crop&w=300&q=80' },
-  { id: 'r2', title: 'Detergente Concentrado Ropa Pack x3 Litros', price: 8950, volumePrice: '$ 8.500 llevando 5 o más', exclusive: true, shipping: 'Llega mañana', image: 'https://images.unsplash.com/photo-1583947215259-38e31be8751f?auto=format&fit=crop&w=300&q=80' },
-  { id: 'r3', title: 'Café Molido Tostado Premium 1kg Colombia', price: 15985, shipping: 'Llega mañana', image: 'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?auto=format&fit=crop&w=300&q=80' },
-  { id: 'r4', title: 'Yerba Mate Orgánica Premium 1kg Pack x2', price: 10494, shipping: 'Llega mañana', image: 'https://images.unsplash.com/photo-1592663527359-cf6642f54cff?auto=format&fit=crop&w=300&q=80' },
-  { id: 'r5', title: 'Desodorante Antitranspirante Pack x6 Unidades', originalPrice: 19990, price: 18990, discount: '5% OFF', shipping: 'Llega mañana', image: 'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?auto=format&fit=crop&w=300&q=80' },
-]
-
 const categoriesData = [
   { id: 1, name: 'Autos, Motos y Otros', image: 'https://cdn-icons-png.flaticon.com/512/3204/3204061.png', slug: 'autos-motos' },
   { id: 2, name: 'Accesorios para Vehículos', image: 'https://cdn-icons-png.flaticon.com/512/3085/3085330.png', slug: 'accesorios-vehiculos' },
@@ -173,6 +156,8 @@ export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [products, setProducts] = useState<any[]>([])
   const [recentProducts, setRecentProducts] = useState<any[]>([])
+  const [repurchaseProducts, setRepurchaseProducts] = useState<any[]>([])
+  const [extraProducts, setExtraProducts] = useState<any[]>([])
 
   const heroSlideCount = heroBanners.length
 
@@ -192,22 +177,27 @@ export default function Home() {
         const { data: prods, error } = await supabase
           .from("products")
           .select(
-            "id, title, price, original_price, free_shipping, sales, product_images(url, is_primary, order)"
+            "id, title, price, original_price, free_shipping, sales, stock, product_images(url, is_primary, order)"
           )
           .eq("is_active", true)
+          .gt("stock", 0)
           .order("created_at", { ascending: false })
-          .limit(72)
+          .limit(120)
 
         if (cancelled) return
         if (error) {
           console.error("Landing products:", error.message)
           setProducts([])
           setRecentProducts([])
+          setRepurchaseProducts([])
+          setExtraProducts([])
           return
         }
         if (!prods?.length) {
           setProducts([])
           setRecentProducts([])
+          setRepurchaseProducts([])
+          setExtraProducts([])
           return
         }
         const mapped = prods.map((p: Record<string, unknown>) => ({
@@ -217,18 +207,24 @@ export default function Home() {
           original_price: p.original_price as number | null,
           free_shipping: p.free_shipping as boolean,
           sales: (p.sales as number) || 0,
+          stock: (p.stock as number) || 0,
           image: primaryImageUrlFromRows(
             p.product_images as Array<{ url?: unknown; is_primary?: boolean; order?: number }> | null
           ),
         }))
-        const withImages = mapped.filter((p) => hasValidProductImageUrl(p.image))
-        setProducts(withImages.slice(0, 6))
-        setRecentProducts(withImages.slice(6, 12))
+        const withImages = mapped.filter((p) => p.stock > 0 && hasValidProductImageUrl(p.image))
+        const sortedBySales = [...withImages].sort((a, b) => (b.sales || 0) - (a.sales || 0))
+        setProducts(withImages.slice(0, 12))
+        setRecentProducts(withImages.slice(12, 24))
+        setRepurchaseProducts(sortedBySales.slice(0, 12))
+        setExtraProducts(withImages.slice(24, 36))
       } catch (e) {
         if (!cancelled) {
           console.error("Landing products fetch:", e)
           setProducts([])
           setRecentProducts([])
+          setRepurchaseProducts([])
+          setExtraProducts([])
         }
       }
     }
@@ -549,6 +545,7 @@ export default function Home() {
         <ProductCarousel
           title="Relacionado con tus visitas"
           products={products}
+          autoRotate
         />
       </section>
 
@@ -557,6 +554,7 @@ export default function Home() {
         <ProductCarousel
           title="Elegidos para vos"
           products={recentProducts}
+          autoRotate
         />
       </section>
 
@@ -564,11 +562,12 @@ export default function Home() {
         <PaidAdBannerSlot variant="leaderboard" demoIndex={0} />
       </section>
 
-      {/* 4. CARRUSEL: Pensados para vos en Ropa */}
+      {/* 4. CARRUSEL: MAs productos reales del marketplace */}
       <section className="max-w-[1184px] mx-auto px-4">
         <ProductCarousel
-          title="Pensados para vos en Ropa y Accesorios"
-          products={demoClothing}
+          title="Mas productos del marketplace"
+          products={extraProducts}
+          autoRotate
         />
       </section>
 
@@ -576,7 +575,8 @@ export default function Home() {
       <section className="max-w-[1184px] mx-auto px-4">
         <ProductCarousel
           title="Productos que otras personas vuelven a comprar"
-          products={demoRepurchase}
+          products={repurchaseProducts}
+          autoRotate
         />
       </section>
 
@@ -614,7 +614,8 @@ export default function Home() {
       <section className="max-w-[1184px] mx-auto px-4">
         <ProductCarousel
           title="También puede interesarte"
-          products={[...demoClothing].reverse()}
+          products={[...recentProducts].reverse()}
+          autoRotate
         />
       </section>
 

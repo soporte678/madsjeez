@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight, Package, Zap } from 'lucide-react'
 import Link from 'next/link'
 
@@ -25,13 +25,21 @@ interface ProductCarouselProps {
   title: string
   products: CarouselProduct[]
   linkText?: string
+  autoRotate?: boolean
+  rotateIntervalMs?: number
 }
 
 const formatPrice = (price: number) => {
   return `$ ${price.toLocaleString('es-AR')}`
 }
 
-export function ProductCarousel({ title, products, linkText }: ProductCarouselProps) {
+export function ProductCarousel({
+  title,
+  products,
+  linkText,
+  autoRotate = false,
+  rotateIntervalMs = 12000,
+}: ProductCarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [showLeftArrow, setShowLeftArrow] = useState(false)
   const [showRightArrow, setShowRightArrow] = useState(true)
@@ -49,6 +57,25 @@ export function ProductCarousel({ title, products, linkText }: ProductCarouselPr
     setShowLeftArrow(scrollLeft > 0)
     setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 10)
   }
+
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!autoRotate || !el || products.length <= 4) return
+
+    const rotate = () => {
+      const { scrollLeft, clientWidth, scrollWidth } = el
+      const nextLeft = scrollLeft + clientWidth
+      const maxLeft = scrollWidth - clientWidth
+
+      el.scrollTo({
+        left: nextLeft >= maxLeft - 10 ? 0 : nextLeft,
+        behavior: "smooth",
+      })
+    }
+
+    const interval = setInterval(rotate, rotateIntervalMs)
+    return () => clearInterval(interval)
+  }, [autoRotate, products.length, rotateIntervalMs])
 
   if (products.length === 0) return null
 
