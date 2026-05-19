@@ -3,12 +3,21 @@
 declare global {
   interface Window {
     dataLayer?: Array<Record<string, unknown>>;
-    gtag?: (
-      command: "event",
-      eventName: string,
-      params?: Record<string, unknown>
-    ) => void;
+    gtag?: (...args: unknown[]) => void;
   }
+}
+
+function shouldUseDebugMode() {
+  if (typeof window === "undefined") return false;
+
+  const params = new URLSearchParams(window.location.search);
+  return (
+    params.has("gtm_debug") ||
+    params.has("_dbg") ||
+    params.has("gtm_preview") ||
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1"
+  );
 }
 
 function ensureGtag() {
@@ -17,10 +26,10 @@ function ensureGtag() {
   window.dataLayer = window.dataLayer || [];
 
   if (typeof window.gtag !== "function") {
-    window.gtag = ((...args: unknown[]) => {
+    window.gtag = (...args: unknown[]) => {
       window.dataLayer = window.dataLayer || [];
       window.dataLayer.push(args as unknown as Record<string, unknown>);
-    }) as Window["gtag"];
+    };
   }
 
   return window.gtag;
@@ -65,6 +74,9 @@ export function trackEvent(
     params.ecommerce && typeof params.ecommerce === "object"
       ? (params.ecommerce as Record<string, unknown>)
       : null;
+  const payload = shouldUseDebugMode()
+    ? { ...params, debug_mode: true }
+    : params;
 
   window.dataLayer = window.dataLayer || [];
   if (ecommerce) {
@@ -72,11 +84,15 @@ export function trackEvent(
   }
   window.dataLayer.push({
     event: eventName,
-    ...params,
+    ...payload,
   });
 
   const gtag = ensureGtag();
   if (typeof gtag === "function") {
-    gtag("event", eventName, ecommerce ? { ...params, ...ecommerce } : params);
+    gtag(
+      "event",
+      eventName,
+      ecommerce ? { ...payload, ...ecommerce } : payload
+    );
   }
 }

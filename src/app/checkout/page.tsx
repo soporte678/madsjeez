@@ -123,6 +123,7 @@ function CheckoutContent() {
   const [shippingQuoteError, setShippingQuoteError] = useState<string | null>(null);
   const quoteAbortRef = useRef<AbortController | null>(null);
   const beginCheckoutTrackedRef = useRef(false);
+  const viewCartTrackedRef = useRef<string | null>(null);
 
   const fetchCart = useCallback(async () => {
     setLoading(true);
@@ -345,6 +346,35 @@ function CheckoutContent() {
     });
   }, [cartItems, loading, status, subtotal]);
 
+  useEffect(() => {
+    if (loading || cartItems.length === 0) return;
+
+    const fingerprint = cartItems
+      .map((item) => `${item.product.id}:${item.quantity}`)
+      .join("|");
+
+    if (viewCartTrackedRef.current === fingerprint) return;
+    viewCartTrackedRef.current = fingerprint;
+
+    trackEvent("view_cart", {
+      currency: ANALYTICS_CURRENCY,
+      value: Number(subtotal || 0),
+      ecommerce: {
+        currency: ANALYTICS_CURRENCY,
+        value: Number(subtotal || 0),
+        items: cartItems.map((item) =>
+          buildAnalyticsItem({
+            id: item.product.id,
+            name: item.product.title,
+            price: item.product.price,
+            quantity: item.quantity,
+            brand: item.product.seller_name,
+          })
+        ),
+      },
+    });
+  }, [cartItems, loading, subtotal]);
+
   const shippingDraftKey = `madsjeez_checkout_shipping_${
     session?.user?.email?.toLowerCase() || "anon"
   }`;
@@ -468,8 +498,28 @@ function CheckoutContent() {
   };
 
   const removeCartItem = async (itemId: string) => {
+    const item = cartItems.find((entry) => entry.id === itemId);
     setItemUpdatingId(itemId);
     try {
+      if (item) {
+        trackEvent("remove_from_cart", {
+          currency: ANALYTICS_CURRENCY,
+          value: Number(item.product.price * item.quantity),
+          ecommerce: {
+            currency: ANALYTICS_CURRENCY,
+            value: Number(item.product.price * item.quantity),
+            items: [
+              buildAnalyticsItem({
+                id: item.product.id,
+                name: item.product.title,
+                price: item.product.price,
+                quantity: item.quantity,
+                brand: item.product.seller_name,
+              }),
+            ],
+          },
+        });
+      }
       const res = await fetch(`/api/cart?itemId=${encodeURIComponent(itemId)}`, {
         method: "DELETE",
         credentials: "include",
@@ -518,6 +568,50 @@ function CheckoutContent() {
       </div>
     );
   }
+
+  const handleAdvanceToPayment = () => {
+    trackEvent("add_shipping_info", {
+      currency: ANALYTICS_CURRENCY,
+      value: Number(subtotal || 0),
+      shipping_tier: shippingQuote?.used_zipnova ? "zipnova" : "standard",
+      ecommerce: {
+        currency: ANALYTICS_CURRENCY,
+        value: Number(subtotal || 0),
+        items: cartItems.map((item) =>
+          buildAnalyticsItem({
+            id: item.product.id,
+            name: item.product.title,
+            price: item.product.price,
+            quantity: item.quantity,
+            brand: item.product.seller_name,
+          })
+        ),
+      },
+    });
+    setStep(2);
+  };
+
+  const handleAdvanceToConfirmation = () => {
+    trackEvent("add_payment_info", {
+      currency: ANALYTICS_CURRENCY,
+      value: Number(totalKnown ?? subtotal ?? 0),
+      payment_type: "mercado_pago",
+      ecommerce: {
+        currency: ANALYTICS_CURRENCY,
+        value: Number(totalKnown ?? subtotal ?? 0),
+        items: cartItems.map((item) =>
+          buildAnalyticsItem({
+            id: item.product.id,
+            name: item.product.title,
+            price: item.product.price,
+            quantity: item.quantity,
+            brand: item.product.seller_name,
+          })
+        ),
+      },
+    });
+    setStep(3);
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -659,7 +753,7 @@ function CheckoutContent() {
 
                         <Button
                           className="w-full mt-6 bg-primary hover:bg-primary-hover"
-                          onClick={() => setStep(2)}
+                          onClick={handleAdvanceToPayment}
                           disabled={
                             !shippingAddress.recipient ||
                             !shippingAddress.street ||
@@ -694,7 +788,10 @@ function CheckoutContent() {
                         <Button variant="outline" onClick={() => setStep(1)}>
                           Volver
                         </Button>
-                        <Button className="flex-1 bg-primary hover:bg-primary-hover" onClick={() => setStep(3)}>
+                        <Button
+                          className="flex-1 bg-primary hover:bg-primary-hover"
+                          onClick={handleAdvanceToConfirmation}
+                        >
                           Continuar
                         </Button>
                       </div>
