@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Package,
+  Search,
   Truck,
   CheckCircle2,
   Clock,
@@ -121,6 +122,7 @@ function StatusIcon({ status }: { status: string }) {
 
 export default function VentasView() {
   const [tab, setTab] = useState("all");
+  const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [orders, setOrders] = useState<ApiOrder[]>([]);
@@ -159,9 +161,21 @@ export default function VentasView() {
 
   const filtered = useMemo(() => {
     const cfg = STATUS_TABS.find((t) => t.key === tab);
-    if (!cfg) return orders;
-    return orders.filter((o) => cfg.filter(o));
-  }, [orders, tab]);
+    const base = cfg ? orders.filter((o) => cfg.filter(o)) : orders;
+    const normalized = query.trim().toLowerCase();
+    if (!normalized) return base;
+    return base.filter((order) => {
+      const first = order.items[0];
+      const title = first?.product?.title?.toLowerCase() ?? "";
+      const buyerName = order.buyer?.name?.toLowerCase() ?? "";
+      const buyerEmail = order.buyer?.email?.toLowerCase() ?? "";
+      const orderNumber = order.orderNumber.toLowerCase();
+      const shippingName = order.shippingName.toLowerCase();
+      return [title, buyerName, buyerEmail, orderNumber, shippingName].some((value) =>
+        value.includes(normalized)
+      );
+    });
+  }, [orders, query, tab]);
 
   const tabCount = (key: string) => {
     if (key === "all") return totalServer;
@@ -293,6 +307,16 @@ export default function VentasView() {
         ))}
       </div>
 
+      <div className="relative max-w-md">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Buscar por pedido, comprador o producto..."
+          className="w-full rounded-xl border border-slate-200/80 bg-white/92 py-2.5 pl-10 pr-4 text-sm text-slate-800 shadow-sm outline-none transition focus:border-[#3483fa] dark:border-slate-700/80 dark:bg-slate-900/92 dark:text-slate-100 dark:placeholder:text-slate-500"
+        />
+      </div>
+
       {orders.length === 0 ? (
         <div className="rounded-xl border border-border bg-card p-16 text-center">
           <Package className="w-14 h-14 text-muted-foreground/40 mx-auto mb-4" />
@@ -330,7 +354,7 @@ export default function VentasView() {
                   key={order.id}
                   className="rounded-xl border border-border bg-card overflow-hidden shadow-sm"
                 >
-                  <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3 bg-muted/30 text-xs text-muted-foreground">
+                  <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3 bg-muted/30 text-xs text-slate-500 dark:text-slate-300">
                     <span className="font-mono text-foreground font-medium">#{order.orderNumber}</span>
                     <span>·</span>
                     <span>{formatWhen(order.createdAt)}</span>
@@ -351,28 +375,28 @@ export default function VentasView() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground leading-snug">{title}</p>
-                      <p className="text-xs text-muted-foreground mt-1">Comprador: {buyer}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">Comprador: {buyer}</p>
                       {(order.shippingCity || order.shippingState) && (
-                        <p className="text-xs text-muted-foreground mt-0.5">
+                        <p className="text-xs text-slate-500 dark:text-slate-300 mt-0.5">
                           Envío: {order.shippingCity}
                           {order.shippingCity && order.shippingState ? ", " : ""}
                           {order.shippingState}
                         </p>
                       )}
                       {order.fulfillmentStageLabel && (
-                        <p className="text-xs text-primary font-medium mt-1">
+                        <p className="text-xs text-primary dark:text-[#60a5fa] font-medium mt-1">
                           Tu gestión: {order.fulfillmentStageLabel}
                         </p>
                       )}
                       {order.delayLabel && (
-                        <p className="text-xs font-semibold text-amber-700 mt-1">{order.delayLabel}</p>
+                        <p className="text-xs font-semibold text-amber-700 dark:text-amber-300 mt-1">{order.delayLabel}</p>
                       )}
                     </div>
                     <div className="flex flex-col items-end gap-2 shrink-0">
                       <span className="text-lg font-semibold text-foreground">{formatPrice(order.total)}</span>
                       <Link
                         href={`/dashboard/pedido/${encodeURIComponent(order.id)}`}
-                        className="text-sm font-semibold text-primary hover:underline"
+                        className="text-sm font-semibold text-primary dark:text-[#60a5fa] hover:underline"
                       >
                         Ver seguimiento
                       </Link>
@@ -381,7 +405,7 @@ export default function VentasView() {
 
                   {order.id.startsWith("sb-") && !canOps && (
                     <div className="border-t border-border px-4 py-3 bg-muted/20">
-                      <p className="text-[11px] text-muted-foreground">
+                      <p className="text-[11px] text-slate-500 dark:text-slate-300">
                         {order.status === "PENDING"
                           ? "Las opciones de preparacion se activan cuando Mercado Pago confirme el pago."
                           : "Este pedido no admite cambios operativos por su estado actual."}
@@ -391,13 +415,13 @@ export default function VentasView() {
 
                   {canOps && (
                     <div className="border-t border-border px-4 py-3 bg-muted/20 space-y-2">
-                      <p className="text-[11px] text-muted-foreground">
+                      <p className="text-[11px] text-slate-500 dark:text-slate-300">
                         Actualizá el estado operativo (no reemplaza el estado de pago de Mercado Pago). Si no despachás
                         en 24 h desde el pago, el pedido entra en demora.
                       </p>
                       <div className="flex flex-wrap items-center gap-2">
                         <select
-                          className="text-xs border border-border rounded-md px-2 py-1.5 bg-background max-w-[220px]"
+                          className="text-xs border border-slate-200/80 dark:border-slate-700/80 rounded-md px-2 py-1.5 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100 max-w-[220px]"
                           value={stageVal}
                           disabled={savingId === order.id}
                           onChange={(e) => void saveFulfillment(order, e.target.value)}
@@ -417,7 +441,7 @@ export default function VentasView() {
                               setReviewReason("");
                               setReviewUrls("");
                             }}
-                            className="text-xs font-semibold text-amber-800 underline"
+                            className="text-xs font-semibold text-amber-800 dark:text-amber-300 underline"
                           >
                             Solicitar revisión por demora
                           </button>
@@ -433,21 +457,21 @@ export default function VentasView() {
       )}
 
       {reviewOrder && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-card rounded-xl border border-border max-w-md w-full p-5 shadow-lg">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/55 p-4">
+          <div className="bg-card rounded-xl border border-slate-200/80 dark:border-slate-700/80 max-w-md w-full p-5 shadow-lg">
             <h3 className="text-sm font-semibold text-foreground mb-2">Revisión por demora</h3>
-            <p className="text-xs text-muted-foreground mb-3">
+            <p className="text-xs text-slate-500 dark:text-slate-300 mb-3">
               Pedido #{reviewOrder.orderNumber}. Contanos el motivo y adjuntá URLs de prueba (tracking, capturas,
               etc.).
             </p>
             <textarea
-              className="w-full text-sm border border-border rounded-md p-2 min-h-[100px] bg-background"
+              className="w-full text-sm border border-slate-200/80 dark:border-slate-700/80 rounded-md p-2 min-h-[100px] bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100"
               placeholder="Motivo (mín. 10 caracteres)…"
               value={reviewReason}
               onChange={(e) => setReviewReason(e.target.value)}
             />
             <textarea
-              className="w-full text-sm border border-border rounded-md p-2 mt-2 min-h-[60px] bg-background"
+              className="w-full text-sm border border-slate-200/80 dark:border-slate-700/80 rounded-md p-2 mt-2 min-h-[60px] bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100"
               placeholder="URLs de prueba, una por línea o separadas por coma"
               value={reviewUrls}
               onChange={(e) => setReviewUrls(e.target.value)}
@@ -455,7 +479,7 @@ export default function VentasView() {
             <div className="flex justify-end gap-2 mt-4">
               <button
                 type="button"
-                className="text-sm px-3 py-1.5 rounded-md border border-border"
+                className="text-sm px-3 py-1.5 rounded-md border border-slate-200/80 dark:border-slate-700/80"
                 onClick={() => setReviewOrder(null)}
                 disabled={reviewBusy}
               >

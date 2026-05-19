@@ -40,7 +40,7 @@ function formatRelativeDate(date: Date): string {
   return `Hace ${Math.floor(diffDays / 30)} meses`;
 }
 
-// Datos mock para fallback
+// Datos mock solo para desarrollo local
 const mockQuestions: QuestionItem[] = [
   {
     id: '1',
@@ -170,22 +170,23 @@ export async function GET(request: NextRequest) {
       tableExists = false;
     }
 
+    const shouldUseMockFallback = process.env.NODE_ENV !== 'production' && realQuestions.length === 0 && !tableExists;
     const response = {
-      questions: realQuestions.length > 0 ? realQuestions : mockQuestions,
-      total: realQuestions.length > 0 ? realQuestions.length : mockQuestions.length,
-      isRealData: realQuestions.length > 0,
+      questions: shouldUseMockFallback ? mockQuestions : realQuestions,
+      total: shouldUseMockFallback ? mockQuestions.length : realQuestions.length,
+      isRealData: !shouldUseMockFallback,
       tableExists,
     };
 
     return NextResponse.json(response);
   } catch (error) {
     console.error('Error fetching questions:', error);
-    // Devolver datos mock en caso de error
+    const shouldUseMockFallback = process.env.NODE_ENV !== 'production';
     return NextResponse.json({
-      questions: mockQuestions,
-      total: mockQuestions.length,
-      isRealData: false,
-      tableExists: false,
+      questions: shouldUseMockFallback ? mockQuestions : [],
+      total: shouldUseMockFallback ? mockQuestions.length : 0,
+      isRealData: !shouldUseMockFallback,
+      tableExists: shouldUseMockFallback ? false : true,
       error: 'Error fetching questions',
     });
   }

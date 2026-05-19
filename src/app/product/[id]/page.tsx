@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { ProductQuestions } from "@/components/product/ProductQuestions";
 import { getPrismaProductDetailBundle } from "@/lib/product/prisma-detail-for-page";
 import { ProductDetailClient } from "@/components/product/ProductDetailClient";
 import { BuyBox } from "@/components/product/BuyBox";
@@ -346,23 +347,8 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                 </>
               )}
 
-              {/* Questions */}
-              <div className="px-4 lg:px-0 mb-10">
-                <h2 className="text-[24px] font-semibold text-gray-800 mb-6">Preguntas y respuestas</h2>
-                <div className="flex gap-4 mb-8">
-                  <input
-                    type="text"
-                    placeholder="Escribí tu pregunta..."
-                    className="flex-1 py-3 px-4 rounded-lg border border-gray-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-sm"
-                    readOnly
-                  />
-                  <Link href={`/messages?seller=${product.seller_id}&product=${product.id}`} className="bg-blue-600 text-white font-bold px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors">
-                    Preguntar
-                  </Link>
-                </div>
-                <Link href={`/messages?seller=${product.seller_id}&product=${product.id}`} className="text-blue-500 font-semibold text-[14px] hover:underline">
-                  Ver todas las preguntas
-                </Link>
+              <div id="preguntas" className="px-4 lg:px-0 mb-10 scroll-mt-24">
+                <ProductQuestions productId={product.id} sellerId={product.seller_id} />
               </div>
 
               <div className="w-full h-px bg-border my-8 hidden md:block"></div>

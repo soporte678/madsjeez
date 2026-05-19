@@ -114,6 +114,22 @@ async function getSubcategories(parentId: string | null): Promise<Subcategory[]>
   });
 }
 
+async function getRelatedCategories(category: CategoryView): Promise<Subcategory[]> {
+  if (category.parentId) {
+    return prisma.category.findMany({
+      where: {
+        parentId: category.parentId,
+        NOT: { id: category.id },
+      },
+      select: { id: true, name: true, slug: true },
+      orderBy: { name: "asc" },
+      take: 12,
+    });
+  }
+
+  return getSubcategories(category.id);
+}
+
 async function getParentCategory(parentId: string | null) {
   if (!parentId) return null;
   return prisma.category.findUnique({
@@ -186,6 +202,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
     getSubcategories(category.id),
     getParentCategory(category.parentId),
   ]);
+  const relatedCategories = await getRelatedCategories(category);
   const categoryIds = [category.id, ...subcategories.map((subcategory) => subcategory.id)];
   const products = await getCategoryProducts(categoryIds);
   const searchHref = `/search?category=${encodeURIComponent(category.id)}`;
@@ -342,8 +359,10 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
                     <p className="text-xs text-white/70">publicaciones visibles</p>
                   </div>
                   <div className="rounded-2xl bg-white/10 p-4">
-                    <p className="text-2xl font-black">{formatCount(subcategories.length)}</p>
-                    <p className="text-xs text-white/70">subcategorias enlazadas</p>
+                    <p className="text-2xl font-black">{formatCount(relatedCategories.length)}</p>
+                    <p className="text-xs text-white/70">
+                      {category.parentId ? "subcategorias relacionadas" : "subcategorias enlazadas"}
+                    </p>
                   </div>
                   <div className="rounded-2xl bg-white/10 p-4">
                     <p className="text-2xl font-black">SEO</p>
@@ -441,12 +460,13 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
               <CardContent className="p-6">
                 <h2 className="text-2xl font-black text-slate-950">Explora subcategorias y entradas internas</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Cada enlace interno ayuda a posicionar mejor la categoria y al mismo tiempo empuja al usuario hacia resultados
-                  con mas intencion de compra.
+                  {category.parentId
+                    ? `Como ${category.name} es una subcategoria dentro de ${parentCategory?.name || "su rubro"}, te mostramos otras entradas internas relacionadas para ampliar cobertura SEO y mejorar navegacion.`
+                    : "Cada enlace interno ayuda a posicionar mejor la categoria y al mismo tiempo empuja al usuario hacia resultados con mas intencion de compra."}
                 </p>
                 <div className="mt-5 grid gap-2 sm:grid-cols-2">
-                  {subcategories.length > 0 ? (
-                    subcategories.map((subcategory) => (
+                  {relatedCategories.length > 0 ? (
+                    relatedCategories.map((subcategory) => (
                       <Link
                         key={subcategory.id}
                         href={`/category/${subcategory.slug}`}

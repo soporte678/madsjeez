@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useRef, useState } from "react"
 import { useSession } from "next-auth/react"
 import { useQuestions } from "@/hooks/useQuestions"
 import { Button } from "@/components/ui/button"
@@ -16,7 +16,8 @@ import {
   ImagePlus,
   X,
   Download,
-  Paperclip
+  Paperclip,
+  Lock,
 } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
@@ -54,7 +55,6 @@ export function ProductQuestions({ productId, sellerId }: ProductQuestionsProps)
 
   const isSeller = session?.user?.id === sellerId
 
-  // Función para manejar selección de imágenes
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files) return
@@ -63,21 +63,19 @@ export function ProductQuestions({ productId, sellerId }: ProductQuestionsProps)
     const totalImages = selectedImages.length + newFiles.length
 
     if (totalImages > 2) {
-      alert("Máximo 2 imágenes permitidas")
+      alert("Maximo 2 imagenes permitidas")
       return
     }
 
-    // Validar tamaño (5MB máximo)
     for (const file of newFiles) {
       if (file.size > 5 * 1024 * 1024) {
-        alert("El archivo excede el tamaño máximo de 5MB")
+        alert("El archivo excede el tamano maximo de 5MB")
         return
       }
     }
 
     setSelectedImages(prev => [...prev, ...newFiles])
     
-    // Crear previews
     newFiles.forEach(file => {
       const reader = new FileReader()
       reader.onloadend = () => {
@@ -87,13 +85,11 @@ export function ProductQuestions({ productId, sellerId }: ProductQuestionsProps)
     })
   }
 
-  // Función para remover imagen
   const removeImage = (index: number) => {
     setSelectedImages(prev => prev.filter((_, i) => i !== index))
     setImagePreviews(prev => prev.filter((_, i) => i !== index))
   }
 
-  // Función para subir imágenes
   const uploadImages = async (): Promise<string[]> => {
     if (selectedImages.length === 0) return []
 
@@ -111,13 +107,13 @@ export function ProductQuestions({ productId, sellerId }: ProductQuestionsProps)
 
       if (!res.ok) {
         const err = await res.json()
-        throw new Error(err.error || "Error al subir imágenes")
+        throw new Error(err.error || "Error al subir imagenes")
       }
 
       const data = await res.json()
       return data.urls || []
     } catch (error: any) {
-      throw new Error(error.message || "Error al subir imágenes")
+      throw new Error(error.message || "Error al subir imagenes")
     } finally {
       setUploadingImages(false)
     }
@@ -128,7 +124,6 @@ export function ProductQuestions({ productId, sellerId }: ProductQuestionsProps)
     
     setIsSubmitting(true)
     try {
-      // Subir imágenes primero si hay seleccionadas
       let imageUrls: string[] = []
       if (selectedImages.length > 0) {
         imageUrls = await uploadImages()
@@ -162,7 +157,7 @@ export function ProductQuestions({ productId, sellerId }: ProductQuestionsProps)
   }
 
   const handleDelete = async (questionId: string) => {
-    if (!confirm("¿Eliminar esta pregunta?")) return
+    if (!confirm("Eliminar esta pregunta?")) return
     
     try {
       await deleteQuestion(questionId)
@@ -172,18 +167,22 @@ export function ProductQuestions({ productId, sellerId }: ProductQuestionsProps)
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-        <MessageCircle className="w-5 h-5 text-blue-600" />
+    <div className="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/95 p-6 shadow-[0_18px_48px_rgba(15,23,42,0.10)] backdrop-blur-sm dark:border-slate-700/80 dark:bg-slate-900/95">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <h3 className="flex items-center gap-2 text-lg font-black text-slate-900 dark:text-slate-100">
+          <MessageCircle className="h-5 w-5 text-[#3483fa] dark:text-[#93c5fd]" />
         Preguntas y Respuestas
         {questions.length > 0 && (
-          <span className="text-sm font-normal text-gray-500">({questions.length})</span>
+            <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">({questions.length})</span>
         )}
-      </h3>
+        </h3>
+        <div className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400">
+          Flujo real conectado
+        </div>
+      </div>
 
-      {/* Formulario para hacer pregunta */}
       {session?.user && !isSeller && (
-        <div className="mb-6">
+        <div className="mb-6 rounded-[24px] border border-slate-200/80 bg-slate-50/90 p-4 dark:border-slate-700/80 dark:bg-slate-950/70">
           <div className="flex gap-3">
             <Avatar className="w-10 h-10">
               <AvatarImage src={session.user.image || undefined} />
@@ -194,11 +193,10 @@ export function ProductQuestions({ productId, sellerId }: ProductQuestionsProps)
                 placeholder="Escribe tu pregunta sobre este producto..."
                 value={newQuestion}
                 onChange={(e) => setNewQuestion(e.target.value)}
-                className="min-h-[80px] resize-none"
+                className="min-h-[96px] resize-none rounded-2xl border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus-visible:ring-[#3483fa] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
                 maxLength={1000}
               />
               
-              {/* Preview de imágenes seleccionadas */}
               {imagePreviews.length > 0 && (
                 <div className="flex gap-2 mt-2">
                   {imagePreviews.map((preview, index) => (
@@ -206,11 +204,11 @@ export function ProductQuestions({ productId, sellerId }: ProductQuestionsProps)
                       <img 
                         src={preview} 
                         alt={`Preview ${index + 1}`}
-                        className="w-16 h-16 object-cover rounded-lg border border-gray-200"
+                        className="h-16 w-16 rounded-xl border border-slate-200 object-cover dark:border-slate-700"
                       />
                       <button
                         onClick={() => removeImage(index)}
-                        className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
+                        className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
                         type="button"
                       >
                         <X className="w-3 h-3" />
@@ -222,11 +220,10 @@ export function ProductQuestions({ productId, sellerId }: ProductQuestionsProps)
               
               <div className="flex justify-between items-center mt-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-400">
+                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
                     {newQuestion.length}/1000 caracteres
                   </span>
                   
-                  {/* Botón para adjuntar imágenes */}
                   {imagePreviews.length < 2 && (
                     <>
                       <input
@@ -240,7 +237,7 @@ export function ProductQuestions({ productId, sellerId }: ProductQuestionsProps)
                       <button
                         onClick={() => fileInputRef.current?.click()}
                         type="button"
-                        className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700"
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-[#3483fa] hover:text-[#2968c8] dark:text-[#93c5fd] dark:hover:text-[#bfdbfe]"
                       >
                         <ImagePlus className="w-4 h-4" />
                         Adjuntar foto
@@ -249,7 +246,7 @@ export function ProductQuestions({ productId, sellerId }: ProductQuestionsProps)
                   )}
                   
                   {uploadingImages && (
-                    <span className="text-xs text-gray-500 flex items-center gap-1">
+                    <span className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
                       <Loader2 className="w-3 h-3 animate-spin" />
                       Subiendo...
                     </span>
@@ -260,6 +257,7 @@ export function ProductQuestions({ productId, sellerId }: ProductQuestionsProps)
                   onClick={handleAskQuestion}
                   disabled={!newQuestion.trim() || isSubmitting || uploadingImages}
                   size="sm"
+                  className="rounded-xl bg-[#3483fa] px-4 text-white hover:bg-[#2968c8] dark:bg-[#3b82f6] dark:hover:bg-[#2563eb]"
                 >
                   {isSubmitting || uploadingImages ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -272,48 +270,61 @@ export function ProductQuestions({ productId, sellerId }: ProductQuestionsProps)
                 </Button>
               </div>
               
-              <p className="text-xs text-gray-400 mt-1">
-                Máximo 2 imágenes (5MB cada una). Solo visibles para el vendedor.
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                Maximo 2 imagenes (5MB cada una). Solo visibles para el vendedor.
               </p>
             </div>
           </div>
         </div>
       )}
 
-      {/* Lista de preguntas */}
+      {!session?.user && (
+        <div className="mb-6 rounded-[24px] border border-dashed border-slate-300 bg-slate-50/80 p-5 dark:border-slate-700 dark:bg-slate-950/60">
+          <div className="flex items-start gap-3">
+            <div className="rounded-2xl bg-slate-900 p-2 text-white dark:bg-slate-100 dark:text-slate-900">
+              <Lock className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-slate-900 dark:text-slate-100">Inicia sesion para hacer una pregunta</p>
+              <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                El flujo ya esta conectado al backend real de preguntas. Cuando ingreses vas a poder consultar al vendedor y seguir la respuesta desde tu panel.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-4">
         {isLoading ? (
           <div className="flex justify-center py-8">
             <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
           </div>
         ) : questions.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <HelpCircle className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-            <p className="font-medium">Aún no hay preguntas</p>
-            <p className="text-sm">Sé el primero en preguntar sobre este producto</p>
+          <div className="rounded-[24px] border border-dashed border-slate-300 py-10 text-center text-slate-500 dark:border-slate-700 dark:text-slate-400">
+            <HelpCircle className="mx-auto mb-3 h-12 w-12 text-slate-300 dark:text-slate-600" />
+            <p className="font-semibold text-slate-800 dark:text-slate-100">Aun no hay preguntas</p>
+            <p className="text-sm">Se el primero en preguntar sobre este producto</p>
           </div>
         ) : (
           questions.map((q: any) => (
-            <div key={q.id} className="border-b border-gray-100 last:border-0 pb-4 last:pb-0">
-              {/* Pregunta */}
+            <div key={q.id} className="rounded-[24px] border border-slate-200/80 bg-slate-50/70 p-4 last:pb-4 dark:border-slate-800 dark:bg-slate-950/55">
               <div className="flex gap-3">
                 <Avatar className="w-8 h-8">
                   <AvatarImage src={q.buyer.image || undefined} />
                   <AvatarFallback>{q.buyer.name?.[0] || "?"}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <p className="text-gray-800">{q.question}</p>
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <p className="text-sm leading-7 text-slate-800 dark:text-slate-100">{q.question}</p>
                     
-                    {/* Indicador de imágenes adjuntas - SOLO para vendedor */}
                     {isSeller && q.images && q.images.length > 0 && (
-                      <div className="mt-3 p-2 bg-orange-50 border border-orange-200 rounded-lg">
+                      <div className="mt-3 rounded-2xl border border-orange-200 bg-orange-50 p-3 dark:border-orange-500/30 dark:bg-orange-500/10">
                         <div className="flex items-center gap-2 mb-2">
                           <Paperclip className="w-4 h-4 text-orange-500" />
-                          <span className="text-sm font-medium text-orange-700">
+                          <span className="text-sm font-medium text-orange-700 dark:text-orange-300">
                             {q.images.length} imagen{q.images.length > 1 ? 'es' : ''} adjunta{q.images.length > 1 ? 's' : ''}
                           </span>
-                          <span className="text-xs text-orange-500">(Solo visible para vos)</span>
+                          <span className="text-xs text-orange-500 dark:text-orange-200/80">(Solo visible para vos)</span>
                         </div>
                         <div className="flex gap-2 flex-wrap">
                           {q.images.map((imgUrl: string, idx: number) => (
@@ -321,7 +332,7 @@ export function ProductQuestions({ productId, sellerId }: ProductQuestionsProps)
                               <img
                                 src={imgUrl}
                                 alt={`Adjunto ${idx + 1}`}
-                                className="w-20 h-20 object-cover rounded border border-orange-200"
+                                className="h-20 w-20 rounded-xl border border-orange-200 object-cover dark:border-orange-500/30"
                               />
                               <a
                                 href={imgUrl}
@@ -337,7 +348,7 @@ export function ProductQuestions({ productId, sellerId }: ProductQuestionsProps)
                       </div>
                     )}
                     
-                    <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
+                    <div className="mt-3 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                       <span>{q.buyer.name || "Usuario"}</span>
                       <span>•</span>
                       <span>
@@ -352,7 +363,7 @@ export function ProductQuestions({ productId, sellerId }: ProductQuestionsProps)
                           <span>•</span>
                           <button
                             onClick={() => handleDelete(q.id)}
-                            className="text-red-500 hover:text-red-700 flex items-center gap-1"
+                            className="flex items-center gap-1 text-red-500 hover:text-red-700"
                           >
                             <Trash2 className="w-3 h-3" />
                             Eliminar
@@ -362,13 +373,12 @@ export function ProductQuestions({ productId, sellerId }: ProductQuestionsProps)
                     </div>
                   </div>
 
-                  {/* Respuesta */}
                   {q.answer ? (
                     <div className="flex gap-3 mt-3 ml-4">
                       <div className="flex-1">
-                        <div className="bg-blue-50 rounded-lg p-3 border-l-4 border-blue-500">
-                          <p className="text-gray-800">{q.answer}</p>
-                          <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
+                        <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-500/30 dark:bg-blue-500/10">
+                          <p className="text-sm leading-7 text-slate-800 dark:text-slate-100">{q.answer}</p>
+                          <div className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                             <CheckCircle2 className="w-3 h-3 text-green-500" />
                             <span>Respondido por el vendedor</span>
                             {q.answeredAt && (
@@ -387,7 +397,6 @@ export function ProductQuestions({ productId, sellerId }: ProductQuestionsProps)
                       </div>
                     </div>
                   ) : isSeller ? (
-                    /* Formulario de respuesta para vendedor */
                     <div className="mt-3 ml-4">
                       {showAnswerInput === q.id ? (
                         <div className="space-y-2">
@@ -400,7 +409,7 @@ export function ProductQuestions({ productId, sellerId }: ProductQuestionsProps)
                                 [q.id]: e.target.value 
                               }))
                             }
-                            className="min-h-[80px] resize-none"
+                            className="min-h-[80px] resize-none rounded-2xl border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus-visible:ring-[#3483fa] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
                             maxLength={1000}
                           />
                           <div className="flex gap-2">
@@ -408,6 +417,7 @@ export function ProductQuestions({ productId, sellerId }: ProductQuestionsProps)
                               size="sm"
                               onClick={() => handleAnswer(q.id)}
                               disabled={!answerText[q.id]?.trim() || isSubmitting}
+                              className="rounded-xl bg-[#3483fa] text-white hover:bg-[#2968c8] dark:bg-[#3b82f6] dark:hover:bg-[#2563eb]"
                             >
                               {isSubmitting ? (
                                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -422,6 +432,7 @@ export function ProductQuestions({ productId, sellerId }: ProductQuestionsProps)
                                 setShowAnswerInput(null)
                                 setAnswerText(prev => ({ ...prev, [q.id]: "" }))
                               }}
+                              className="rounded-xl border-slate-300 bg-white text-slate-900 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
                             >
                               Cancelar
                             </Button>
@@ -432,13 +443,14 @@ export function ProductQuestions({ productId, sellerId }: ProductQuestionsProps)
                           size="sm"
                           variant="outline"
                           onClick={() => setShowAnswerInput(q.id)}
+                          className="rounded-xl border-slate-300 bg-white text-slate-900 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
                         >
                           Responder
                         </Button>
                       )}
                     </div>
                   ) : (
-                    <div className="mt-2 ml-4 text-sm text-gray-500 italic">
+                    <div className="mt-2 ml-4 text-sm italic text-slate-500 dark:text-slate-400">
                       Pendiente de respuesta del vendedor
                     </div>
                   )}
@@ -449,10 +461,9 @@ export function ProductQuestions({ productId, sellerId }: ProductQuestionsProps)
         )}
       </div>
 
-      {/* Ver más */}
       {questions.length >= 10 && (
         <div className="text-center mt-4">
-          <Button variant="link" onClick={refresh}>
+          <Button variant="link" onClick={refresh} className="font-semibold text-[#3483fa] dark:text-[#93c5fd]">
             Ver todas las preguntas
           </Button>
         </div>

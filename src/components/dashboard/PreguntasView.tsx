@@ -37,6 +37,8 @@ interface ApiResponse {
   tableExists: boolean;
 }
 
+type DateFilter = 'all' | 'last7' | 'last30';
+
 function formatPrice(price: number): string {
   return `$ ${price.toLocaleString('es-AR')}`;
 }
@@ -47,12 +49,23 @@ function getStockText(stock: number): string | null {
   return 'Hay stock disponible';
 }
 
+function getDaysFromLabel(label: string | null): number | null {
+  if (!label) return null;
+  const normalized = label.toLowerCase();
+  if (normalized.includes('hoy')) return 0;
+  if (normalized.includes('ayer')) return 1;
+  const match = normalized.match(/hace\s+(\d+)\s+d[ií]as?/);
+  if (match) return Number(match[1]);
+  return null;
+}
+
 export default function PreguntasView() {
   const [data, setData] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [expandAll, setExpandAll] = useState(true);
+  const [dateFilter, setDateFilter] = useState<DateFilter>('all');
 
   useEffect(() => {
     fetch('/api/dashboard/questions')
@@ -73,9 +86,21 @@ export default function PreguntasView() {
       });
   }, []);
 
+  const filteredQuestions = useMemo(() => {
+    if (!data) return [];
+    return data.questions.filter((item) => {
+      if (dateFilter === 'all') return true;
+      const referenceDays = getDaysFromLabel(item.questionDate) ?? getDaysFromLabel(item.answerDate);
+      if (referenceDays == null) return true;
+      if (dateFilter === 'last7') return referenceDays <= 7;
+      if (dateFilter === 'last30') return referenceDays <= 30;
+      return true;
+    });
+  }, [data, dateFilter]);
+
   const questionIds = useMemo(
-    () => (data ? data.questions.filter((q) => q.question).map((q) => q.id) : []),
-    [data]
+    () => filteredQuestions.filter((q) => q.question).map((q) => q.id),
+    [filteredQuestions]
   );
 
   const toggleExpand = (id: string) => {
@@ -93,6 +118,8 @@ export default function PreguntasView() {
     setExpandAll(nextExpand);
     setExpandedIds(nextExpand ? new Set(questionIds) : new Set());
   };
+
+  const getProductHref = (productId: string) => `/product/${productId}#preguntas`;
 
   if (loading) {
     return (
@@ -137,7 +164,8 @@ export default function PreguntasView() {
   }
 
   const { questions, total, isRealData } = data;
-  const answeredCount = questions.filter((q) => q.answer).length;
+  const answeredCount = filteredQuestions.filter((q) => q.answer).length;
+  const filteredTotal = filteredQuestions.length;
 
   return (
     <div className="max-w-[1040px] w-full pb-12">
@@ -183,14 +211,22 @@ export default function PreguntasView() {
       </div>
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <button className="flex items-center gap-2 rounded-xl border border-slate-200/80 bg-white/90 px-4 py-2.5 text-[14px] font-semibold text-slate-800 shadow-sm transition-colors hover:bg-slate-50 dark:border-slate-700/80 dark:bg-slate-900/85 dark:text-slate-100 dark:hover:bg-slate-800">
+        <div className="flex items-center gap-2 rounded-xl border border-slate-200/80 bg-white/90 px-4 py-2.5 text-[14px] font-semibold text-slate-800 shadow-sm dark:border-slate-700/80 dark:bg-slate-900/85 dark:text-slate-100">
           <Calendar className="h-4 w-4 text-slate-500 dark:text-slate-400" />
-          Todas las fechas
+          <select
+            value={dateFilter}
+            onChange={(event) => setDateFilter(event.target.value as DateFilter)}
+            className="bg-transparent text-[14px] font-semibold text-slate-800 outline-none dark:text-slate-100"
+          >
+            <option value="all">Todas las fechas</option>
+            <option value="last7">Ultimos 7 dias</option>
+            <option value="last30">Ultimos 30 dias</option>
+          </select>
           <ChevronDown className="ml-1 h-4 w-4 text-slate-700 dark:text-slate-300" />
-        </button>
+        </div>
 
         <div className="flex items-center gap-6 text-[14px] text-slate-500 dark:text-slate-400">
-          <span className="font-medium text-slate-600 dark:text-slate-300">1 - {total} de {total} preguntas</span>
+          <span className="font-medium text-slate-600 dark:text-slate-300">1 - {filteredTotal} de {total} preguntas</span>
           <div className="flex items-center gap-3">
             <span className="font-medium text-slate-700 dark:text-slate-200">Ampliar todas</span>
             <button
@@ -210,7 +246,7 @@ export default function PreguntasView() {
       </div>
 
       <div className="space-y-4">
-        {questions.map((item) => {
+        {filteredQuestions.map((item) => {
           const isExpanded = expandedIds.has(item.id);
           const stockText = getStockText(item.stock);
 
@@ -231,10 +267,10 @@ export default function PreguntasView() {
                 </div>
 
                 <div className="min-w-[220px] flex-1 pr-4">
-                  <h4 className="text-[17px] font-semibold leading-snug text-slate-900 dark:text-slate-100">{item.productTitle}</h4>
+                  <h4 className="text-[17px] font-semibold leading-snug text-slate-900 dark:text-white">{item.productTitle}</h4>
                   <a
-                    href={`/producto/${item.productId}`}
-                    className="mt-1.5 inline-flex items-center gap-1 text-[14px] font-semibold text-[#3483fa] hover:text-blue-700"
+                    href={getProductHref(item.productId)}
+                    className="mt-1.5 inline-flex items-center gap-1 text-[14px] font-semibold text-[#3483fa] hover:text-blue-700 dark:text-[#60a5fa] dark:hover:text-[#93c5fd]"
                   >
                     {item.sellerName ? `Ver más productos de ${item.sellerName}` : 'Ir a la página del vendedor'}
                     <ChevronRight className="h-3.5 w-3.5" />
@@ -247,27 +283,30 @@ export default function PreguntasView() {
                   </span>
                   {item.comparePrice && (
                     <div className="mt-1 flex items-center gap-1">
-                      <span className="text-[14px] text-slate-500 dark:text-slate-400">{formatPrice(item.comparePrice)}</span>
+                      <span className="text-[14px] line-through text-slate-500 dark:text-slate-400">{formatPrice(item.comparePrice)}</span>
                     </div>
                   )}
                   {item.installments && (
-                    <p className="mt-1 text-[14px] leading-tight text-[#00a650]">{item.installments}</p>
+                    <p className="mt-1 text-[14px] font-medium leading-tight text-[#00a650] dark:text-emerald-400">{item.installments}</p>
                   )}
                 </div>
 
                 <div className="w-[190px] flex-shrink-0">
                   {stockText && (
-                    <p className={`text-[14px] font-medium ${item.stock <= 3 ? 'text-[#ff7733]' : 'text-slate-500 dark:text-slate-400'}`}>
+                    <p className={`text-[14px] font-medium ${item.stock <= 3 ? 'text-[#ff7733] dark:text-orange-400' : 'text-slate-700 dark:text-slate-200'}`}>
                       {stockText}
                     </p>
                   )}
-                  {item.shipping && <p className="mt-1 text-[14px] leading-tight text-[#00a650]">{item.shipping}</p>}
+                  {item.shipping && <p className="mt-1 text-[14px] font-medium leading-tight text-[#00a650] dark:text-emerald-400">{item.shipping}</p>}
                 </div>
 
                 <div className="flex flex-shrink-0 items-center gap-3">
-                  <button className="rounded-xl bg-[#3483fa] px-6 py-2.5 text-[16px] font-semibold text-white transition-colors hover:bg-[#2968c8]">
+                  <a
+                    href={`/product/${item.productId}`}
+                    className="rounded-xl bg-[#3483fa] px-6 py-2.5 text-[16px] font-semibold text-white transition-colors hover:bg-[#2968c8]"
+                  >
                     Comprar
-                  </button>
+                  </a>
                   <button className="flex items-center justify-center rounded-full p-2 text-[#3483fa] transition-colors hover:bg-[#f0f4ff] dark:hover:bg-slate-800">
                     <MoreVertical className="h-6 w-6" />
                   </button>
@@ -278,8 +317,8 @@ export default function PreguntasView() {
 
               <div className="px-6 py-4">
                 <a
-                  href={`/producto/${item.productId}#preguntas`}
-                  className="inline-flex items-center gap-2 text-[14px] font-semibold text-[#3483fa] hover:text-blue-700"
+                  href={getProductHref(item.productId)}
+                  className="inline-flex items-center gap-2 text-[14px] font-semibold text-[#3483fa] hover:text-blue-700 dark:text-[#60a5fa] dark:hover:text-[#93c5fd]"
                 >
                   <MessageSquareQuote className="h-4 w-4" />
                   Hacer otra pregunta
@@ -292,17 +331,17 @@ export default function PreguntasView() {
 
                   <div className="flex items-start justify-between gap-4 px-6 py-5">
                     <div className="flex w-full flex-col gap-3">
-                      <p className="text-[14px] text-slate-800 dark:text-slate-200">
+                      <p className="text-[14px] font-medium leading-relaxed text-slate-800 dark:text-slate-100">
                         {item.question}{' '}
-                        <span className="ml-1 text-[13px] text-slate-400">- {item.questionDate}</span>
+                        <span className="ml-1 text-[13px] text-slate-500 dark:text-slate-300">- {item.questionDate}</span>
                       </p>
 
                       {item.answer && isExpanded && (
                         <div className="relative mt-1 flex gap-0">
                           <div className="mt-0.5 ml-1 mr-3 h-5 w-5 flex-shrink-0 rounded-bl-sm border-b-2 border-l-2 border-slate-200 dark:border-slate-700"></div>
-                          <p className="text-[14px] leading-relaxed text-slate-600 dark:text-slate-300">
+                          <p className="text-[14px] leading-relaxed text-slate-700 dark:text-slate-200">
                             {item.answer}{' '}
-                            {item.answerDate && <span className="ml-1 text-[13px] text-slate-400">- {item.answerDate}</span>}
+                            {item.answerDate && <span className="ml-1 text-[13px] text-slate-500 dark:text-slate-300">- {item.answerDate}</span>}
                           </p>
                         </div>
                       )}
@@ -322,6 +361,13 @@ export default function PreguntasView() {
           );
         })}
       </div>
+
+      {filteredQuestions.length === 0 && (
+        <div className="mt-4 rounded-[22px] border border-slate-200/80 bg-white/92 p-14 text-center shadow-[0_18px_45px_rgba(15,23,42,0.10)] backdrop-blur-sm dark:border-slate-700/80 dark:bg-slate-900/92">
+          <h3 className="text-[18px] font-semibold text-slate-900 dark:text-slate-100">No hay preguntas para este filtro</h3>
+          <p className="mt-2 text-[14px] text-slate-500 dark:text-slate-400">Probá con otra ventana de fechas para volver a ver la actividad.</p>
+        </div>
+      )}
     </div>
   );
 }
