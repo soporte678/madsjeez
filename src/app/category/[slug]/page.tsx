@@ -10,6 +10,7 @@ import {
   BadgeCheck,
   ChevronRight,
   CircleHelp,
+  Compass,
   LineChart,
   Package,
   Search,
@@ -389,6 +390,26 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
           <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
             <Card className="rounded-3xl border-0 bg-white shadow-sm">
               <CardContent className="p-6">
+                <div className="flex items-center gap-3">
+                  <Compass className="h-5 w-5" style={{ color: seo.theme.accent }} />
+                  <h2 className="text-2xl font-black text-slate-950">Busquedas que esta landing ataca</h2>
+                </div>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{seo.editorialIntro}</p>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {seo.searchIntents.map((intent) => (
+                    <span
+                      key={intent}
+                      className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700"
+                    >
+                      {intent}
+                    </span>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-3xl border-0 bg-white shadow-sm">
+              <CardContent className="p-6">
                 <h2 className="text-2xl font-black text-slate-950">Explora subcategorias y entradas internas</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
                   Cada enlace interno ayuda a posicionar mejor la categoria y al mismo tiempo empuja al usuario hacia resultados
@@ -441,8 +462,8 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
         </section>
 
         <section className="mx-auto max-w-[1280px] px-4 pb-10">
-          <div className="rounded-[28px] border border-black/5 bg-white p-6 shadow-sm">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div className="rounded-[28px] border border-black/5 bg-white p-6 shadow-sm">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="text-sm font-semibold" style={{ color: seo.theme.accent }}>Catalogo activo</p>
                 <h2 className="mt-1 text-2xl font-black text-slate-950">Publicaciones destacadas de {category.name}</h2>
@@ -457,7 +478,22 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
                   Ir al buscador
                 </Link>
               </div>
-            </div>
+              </div>
+
+              <div className="mt-5 grid gap-4 rounded-3xl bg-slate-50 p-5 lg:grid-cols-[0.9fr_1.1fr]">
+                <div>
+                  <p className="text-sm font-semibold" style={{ color: seo.theme.accent }}>Oportunidad comercial</p>
+                  <h3 className="mt-2 text-xl font-black text-slate-950">Que tipo de vendedores deberiamos atraer primero</h3>
+                  <p className="mt-3 text-sm leading-6 text-slate-600">{seo.editorialClosing}</p>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {seo.sellerAngles.map((angle) => (
+                    <div key={angle} className="rounded-2xl border border-slate-200 bg-white px-4 py-4">
+                      <p className="text-sm font-semibold text-slate-800">{angle}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
             {products.length > 0 ? (
               <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
