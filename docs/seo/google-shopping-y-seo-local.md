@@ -8,7 +8,7 @@ URL del feed (producción):
 
 `https://www.madsjeez.com.ar/feeds/google-shopping.xml`
 
-- Se regenera cada hora (`revalidate: 3600`).
+- Se genera en **runtime** (`force-dynamic`); caché CDN ~1 h (`s-maxage=3600`).
 - Incluye productos activos con stock e imagen.
 - Formato compatible con **Google Merchant Center**.
 

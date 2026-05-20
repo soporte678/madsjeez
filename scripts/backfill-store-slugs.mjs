@@ -1,11 +1,27 @@
 /**
  * Asigna store_slug a vendedores sin slug.
- * Uso: node scripts/backfill-store-slugs.mjs
+ * Uso: npm run backfill:store-slugs
+ * Requiere DATABASE_URL en .env o .env.local (Prisma 7 + adapter pg).
  */
-import "dotenv/config";
+import { config } from "dotenv";
+import { existsSync } from "fs";
+import { resolve } from "path";
+import { Pool } from "pg";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
+const root = process.cwd();
+if (existsSync(resolve(root, ".env.local"))) config({ path: resolve(root, ".env.local") });
+else if (existsSync(resolve(root, ".env"))) config({ path: resolve(root, ".env") });
+
+const url = process.env.DATABASE_URL?.trim();
+if (!url) {
+  console.error("DATABASE_URL no configurada");
+  process.exit(1);
+}
+
+const pool = new Pool({ connectionString: url });
+const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
 
 function slugify(input) {
   return input
@@ -25,34 +41,44 @@ async function main() {
     select: { id: true, sellerName: true, name: true, storeSlug: true, isSeller: true },
   });
 
+  let promoted = 0;
   for (const s of withProducts) {
     if (!s.isSeller) {
       await prisma.user.update({
         where: { id: s.id },
         data: { isSeller: true, sellerSince: new Date() },
       });
+      promoted++;
     }
   }
 
   const sellers = withProducts.filter((s) => !s.storeSlug);
-  console.log(`Cuentas con productos sin slug: ${sellers.length}`);
+  console.log(`Cuentas con productos: ${withProducts.length}, sin slug: ${sellers.length}, promovidos isSeller: ${promoted}`);
+
+  let created = 0;
   for (const s of sellers) {
     const base = slugify(s.sellerName || s.name || "tienda") || `tienda-${s.id.slice(0, 8)}`;
     let slug = base.length >= 3 ? base : `tienda-${s.id.slice(0, 8)}`;
-    let n = 0;
-    while (n < 30) {
+    for (let n = 0; n < 30; n++) {
       const trySlug = n === 0 ? slug : `${slug}-${n}`;
       const exists = await prisma.user.findFirst({ where: { storeSlug: trySlug } });
       if (!exists) {
         await prisma.user.update({ where: { id: s.id }, data: { storeSlug: trySlug } });
         console.log(`  ${s.id} → ${trySlug}`);
+        created++;
         break;
       }
-      n++;
     }
   }
+  console.log(`Slugs creados: ${created}`);
 }
 
 main()
-  .catch(console.error)
-  .finally(() => prisma.$disconnect());
+  .catch((err) => {
+    console.error(err);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+    await pool.end();
+  });

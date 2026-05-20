@@ -15,10 +15,10 @@ export default async function AdminLayout({
 }) {
   const supabase = await createClient()
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+  } = await supabase.auth.getUser()
 
-  if (!session) {
+  if (!user) {
     redirect("/admin/login")
   }
 
@@ -26,7 +26,7 @@ export default async function AdminLayout({
   const { data: adminUser } = await svc
     .from("admin_users")
     .select("id, is_active")
-    .eq("user_id", session.user.id)
+    .eq("user_id", user.id)
     .eq("is_active", true)
     .maybeSingle()
 
@@ -44,7 +44,7 @@ export default async function AdminLayout({
   const activeAdminSession = await verifyAdminSession({
     rawToken: adminSessionToken,
     adminUserId: adminUser.id,
-    userId: session.user.id,
+    userId: user.id,
   })
 
   if (!activeAdminSession) {

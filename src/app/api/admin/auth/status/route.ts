@@ -33,10 +33,10 @@ export async function GET(request: NextRequest) {
   })
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+  } = await supabase.auth.getUser()
 
-  if (!session) {
+  if (!user) {
     pendingCookies.forEach(({ name, value, options }) => response.cookies.set(name, value, options))
     return response
   }
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
   const { data: adminUser } = await svc
     .from("admin_users")
     .select("id, is_active")
-    .eq("user_id", session.user.id)
+    .eq("user_id", user.id)
     .eq("is_active", true)
     .maybeSingle()
 
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
   const activeAdminSession = await verifyAdminSession({
     rawToken: adminToken,
     adminUserId: adminUser.id,
-    userId: session.user.id,
+    userId: user.id,
   })
 
   if (!activeAdminSession) {

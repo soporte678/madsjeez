@@ -51,9 +51,11 @@ export async function middleware(request: NextRequest) {
       }
     )
 
-    const { data: { session } } = await supabase.auth.getSession()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-    if (!session) {
+    if (!user) {
       return NextResponse.redirect(new URL("/admin/login", request.url))
     }
 
@@ -62,7 +64,7 @@ export async function middleware(request: NextRequest) {
     const { data: adminUser } = await svc
       .from("admin_users")
       .select("is_active")
-      .eq("user_id", session.user.id)
+      .eq("user_id", user.id)
       .eq("is_active", true)
       .maybeSingle()
 
