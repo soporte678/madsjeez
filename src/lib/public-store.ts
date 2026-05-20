@@ -29,12 +29,37 @@ export type PublicStoreData = {
   productCount: number;
 };
 
+/** Tiene catálogo publicable o flag vendedor. */
+export async function userQualifiesForPublicStore(userId: string): Promise<boolean> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { isSeller: true },
+  });
+  if (!user) return false;
+  if (user.isSeller) return true;
+  const activeProducts = await prisma.product.count({
+    where: { sellerId: userId, isActive: true, images: { some: {} } },
+  });
+  return activeProducts > 0;
+}
+
 export async function ensureStoreSlugForUser(userId: string): Promise<string | null> {
+  const qualifies = await userQualifiesForPublicStore(userId);
+  if (!qualifies) return null;
+
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { storeSlug: true, sellerName: true, name: true, isSeller: true },
   });
-  if (!user?.isSeller) return null;
+  if (!user) return null;
+
+  if (!user.isSeller) {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { isSeller: true, sellerSince: new Date() },
+    });
+  }
+
   if (user.storeSlug) return user.storeSlug;
 
   const base = user.sellerName || user.name || "tienda";
@@ -61,7 +86,7 @@ export async function getPublicStoreBySlug(slug: string): Promise<PublicStoreDat
   if (!isValidStoreSlug(slug)) return null;
 
   const user = await prisma.user.findFirst({
-    where: { storeSlug: slug, isSeller: true },
+    where: { storeSlug: slug },
     select: {
       id: true,
       storeSlug: true,
@@ -130,7 +155,6 @@ export async function listIndexableStoreSlugs(): Promise<
 > {
   const sellers = await prisma.user.findMany({
     where: {
-      isSeller: true,
       storeSlug: { not: null },
       products: {
         some: {

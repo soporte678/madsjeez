@@ -18,11 +18,24 @@ function slugify(input) {
 }
 
 async function main() {
-  const sellers = await prisma.user.findMany({
-    where: { isSeller: true, storeSlug: null },
-    select: { id: true, sellerName: true, name: true },
+  const withProducts = await prisma.user.findMany({
+    where: {
+      products: { some: { isActive: true, images: { some: {} } } },
+    },
+    select: { id: true, sellerName: true, name: true, storeSlug: true, isSeller: true },
   });
-  console.log(`Vendedores sin slug: ${sellers.length}`);
+
+  for (const s of withProducts) {
+    if (!s.isSeller) {
+      await prisma.user.update({
+        where: { id: s.id },
+        data: { isSeller: true, sellerSince: new Date() },
+      });
+    }
+  }
+
+  const sellers = withProducts.filter((s) => !s.storeSlug);
+  console.log(`Cuentas con productos sin slug: ${sellers.length}`);
   for (const s of sellers) {
     const base = slugify(s.sellerName || s.name || "tienda") || `tienda-${s.id.slice(0, 8)}`;
     let slug = base.length >= 3 ? base : `tienda-${s.id.slice(0, 8)}`;

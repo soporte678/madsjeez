@@ -37,6 +37,7 @@ import MarketingCentralView from "@/components/dashboard/MarketingCentralView";
 import AdvertisingView from "@/components/dashboard/AdvertisingView";
 import MeliIntegrationView from "@/components/dashboard/MeliIntegrationView";
 import MeliAdsStudioView from "@/components/dashboard/MeliAdsStudioView";
+import { StorePublicPanel } from "@/components/dashboard/StorePublicPanel";
 import ThemeToneSwitcher from "@/components/theme/ThemeToneSwitcher";
 import RainbowLogo from "@/components/brand/RainbowLogo";
 
@@ -375,6 +376,7 @@ export default function App() {
         { id: 'resumen', label: 'Resumen' },
         { id: 'ventas-novedades', label: 'Novedades' },
         { id: 'publicaciones', label: 'Publicaciones' },
+        { id: 'mi-tienda', label: 'Mi tienda pública' },
         { id: 'meli-sync', label: 'Mercado Libre' },
         { id: 'preguntas', label: 'Preguntas' },
         { id: 'ventas-lista', label: 'Ventas' },
@@ -1480,6 +1482,16 @@ export default function App() {
             {activeMenu === 'carrito' && <CartView />}
             {activeMenu === 'ayuda' && <HelpView userData={currentUser || undefined} onNavigate={(section) => setActiveMenu(section)} />}
             {activeMenu === 'publicaciones' && <div className="-mx-4 lg:-mx-8">{renderPublicaciones()}</div>}
+            {activeMenu === 'mi-tienda' && (
+              <div className="max-w-3xl">
+                <h1 className="text-2xl font-bold text-foreground mb-2">Mi tienda pública</h1>
+                <p className="text-sm text-muted-foreground mb-6">
+                  Cada vendedor con productos activos tiene una URL propia en MadsJeez. Compartila en tu web
+                  o redes para generar visitas y backlinks naturales.
+                </p>
+                <StorePublicPanel />
+              </div>
+            )}
             {activeMenu === 'meli-sync' && (
               <Suspense
                 fallback={

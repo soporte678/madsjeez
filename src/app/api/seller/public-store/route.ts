@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { SITE_URL } from "@/lib/seo/site";
-import { ensureStoreSlugForUser } from "@/lib/public-store";
+import { ensureStoreSlugForUser, userQualifiesForPublicStore } from "@/lib/public-store";
 import { isValidStoreSlug, slugifyStoreName } from "@/lib/store-slug";
 
 export async function GET() {
@@ -13,13 +13,23 @@ export async function GET() {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
+  const qualifies = await userQualifiesForPublicStore(userId);
+  if (!qualifies) {
+    return NextResponse.json(
+      {
+        error: "Publicá al menos un producto activo con imagen para activar tu tienda pública.",
+        qualifies: false,
+      },
+      { status: 403 }
+    );
+  }
+
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { isSeller: true, storeSlug: true, sellerName: true, name: true },
+    select: { storeSlug: true, sellerName: true, name: true },
   });
-
-  if (!user?.isSeller) {
-    return NextResponse.json({ error: "No sos vendedor" }, { status: 403 });
+  if (!user) {
+    return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
   }
 
   const slug = user.storeSlug || (await ensureStoreSlugForUser(userId));
@@ -50,12 +60,9 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { isSeller: true },
-  });
-  if (!user?.isSeller) {
-    return NextResponse.json({ error: "No sos vendedor" }, { status: 403 });
+  const qualifies = await userQualifiesForPublicStore(userId);
+  if (!qualifies) {
+    return NextResponse.json({ error: "Sin productos publicados" }, { status: 403 });
   }
 
   let body: { storeSlug?: string };

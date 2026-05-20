@@ -40,7 +40,9 @@ Cada `/product/[id]` incluye JSON-LD `Product` + `Offer` (precio ARS, stock, im�
 - Panel en Dashboard → Perfil: copiar link, HTML y badge
 - API: `GET/PATCH /api/seller/public-store`
 - Migración: `store_slug` en `users`
-- Backfill: `npm run backfill:store-slugs`
+- Backfill: `npm run backfill:store-slugs` o `POST /api/internal/backfill-store-slugs` con `Authorization: Bearer {ADMIN_SETUP_SECRET}`
+- **Cada vendedor** con ≥1 producto activo con imagen obtiene URL `/tienda/[slug]` (no hace falta flag manual)
+- Dashboard → Ventas → **Mi tienda pública** (copiar link y badge HTML)
 
 ### Landings «comprar categoría en ciudad»
 

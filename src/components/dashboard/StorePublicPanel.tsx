@@ -22,6 +22,10 @@ export function StorePublicPanel() {
     setLoading(true);
     try {
       const res = await fetch("/api/seller/public-store");
+      if (res.status === 403) {
+        setInfo(null);
+        return;
+      }
       if (!res.ok) {
         setInfo(null);
         return;
