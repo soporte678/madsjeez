@@ -98,8 +98,21 @@ export default function RootLayout({
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             window.gtag = window.gtag || gtag;
+            var __gaDebugParams = new URLSearchParams(window.location.search);
+            var __gaDebugMode =
+              __gaDebugParams.has('gtm_debug') ||
+              __gaDebugParams.has('_dbg') ||
+              __gaDebugParams.has('gtm_preview') ||
+              window.location.hostname === 'localhost' ||
+              window.location.hostname === '127.0.0.1';
             gtag('js', new Date());
-            gtag('config', '${GA_MEASUREMENT_ID}', { send_page_view: false });
+            if (__gaDebugMode) {
+              gtag('set', 'debug_mode', true);
+            }
+            gtag('config', '${GA_MEASUREMENT_ID}', {
+              send_page_view: false,
+              debug_mode: __gaDebugMode
+            });
           `}
         </Script>
         <style>{`

@@ -70,13 +70,14 @@ export function trackEvent(
 ) {
   if (typeof window === "undefined") return;
 
+  const { ecommerce: rawEcommerce, ...restParams } = params;
   const ecommerce =
-    params.ecommerce && typeof params.ecommerce === "object"
-      ? (params.ecommerce as Record<string, unknown>)
+    rawEcommerce && typeof rawEcommerce === "object"
+      ? (rawEcommerce as Record<string, unknown>)
       : null;
   const payload = shouldUseDebugMode()
-    ? { ...params, debug_mode: true }
-    : params;
+    ? { ...restParams, debug_mode: true }
+    : restParams;
 
   window.dataLayer = window.dataLayer || [];
   if (ecommerce) {
@@ -85,14 +86,11 @@ export function trackEvent(
   window.dataLayer.push({
     event: eventName,
     ...payload,
+    ...(ecommerce ? { ecommerce } : {}),
   });
 
   const gtag = ensureGtag();
   if (typeof gtag === "function") {
-    gtag(
-      "event",
-      eventName,
-      ecommerce ? { ...payload, ...ecommerce } : payload
-    );
+    gtag("event", eventName, ecommerce ? { ...payload, ...ecommerce } : payload);
   }
 }
