@@ -27,9 +27,29 @@ function conditionGoogle(condition: string): string {
   return "new";
 }
 
+function emptyGoogleShoppingFeedXml(): string {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">
+  <channel>
+    <title>MadsJeez Marketplace — Productos</title>
+    <link>${SITE_URL}</link>
+    <description>Catálogo MadsJeez para Google Shopping y Merchant Center</description>
+  </channel>
+</rss>`;
+}
+
+/** Railway/Docker: `next build` no tiene DB; evita Prisma (P1001 en host "base"). */
+function shouldSkipFeedDb(): boolean {
+  if (process.env.NEXT_PHASE === "phase-production-build") return true;
+  const url = process.env.DATABASE_URL?.trim() ?? "";
+  if (!url) return true;
+  return /@base(?::|\/|$)/i.test(url);
+}
+
 /** Feed RSS 2.0 + namespace Google Merchant para Merchant Center. */
 export async function buildGoogleShoppingFeedXml(): Promise<string> {
   const brand = process.env.GOOGLE_MERCHANT_BRAND || "MadsJeez Marketplace";
+  if (shouldSkipFeedDb()) return emptyGoogleShoppingFeedXml();
 
   let rows: FeedProductRow[] = [];
   try {
@@ -72,6 +92,8 @@ export async function buildGoogleShoppingFeedXml(): Promise<string> {
     })
     .filter(Boolean)
     .join("");
+
+  if (items.length === 0) return emptyGoogleShoppingFeedXml();
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">

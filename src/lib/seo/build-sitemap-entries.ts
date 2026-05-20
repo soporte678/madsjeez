@@ -55,6 +55,10 @@ export async function buildSitemapEntries(): Promise<MetadataRoute.Sitemap> {
     entry(path, now, priority, changeFrequency)
   );
 
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    return out;
+  }
+
   for (const segment of sellerSegments) {
     out.push(entry(`/vender/${segment.slug}`, now, 0.88, "weekly"));
   }
