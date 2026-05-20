@@ -20,17 +20,39 @@ function parseTraffic(url: URL, referrer: string | null) {
 
 export async function POST(req: Request) {
   try {
-    const body = (await req.json()) as { path?: string; referrer?: string | null };
+    const body = (await req.json()) as {
+      path?: string;
+      referrer?: string | null;
+      eventName?: string;
+    };
     const url = new URL(req.url);
     const parsed = parseTraffic(url, body.referrer || null);
     const ua = req.headers.get("user-agent");
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "na";
     const visitorHash = createHash("sha256").update(`${ip}:${ua || ""}`).digest("hex").slice(0, 24);
+    const isAnalyticsEvent =
+      typeof body.eventName === "string" && body.eventName.trim().length > 0;
+
+    const source = isAnalyticsEvent ? "analytics" : parsed.source;
+    const medium = isAnalyticsEvent ? body.eventName!.trim() : parsed.medium;
+    const campaign = isAnalyticsEvent ? null : parsed.campaign;
+    const path = isAnalyticsEvent
+      ? `/__analytics__/${body.eventName!.trim()}`
+      : body.path || "/";
 
     await pool.query(
       `insert into web_visits (id, path, source, medium, campaign, referrer, user_agent, visitor_hash)
        values ($1,$2,$3,$4,$5,$6,$7,$8)`,
-      [randomUUID(), body.path || "/", parsed.source, parsed.medium, parsed.campaign, body.referrer || null, ua, visitorHash]
+      [
+        randomUUID(),
+        path,
+        source,
+        medium,
+        campaign,
+        body.referrer || null,
+        ua,
+        visitorHash,
+      ]
     );
     return NextResponse.json({ ok: true });
   } catch {

@@ -8,17 +8,43 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 export async function GET() {
   const ga4 = await getGa4TrafficSummary().catch(() => null);
   if (ga4) {
-    return NextResponse.json(ga4);
+    const { rows: eventRows } = await pool.query(
+      `select medium, count(*)::int as count
+       from web_visits
+       where created_at >= now() - interval '30 days'
+         and source = 'analytics'
+       group by medium`
+    );
+
+    const internalEvents = Object.fromEntries(
+      eventRows.map((r: { medium: string; count: number }) => [r.medium, r.count])
+    );
+
+    return NextResponse.json({
+      ...ga4,
+      internalEvents,
+    });
   }
 
   const { rows } = await pool.query(
     `select medium, count(*)::int as count
      from web_visits
      where created_at >= now() - interval '30 days'
+       and source <> 'analytics'
+     group by medium`
+  );
+  const { rows: eventRows } = await pool.query(
+    `select medium, count(*)::int as count
+     from web_visits
+     where created_at >= now() - interval '30 days'
+       and source = 'analytics'
      group by medium`
   );
   const byMedium = Object.fromEntries(
     rows.map((r: { medium: string; count: number }) => [r.medium, r.count])
+  );
+  const internalEvents = Object.fromEntries(
+    eventRows.map((r: { medium: string; count: number }) => [r.medium, r.count])
   );
   const total = Object.values(byMedium).reduce((a, b) => a + Number(b), 0);
   return NextResponse.json({
@@ -27,7 +53,8 @@ export async function GET() {
     activeUsers: 0,
     sessions: total,
     pageViews: total,
-    eventCount: total,
+    eventCount:
+      Object.values(internalEvents).reduce((a, b) => a + Number(b), 0) || total,
     organic: byMedium.organic || 0,
     paid:
       (byMedium.cpc || 0) +
@@ -37,5 +64,6 @@ export async function GET() {
     social: byMedium.social || 0,
     referral: byMedium.referral || 0,
     direct: byMedium.none || 0,
+    internalEvents,
   });
 }

@@ -46,6 +46,21 @@ export type AnalyticsItem = {
 
 export const ANALYTICS_CURRENCY = "ARS";
 
+const INTERNAL_ANALYTICS_EVENTS = new Set([
+  "view_item",
+  "add_to_cart",
+  "view_cart",
+  "remove_from_cart",
+  "begin_checkout",
+  "add_shipping_info",
+  "add_payment_info",
+  "purchase",
+  "generate_lead",
+  "sign_up",
+  "login",
+  "contact_whatsapp",
+]);
+
 export function buildAnalyticsItem(params: {
   id: string;
   name: string;
@@ -92,5 +107,31 @@ export function trackEvent(
   const gtag = ensureGtag();
   if (typeof gtag === "function") {
     gtag("event", eventName, ecommerce ? { ...payload, ...ecommerce } : payload);
+  }
+
+  if (INTERNAL_ANALYTICS_EVENTS.has(eventName)) {
+    const body = JSON.stringify({
+      eventName,
+      path: window.location.pathname,
+      referrer: document.referrer || null,
+    });
+
+    try {
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon(
+          "/api/traffic/track",
+          new Blob([body], { type: "application/json" })
+        );
+      } else {
+        fetch("/api/traffic/track", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body,
+          keepalive: true,
+        }).catch(() => null);
+      }
+    } catch {
+      // non-blocking internal analytics mirror
+    }
   }
 }

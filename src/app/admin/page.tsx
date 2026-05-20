@@ -36,6 +36,7 @@ interface DashboardStats {
   pageViews30d: number
   eventos30d: number
   gaSource: string
+  internalEvents: Record<string, number>
 }
 
 export default function AdminDashboardPage() {
@@ -55,6 +56,7 @@ export default function AdminDashboardPage() {
     pageViews30d: 0,
     eventos30d: 0,
     gaSource: "web_visits",
+    internalEvents: {},
   })
   const [loading, setLoading] = useState(true)
   const [lastUpdated, setLastUpdated] = useState<string>("")
@@ -135,6 +137,7 @@ export default function AdminDashboardPage() {
             pageViews: 0,
             eventCount: 0,
             source: "web_visits",
+            internalEvents: {},
           }
 
       setStats({
@@ -153,6 +156,7 @@ export default function AdminDashboardPage() {
         pageViews30d: traffic.pageViews || 0,
         eventos30d: traffic.eventCount || 0,
         gaSource: traffic.source || "web_visits",
+        internalEvents: traffic.internalEvents || {},
       })
       setLastUpdated(new Date().toLocaleTimeString("es-AR"))
     } catch (error) {
@@ -223,6 +227,14 @@ export default function AdminDashboardPage() {
     { label: "Eventos 30 dias", value: stats.eventos30d.toLocaleString(), icon: ShieldCheck },
     { label: "Organico 30 dias", value: stats.organico30d.toLocaleString(), icon: ArrowUpRight },
     { label: "Pago 30 dias", value: stats.pago30d.toLocaleString(), icon: DollarSign },
+  ]
+
+  const eventHighlights = [
+    { label: "view_item", value: stats.internalEvents.view_item || 0 },
+    { label: "add_to_cart", value: stats.internalEvents.add_to_cart || 0 },
+    { label: "begin_checkout", value: stats.internalEvents.begin_checkout || 0 },
+    { label: "purchase", value: stats.internalEvents.purchase || 0 },
+    { label: "generate_lead", value: stats.internalEvents.generate_lead || 0 },
   ]
 
   return (
@@ -314,6 +326,28 @@ export default function AdminDashboardPage() {
             </div>
           </div>
         ))}
+      </div>
+
+      <div className="rounded-lg border border-gray-200 bg-white p-6">
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-gray-800">Embudo medido del marketplace</h3>
+            <p className="text-sm text-gray-500">
+              Espejo interno de eventos ecommerce y leads para validar lo que dispara el sitio.
+            </p>
+          </div>
+          <span className="inline-flex w-fit rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-600">
+            Tracking interno espejo
+          </span>
+        </div>
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+          {eventHighlights.map((event) => (
+            <div key={event.label} className="rounded-lg border border-gray-100 bg-gray-50 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{event.label}</p>
+              <p className="mt-2 text-2xl font-bold text-gray-900">{event.value.toLocaleString()}</p>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="rounded-lg border border-gray-200 bg-white p-6">
