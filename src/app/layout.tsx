@@ -80,11 +80,11 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/brand/madsjeez-mark.svg", type: "image/svg+xml" },
-      { url: "/icon.svg", type: "image/svg+xml", sizes: "32x32" },
+      { url: "/icon.png", type: "image/png", sizes: "32x32" },
+      { url: "/brand/madsjeez-icon-512.png", type: "image/png", sizes: "512x512" },
     ],
-    apple: [{ url: "/apple-icon.svg", type: "image/svg+xml", sizes: "180x180" }],
-    shortcut: "/brand/madsjeez-mark.svg",
+    apple: [{ url: "/apple-icon.png", type: "image/png", sizes: "180x180" }],
+    shortcut: "/brand/madsjeez-icon-512.png",
   },
   robots: {
     index: true,
