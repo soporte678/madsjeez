@@ -1,13 +1,13 @@
-# Railway — Debian en build y runtime (misma libc que motores Prisma/sharp del trace standalone).
+# Railway — Debian bookworm (misma libc que motores Prisma del trace standalone).
+# Sin apt-get: los builders Metal de Railway a veces fallan con GPG "invalid signature"
+# en deb.debian.org (incidente de infra). node:22-bookworm-slim ya trae libssl3 y ca-certificates.
 FROM node:22-bookworm-slim AS deps
-RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
 
 FROM node:22-bookworm-slim AS builder
 WORKDIR /app
-RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -32,10 +32,6 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends openssl ca-certificates coreutils && \
-    rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
