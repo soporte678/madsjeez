@@ -5,6 +5,7 @@ import dynamic from "next/dynamic"
 import Image from "next/image"
 import Navbar from "@/components/Navbar"
 import { HomeSeoContent } from "@/components/home/HomeSeoContent"
+import { HomeSocialProof } from "@/components/home/HomeSocialProof"
 import { SiteCompanyFooter } from "@/components/seo/SiteCompanyFooter"
 import { SiteSocialFooter } from "@/components/seo/SiteSocialFooter"
 import { COMPANY } from "@/lib/company"
@@ -448,6 +449,8 @@ export default function HomePageClient() {
           </div>
         </div>
       </section>
+
+      <HomeSocialProof />
 
       {/* Franja publicitaria principal */}
       <section className="max-w-[1184px] mx-auto px-4 mb-10" aria-labelledby="ads-franja-1">
