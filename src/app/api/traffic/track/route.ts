@@ -55,7 +55,14 @@ export async function POST(req: Request) {
       ]
     );
     return NextResponse.json({ ok: true });
-  } catch {
+  } catch (err) {
+    const code =
+      typeof err === "object" && err !== null && "code" in err
+        ? String((err as { code: string }).code)
+        : "";
+    if (code === "42P01") {
+      console.warn("[traffic/track] web_visits no existe aún; migración pendiente");
+    }
     return NextResponse.json({ ok: false }, { status: 200 });
   }
 }
