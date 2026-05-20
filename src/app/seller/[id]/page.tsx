@@ -114,6 +114,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return {
     title: `${seller.full_name || "Vendedor"} | MADSJEEZ`,
     description: `Tienda oficial de ${seller.full_name || "vendedor"} en MADSJEEZ`,
+    robots: { index: false, follow: true },
   };
 }
 

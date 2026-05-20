@@ -27,6 +27,7 @@ import { ProductDetailClient } from "@/components/product/ProductDetailClient";
 import { BuyBox } from "@/components/product/BuyBox";
 import { ProductViewTracker } from "@/components/analytics/ProductViewTracker";
 import { ProductJsonLd } from "@/components/seo/ProductJsonLd";
+import { BreadcrumbJsonLd } from "@/components/seo/BreadcrumbJsonLd";
 
 function hasValidSupabaseConfig() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -171,7 +172,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       imgs.find((i) => i.url)?.url ||
       undefined;
     return {
-      title: `${product.title} | MadsJeez Marketplace`,
+      title: product.title,
       description: desc,
       alternates: { canonical },
       openGraph: {
@@ -181,6 +182,12 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
         type: "website",
         locale: "es_AR",
         ...(ogImage ? { images: [{ url: ogImage, alt: product.title }] } : {}),
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: product.title,
+        description: desc,
+        ...(ogImage ? { images: [ogImage] } : {}),
       },
     };
   }
@@ -199,7 +206,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     `Comprá ${prismaProd.title} en el marketplace MadsJeez Argentina.`;
   const canonical = `/product/${id}`;
   return {
-    title: `${prismaProd.title} | MadsJeez Marketplace`,
+    title: prismaProd.title,
     description: desc,
     alternates: { canonical },
     openGraph: {
@@ -208,6 +215,11 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       url: `${SITE_URL}${canonical}`,
       type: "website",
       locale: "es_AR",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: prismaProd.title,
+      description: desc,
     },
   };
 }
@@ -284,6 +296,15 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
         sku={product.sku}
         ratingValue={avgRating}
         reviewCount={totalReviews}
+      />
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Inicio", path: "/" },
+          ...(categorySlug
+            ? [{ name: categoryName, path: `/category/${categorySlug}` }]
+            : []),
+          { name: product.title, path: `/product/${product.id}` },
+        ]}
       />
       <Navbar />
       <ProductViewTracker

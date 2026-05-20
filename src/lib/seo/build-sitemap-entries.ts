@@ -30,6 +30,7 @@ const STATIC_PATHS: Array<{
   { path: "/legal/privacidad", priority: 0.3, changeFrequency: "yearly" },
   { path: "/legal/cookies", priority: 0.3, changeFrequency: "yearly" },
   { path: "/legal/reembolsos", priority: 0.3, changeFrequency: "yearly" },
+  { path: "/legal/aviso-legal", priority: 0.3, changeFrequency: "yearly" },
 ];
 
 function entry(

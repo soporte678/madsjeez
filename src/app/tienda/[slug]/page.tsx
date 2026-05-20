@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!store) return { title: "Tienda no encontrada | MadsJeez" };
 
   const path = `/tienda/${slug}`;
-  const title = `${store.displayName} — Tienda oficial | MadsJeez Marketplace`;
+  const title = `${store.displayName} — Tienda oficial`;
   const description =
     store.description?.slice(0, 160) ||
     `Comprá en la tienda ${store.displayName} en MadsJeez Marketplace Argentina. ${store.productCount} productos con pagos seguros.`;

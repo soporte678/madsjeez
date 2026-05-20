@@ -43,11 +43,13 @@ export function ProductJsonLd(props: ProductJsonLdProps) {
       "@type": "Brand",
       name: "MadsJeez Marketplace",
     },
+    category: props.categoryName || undefined,
     offers: {
       "@type": "Offer",
       url,
       priceCurrency: currency,
       price: props.price,
+      priceValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
       availability: props.inStock
         ? "https://schema.org/InStock"
         : "https://schema.org/OutOfStock",

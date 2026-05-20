@@ -167,17 +167,18 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     },
     subcategories
   );
-  const canonical = `${SITE_URL}/category/${category.slug}`;
+  const canonicalPath = `/category/${category.slug}`;
+  const canonicalUrl = `${SITE_URL}${canonicalPath}`;
 
   return {
     title: seo.seoTitle,
     description: seo.seoDescription,
     keywords: seo.keywords,
-    alternates: { canonical },
+    alternates: { canonical: canonicalPath },
     openGraph: {
       title: seo.seoTitle,
       description: seo.seoDescription,
-      url: canonical,
+      url: canonicalUrl,
       siteName: "MADSJEEZ",
       type: "website",
       locale: "es_AR",
