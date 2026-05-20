@@ -78,6 +78,14 @@ export const metadata: Metadata = {
       "Marketplace argentino para comprar y vender online. Publica productos y gestiona tus ventas.",
     images: ["/twitter-image"],
   },
+  icons: {
+    icon: [
+      { url: "/brand/madsjeez-mark.svg", type: "image/svg+xml" },
+      { url: "/icon.svg", type: "image/svg+xml", sizes: "32x32" },
+    ],
+    apple: [{ url: "/apple-icon.svg", type: "image/svg+xml", sizes: "180x180" }],
+    shortcut: "/brand/madsjeez-mark.svg",
+  },
   robots: {
     index: true,
     follow: true,
