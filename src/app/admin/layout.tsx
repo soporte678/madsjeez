@@ -5,8 +5,6 @@ import { createClient } from "@/lib/supabase/server"
 import { getSupabaseService } from "@/lib/supabase/service"
 import {
   ADMIN_SESSION_COOKIE,
-  getAdminSessionCookieOptions,
-  touchAdminSession,
   verifyAdminSession,
 } from "@/lib/admin-session"
 
@@ -52,13 +50,6 @@ export default async function AdminLayout({
   if (!activeAdminSession) {
     redirect("/admin/login")
   }
-
-  const refreshedExpiry = await touchAdminSession(adminSessionToken)
-  cookieStore.set(
-    ADMIN_SESSION_COOKIE,
-    adminSessionToken,
-    getAdminSessionCookieOptions(refreshedExpiry)
-  )
 
   return (
     <AdminLayoutClient>

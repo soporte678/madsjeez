@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createServerClient, type CookieOptions } from "@supabase/ssr"
 import { getSupabaseService } from "@/lib/supabase/service"
-import { ADMIN_SESSION_COOKIE, verifyAdminSession } from "@/lib/admin-session"
+import {
+  ADMIN_SESSION_COOKIE,
+  getAdminSessionCookieOptions,
+  touchAdminSession,
+  verifyAdminSession,
+} from "@/lib/admin-session"
 
 export async function GET(request: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()
@@ -61,7 +66,13 @@ export async function GET(request: NextRequest) {
     return response
   }
 
+  const refreshedExpiry = await touchAdminSession(adminToken!)
   const okResponse = NextResponse.json({ authenticated: true })
+  okResponse.cookies.set(
+    ADMIN_SESSION_COOKIE,
+    adminToken!,
+    getAdminSessionCookieOptions(refreshedExpiry)
+  )
   pendingCookies.forEach(({ name, value, options }) => okResponse.cookies.set(name, value, options))
   return okResponse
 }

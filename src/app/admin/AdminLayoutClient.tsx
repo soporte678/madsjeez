@@ -162,6 +162,43 @@ export function AdminLayoutClient({ children, user: propUser, role: propRole, ad
   const [searchQuery, setSearchQuery] = useState("")
   const [notifications, setNotifications] = useState(3)
 
+  useEffect(() => {
+    let disposed = false
+
+    const refreshAdminSession = async () => {
+      try {
+        const response = await fetch("/api/admin/auth/status", {
+          credentials: "include",
+          cache: "no-store",
+        })
+
+        if (!disposed && response.status === 401) {
+          router.replace("/admin/login")
+          router.refresh()
+        }
+      } catch {
+        // Keep the current session UI intact on transient network failures.
+      }
+    }
+
+    refreshAdminSession()
+    const intervalId = window.setInterval(refreshAdminSession, 5 * 60 * 1000)
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        refreshAdminSession()
+      }
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+
+    return () => {
+      disposed = true
+      window.clearInterval(intervalId)
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
+    }
+  }, [router])
+
   const toggleGroup = (title: string) => {
     setExpandedGroups((prev) => ({ ...prev, [title]: !prev[title] }))
   }
