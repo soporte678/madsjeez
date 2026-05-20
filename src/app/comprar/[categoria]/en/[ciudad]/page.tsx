@@ -11,7 +11,6 @@ import { ChevronRight, MapPin, ShoppingBag } from "lucide-react";
 
 /** Sin DB en Docker build (Railway): páginas bajo demanda + caché ISR. */
 export const dynamic = "force-dynamic";
-export const revalidate = 86400;
 
 type Props = { params: Promise<{ categoria: string; ciudad: string }> };
 

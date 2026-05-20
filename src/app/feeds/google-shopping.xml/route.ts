@@ -1,6 +1,7 @@
 import { buildGoogleShoppingFeedXml } from "@/lib/seo/google-shopping-feed";
 
-export const revalidate = 3600;
+/** Sin DB durante Docker build en Railway (evita prerender en `next build`). */
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   const xml = await buildGoogleShoppingFeedXml();

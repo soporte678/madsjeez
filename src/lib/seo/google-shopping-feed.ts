@@ -1,8 +1,16 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { primaryImageUrlFromRows, hasValidProductImageUrl } from "@/lib/productVisibility";
 import { SITE_URL } from "@/lib/seo/site";
 
 const FEED_LIMIT = 5000;
+
+const feedInclude = {
+  images: { orderBy: { order: "asc" as const }, take: 1 },
+  category: { select: { name: true } },
+} satisfies Prisma.ProductInclude;
+
+type FeedProductRow = Prisma.ProductGetPayload<{ include: typeof feedInclude }>;
 
 function escapeXml(value: string): string {
   return value
@@ -23,19 +31,21 @@ function conditionGoogle(condition: string): string {
 export async function buildGoogleShoppingFeedXml(): Promise<string> {
   const brand = process.env.GOOGLE_MERCHANT_BRAND || "MadsJeez Marketplace";
 
-  const rows = await prisma.product.findMany({
-    where: {
-      isActive: true,
-      stock: { gt: 0 },
-      images: { some: {} },
-    },
-    include: {
-      images: { orderBy: { order: "asc" }, take: 1 },
-      category: { select: { name: true } },
-    },
-    orderBy: { updatedAt: "desc" },
-    take: FEED_LIMIT,
-  });
+  let rows: FeedProductRow[] = [];
+  try {
+    rows = await prisma.product.findMany({
+      where: {
+        isActive: true,
+        stock: { gt: 0 },
+        images: { some: {} },
+      },
+      include: feedInclude,
+      orderBy: { updatedAt: "desc" },
+      take: FEED_LIMIT,
+    });
+  } catch (err) {
+    console.warn("[google-shopping-feed] DB no disponible:", err);
+  }
 
   const items = rows
     .map((p) => {

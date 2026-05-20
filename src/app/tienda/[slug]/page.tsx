@@ -10,6 +10,8 @@ import { canonicalMeta } from "@/lib/seo/canonical";
 import { SITE_URL } from "@/lib/seo/site";
 import { Store, Package, Star, ChevronRight } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 type Props = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

@@ -1,7 +1,8 @@
 import type { MetadataRoute } from "next";
 import { buildSitemapEntries } from "@/lib/seo/build-sitemap-entries";
 
-/** Regenera el sitemap como máximo cada hora (menos carga en DB en cada request). */
+/** Generado en runtime (DB no disponible en Docker build de Railway). */
+export const dynamic = "force-dynamic";
 export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
