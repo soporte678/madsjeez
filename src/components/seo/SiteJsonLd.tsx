@@ -36,6 +36,7 @@ export function SiteJsonLd() {
     "@id": `${SITE_URL}/#founder`,
     name: COMPANY.founder.name,
     jobTitle: COMPANY.founder.role,
+    image: `${SITE_URL}${COMPANY.founder.photoPortrait}`,
     worksFor: { "@id": `${SITE_URL}/#organization` },
     url: `${SITE_URL}/quienes-somos`,
   };

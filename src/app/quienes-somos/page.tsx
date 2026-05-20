@@ -1,20 +1,30 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { SiteCompanyFooter } from "@/components/seo/SiteCompanyFooter";
 import { COMPANY } from "@/lib/company";
 import { FEATURED_SELLER, MARKETPLACE_STATS } from "@/lib/social-proof";
 import { canonicalMeta } from "@/lib/seo/canonical";
+import { SITE_URL } from "@/lib/seo/site";
 import { ChevronRight, Target, Users } from "lucide-react";
+
+const GALLERY = [
+  { src: COMPANY.founder.photoOffice, alt: `${COMPANY.founder.name} en oficina corporativa` },
+  { src: COMPANY.founder.photoLeadership, alt: `${COMPANY.founder.name} liderando el marketplace` },
+  { src: COMPANY.founder.photoOperations, alt: `${COMPANY.founder.name} en operaciones` },
+  { src: COMPANY.founder.photoExterior, alt: `${COMPANY.founder.name} — presencia ejecutiva` },
+] as const;
 
 export const metadata: Metadata = {
   ...canonicalMeta("/quienes-somos"),
-  title: "Quiénes somos — MadsJeez Marketplace Argentina",
-  description: `Conocé a ${COMPANY.founder.name}, fundador de MadsJeez: marketplace en Argentina para comprar y vender online desde ${COMPANY.address.city}.`,
+  title: "Quiénes somos — Ezequiel Ziegler · MadsJeez Marketplace",
+  description: `${COMPANY.founder.name}, ${COMPANY.founder.role} de MadsJeez: marketplace en Argentina desde ${COMPANY.address.city}.`,
   openGraph: {
     title: "Quiénes somos | MadsJeez Marketplace",
     description: COMPANY.mission,
-    url: "https://www.madsjeez.com.ar/quienes-somos",
+    url: `${SITE_URL}/quienes-somos`,
+    images: [{ url: `${SITE_URL}${COMPANY.founder.photoPortrait}`, width: 800, height: 800, alt: COMPANY.founder.name }],
   },
 };
 
@@ -25,17 +35,40 @@ export default function QuienesSomosPage() {
     <main className="min-h-screen bg-mesh font-outfit text-slate-900">
       <Navbar />
 
-      <section className="bg-gradient-to-br from-[#0f172a] via-[#1a1a2e] to-[#16213e] text-white py-16 md:py-24">
-        <div className="max-w-4xl mx-auto px-4 text-center">
-          <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#f97316] mb-4">
-            E-E-A-T · Experiencia · Autoridad · Confianza
-          </p>
-          <h1 className="text-3xl md:text-5xl font-black tracking-tight font-montserrat mb-6">
-            Quiénes somos
-          </h1>
-          <p className="text-lg md:text-xl text-slate-300 leading-relaxed max-w-2xl mx-auto">
-            {COMPANY.tagline}
-          </p>
+      <section className="relative bg-gradient-to-br from-[#0f172a] via-[#1a1a2e] to-[#16213e] text-white overflow-hidden">
+        <div className="absolute inset-0 opacity-30">
+          <Image
+            src={founder.photoOffice}
+            alt=""
+            fill
+            className="object-cover object-center"
+            priority
+            sizes="100vw"
+          />
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0f172a]/95 via-[#0f172a]/80 to-[#0f172a]/50" />
+        <div className="relative max-w-5xl mx-auto px-4 py-16 md:py-24 flex flex-col md:flex-row items-center gap-10">
+          <div className="relative h-48 w-48 md:h-56 md:w-56 shrink-0 rounded-2xl overflow-hidden border-2 border-white/20 shadow-2xl">
+            <Image
+              src={founder.photoPortrait}
+              alt={founder.name}
+              fill
+              className="object-cover object-top"
+              priority
+              sizes="(max-width: 768px) 192px, 224px"
+            />
+          </div>
+          <div className="text-center md:text-left">
+            <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#f97316] mb-3">
+              Fundador & CEO
+            </p>
+            <h1 className="text-3xl md:text-5xl font-black tracking-tight font-montserrat mb-4">
+              {founder.name}
+            </h1>
+            <p className="text-lg text-slate-300 leading-relaxed max-w-xl">
+              {COMPANY.tagline}
+            </p>
+          </div>
         </div>
       </section>
 
@@ -59,31 +92,14 @@ export default function QuienesSomosPage() {
         </p>
       </section>
 
-      <section className="max-w-5xl mx-auto px-4 py-8 md:py-14">
-        <div className="grid md:grid-cols-[280px_1fr] gap-10 items-start">
-          <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm text-center">
-            <div
-              className="mx-auto mb-6 flex h-40 w-40 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0f172a] to-[#1e293b] text-4xl font-black text-white"
-              aria-hidden
-            >
-              EZ
-            </div>
-            <p className="text-xs font-bold uppercase tracking-wider text-[#3483FA] mb-1">
-              Fundador
-            </p>
-            <h2 className="text-xl font-black text-slate-900">{founder.name}</h2>
-            <p className="text-sm font-semibold text-[#f97316] mt-1">{founder.role}</p>
-            <p className="text-xs text-slate-500 mt-4">
-              Foto profesional — próximamente
-            </p>
-          </div>
-
-          <div className="space-y-8">
+      <section className="max-w-5xl mx-auto px-4 py-8 md:py-12">
+        <div className="grid lg:grid-cols-[1fr_320px] gap-10 items-start">
+          <div className="space-y-8 order-2 lg:order-1">
             <div>
-              <h3 className="text-lg font-black text-slate-900 mb-3 flex items-center gap-2">
+              <h2 className="text-lg font-black text-slate-900 mb-3 flex items-center gap-2">
                 <Users className="h-5 w-5 text-[#3483FA]" />
                 Biografía
-              </h3>
+              </h2>
               {founder.bio.split("\n\n").map((paragraph) => (
                 <p key={paragraph.slice(0, 24)} className="text-slate-600 leading-relaxed mb-4">
                   {paragraph}
@@ -92,10 +108,10 @@ export default function QuienesSomosPage() {
             </div>
 
             <div className="rounded-2xl border border-orange-200/60 bg-orange-50/50 p-6 md:p-8">
-              <h3 className="text-lg font-black text-slate-900 mb-3 flex items-center gap-2">
+              <h2 className="text-lg font-black text-slate-900 mb-3 flex items-center gap-2">
                 <Target className="h-5 w-5 text-[#f97316]" />
                 Visión del proyecto
-              </h3>
+              </h2>
               {founder.vision.split("\n\n").map((paragraph) => (
                 <p key={paragraph.slice(0, 24)} className="text-slate-700 leading-relaxed mb-4 last:mb-0">
                   {paragraph}
@@ -153,14 +169,24 @@ export default function QuienesSomosPage() {
               >
                 Hablar por WhatsApp
               </Link>
-              <Link
-                href="/help"
-                className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold text-[#3483FA] hover:underline"
-              >
-                Centro de ayuda
-              </Link>
             </div>
           </div>
+
+          <aside className="order-1 lg:order-2 space-y-4">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              El equipo detrás del marketplace
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              {GALLERY.map((img) => (
+                <div
+                  key={img.src}
+                  className="relative aspect-[3/4] rounded-xl overflow-hidden border border-slate-200 shadow-sm"
+                >
+                  <Image src={img.src} alt={img.alt} fill className="object-cover" sizes="160px" />
+                </div>
+              ))}
+            </div>
+          </aside>
         </div>
       </section>
 

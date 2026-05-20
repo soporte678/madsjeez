@@ -366,14 +366,24 @@ export default function HomePageClient() {
             >
               Qué es MADSJEEZ
             </h2>
-            <p className="text-slate-600 text-[15px] md:text-base leading-relaxed max-w-3xl">
-              Operado desde {COMPANY.address.city} por {COMPANY.founder.name}, {COMPANY.founder.role}.{" "}
-              {COMPANY.mission}{" "}
-              <Link href="/quienes-somos" className="text-[#3483FA] font-semibold hover:underline">
-                Conocé nuestra historia y visión
-              </Link>
-              .
-            </p>
+            <div className="flex flex-col sm:flex-row gap-5 items-start max-w-3xl">
+              <div className="relative h-20 w-20 shrink-0 rounded-xl overflow-hidden border border-slate-200 shadow-md">
+                <img
+                  src={COMPANY.founder.photoPortrait}
+                  alt={COMPANY.founder.name}
+                  className="h-full w-full object-cover object-top"
+                />
+              </div>
+              <p className="text-slate-600 text-[15px] md:text-base leading-relaxed">
+                Operado desde {COMPANY.address.city} por{" "}
+                <strong className="text-slate-800">{COMPANY.founder.name}</strong>, {COMPANY.founder.role}.{" "}
+                {COMPANY.mission}{" "}
+                <Link href="/quienes-somos" className="text-[#3483FA] font-semibold hover:underline">
+                  Conocé nuestra historia y visión
+                </Link>
+                .
+              </p>
+            </div>
           </div>
           <div className="p-6 md:p-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
             {[
