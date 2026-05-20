@@ -40,6 +40,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { getCategoryCatalog } from "@/lib/categoryCatalog";
+import { canonicalMeta } from "@/lib/seo/canonical";
 
 export const dynamic = "force-dynamic";
 
@@ -47,6 +48,7 @@ export const metadata: Metadata = {
   title: "Categorias para comprar y vender | MADSJEEZ",
   description:
     "Explora todas las categorias del marketplace MADSJEEZ en Argentina. Encuentra productos, vendedores y oportunidades para publicar tu catalogo.",
+  ...canonicalMeta("/categories"),
 };
 
 const categoryIcons: Record<string, LucideIcon> = {

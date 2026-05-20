@@ -1,10 +1,12 @@
 import { Metadata } from "next";
 import { Header } from "@/components/Header";
 import { Card, CardContent } from "@/components/ui/card";
+import { canonicalMeta } from "@/lib/seo/canonical";
 
 export const metadata: Metadata = {
   title: "Política de Privacidad | MADSJEEZ",
   description: "Política de privacidad y protección de datos de MADSJEEZ Marketplace",
+  ...canonicalMeta("/legal/privacidad"),
 };
 
 export default function PrivacidadPage() {

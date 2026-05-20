@@ -11,6 +11,7 @@ import {
   apiDocKeyToFsPath,
   slugSegmentsToKey,
 } from "@/lib/api-docs";
+import { canonicalMeta } from "@/lib/seo/canonical";
 
 export const dynamic = "force-static";
 
@@ -28,10 +29,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!key) {
     return { title: "API | Madsjeez" };
   }
+  const path = key === "README" ? "/docs/api" : `/docs/api/${key}`;
   return {
     title: `${API_DOC_PAGE_TITLE[key]} | Madsjeez Developers`,
     description:
       "Documentación de la API REST del marketplace: autenticación, productos, pedidos, Mercado Libre, webhooks y más.",
+    ...canonicalMeta(path),
     openGraph: {
       title: `${API_DOC_PAGE_TITLE[key]} — API Madsjeez`,
       type: "article",

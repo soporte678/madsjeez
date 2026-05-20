@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
 import { sellerSegments } from "@/lib/seller-acquisition";
+import { HELP_SLUGS } from "@/lib/help-articles";
 import { SITE_URL, SITEMAP_PRODUCT_LIMIT } from "@/lib/seo/site";
 
 const STATIC_PATHS: Array<{
@@ -50,6 +51,10 @@ export async function buildSitemapEntries(): Promise<MetadataRoute.Sitemap> {
 
   for (const segment of sellerSegments) {
     out.push(entry(`/vender/${segment.slug}`, now, 0.88, "weekly"));
+  }
+
+  for (const slug of HELP_SLUGS) {
+    out.push(entry(`/help/${slug}`, now, 0.55, "monthly"));
   }
 
   try {
