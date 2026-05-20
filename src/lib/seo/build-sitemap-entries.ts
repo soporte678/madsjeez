@@ -2,6 +2,9 @@ import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
 import { sellerSegments } from "@/lib/seller-acquisition";
 import { HELP_SLUGS } from "@/lib/help-articles";
+import { allMarketplaceLocationPaths } from "@/lib/seo/argentina-locations";
+import { getAllComprarLandingParams } from "@/lib/seo/comprar-landings";
+import { listIndexableStoreSlugs } from "@/lib/public-store";
 import { SITE_URL, SITEMAP_PRODUCT_LIMIT } from "@/lib/seo/site";
 
 const STATIC_PATHS: Array<{
@@ -20,6 +23,8 @@ const STATIC_PATHS: Array<{
   { path: "/seller/register", priority: 0.9, changeFrequency: "weekly" },
   { path: "/vender", priority: 0.95, changeFrequency: "weekly" },
   { path: "/quienes-somos", priority: 0.75, changeFrequency: "monthly" },
+  { path: "/marketplace", priority: 0.9, changeFrequency: "weekly" },
+  { path: "/comprar", priority: 0.88, changeFrequency: "weekly" },
   { path: "/help", priority: 0.6, changeFrequency: "monthly" },
   { path: "/legal/terminos", priority: 0.3, changeFrequency: "yearly" },
   { path: "/legal/privacidad", priority: 0.3, changeFrequency: "yearly" },
@@ -58,6 +63,13 @@ export async function buildSitemapEntries(): Promise<MetadataRoute.Sitemap> {
     out.push(entry(`/help/${slug}`, now, 0.55, "monthly"));
   }
 
+  for (const loc of allMarketplaceLocationPaths()) {
+    const path = loc.localidad
+      ? `/marketplace/${loc.provincia}/${loc.localidad}`
+      : `/marketplace/${loc.provincia}`;
+    out.push(entry(path, now, loc.localidad ? 0.78 : 0.85, "weekly"));
+  }
+
   try {
     const [categories, products] = await Promise.all([
       prisma.category.findMany({
@@ -78,6 +90,21 @@ export async function buildSitemapEntries(): Promise<MetadataRoute.Sitemap> {
 
     for (const product of products) {
       out.push(entry(`/product/${product.id}`, product.updatedAt, 0.75, "weekly"));
+    }
+
+    const [stores, comprarParams] = await Promise.all([
+      listIndexableStoreSlugs(),
+      getAllComprarLandingParams(),
+    ]);
+
+    for (const store of stores) {
+      out.push(entry(`/tienda/${store.slug}`, store.updatedAt, 0.8, "weekly"));
+    }
+
+    for (const c of comprarParams) {
+      out.push(
+        entry(`/comprar/${c.categoria}/en/${c.ciudad}`, now, 0.76, "weekly")
+      );
     }
   } catch (err) {
     console.warn("[sitemap] No se pudieron cargar categorías/productos desde DB:", err);

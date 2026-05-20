@@ -26,6 +26,7 @@ import { getPrismaProductDetailBundle } from "@/lib/product/prisma-detail-for-pa
 import { ProductDetailClient } from "@/components/product/ProductDetailClient";
 import { BuyBox } from "@/components/product/BuyBox";
 import { ProductViewTracker } from "@/components/analytics/ProductViewTracker";
+import { ProductJsonLd } from "@/components/seo/ProductJsonLd";
 
 function hasValidSupabaseConfig() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -165,6 +166,10 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       product.description?.slice(0, 160) ||
       `Comprá ${product.title} en el marketplace MadsJeez Argentina.`;
     const canonical = `/product/${id}`;
+    const imgs = (product.product_images as { url: string }[] | undefined) || [];
+    const ogImage =
+      imgs.find((i) => i.url)?.url ||
+      undefined;
     return {
       title: `${product.title} | MadsJeez Marketplace`,
       description: desc,
@@ -175,6 +180,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
         url: `${SITE_URL}${canonical}`,
         type: "website",
         locale: "es_AR",
+        ...(ogImage ? { images: [{ url: ogImage, alt: product.title }] } : {}),
       },
     };
   }
@@ -261,8 +267,24 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   const categoryName = product.categories?.name || "Productos";
   const categorySlug = product.categories?.slug || "";
 
+  const stockQty = Number(product.stock ?? 0);
+
   return (
     <div className="min-h-screen flex flex-col">
+      <ProductJsonLd
+        id={product.id}
+        title={product.title}
+        description={product.description || ""}
+        price={Number(product.price)}
+        images={images}
+        condition={product.condition || "new"}
+        inStock={stockQty > 0}
+        categoryName={categoryName}
+        sellerName={sellerName}
+        sku={product.sku}
+        ratingValue={avgRating}
+        reviewCount={totalReviews}
+      />
       <Navbar />
       <ProductViewTracker
         productId={product.id}

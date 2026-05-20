@@ -105,6 +105,8 @@ model User {
   sellerName        String?
   sellerDescription String?   @db.Text
   sellerSince       DateTime? @map("seller_since")
+  /// URL pública /tienda/[storeSlug]
+  storeSlug         String?   @unique @map("store_slug")
   
   // Sistema de reputación
   reputationColor   ReputationColor @default(VERDE) @map("reputation_color")

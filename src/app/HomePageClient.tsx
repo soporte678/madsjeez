@@ -41,8 +41,9 @@ const CategoryCarousel = dynamic(
   () => import("@/components/CategoryCarousel").then((m) => m.CategoryCarousel),
   { loading: () => <div className="h-64 animate-pulse rounded-2xl bg-slate-100" /> }
 )
-const RotatingProductCarousel = dynamic(
-  () => import("@/components/RotatingProductCarousel").then((m) => m.RotatingProductCarousel),
+const LazyRotatingProductCarousel = dynamic(
+  () =>
+    import("@/components/LazyRotatingProductCarousel").then((m) => m.LazyRotatingProductCarousel),
   { loading: () => <div className="h-48 animate-pulse rounded-xl bg-slate-100 mb-8" /> }
 )
 const PaidAdBannerSlot = dynamic(
@@ -73,7 +74,7 @@ const heroBanners = [
     desc: "La plataforma para vender productos y gestionar tu negocio online en Argentina. Catálogo, ofertas y pagos con Mercado Pago.",
     btn1: "Explorar Colección",
     Icon: ShoppingCart,
-    image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1200&q=80",
+    image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=75",
     imageAlt: "Compradores en un local comercial moderno — marketplace Madsjeez Argentina",
     bgGradient: "from-blue-600 via-slate-900 to-indigo-950",
     accent: "blue"
@@ -87,7 +88,7 @@ const heroBanners = [
     desc: "Hasta 50% de beneficio directo en marcas seleccionadas. Solo por 24 horas.",
     btn1: "Cazar Ofertas",
     Icon: Zap,
-    image: "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&w=1200&q=80",
+    image: "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&w=800&q=75",
     imageAlt: "Etiquetas de ofertas y descuentos en productos — ofertas flash Madsjeez",
     bgGradient: "from-orange-900 via-slate-900 to-black",
     accent: "orange"
@@ -101,7 +102,7 @@ const heroBanners = [
     desc: "Nuestra propia flota logística garantiza la entrega en menos de 24hs con seguimiento en tiempo real.",
     btn1: "Saber más",
     Icon: Truck,
-    image: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaeb55?auto=format&fit=crop&w=1200&q=80",
+    image: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaeb55?auto=format&fit=crop&w=800&q=75",
     imageAlt: "Camión de logística en ruta — envío express Madsjeez en 24 horas",
     bgGradient: "from-emerald-800 via-slate-900 to-black",
     accent: "emerald",
@@ -116,7 +117,7 @@ const heroBanners = [
     desc: "Hardware de última generación con cuotas fijas y garantía extendida oficial.",
     btn1: "Ver Setup",
     Icon: Gamepad2,
-    image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1200&q=80",
+    image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=75",
     imageAlt: "Setup gamer con periféricos de alta gama — categoría gaming Madsjeez",
     bgGradient: "from-purple-800 via-slate-900 to-indigo-950",
     accent: "purple"
@@ -130,7 +131,7 @@ const heroBanners = [
     desc: "Vende en la plataforma de mayor crecimiento. Dashboard avanzado y logística integrada.",
     btn1: "Ser Vendedor Pro",
     Icon: TrendingUp,
-    image: "https://images.unsplash.com/photo-1556761175-4b46a572b786?auto=format&fit=crop&w=1200&q=80",
+    image: "https://images.unsplash.com/photo-1556761175-4b46a572b786?auto=format&fit=crop&w=800&q=75",
     imageAlt: "Equipo de negocios en reunión — vender y escalar tu marca en Madsjeez",
     bgGradient: "from-amber-600 via-slate-900 to-black",
     accent: "amber"
@@ -144,7 +145,7 @@ const heroBanners = [
     desc: "Comprá tranquilo. Tu dinero está protegido por protocolos de seguridad de alta gama.",
     btn1: "Centro de Confianza",
     Icon: ShieldCheck,
-    image: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=1200&q=80",
+    image: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=800&q=75",
     imageAlt: "Pago seguro con tarjeta y protección digital — compra protegida Madsjeez",
     bgGradient: "from-slate-700 via-slate-900 to-blue-950",
     accent: "slate"
@@ -368,10 +369,12 @@ export default function HomePageClient() {
             </h2>
             <div className="flex flex-col sm:flex-row gap-5 items-start max-w-3xl">
               <div className="relative h-20 w-20 shrink-0 rounded-xl overflow-hidden border border-slate-200 shadow-md">
-                <img
+                <Image
                   src={COMPANY.founder.photoPortrait}
-                  alt={COMPANY.founder.name}
-                  className="h-full w-full object-cover object-top"
+                  alt={`${COMPANY.founder.name}, ${COMPANY.founder.role} de MadsJeez Marketplace`}
+                  fill
+                  sizes="80px"
+                  className="object-cover object-top"
                 />
               </div>
               <p className="text-slate-600 text-[15px] md:text-base leading-relaxed">
@@ -505,7 +508,8 @@ export default function HomePageClient() {
 
       {/* 1. CARRUSEL: Productos rotativos — catálogo completo en rotación automática */}
       <section className="max-w-[1184px] mx-auto px-4">
-        <RotatingProductCarousel
+        <LazyRotatingProductCarousel
+          eager
           title="Productos destacados"
           subtitle="Descubrí nuevos productos de nuestro catálogo"
         />
@@ -513,7 +517,8 @@ export default function HomePageClient() {
 
       {/* 2. CARRUSEL: Relacionado con tus visitas */}
       <section className="max-w-[1184px] mx-auto px-4">
-        <RotatingProductCarousel
+        <LazyRotatingProductCarousel
+          eager
           title="Relacionado con tus visitas"
           subtitle="Rotación automática en todo el catálogo"
           offset={12}
@@ -522,7 +527,7 @@ export default function HomePageClient() {
 
       {/* 3. CARRUSEL: Elegidos para vos */}
       <section className="max-w-[1184px] mx-auto px-4">
-        <RotatingProductCarousel
+        <LazyRotatingProductCarousel
           title="Elegidos para vos"
           subtitle="Nuevas combinaciones cada pocos segundos"
           offset={24}
@@ -535,7 +540,7 @@ export default function HomePageClient() {
 
       {/* 4. CARRUSEL: Herramientas (completa con otras categorías si faltan) */}
       <section className="max-w-[1184px] mx-auto px-4">
-        <RotatingProductCarousel
+        <LazyRotatingProductCarousel
           title="Herramientas y ferretería"
           subtitle="Prioriza la categoría; si no hay stock, muestra el resto del catálogo"
           offset={36}
@@ -545,7 +550,7 @@ export default function HomePageClient() {
 
       {/* 5. CARRUSEL: Deportes */}
       <section className="max-w-[1184px] mx-auto px-4">
-        <RotatingProductCarousel
+        <LazyRotatingProductCarousel
           title="Deportes y fitness"
           subtitle="Rotación continua con respaldo de otras categorías"
           offset={48}
@@ -555,7 +560,7 @@ export default function HomePageClient() {
 
       {/* 6. CARRUSEL: Más productos rotativos */}
       <section className="max-w-[1184px] mx-auto px-4">
-        <RotatingProductCarousel
+        <LazyRotatingProductCarousel
           title="Más productos para vos"
           subtitle="Nuestra selección se renueva automáticamente"
           offset={60}
@@ -585,7 +590,7 @@ export default function HomePageClient() {
 
       {/* 7. CARRUSEL: También puede interesarte */}
       <section className="max-w-[1184px] mx-auto px-4">
-        <RotatingProductCarousel
+        <LazyRotatingProductCarousel
           title="También puede interesarte"
           subtitle="Más productos del marketplace en rotación"
           offset={72}

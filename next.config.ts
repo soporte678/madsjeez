@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { getProductImageRemotePatterns } from "./src/lib/seo/image-remote-hosts";
 
 const nextConfig: NextConfig = {
   output: "standalone",
@@ -6,9 +7,11 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ["lucide-react"],
   },
   images: {
-    remotePatterns: [
-      { protocol: "https", hostname: "images.unsplash.com", pathname: "/**" },
-    ],
+    formats: ["image/avif", "image/webp"],
+    deviceSizes: [640, 750, 828, 1080, 1200],
+    imageSizes: [16, 32, 48, 64, 96, 128, 224, 256, 384],
+    minimumCacheTTL: 86400,
+    remotePatterns: getProductImageRemotePatterns(),
   },
   // Evita que Next elija otro root cuando detecta lockfiles fuera del proyecto.
   turbopack: {
@@ -27,6 +30,33 @@ const nextConfig: NextConfig = {
   // Configuración para dominio personalizado
   async headers() {
     return [
+      {
+        source: "/_next/static/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        source: "/brand/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=604800, stale-while-revalidate=86400",
+          },
+        ],
+      },
+      {
+        source: "/team/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=604800, stale-while-revalidate=86400",
+          },
+        ],
+      },
       {
         source: "/:path*",
         headers: [

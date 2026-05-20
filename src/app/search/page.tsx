@@ -738,7 +738,13 @@ function SearchContent() {
                         >
                           <div className="aspect-square bg-gray-50 p-2 flex items-center justify-center">
                             {product.primary_image ? (
-                              <img src={product.primary_image} alt="" className="max-w-full max-h-full object-contain" />
+                              <img
+                                src={product.primary_image}
+                                alt={`${product.title} — MadsJeez Marketplace`}
+                                className="max-w-full max-h-full object-contain"
+                                loading="lazy"
+                                decoding="async"
+                              />
                             ) : (
                               <Package className="w-10 h-10 text-gray-300" />
                             )}
@@ -805,8 +811,10 @@ function ProductCard({
         {product.primary_image ? (
           <img
             src={product.primary_image}
-            alt={product.title}
+            alt={`Comprar ${product.title} online — marketplace MadsJeez Argentina`}
             className="w-full h-full object-contain group-hover:scale-[1.03] transition-transform duration-300"
+            loading="lazy"
+            decoding="async"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">

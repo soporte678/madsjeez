@@ -41,6 +41,16 @@ export function SiteCompanyFooter() {
             Quiénes somos
           </Link>
         </li>
+        <li>
+          <Link href="/marketplace" className="hover:text-[#00b4d8] transition-colors">
+            Marketplace por provincia
+          </Link>
+        </li>
+        <li>
+          <Link href="/comprar" className="hover:text-[#00b4d8] transition-colors">
+            Comprar por ciudad
+          </Link>
+        </li>
       </ul>
     </div>
   );

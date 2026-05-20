@@ -26,6 +26,8 @@ Contacto de soporte: soporte@madsjeez.com
 ## Empresa y confianza
 
 - [Quiénes somos](https://www.madsjeez.com.ar/quienes-somos): Fundador Ezequiel Armando Ziegler, visión del marketplace y contacto en Spegazzini, Buenos Aires
+- [Marketplace por provincia](https://www.madsjeez.com.ar/marketplace): Landings SEO por provincia y ciudad en Argentina
+- [Feed Google Shopping](https://www.madsjeez.com.ar/feeds/google-shopping.xml): Catálogo XML para Google Merchant Center
 
 ## Ayuda y legales
 

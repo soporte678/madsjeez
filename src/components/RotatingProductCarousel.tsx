@@ -1,12 +1,12 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import Image from "next/image"
 import Link from "next/link"
 import { ChevronLeft, ChevronRight, Truck } from "lucide-react"
 import { useRotatingProducts } from "@/hooks/useRotatingProducts"
+import { OptimizedProductImage } from "@/components/product/OptimizedProductImage"
 
-interface RotatingProductCarouselProps {
+export interface RotatingProductCarouselProps {
   title: string
   subtitle?: string
   offset?: number
@@ -165,13 +165,14 @@ export function RotatingProductCarousel({
           >
             <div className="relative h-[224px] overflow-hidden rounded-t-lg bg-secondary">
               {product.image ? (
-                <Image
+                <OptimizedProductImage
                   src={product.image}
-                  alt={product.title}
+                  title={product.title}
+                  category={product.category}
+                  sellerName={product.sellerName}
                   fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
                   sizes="224px"
-                  unoptimized
+                  className="object-cover group-hover:scale-105 transition-transform duration-500"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-muted-foreground/50">

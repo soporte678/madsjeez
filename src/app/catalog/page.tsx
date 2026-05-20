@@ -317,10 +317,11 @@ export default function CatalogPage() {
                 <div className="relative w-full aspect-square bg-slate-50 p-4 overflow-hidden">
                   <Image
                     src={product.image}
-                    alt={product.title}
+                    alt={`Comprar ${product.title} en MadsJeez Marketplace Argentina`}
                     fill
+                    sizes="(max-width: 768px) 50vw, 25vw"
                     className="object-contain group-hover:scale-105 transition-transform duration-500"
-                    unoptimized
+                    quality={80}
                   />
                   <button className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-sm rounded-full text-slate-300 hover:text-rose-500 shadow-sm transition-colors">
                     <Heart size={18} />

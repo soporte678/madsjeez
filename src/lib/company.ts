@@ -19,11 +19,11 @@ export const COMPANY = {
   founder: {
     name: "Ezequiel Armando Ziegler",
     role: "Fundador & CEO",
-    photoPortrait: "/team/ezequiel-ziegler-portrait.png",
-    photoOffice: "/team/ezequiel-ziegler-office.png",
-    photoLeadership: "/team/ezequiel-ziegler-leadership.png",
-    photoExterior: "/team/ezequiel-ziegler-exterior.png",
-    photoOperations: "/team/ezequiel-ziegler-operations.png",
+    photoPortrait: "/team/ezequiel-ziegler-portrait.webp",
+    photoOffice: "/team/ezequiel-ziegler-office.webp",
+    photoLeadership: "/team/ezequiel-ziegler-leadership.webp",
+    photoExterior: "/team/ezequiel-ziegler-exterior.webp",
+    photoOperations: "/team/ezequiel-ziegler-operations.webp",
     bio: `Ezequiel Armando Ziegler fundó MadsJeez con una idea clara: que comercios argentinos —desde ferreterías y repuesteros hasta emprendimientos en crecimiento— puedan vender online con la misma seriedad que las grandes plataformas, sin depender solo de redes sociales o mensajes sueltos por WhatsApp.
 
 Con experiencia en digitalización comercial y operación de negocios locales, lidera el desarrollo de un marketplace que combina catálogo profesional, pagos con Mercado Pago, logística, panel de vendedor y publicidad MADSJEEZ Ads en un solo ecosistema.`,

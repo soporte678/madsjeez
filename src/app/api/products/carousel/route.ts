@@ -29,13 +29,27 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(result);
     }
 
+    if (mode === "home") {
+      const poolCap = Math.min(Number(searchParams.get("poolCap") || "400"), 500);
+      const result = await getCarouselProductPool({ poolCap, categorySlug: null });
+      return NextResponse.json(result, {
+        headers: {
+          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+        },
+      });
+    }
+
     if (mode === "pool") {
-      const poolCap = Number(searchParams.get("poolCap") || "2500");
+      const poolCap = Math.min(Number(searchParams.get("poolCap") || "400"), 600);
       const result = await getCarouselProductPool({
         poolCap,
         categorySlug,
       });
-      return NextResponse.json(result);
+      return NextResponse.json(result, {
+        headers: {
+          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+        },
+      });
     }
 
     const result = await getCarouselProducts({

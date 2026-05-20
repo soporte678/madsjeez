@@ -17,6 +17,7 @@ import ProfileAddressesView from './profile/ProfileAddressesView';
 import ProfilePrivacyView from './profile/ProfilePrivacyView';
 import ProfileCommunicationsView from './profile/ProfileCommunicationsView';
 import MeliIntegrationView from '@/components/dashboard/MeliIntegrationView';
+import { StorePublicPanel } from '@/components/dashboard/StorePublicPanel';
 
 interface ProfileViewProps {
   userData?: {
@@ -558,6 +559,8 @@ export default function ProfileView({ userData }: ProfileViewProps) {
           Negocio
         </span>
       </div>
+
+      <StorePublicPanel />
 
       {/* --- BANNER DE ALERTA: LLAVE DE ACCESO --- */}
       {!accessKeyState.loading && accessKeyState.showBanner && (

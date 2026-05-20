@@ -1,5 +1,7 @@
 import { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { prisma } from "@/lib/prisma";
+import { ensureStoreSlugForUser } from "@/lib/public-store";
 import Link from "next/link";
 import { Header } from "@/components/Header";
 import { ProductCard } from "@/components/product/ProductCard";
@@ -117,6 +119,16 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 export default async function SellerPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+
+  const prismaUser = await prisma.user.findUnique({
+    where: { id },
+    select: { storeSlug: true, isSeller: true },
+  });
+  if (prismaUser?.isSeller) {
+    const slug = prismaUser.storeSlug || (await ensureStoreSlugForUser(id));
+    if (slug) redirect(`/tienda/${slug}`);
+  }
+
   const seller = await getSeller(id);
 
   if (!seller) {

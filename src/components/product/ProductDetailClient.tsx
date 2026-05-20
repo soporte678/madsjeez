@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react"
 import { Heart, Package, X, ZoomIn, ZoomOut, ChevronLeft, ChevronRight } from "lucide-react"
+import { buildProductImageAlt } from "@/lib/seo/product-image-alt"
 
 interface ProductDetailClientProps {
   images: string[]
@@ -100,8 +101,10 @@ export function ProductDetailClient({ images, title }: ProductDetailClientProps)
             >
               <img
                 src={img}
-                alt={`${title} - ${idx + 1}`}
+                alt={buildProductImageAlt({ title, index: idx })}
                 className="w-full h-full object-contain rounded-sm"
+                loading={idx === 0 ? "eager" : "lazy"}
+                decoding="async"
               />
             </div>
           ))}
@@ -114,8 +117,10 @@ export function ProductDetailClient({ images, title }: ProductDetailClientProps)
         >
           <img
             src={images[activeImage]}
-            alt={title}
+            alt={buildProductImageAlt({ title, index: activeImage })}
             className="max-w-full max-h-full object-contain cursor-zoom-in"
+            fetchPriority="high"
+            decoding="async"
           />
           <button className="absolute top-2 right-2 text-[#3483fa] hover:text-blue-700 transition-colors z-10"
             onClick={(e) => { e.stopPropagation() }}

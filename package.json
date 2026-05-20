@@ -23,7 +23,9 @@
     "scrape:aliexpress": "tsx scripts/scrape-aliexpress-images.ts",
     "download:meli-images": "tsx scripts/download-meli-images.ts",
     "download:meli-seller": "tsx scripts/download-meli-seller.ts --store bullservice",
-    "download:meli-seller-eco": "tsx scripts/download-meli-seller.ts --store bullservice --resume --eco"
+    "download:meli-seller-eco": "tsx scripts/download-meli-seller.ts --store bullservice --resume --eco",
+    "optimize:images": "node scripts/optimize-static-images.mjs",
+    "backfill:store-slugs": "node scripts/backfill-store-slugs.mjs"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -83,6 +85,7 @@
     "eslint-config-next": "16.2.4",
     "pdf-parse": "^1.1.1",
     "playwright": "^1.60.0",
+    "sharp": "^0.33.5",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
     "typescript": "^5",
