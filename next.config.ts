@@ -127,13 +127,8 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/:path*",
-        has: [
-          {
-            type: "host",
-            value: "www.tudominio.com",
-          },
-        ],
-        destination: "https://tudominio.com/:path*",
+        has: [{ type: "host", value: "madsjeez.com.ar" }],
+        destination: "https://www.madsjeez.com.ar/:path*",
         permanent: true,
       },
     ];

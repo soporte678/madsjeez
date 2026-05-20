@@ -5,6 +5,7 @@ import dynamic from "next/dynamic"
 import Image from "next/image"
 import Navbar from "@/components/Navbar"
 import { HomeSeoContent } from "@/components/home/HomeSeoContent"
+import { SiteSocialFooter } from "@/components/seo/SiteSocialFooter"
 import Link from "next/link"
 import {
   ShoppingCart,
@@ -260,10 +261,7 @@ export default function HomePageClient() {
 
                   {banner.isLogistics && (
                     <>
-                      <div
-                        className="absolute -left-12 bottom-12 glass-panel px-6 py-4 rounded-3xl shadow-2xl flex items-center gap-4 floating-ui z-40"
-                        style={{ animationDelay: "1s" }}
-                      >
+                      <div className="absolute -left-12 bottom-12 glass-panel px-6 py-4 rounded-3xl shadow-2xl flex items-center gap-4 floating-ui floating-ui-delay-1 z-40">
                         <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400">
                           <Navigation size={24} />
                         </div>
@@ -274,10 +272,7 @@ export default function HomePageClient() {
                           <span className="text-white font-black text-sm">ZONA: SPEGAZZINI</span>
                         </div>
                       </div>
-                      <div
-                        className="absolute -right-6 top-8 glass-panel px-5 py-4 rounded-3xl shadow-2xl flex flex-col items-center gap-1 floating-ui z-40"
-                        style={{ animationDelay: "0.5s" }}
-                      >
+                      <div className="absolute -right-6 top-8 glass-panel px-5 py-4 rounded-3xl shadow-2xl flex flex-col items-center gap-1 floating-ui floating-ui-delay-05 z-40">
                         <Clock size={28} className="text-yellow-400 mb-1" />
                         <span className="text-[18px] text-white font-black leading-none">Hoy</span>
                         <span className="text-[9px] text-white/50 font-bold uppercase tracking-widest">En tu puerta</span>
@@ -342,9 +337,9 @@ export default function HomePageClient() {
         <p className="mb-2 text-center text-xs font-black uppercase tracking-[0.2em] text-[#2968c8]">
           MADSJEEZ Ads
         </p>
-        <p className="mb-6 text-center text-lg font-black text-slate-900 md:text-xl">
-          Publicidad activa dentro del marketplace
-        </p>
+        <h2 className="mb-6 text-center text-lg font-black text-slate-900 md:text-xl">
+          MADSJEEZ Ads — publicidad activa dentro del marketplace
+        </h2>
         <p className="mb-6 max-w-2xl mx-auto text-center text-sm text-slate-600 leading-relaxed">
           Los bloques de abajo muestran campanas activas de vendedores reales dentro del marketplace. La rotacion y la prioridad responden a la inversion de cada campana.
         </p>
@@ -769,9 +764,11 @@ export default function HomePageClient() {
               <div className="flex items-center gap-3 mb-8">
                 <span className="font-montserrat font-black text-2xl tracking-tighter uppercase text-white">MADS<span className="text-[#f97316]">JEEZ</span></span>
               </div>
-              <p className="text-slate-400 font-medium text-sm max-w-sm leading-relaxed mb-8">
-                La plataforma definitiva para el comercio del siglo XXI. Innovación, velocidad y seguridad en cada clic.
+              <p className="text-slate-400 font-medium text-sm max-w-sm leading-relaxed mb-6">
+                Marketplace del Commerce Group en Argentina: catálogo, ofertas, MADSJEEZ Ads y
+                herramientas para vendedores con Mercado Pago, Instagram, Facebook y WhatsApp.
               </p>
+              <SiteSocialFooter />
             </div>
             {[
               { title: "Marketplace", links: ["Ayuda", "Servicios VIP", "Contacto"] },

@@ -27,7 +27,11 @@ Lo alcanzable en 3–12 meses con trabajo constante:
 - [x] Imagen Open Graph / Twitter (`/opengraph-image`, 1200×630)
 - [ ] **Google Search Console**: propiedad `https://www.madsjeez.com.ar`, enviar sitemap
 - [ ] Variable `GOOGLE_SITE_VERIFICATION` en Railway (ver `.env.example`)
-- [ ] Canonical consistente (www vs sin-www — elegir uno y redirigir)
+- [x] Canonical `www.madsjeez.com.ar` (middleware + redirect apex → www)
+- [x] `llms.txt` en `/llms.txt`
+- [x] Schema `LocalBusiness` + `sameAs` (redes vía env)
+- [ ] SPF + DMARC en DNS — ver `docs/seo/dns-spf-dmarc.md`
+- [ ] URLs de redes en Railway — ver `docs/seo/redes-sociales.md`
 - [ ] Core Web Vitals en verde (LCP en home con muchas imágenes)
 - [ ] Fichas de producto: título único, descripción >150 palabras, 5+ fotos
 

@@ -946,6 +946,19 @@ body {
   animation: float 4s ease-in-out infinite;
 }
 
+.floating-ui-delay-05 {
+  animation-delay: 0.5s;
+}
+
+.floating-ui-delay-1 {
+  animation-delay: 1s;
+}
+
+.gtm-noscript-frame {
+  display: none;
+  visibility: hidden;
+}
+
 .bg-pattern {
   background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
   background-size: 30px 30px;

@@ -33,7 +33,9 @@ export function HomeSeoContent() {
 
         <div className="p-6 md:p-10 grid gap-10 md:grid-cols-2 text-slate-600 text-[15px] leading-relaxed">
           <div>
-            <h3 className="text-lg font-bold text-slate-900 mb-3">Comprar con confianza</h3>
+            <h3 className="text-lg font-bold text-slate-900 mb-3">
+              Comprar con confianza — ver ofertas del catálogo
+            </h3>
             <p className="mb-4">
               Desde la home podés explorar{" "}
               <Link href="/search" className="text-[#3483FA] font-semibold hover:underline">
@@ -61,7 +63,9 @@ export function HomeSeoContent() {
           </div>
 
           <div>
-            <h3 className="text-lg font-bold text-slate-900 mb-3">Vender y hacer crecer tu marca</h3>
+            <h3 className="text-lg font-bold text-slate-900 mb-3">
+              Vender con MADSJEEZ Ads y el Commerce Group
+            </h3>
             <p className="mb-4">
               Los comercios, ferreterías, tiendas de electrónica y emprendimientos pueden{" "}
               <Link

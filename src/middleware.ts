@@ -2,7 +2,24 @@ import { NextResponse, type NextRequest } from "next/server"
 import { createServerClient, type CookieOptions } from "@supabase/ssr"
 import { getSupabaseService } from "@/lib/supabase/service"
 
+const CANONICAL_HOST = "www.madsjeez.com.ar"
+
+/** Un solo salto apex → www (evita cadenas de redirección en auditorías SEO). */
+function canonicalHostRedirect(request: NextRequest): NextResponse | null {
+  const host = request.headers.get("host") ?? ""
+  if (!host.endsWith("madsjeez.com.ar") || host === CANONICAL_HOST) {
+    return null
+  }
+  const url = request.nextUrl.clone()
+  url.host = CANONICAL_HOST
+  url.protocol = "https"
+  return NextResponse.redirect(url, 308)
+}
+
 export async function middleware(request: NextRequest) {
+  const hostRedirect = canonicalHostRedirect(request)
+  if (hostRedirect) return hostRedirect
+
   const { pathname } = request.nextUrl
 
   // Only protect admin routes except login
@@ -61,5 +78,7 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|txt|xml|woff2?)).*)",
+  ],
 }

@@ -7,6 +7,7 @@ import ThemeToneInit from "@/components/theme/ThemeToneInit"
 import TrafficTracker from "@/components/TrafficTracker"
 import { SiteJsonLd } from "@/components/seo/SiteJsonLd"
 import { DeferredAnalytics } from "@/components/seo/DeferredAnalytics"
+import { MetaPixel } from "@/components/seo/MetaPixel"
 import ClientFloatingBots from "@/components/ClientFloatingBots"
 
 const outfit = Outfit({
@@ -28,11 +29,12 @@ const montserrat = Montserrat({
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.madsjeez.com.ar"),
   title: {
-    default: "MadsJeez | Marketplace en Argentina - Compra y vende online",
+    default:
+      "MadsJeez | Marketplace Argentina — productos, catálogo, ofertas y MADSJEEZ Ads",
     template: "%s | MadsJeez Marketplace",
   },
   description:
-    "MadsJeez es un marketplace en Argentina para comprar y vender online: publica productos, cobra con Mercado Pago, envios y panel para vendedores.",
+    "Marketplace en Argentina para comprar y vender online: explorá el catálogo por categorías, ver ofertas activas, MADSJEEZ Ads, pagos con Mercado Pago y panel para vendedores del Commerce Group.",
   applicationName: "MadsJeez Marketplace",
   keywords: [
     "marketplace",
@@ -43,6 +45,10 @@ export const metadata: Metadata = {
     "ecommerce argentina",
     "publicar productos",
     "madsjeez",
+    "catálogo productos",
+    "ver ofertas",
+    "madsjeez ads",
+    "commerce group",
   ],
   ...(process.env.GOOGLE_SITE_VERIFICATION
     ? { verification: { google: process.env.GOOGLE_SITE_VERIFICATION } }
@@ -52,9 +58,10 @@ export const metadata: Metadata = {
     locale: "es_AR",
     url: "https://www.madsjeez.com.ar",
     siteName: "MadsJeez Marketplace",
-    title: "MadsJeez | Marketplace en Argentina - Compra y vende online",
+    title:
+      "MadsJeez | Marketplace Argentina — productos, catálogo, ofertas y MADSJEEZ Ads",
     description:
-      "Marketplace argentino para comprar y vender online. Publica productos, gestiona ventas y hace crecer tu negocio.",
+      "Comprá y vendé en el marketplace argentino MadsJeez: catálogo, ofertas, campañas activas y herramientas para vendedores con Mercado Pago.",
     images: [
       {
         url: "/opengraph-image",
@@ -92,7 +99,7 @@ export default function RootLayout({
   const gtmId = "GTM-PT9H3H6K"
 
   return (
-    <html lang="es" className={`${outfit.variable} ${montserrat.variable} antialiased`}>
+    <html lang="es-AR" className={`${outfit.variable} ${montserrat.variable} antialiased`}>
       <body className="min-h-full flex flex-col font-outfit">
         <SiteJsonLd />
         <noscript>
@@ -100,12 +107,13 @@ export default function RootLayout({
             src={`https://www.googletagmanager.com/ns.html?id=${gtmId}`}
             height="0"
             width="0"
-            style={{ display: "none", visibility: "hidden" }}
+            className="gtm-noscript-frame"
             title="Google Tag Manager"
           />
         </noscript>
         <ThemeToneInit />
         <DeferredAnalytics />
+        <MetaPixel />
         <ChatProvider>
           <Providers>
             <TrafficTracker />
