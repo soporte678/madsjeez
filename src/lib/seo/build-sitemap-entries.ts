@@ -92,19 +92,24 @@ export async function buildSitemapEntries(): Promise<MetadataRoute.Sitemap> {
       out.push(entry(`/product/${product.id}`, product.updatedAt, 0.75, "weekly"));
     }
 
-    const [stores, comprarParams] = await Promise.all([
-      listIndexableStoreSlugs(),
-      getAllComprarLandingParams(),
-    ]);
-
-    for (const store of stores) {
-      out.push(entry(`/tienda/${store.slug}`, store.updatedAt, 0.8, "weekly"));
+    try {
+      const stores = await listIndexableStoreSlugs();
+      for (const store of stores) {
+        out.push(entry(`/tienda/${store.slug}`, store.updatedAt, 0.8, "weekly"));
+      }
+    } catch (err) {
+      console.warn("[sitemap] tiendas omitidas:", err);
     }
 
-    for (const c of comprarParams) {
-      out.push(
-        entry(`/comprar/${c.categoria}/en/${c.ciudad}`, now, 0.76, "weekly")
-      );
+    try {
+      const comprarParams = await getAllComprarLandingParams();
+      for (const c of comprarParams) {
+        out.push(
+          entry(`/comprar/${c.categoria}/en/${c.ciudad}`, now, 0.76, "weekly")
+        );
+      }
+    } catch (err) {
+      console.warn("[sitemap] comprar omitido:", err);
     }
   } catch (err) {
     console.warn("[sitemap] No se pudieron cargar categorías/productos desde DB:", err);

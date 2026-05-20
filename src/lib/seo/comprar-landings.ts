@@ -49,6 +49,7 @@ export function allLocalitiesFlat() {
 export async function getCategoriesEligibleForComprar(
   minProducts = COMPRAR_MIN_PRODUCTS
 ): Promise<Array<{ slug: string; name: string; count: number }>> {
+  try {
   const grouped = await prisma.product.groupBy({
     by: ["categoryId"],
     where: {
@@ -77,18 +78,26 @@ export async function getCategoriesEligibleForComprar(
     }))
     .filter((c) => c.count >= minProducts)
     .sort((a, b) => b.count - a.count);
+  } catch (err) {
+    console.warn("[comprar-landings] DB no disponible:", err);
+    return [];
+  }
 }
 
 export async function getAllComprarLandingParams(): Promise<ComprarLandingParams[]> {
-  const categories = await getCategoriesEligibleForComprar();
-  const localities = allLocalitiesFlat();
-  const params: ComprarLandingParams[] = [];
-  for (const cat of categories) {
-    for (const loc of localities) {
-      params.push({ categoria: cat.slug, ciudad: loc.slug });
+  try {
+    const categories = await getCategoriesEligibleForComprar();
+    const localities = allLocalitiesFlat();
+    const params: ComprarLandingParams[] = [];
+    for (const cat of categories) {
+      for (const loc of localities) {
+        params.push({ categoria: cat.slug, ciudad: loc.slug });
+      }
     }
+    return params;
+  } catch {
+    return [];
   }
-  return params;
 }
 
 export async function getComprarLandingData(

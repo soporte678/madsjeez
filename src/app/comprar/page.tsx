@@ -6,6 +6,8 @@ import { getCategoriesEligibleForComprar, allLocalitiesFlat } from "@/lib/seo/co
 import { canonicalMeta } from "@/lib/seo/canonical";
 import { MapPin, Tag } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   ...canonicalMeta("/comprar"),
   title: "Comprar por categoría y ciudad | MadsJeez Marketplace",

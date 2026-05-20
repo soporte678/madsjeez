@@ -4,22 +4,16 @@ import { notFound } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { SiteCompanyFooter } from "@/components/seo/SiteCompanyFooter";
 import { OptimizedProductImage } from "@/components/product/OptimizedProductImage";
-import {
-  getAllComprarLandingParams,
-  getComprarLandingData,
-} from "@/lib/seo/comprar-landings";
+import { getComprarLandingData } from "@/lib/seo/comprar-landings";
 import { canonicalMeta } from "@/lib/seo/canonical";
 import { SITE_URL } from "@/lib/seo/site";
 import { ChevronRight, MapPin, ShoppingBag } from "lucide-react";
 
+/** Sin DB en Docker build (Railway): páginas bajo demanda + caché ISR. */
+export const dynamic = "force-dynamic";
 export const revalidate = 86400;
 
 type Props = { params: Promise<{ categoria: string; ciudad: string }> };
-
-export async function generateStaticParams() {
-  const params = await getAllComprarLandingParams();
-  return params.slice(0, 200);
-}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { categoria, ciudad } = await params;
