@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import dynamic from "next/dynamic"
 import Image from "next/image"
 import Navbar from "@/components/Navbar"
+import { HomeSeoContent } from "@/components/home/HomeSeoContent"
 import Link from "next/link"
 import {
   ShoppingCart,
@@ -69,6 +70,7 @@ const heroBanners = [
     btn1: "Explorar Colección",
     Icon: ShoppingCart,
     image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1200&q=80",
+    imageAlt: "Compradores en un local comercial moderno — marketplace Madsjeez Argentina",
     bgGradient: "from-blue-600 via-slate-900 to-indigo-950",
     accent: "blue"
   },
@@ -82,6 +84,7 @@ const heroBanners = [
     btn1: "Cazar Ofertas",
     Icon: Zap,
     image: "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&w=1200&q=80",
+    imageAlt: "Etiquetas de ofertas y descuentos en productos — ofertas flash Madsjeez",
     bgGradient: "from-orange-900 via-slate-900 to-black",
     accent: "orange"
   },
@@ -94,7 +97,8 @@ const heroBanners = [
     desc: "Nuestra propia flota logística garantiza la entrega en menos de 24hs con seguimiento en tiempo real.",
     btn1: "Saber más",
     Icon: Truck,
-    image: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaeb55?auto=format&fit=crop&w=1200&q=80", 
+    image: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaeb55?auto=format&fit=crop&w=1200&q=80",
+    imageAlt: "Camión de logística en ruta — envío express Madsjeez en 24 horas",
     bgGradient: "from-emerald-800 via-slate-900 to-black",
     accent: "emerald",
     isLogistics: true
@@ -109,6 +113,7 @@ const heroBanners = [
     btn1: "Ver Setup",
     Icon: Gamepad2,
     image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1200&q=80",
+    imageAlt: "Setup gamer con periféricos de alta gama — categoría gaming Madsjeez",
     bgGradient: "from-purple-800 via-slate-900 to-indigo-950",
     accent: "purple"
   },
@@ -122,6 +127,7 @@ const heroBanners = [
     btn1: "Ser Vendedor Pro",
     Icon: TrendingUp,
     image: "https://images.unsplash.com/photo-1556761175-4b46a572b786?auto=format&fit=crop&w=1200&q=80",
+    imageAlt: "Equipo de negocios en reunión — vender y escalar tu marca en Madsjeez",
     bgGradient: "from-amber-600 via-slate-900 to-black",
     accent: "amber"
   },
@@ -135,6 +141,7 @@ const heroBanners = [
     btn1: "Centro de Confianza",
     Icon: ShieldCheck,
     image: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=1200&q=80",
+    imageAlt: "Pago seguro con tarjeta y protección digital — compra protegida Madsjeez",
     bgGradient: "from-slate-700 via-slate-900 to-blue-950",
     accent: "slate"
   }
@@ -207,7 +214,7 @@ export default function HomePageClient() {
                   </span>
                 </h2>
 
-                <p className="mt-6 text-lg text-white/85 font-medium max-w-lg leading-relaxed hidden md:block">
+                <p className="mt-6 text-base md:text-lg text-white/85 font-medium max-w-lg leading-relaxed">
                   {banner.desc}
                 </p>
 
@@ -232,7 +239,7 @@ export default function HomePageClient() {
                       priority={currentSlide === 0}
                       quality={75}
                       className="object-cover transform scale-105 group-hover:scale-110 transition-transform duration-[15s]"
-                      alt=""
+                      alt={banner.imageAlt}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent" />
 
@@ -585,7 +592,7 @@ export default function HomePageClient() {
               <Link href="/search" className="bg-gradient-to-r from-[#f97316] to-[#ff9100] hover:from-[#ff9100] hover:to-[#ffb703] text-white px-5 py-2 rounded-lg font-bold text-[14px] w-fit shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/50 transition-all duration-300 hover:-translate-y-0.5 btn-shine">Ver ofertas</Link>
             </div>
             <div className="w-1/2 bg-muted overflow-hidden relative">
-              <img src="https://images.unsplash.com/photo-1595515106969-1ce29566ff1c?auto=format&fit=crop&q=80&w=400" alt="Mueble" className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" />
+              <img src="https://images.unsplash.com/photo-1595515106969-1ce29566ff1c?auto=format&fit=crop&q=80&w=400" alt="Estantería y muebles para organizar el hogar en Madsjeez" className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" />
             </div>
           </div>
           <div className="flex-1 bg-card rounded shadow-sm flex overflow-hidden cursor-pointer group hover:shadow-md transition-shadow h-[250px] border border-border">
@@ -595,7 +602,7 @@ export default function HomePageClient() {
               <Link href="/search" className="bg-gradient-to-r from-[#f97316] to-[#ff9100] hover:from-[#ff9100] hover:to-[#ffb703] text-white px-5 py-2 rounded-lg font-bold text-[14px] w-fit shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/50 transition-all duration-300 hover:-translate-y-0.5 btn-shine">Ver ofertas</Link>
             </div>
             <div className="w-1/2 bg-muted overflow-hidden relative">
-              <img src="https://images.unsplash.com/photo-1505843490538-5133c6c7d0e1?auto=format&fit=crop&q=80&w=400" alt="Silla" className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" />
+              <img src="https://images.unsplash.com/photo-1505843490538-5133c6c7d0e1?auto=format&fit=crop&q=80&w=400" alt="Sillón moderno para living — ofertas hogar y muebles Madsjeez" className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" />
             </div>
           </div>
         </div>
@@ -751,6 +758,8 @@ export default function HomePageClient() {
           <AIRecommendations />
         </div>
       </section>
+
+      <HomeSeoContent />
 
       {/* FOOTER */}
       <footer className="bg-gradient-to-b from-[#1a1a2e] to-[#16213e] pt-20 pb-10 border-t-[10px] border-[#f97316]">
