@@ -5,7 +5,9 @@ import dynamic from "next/dynamic"
 import Image from "next/image"
 import Navbar from "@/components/Navbar"
 import { HomeSeoContent } from "@/components/home/HomeSeoContent"
+import { SiteCompanyFooter } from "@/components/seo/SiteCompanyFooter"
 import { SiteSocialFooter } from "@/components/seo/SiteSocialFooter"
+import { COMPANY } from "@/lib/company"
 import Link from "next/link"
 import {
   ShoppingCart,
@@ -67,7 +69,7 @@ const heroBanners = [
     titleLine1: "El Nuevo Standard",
     titleLine2: "en compras",
     titleHighlight: "Globales",
-    desc: "Tecnología, Moda y Hogar con el respaldo del Commerce Group líder en la región.",
+    desc: "La plataforma para vender productos y gestionar tu negocio online en Argentina. Catálogo, ofertas y pagos con Mercado Pago.",
     btn1: "Explorar Colección",
     Icon: ShoppingCart,
     image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1200&q=80",
@@ -364,11 +366,12 @@ export default function HomePageClient() {
               Qué es MADSJEEZ
             </h2>
             <p className="text-slate-600 text-[15px] md:text-base leading-relaxed max-w-3xl">
-              Es un marketplace donde compradores y negocios se encuentran en un solo lugar: podés{" "}
-              <strong className="font-semibold text-slate-800">descubrir productos</strong>, pagar con{" "}
-              <strong className="font-semibold text-slate-800">medios seguros</strong> (incluido Mercado Pago), gestionar{" "}
-              <strong className="font-semibold text-slate-800">envíos y postventa</strong>, y si vendés, usar herramientas para{" "}
-              <strong className="font-semibold text-slate-800">publicar, cobrar y hacer crecer tu marca</strong> sin depender solo de una red social.
+              Operado desde {COMPANY.address.city} por {COMPANY.founder.name}, {COMPANY.founder.role}.{" "}
+              {COMPANY.mission}{" "}
+              <Link href="/quienes-somos" className="text-[#3483FA] font-semibold hover:underline">
+                Conocé nuestra historia y visión
+              </Link>
+              .
             </p>
           </div>
           <div className="p-6 md:p-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
@@ -768,10 +771,11 @@ export default function HomePageClient() {
                 Marketplace del Commerce Group en Argentina: catálogo, ofertas, MADSJEEZ Ads y
                 herramientas para vendedores con Mercado Pago, Instagram, Facebook y WhatsApp.
               </p>
+              <SiteCompanyFooter />
               <SiteSocialFooter />
             </div>
             {[
-              { title: "Marketplace", links: ["Ayuda", "Servicios VIP", "Contacto"] },
+              { title: "Marketplace", links: ["Quiénes somos", "Ayuda", "Servicios VIP", "Contacto"] },
               { title: "Ecosistema", links: ["Vender", "Suscripciones", "Impulsar", "API Developers"] },
               { title: "Legales", links: ["Términos", "Privacidad", "Aviso Legal"] }
             ].map((section) => (
@@ -782,7 +786,9 @@ export default function HomePageClient() {
                     <li key={link}>
                       <Link
                         href={
-                          link === "Términos"
+                          link === "Quiénes somos"
+                            ? "/quienes-somos"
+                            : link === "Términos"
                             ? "/legal/terminos"
                             : link === "Privacidad"
                               ? "/legal/privacidad"

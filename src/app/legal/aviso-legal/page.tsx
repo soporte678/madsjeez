@@ -1,3 +1,5 @@
+import { COMPANY } from "@/lib/company";
+
 export default function AvisoLegalPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -5,18 +7,35 @@ export default function AvisoLegalPage() {
       
       <div className="prose prose-lg max-w-none">
         <p className="text-gray-600 mb-4">
-          <strong>Última actualización:</strong> 24 de abril de 2025
+          <strong>Última actualización:</strong> mayo de 2026
         </p>
 
         <h2 className="text-xl font-semibold mt-6 mb-3">1. Información de la Empresa</h2>
         
         <div className="bg-gray-50 p-4 rounded-lg mb-6">
-          <p><strong>Razón Social:</strong> MadsJeez S.A.</p>
-          <p><strong>CUIT:</strong> [Número de CUIT]</p>
-          <p><strong>Domicilio Social:</strong> [Dirección completa], Argentina</p>
-          <p><strong>Email:</strong> <a href="mailto:legal@madsjeez.com.ar" className="text-blue-600 hover:underline">legal@madsjeez.com.ar</a></p>
-          <p><strong>Teléfono:</strong> [Número de teléfono]</p>
-          <p><strong>Inscripción IGJ:</strong> [Número de inscripción]</p>
+          <p><strong>Razón Social:</strong> {COMPANY.legalName}</p>
+          <p><strong>Responsable / Fundador:</strong> {COMPANY.founder.name} — {COMPANY.founder.role}</p>
+          <p><strong>CUIT:</strong> {COMPANY.cuitFormatted}</p>
+          <p><strong>Domicilio:</strong> {COMPANY.address.full}</p>
+          <p><strong>Email:</strong>{" "}
+            <a href={`mailto:${COMPANY.emailLegal}`} className="text-blue-600 hover:underline">
+              {COMPANY.emailLegal}
+            </a>
+            {" · "}
+            <a href={`mailto:${COMPANY.email}`} className="text-blue-600 hover:underline">
+              {COMPANY.email}
+            </a>
+          </p>
+          <p><strong>Teléfono / WhatsApp:</strong>{" "}
+            <a href={COMPANY.whatsappUrl} className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">
+              {COMPANY.phoneDisplay}
+            </a>
+          </p>
+          <p>
+            <a href="/quienes-somos" className="text-blue-600 hover:underline">
+              Quiénes somos
+            </a>
+          </p>
         </div>
 
         <h2 className="text-xl font-semibold mt-6 mb-3">2. Objeto de la Plataforma</h2>

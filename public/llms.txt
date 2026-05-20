@@ -23,6 +23,10 @@ Contacto de soporte: soporte@madsjeez.com
 - [Publicar producto](https://www.madsjeez.com.ar/sell): Crear una nueva publicación
 - [Planes y suscripciones](https://www.madsjeez.com.ar/subscriptions): Planes Plata, Gold y Platinum con beneficios y comisiones
 
+## Empresa y confianza
+
+- [Quiénes somos](https://www.madsjeez.com.ar/quienes-somos): Fundador Ezequiel Armando Ziegler, visión del marketplace y contacto en Spegazzini, Buenos Aires
+
 ## Ayuda y legales
 
 - [Centro de ayuda](https://www.madsjeez.com.ar/help): Preguntas frecuentes, compras, envíos y postventa
