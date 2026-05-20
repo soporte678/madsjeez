@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import {
+  ADMIN_SESSION_COOKIE,
+  getAdminSessionCookieOptions,
+  revokeAdminSession,
+} from "@/lib/admin-session";
 
 function applyPendingCookies(
   res: NextResponse,
@@ -16,6 +21,7 @@ export async function POST(request: NextRequest) {
   }
 
   const pendingCookies: { name: string; value: string; options: CookieOptions }[] = [];
+  const adminSessionToken = request.cookies.get(ADMIN_SESSION_COOKIE)?.value;
 
   const supabase = createServerClient(url, anon, {
     cookies: {
@@ -30,9 +36,14 @@ export async function POST(request: NextRequest) {
     },
   });
 
+  await revokeAdminSession(adminSessionToken);
   await supabase.auth.signOut();
 
   const res = NextResponse.json({ ok: true });
+  res.cookies.set(ADMIN_SESSION_COOKIE, "", {
+    ...getAdminSessionCookieOptions(new Date(0)),
+    maxAge: 0,
+  });
   applyPendingCookies(res, pendingCookies);
   return res;
 }

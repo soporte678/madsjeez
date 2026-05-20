@@ -1,30 +1,9 @@
 import type { MetadataRoute } from "next";
+import { buildSitemapEntries } from "@/lib/seo/build-sitemap-entries";
 
-const BASE = "https://www.madsjeez.com.ar";
+/** Regenera el sitemap como máximo cada hora (menos carga en DB en cada request). */
+export const revalidate = 3600;
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const now = new Date();
-  const routes = [
-    "",
-    "/categories",
-    "/catalog",
-    "/products",
-    "/search",
-    "/offers",
-    "/deals",
-    "/sell",
-    "/seller/register",
-    "/help",
-    "/legal/terminos",
-    "/legal/privacidad",
-    "/legal/cookies",
-    "/legal/reembolsos",
-  ];
-
-  return routes.map((path) => ({
-    url: `${BASE}${path}`,
-    lastModified: now,
-    changeFrequency: path === "" ? "daily" : "weekly",
-    priority: path === "" ? 1 : path === "/sell" || path === "/seller/register" ? 0.9 : 0.7,
-  }));
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  return buildSitemapEntries();
 }

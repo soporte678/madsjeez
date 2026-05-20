@@ -48,7 +48,6 @@ import {
   X,
   FlaskConical
 } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
 
 interface MenuItem {
   id: string
@@ -168,9 +167,12 @@ export function AdminLayoutClient({ children, user: propUser, role: propRole, ad
   }
 
   const handleLogout = async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
+    await fetch("/api/admin/auth/sign-out", {
+      method: "POST",
+      credentials: "include",
+    }).catch(() => {})
     router.push("/admin/login")
+    router.refresh()
   }
 
   const getActiveModule = () => {

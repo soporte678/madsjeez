@@ -249,10 +249,17 @@ export default function Navbar() {
         }
         .nav-link:hover { color: #ffffff; transform: translateY(-1px); }
         .nav-link-muted {
-          color: rgba(148, 163, 184, 0.82);
+          color: rgba(203, 213, 225, 0.95);
           transition: color 0.2s ease, opacity 0.2s ease;
         }
-        .nav-link-muted:hover { color: rgba(255,255,255,0.94); }
+        .nav-link-muted:hover { color: #ffffff; }
+        .touch-target {
+          min-height: 44px;
+          min-width: 44px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+        }
         .nav-icon {
           color: rgba(226, 232, 240, 0.92);
           transition: color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
@@ -302,7 +309,7 @@ export default function Navbar() {
           <div className="flex items-center h-12">
             
             {/* LOGO - NUEVA PALETA */}
-            <Link href="/" className="flex items-center gap-2 cursor-pointer group w-[160px] flex-shrink-0">
+            <Link href="/" aria-label="MadsJeez, ir al inicio del marketplace" className="flex items-center gap-2 cursor-pointer group w-[160px] flex-shrink-0">
               <div className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg border border-white/10 bg-gradient-to-br from-[#162032] via-[#0f172a] to-[#16213e] shadow-lg shadow-sky-900/20 transition-all duration-300 group-hover:border-white/20 group-hover:shadow-xl group-hover:shadow-sky-900/30">
                  <svg viewBox="0 0 100 100" className="w-6 h-6">
                     <path d="M 15 80 L 35 30 L 55 55" stroke="#f97316" fill="none" strokeWidth="15" strokeLinecap="round"/>
@@ -361,31 +368,33 @@ export default function Navbar() {
                     <button 
                       type="button"
                       onClick={clearSearch}
-                      className="mr-1 rounded-full p-1 transition-colors hover:bg-white/10"
+                      aria-label="Limpiar búsqueda"
+                      className="touch-target mr-1 rounded-full p-1 transition-colors hover:bg-white/10"
                     >
-                      <X size={16} className="text-slate-400" />
+                      <X size={16} className="text-slate-400" aria-hidden />
                     </button>
                   )}
                   <div className="mx-2 h-6 w-[1px] bg-white/10"></div>
                   <button 
                     type="button" 
-                    className="p-1.5 text-slate-400 transition-colors hover:text-slate-100"
-                    title="Búsqueda por voz"
+                    aria-label="Búsqueda por voz"
+                    className="touch-target p-1.5 text-slate-300 transition-colors hover:text-slate-100"
                   >
-                    <Mic size={18} />
+                    <Mic size={18} aria-hidden />
                   </button>
                   <button 
                     type="button" 
-                    className="mr-1 p-1.5 text-slate-400 transition-colors hover:text-slate-100"
-                    title="Búsqueda por imagen"
+                    aria-label="Búsqueda por imagen"
+                    className="touch-target mr-1 p-1.5 text-slate-300 transition-colors hover:text-slate-100"
                   >
-                    <Camera size={18} />
+                    <Camera size={18} aria-hidden />
                   </button>
                   <button 
                     type="submit" 
-                    className="rounded-xl bg-gradient-to-r from-[#f97316] via-[#ff9100] to-[#ffb703] p-2 text-white shadow-md shadow-orange-500/30 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-orange-500/40"
+                    aria-label="Buscar productos"
+                    className="touch-target rounded-xl bg-gradient-to-r from-[#f97316] via-[#ff9100] to-[#ffb703] p-2 text-white shadow-md shadow-orange-500/30 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-orange-500/40"
                   >
-                    <Search size={18} strokeWidth={2.5} />
+                    <Search size={18} strokeWidth={2.5} aria-hidden />
                   </button>
                 </div>
               </form>
@@ -486,11 +495,12 @@ export default function Navbar() {
                             
                             {suggestion.type === 'history' && (
                               <button
+                                type="button"
                                 onClick={(e) => removeFromHistory(e, suggestion.title)}
-                                className="p-1 hover:bg-slate-100 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                title="Eliminar del historial"
+                                aria-label={`Eliminar "${suggestion.title}" del historial`}
+                                className="touch-target p-1 hover:bg-slate-100 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                               >
-                                <X size={14} className="text-slate-400" />
+                                <X size={14} className="text-slate-400" aria-hidden />
                               </button>
                             )}
                           </button>
@@ -522,7 +532,11 @@ export default function Navbar() {
 
             {/* BOTÓN DESLIZANTE MADS PRO (Efecto Borrador) */}
             <div className="flex-1 flex items-center justify-end">
-              <div className="mads-pro-shell relative flex h-[38px] w-[340px] cursor-pointer items-center overflow-hidden rounded-full px-1.5 transition-all duration-300 hover:-translate-y-[1px] hover:border-white/20 hover:shadow-[0_14px_36px_rgba(2,6,23,0.32)]">
+              <Link
+                href="/subscriptions"
+                aria-label="Suscribite a Mads Pro con envíos gratis"
+                className="mads-pro-shell relative flex h-[38px] w-[340px] cursor-pointer items-center overflow-hidden rounded-full px-1.5 transition-all duration-300 hover:-translate-y-[1px] hover:border-white/20 hover:shadow-[0_14px_36px_rgba(2,6,23,0.32)]"
+              >
                  
                  {/* 1. TEXTO DE LA IZQUIERDA (Aparece cuando el botón está a la derecha) */}
                  <div className="absolute left-6 w-[230px] flex items-center justify-center animate-wipe-out">
@@ -574,7 +588,7 @@ export default function Navbar() {
                     <span className="font-montserrat font-black text-white text-[11px] italic tracking-tight">MADS PRO</span>
                  </div>
 
-              </div>
+              </Link>
             </div>
 
           </div>
@@ -586,13 +600,17 @@ export default function Navbar() {
             <div className="flex items-center">
               
               {/* Ubicación (Ancho fijo alineado con el Logo) */}
-              <div className="flex items-center gap-1 cursor-pointer w-[160px] flex-shrink-0 group">
-                <MapPin size={18} className="text-slate-500 transition-colors group-hover:text-slate-200" />
+              <button
+                type="button"
+                aria-label="Dirección de envío: Capital Federal, Av. Corrientes 1234"
+                className="flex items-center gap-1 cursor-pointer w-[160px] flex-shrink-0 group text-left"
+              >
+                <MapPin size={18} className="text-slate-300 transition-colors group-hover:text-slate-100" aria-hidden />
                 <div className="flex flex-col leading-none">
                   <span className="nav-link-muted whitespace-nowrap text-[10px]">Enviar a Capital Federal</span>
                   <span className="truncate text-[12px] font-medium text-slate-100 transition-colors group-hover:text-white">Av. Corrientes 1234, CABA</span>
                 </div>
-              </div>
+              </button>
 
               {/* Navegación (ml-8 para arrancar igual que el buscador) */}
               <nav className="flex flex-1 min-w-0 items-center gap-x-3 lg:gap-x-4 text-[13px] font-light ml-4 md:ml-8 overflow-x-auto scrollbar-hide pb-0.5 md:pb-0">
@@ -647,7 +665,7 @@ export default function Navbar() {
               <div className="flex items-center gap-4 ml-1">
                  <button
                    type="button"
-                   className="relative cursor-pointer nav-icon"
+                   className="touch-target relative cursor-pointer nav-icon"
                    aria-label="Novedades y alertas"
                    onClick={() => {
                      if (hasSeenNovedadesPanelThisSession()) {
@@ -657,10 +675,10 @@ export default function Navbar() {
                      openNovedadesPanel()
                    }}
                  >
-                    <Bell size={18} strokeWidth={1.5} className="nav-icon" />
+                    <Bell size={18} strokeWidth={1.5} className="nav-icon" aria-hidden />
                  </button>
-                 <Link href="/cart" className="relative cursor-pointer nav-icon">
-                    <ShoppingCart size={18} strokeWidth={1.5} className="nav-icon" />
+                 <Link href="/cart" aria-label="Carrito de compras" className="touch-target relative cursor-pointer nav-icon">
+                    <ShoppingCart size={18} strokeWidth={1.5} className="nav-icon" aria-hidden />
                  </Link>
               </div>
             </div>

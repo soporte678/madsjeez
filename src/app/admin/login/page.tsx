@@ -15,9 +15,15 @@ export default function AdminLoginPage() {
   const [error, setError] = useState("");
 
   React.useEffect(() => {
-    fetch("/api/admin/auth/sign-out", { method: "POST", credentials: "include" }).catch(
-      () => {}
-    );
+    fetch("/api/admin/auth/status", { credentials: "include" })
+      .then(async (res) => {
+        if (!res.ok) return;
+        const data = (await res.json().catch(() => ({}))) as { authenticated?: boolean };
+        if (data.authenticated) {
+          router.replace("/admin");
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const handleLogin = async (e: React.FormEvent) => {

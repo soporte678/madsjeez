@@ -2,6 +2,14 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  experimental: {
+    optimizePackageImports: ["lucide-react"],
+  },
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "images.unsplash.com", pathname: "/**" },
+    ],
+  },
   // Evita que Next elija otro root cuando detecta lockfiles fuera del proyecto.
   turbopack: {
     root: __dirname,

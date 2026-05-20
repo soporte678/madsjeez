@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { SITE_URL } from "@/lib/seo/site";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
@@ -160,9 +161,21 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const product = await getProduct(id);
 
   if (product) {
+    const desc =
+      product.description?.slice(0, 160) ||
+      `Comprá ${product.title} en el marketplace MadsJeez Argentina.`;
+    const canonical = `/product/${id}`;
     return {
-      title: `${product.title} | MADSJEEZ`,
-      description: product.description?.slice(0, 160) || "Compra este producto en MADSJEEZ",
+      title: `${product.title} | MadsJeez Marketplace`,
+      description: desc,
+      alternates: { canonical },
+      openGraph: {
+        title: product.title,
+        description: desc,
+        url: `${SITE_URL}${canonical}`,
+        type: "website",
+        locale: "es_AR",
+      },
     };
   }
 
@@ -175,9 +188,21 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     return { title: "Producto no encontrado | MADSJEEZ" };
   }
 
+  const desc =
+    prismaProd.description?.slice(0, 160) ||
+    `Comprá ${prismaProd.title} en el marketplace MadsJeez Argentina.`;
+  const canonical = `/product/${id}`;
   return {
-    title: `${prismaProd.title} | MADSJEEZ`,
-    description: prismaProd.description?.slice(0, 160) || "Compra este producto en MADSJEEZ",
+    title: `${prismaProd.title} | MadsJeez Marketplace`,
+    description: desc,
+    alternates: { canonical },
+    openGraph: {
+      title: prismaProd.title,
+      description: desc,
+      url: `${SITE_URL}${canonical}`,
+      type: "website",
+      locale: "es_AR",
+    },
   };
 }
 

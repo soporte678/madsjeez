@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { getSupabaseService } from "@/lib/supabase/service";
+import {
+  ADMIN_SESSION_COOKIE,
+  createAdminSession,
+  getAdminSessionCookieOptions,
+  getRequestIp,
+} from "@/lib/admin-session";
 
 function applyPendingCookies(
   res: NextResponse,
@@ -97,6 +103,27 @@ export async function POST(request: NextRequest) {
     return res;
   }
 
+  const adminSession = await createAdminSession({
+    adminUserId: adminUser.id,
+    userId: authData.user.id,
+    email: adminUser.email,
+    userAgent: request.headers.get("user-agent"),
+    ipAddress: getRequestIp(request.headers),
+  });
+
+  if (!adminSession.ok) {
+    await supabase.auth.signOut();
+    const res = NextResponse.json(
+      {
+        error:
+          "Ya hay una sesion activa para este administrador. Cierra esa sesion antes de volver a ingresar.",
+      },
+      { status: 409 }
+    );
+    applyPendingCookies(res, pendingCookies);
+    return res;
+  }
+
   const res = NextResponse.json({
     ok: true,
     admin: {
@@ -106,6 +133,11 @@ export async function POST(request: NextRequest) {
       last_name: adminUser.last_name,
     },
   });
+  res.cookies.set(
+    ADMIN_SESSION_COOKIE,
+    adminSession.rawToken,
+    getAdminSessionCookieOptions(adminSession.expiresAt)
+  );
   applyPendingCookies(res, pendingCookies);
   return res;
 }

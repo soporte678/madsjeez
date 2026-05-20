@@ -39,6 +39,25 @@ model Session {
   @@map("sessions")
 }
 
+model AdminSession {
+  id               String    @id @default(cuid())
+  adminUserId      String    @map("admin_user_id")
+  userId           String    @map("user_id")
+  email            String
+  sessionTokenHash String    @unique @map("session_token_hash")
+  userAgent        String?   @map("user_agent") @db.Text
+  ipAddress        String?   @map("ip_address")
+  lastSeenAt       DateTime  @default(now()) @map("last_seen_at")
+  expiresAt        DateTime  @map("expires_at")
+  revokedAt        DateTime? @map("revoked_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  @@index([adminUserId, revokedAt, expiresAt])
+  @@index([userId, revokedAt, expiresAt])
+  @@map("admin_sessions")
+}
+
 enum UserRole {
   USER
   SELLER

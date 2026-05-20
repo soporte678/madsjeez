@@ -1,9 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import dynamic from "next/dynamic"
 import Image from "next/image"
 import Navbar from "@/components/Navbar"
-import AIRecommendations from "@/components/AIRecommendations"
 import Link from "next/link"
 import {
   ShoppingCart,
@@ -28,9 +28,22 @@ import {
   ShoppingBag,
   Users,
 } from "lucide-react"
-import { CategoryCarousel } from "@/components/CategoryCarousel"
-import { RotatingProductCarousel } from "@/components/RotatingProductCarousel"
-import { PaidAdBannerSlot } from "@/components/ads/PaidAdBannerSlot"
+const AIRecommendations = dynamic(() => import("@/components/AIRecommendations"), {
+  ssr: false,
+  loading: () => null,
+})
+const CategoryCarousel = dynamic(
+  () => import("@/components/CategoryCarousel").then((m) => m.CategoryCarousel),
+  { loading: () => <div className="h-64 animate-pulse rounded-2xl bg-slate-100" /> }
+)
+const RotatingProductCarousel = dynamic(
+  () => import("@/components/RotatingProductCarousel").then((m) => m.RotatingProductCarousel),
+  { loading: () => <div className="h-48 animate-pulse rounded-xl bg-slate-100 mb-8" /> }
+)
+const PaidAdBannerSlot = dynamic(
+  () => import("@/components/ads/PaidAdBannerSlot").then((m) => m.PaidAdBannerSlot),
+  { loading: () => <div className="h-24 animate-pulse rounded-xl bg-slate-100" /> }
+)
 
 // Configuración de letras para el logo cinético
 const logoLetters = [
@@ -144,40 +157,61 @@ export default function Home() {
     <main className="min-h-screen bg-mesh font-outfit text-slate-900 overflow-x-hidden">
       <Navbar />
 
-      {/* HERO SECTION */}
-      <section className="relative bg-black overflow-hidden h-[550px] md:h-[700px] flex items-center group pb-16 md:pb-24">
+      {/* HERO — un solo H1 con "marketplace"; carrusel = fondo + H2 */}
+      <section
+        className="relative bg-black overflow-hidden h-[550px] md:h-[700px] flex items-center group pb-16 md:pb-24"
+        aria-labelledby="home-marketplace-h1"
+      >
         {heroBanners.map((banner, index) => (
-          <div 
-            key={banner.id} 
+          <div
+            key={banner.id}
             className={`absolute inset-0 w-full h-full transition-all duration-1000 ease-[cubic-bezier(0.23,1,0.32,1)] ${
-              currentSlide === index ? "opacity-100 z-10 translate-x-0" : "opacity-0 z-0 translate-x-12 pointer-events-none"
+              currentSlide === index
+                ? "opacity-100 z-10 translate-x-0"
+                : "opacity-0 z-0 translate-x-12 pointer-events-none"
             }`}
+            aria-hidden={currentSlide !== index}
           >
-            <div className={`absolute inset-0 bg-gradient-to-br ${banner.bgGradient}`}></div>
-            <div className="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-blue-500/10 blur-[150px] animate-pulse"></div>
-            <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-yellow-500/5 blur-[120px]"></div>
-            <div className="absolute inset-0 bg-pattern opacity-[0.15]"></div>
+            <div className={`absolute inset-0 bg-gradient-to-br ${banner.bgGradient}`} />
+            <div className="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-blue-500/10 blur-[150px] hidden md:block" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-yellow-500/5 blur-[120px] hidden md:block" />
+            <div className="absolute inset-0 bg-pattern opacity-[0.15]" />
+          </div>
+        ))}
 
-            <div className="max-w-7xl mx-auto px-4 h-full flex flex-col md:flex-row items-center justify-between gap-12 relative z-20">
+        {(() => {
+          const banner = heroBanners[currentSlide]
+          return (
+            <div className="max-w-7xl mx-auto px-4 h-full w-full flex flex-col md:flex-row items-center justify-between gap-12 relative z-20">
               <div className="w-full md:w-3/5 text-left pt-6 md:pt-0">
                 <div className="glass-panel inline-flex items-center gap-2 px-5 py-2 rounded-full text-white font-bold text-[11px] tracking-[0.3em] uppercase mb-4 shadow-2xl">
-                  <span className="w-2.5 h-2.5 rounded-full bg-white shadow-[0_0_10px_#fff]"></span>
+                  <span className="w-2.5 h-2.5 rounded-full bg-white shadow-[0_0_10px_#fff]" />
                   {banner.badge}
                 </div>
-                
-                <h1 className="text-5xl md:text-[5rem] font-black text-white tracking-tighter leading-[0.88] uppercase font-montserrat drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
-                  {banner.titleLine1} <br/>
-                  <span className="text-white/40">{banner.titleLine2}</span> <br/>
+
+                <h1
+                  id="home-marketplace-h1"
+                  className="text-3xl md:text-5xl font-black text-white tracking-tight leading-[1.05] font-montserrat drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]"
+                >
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-white to-yellow-500">
+                    Marketplace
+                  </span>{" "}
+                  en Argentina — MadsJeez
+                </h1>
+
+                <h2 className="mt-4 text-4xl md:text-[3.25rem] font-black text-white/90 tracking-tighter leading-[0.88] uppercase font-montserrat">
+                  {banner.titleLine1} <br />
+                  <span className="text-white/40">{banner.titleLine2}</span> <br />
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-white to-yellow-500 inline-block mt-2">
                     {banner.titleHighlight}
                   </span>
-                </h1>
-                
-                <p className="mt-6 text-lg text-white/70 font-medium max-w-lg leading-relaxed hidden md:block">
+                </h2>
+
+                <p className="mt-6 text-lg text-white/85 font-medium max-w-lg leading-relaxed hidden md:block">
                   {banner.desc}
                 </p>
-                
-                <Link 
+
+                <Link
                   href={banner.id === 5 ? "/seller/register" : "/search"}
                   className="mt-8 group/btn bg-gradient-to-r from-[#f97316] to-[#ff9100] hover:from-[#ff9100] hover:to-[#ffb703] text-white text-[14px] font-black py-4 px-10 rounded-2xl shadow-xl shadow-orange-500/30 hover:shadow-2xl hover:shadow-orange-500/50 transition-all duration-300 hover:-translate-y-2 inline-flex items-center gap-4 uppercase tracking-wider btn-shine"
                 >
@@ -191,21 +225,25 @@ export default function Home() {
               <div className="hidden lg:flex relative w-1/2 h-[80%] items-center justify-end">
                 <div className="relative w-[480px] h-[520px] glass-panel p-4 rounded-[3.5rem] shadow-[0_50px_100px_rgba(0,0,0,0.6)] border-white/20 transform rotate-2 hover:rotate-0 transition-transform duration-1000 group-hover:scale-[1.02]">
                   <div className="relative w-full h-full rounded-[2.8rem] overflow-hidden bg-slate-900">
-                    <Image 
-                      src={banner.image} 
-                      fill 
-                      className="object-cover transform scale-105 group-hover:scale-110 transition-transform duration-[15s]" 
-                      alt={banner.badge}
-                      unoptimized
+                    <Image
+                      src={banner.image}
+                      fill
+                      sizes="(max-width: 1024px) 0px, 480px"
+                      priority={currentSlide === 0}
+                      quality={75}
+                      className="object-cover transform scale-105 group-hover:scale-110 transition-transform duration-[15s]"
+                      alt=""
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent"></div>
-                    
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent" />
+
                     {banner.isLogistics && (
                       <div className="absolute top-[30%] left-[10%] w-64 p-6 bg-yellow-400 rounded-3xl shadow-[0_30px_60px_rgba(0,0,0,0.5)] border-b-[6px] border-yellow-600 flex flex-col items-center justify-center transform -rotate-12 floating-ui z-30">
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="font-montserrat font-black text-slate-900 text-xl tracking-tighter uppercase">MADS<span className="text-blue-700">JEEZ</span></span>
+                          <span className="font-montserrat font-black text-slate-900 text-xl tracking-tighter uppercase">
+                            MADS<span className="text-blue-700">JEEZ</span>
+                          </span>
                         </div>
-                        <div className="w-full h-px bg-slate-900/10 mb-3"></div>
+                        <div className="w-full h-px bg-slate-900/10 mb-3" />
                         <div className="flex items-center gap-2 text-[12px] font-black text-slate-800 uppercase tracking-widest">
                           <Truck size={16} className="text-blue-600" /> Express Logística
                         </div>
@@ -215,16 +253,24 @@ export default function Home() {
 
                   {banner.isLogistics && (
                     <>
-                      <div className="absolute -left-12 bottom-12 glass-panel px-6 py-4 rounded-3xl shadow-2xl flex items-center gap-4 floating-ui z-40" style={{animationDelay: "1s"}}>
+                      <div
+                        className="absolute -left-12 bottom-12 glass-panel px-6 py-4 rounded-3xl shadow-2xl flex items-center gap-4 floating-ui z-40"
+                        style={{ animationDelay: "1s" }}
+                      >
                         <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400">
                           <Navigation size={24} />
                         </div>
                         <div className="flex flex-col">
-                          <span className="text-[10px] text-white/50 font-bold uppercase tracking-tighter">Entrega en Curso</span>
+                          <span className="text-[10px] text-white/50 font-bold uppercase tracking-tighter">
+                            Entrega en Curso
+                          </span>
                           <span className="text-white font-black text-sm">ZONA: SPEGAZZINI</span>
                         </div>
                       </div>
-                      <div className="absolute -right-6 top-8 glass-panel px-5 py-4 rounded-3xl shadow-2xl flex flex-col items-center gap-1 floating-ui z-40" style={{animationDelay: "0.5s"}}>
+                      <div
+                        className="absolute -right-6 top-8 glass-panel px-5 py-4 rounded-3xl shadow-2xl flex flex-col items-center gap-1 floating-ui z-40"
+                        style={{ animationDelay: "0.5s" }}
+                      >
                         <Clock size={28} className="text-yellow-400 mb-1" />
                         <span className="text-[18px] text-white font-black leading-none">Hoy</span>
                         <span className="text-[9px] text-white/50 font-bold uppercase tracking-widest">En tu puerta</span>
@@ -234,18 +280,20 @@ export default function Home() {
                 </div>
               </div>
             </div>
-          </div>
-        ))}
-        
+          )
+        })()}
+
         <div className="absolute bottom-16 left-1/2 -translate-x-1/2 flex items-center gap-4 z-[50]">
           {heroBanners.map((_, index) => (
             <button
               key={index}
+              type="button"
+              aria-label={`Ir al banner ${index + 1}`}
               onClick={() => setCurrentSlide(index)}
-              className={`transition-all duration-700 rounded-full ${
-                currentSlide === index 
-                  ? "w-16 h-2 bg-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.8)]" 
-                  : "w-3 h-2 bg-white/20 hover:bg-white/40"
+              className={`touch-target transition-all duration-700 rounded-full ${
+                currentSlide === index
+                  ? "w-16 h-3 min-h-[12px] bg-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.8)]"
+                  : "w-11 h-3 min-h-[12px] bg-white/30 hover:bg-white/50"
               }`}
             />
           ))}
