@@ -96,16 +96,52 @@ export async function GET(request: Request) {
       categoryId: p.category_id,
       category: p.categories ? { name: p.categories.name } : null,
       images: (p.product_images || []).map((img: any) => ({ url: img.url })),
+      meliItemId: p.meli_item_id || null,
+      source: "supabase" as const,
       createdAt: p.created_at,
       updatedAt: p.updated_at,
     }))
 
-    // Combine products (Prisma + Supabase)
-    const allProducts = [...prismaProducts, ...transformedSupabaseProducts]
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    const transformedPrismaProducts = prismaProducts.map((p: any) => ({
+      ...p,
+      source: "prisma" as const,
+    }))
+
+    // Combine and de-duplicate MELI imports.
+    // If the same MELI item exists in both stores, prefer Prisma row (editable from this dashboard).
+    const combined = [...transformedPrismaProducts, ...transformedSupabaseProducts].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )
+    const dedupedByMeli = new Map<string, any>()
+    const duplicateKeys = new Set<string>()
+
+    for (const product of combined) {
+      const key = product.meliItemId ? `meli:${product.meliItemId}` : `${product.source}:${product.id}`
+      const existing = dedupedByMeli.get(key)
+      if (!existing) {
+        dedupedByMeli.set(key, product)
+        continue
+      }
+      duplicateKeys.add(key)
+      if (existing.source !== "prisma" && product.source === "prisma") {
+        dedupedByMeli.set(key, product)
+      }
+    }
+
+    const allProducts = Array.from(dedupedByMeli.entries())
+      .map(([key, product]) => {
+        if (duplicateKeys.has(key)) {
+          return {
+            ...product,
+            isCatalog: true,
+            category: { name: "Catálogo" },
+          }
+        }
+        return { ...product, isCatalog: false }
+      })
       .slice(0, limit)
 
-    const total = prismaTotal + supabaseTotal
+    const total = allProducts.length
 
     // Summary counts from both sources
     const prismaActive = await prisma.product.count({ where: { sellerId: userId, isActive: true } })

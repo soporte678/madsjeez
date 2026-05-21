@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import {
@@ -157,25 +158,41 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const { id } = await params;
   const product = await getProduct(id);
 
-  if (product) {
-    return {
-      title: `${product.title} | MADSJEEZ`,
-      description: product.description?.slice(0, 160) || "Compra este producto en MADSJEEZ",
-    };
-  }
+  const title = product?.title
+    ?? (await prisma.product.findUnique({ where: { id }, select: { title: true } }))?.title
+    ?? null;
 
-  const prismaProd = await prisma.product.findUnique({
-    where: { id },
-    select: { title: true, description: true },
-  });
+  if (!title) return { title: "Producto no encontrado | MadsJeez" };
 
-  if (!prismaProd) {
-    return { title: "Producto no encontrado | MADSJEEZ" };
-  }
+  const description = (product?.description ?? "").slice(0, 160) || `Comprá ${title} en MadsJeez con envío rápido y la mejor garantía.`;
+  const primaryImage = product?.product_images?.find((img: any) => img.is_primary)?.url
+    ?? product?.product_images?.[0]?.url
+    ?? "/og-image.jpg";
+  const price: number = product?.price ?? 0;
+  const canonical = `https://www.madsjeez.com.ar/product/${id}`;
 
   return {
-    title: `${prismaProd.title} | MADSJEEZ`,
-    description: prismaProd.description?.slice(0, 160) || "Compra este producto en MADSJEEZ",
+    title: `${title} | MadsJeez`,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      type: "website",
+      url: canonical,
+      title: `${title} | MadsJeez`,
+      description,
+      siteName: "MadsJeez",
+      images: [{ url: primaryImage, width: 800, height: 800, alt: title }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${title} | MadsJeez`,
+      description,
+      images: [primaryImage],
+    },
+    other: {
+      "product:price:amount": String(price),
+      "product:price:currency": "ARS",
+    },
   };
 }
 
@@ -234,8 +251,42 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   const categoryName = product.categories?.name || "Productos";
   const categorySlug = product.categories?.slug || "";
 
+  const primaryImage = images[0] ?? "/og-image.jpg";
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.title,
+    description: product.description ?? undefined,
+    image: images.length > 0 ? images : [primaryImage],
+    sku: product.id,
+    offers: {
+      "@type": "Offer",
+      url: `https://www.madsjeez.com.ar/product/${product.id}`,
+      priceCurrency: "ARS",
+      price: product.price,
+      itemCondition: product.condition === "used"
+        ? "https://schema.org/UsedCondition"
+        : "https://schema.org/NewCondition",
+      availability: product.stock > 0
+        ? "https://schema.org/InStock"
+        : "https://schema.org/OutOfStock",
+      seller: { "@type": "Organization", name: sellerName },
+    },
+    ...(avgRating > 0 && {
+      aggregateRating: {
+        "@type": "AggregateRating",
+        ratingValue: avgRating.toFixed(1),
+        reviewCount: totalReviews,
+      },
+    }),
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+      />
       <Navbar />
 
       <div className="min-h-screen bg-background font-sans text-foreground pb-20">
@@ -553,7 +604,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                   <Link key={item.id} href={`/product/${item.id}`} className="min-w-[170px] max-w-[170px] px-3 py-2 cursor-pointer flex flex-col hover:opacity-95 transition-opacity border-r border-border last:border-r-0">
                     <div className="h-[140px] mb-3 flex items-center justify-center rounded-lg bg-card border border-border p-2">
                       {item.primary_image ? (
-                        <img src={item.primary_image} alt={item.title} className="max-h-full max-w-full object-contain" />
+                        <Image src={item.primary_image} alt={item.title} width={140} height={140} className="max-h-full max-w-full object-contain" />
                       ) : (
                         <Package className="h-16 w-16 text-gray-300" />
                       )}

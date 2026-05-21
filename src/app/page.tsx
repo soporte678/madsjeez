@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
+import dynamic from "next/dynamic"
 import Navbar from "@/components/Navbar"
-import AIRecommendations from "@/components/AIRecommendations"
-import AISmartNotifications from "@/components/AISmartNotifications"
 import Link from "next/link"
+const AIRecommendations = dynamic(() => import("@/components/AIRecommendations"), { ssr: false })
+const AISmartNotifications = dynamic(() => import("@/components/AISmartNotifications"), { ssr: false })
 import { useSession } from "next-auth/react"
 import { 
   Search, Bell, Heart, ShoppingCart, Menu, 
@@ -261,8 +262,9 @@ export default function Home() {
                       src={banner.image} 
                       fill 
                       className="object-cover transform scale-105 group-hover:scale-110 transition-transform duration-[15s]" 
-                      alt={banner.badge}
-                      unoptimized
+                      alt={`Banner MadsJeez: ${banner.titleLine1} ${banner.titleHighlight}`}
+                      priority={index === 0}
+                      sizes="480px"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent"></div>
                     
@@ -449,7 +451,7 @@ export default function Home() {
               <Link href="/search" className="bg-gradient-to-r from-[#ff4d2e] to-[#ff9100] hover:from-[#ff9100] hover:to-[#ffb703] text-white px-5 py-2 rounded-lg font-bold text-[14px] w-fit shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/50 transition-all duration-300 hover:-translate-y-0.5 btn-shine">Ver ofertas</Link>
             </div>
             <div className="w-1/2 bg-muted overflow-hidden relative">
-              <img src="https://images.unsplash.com/photo-1595515106969-1ce29566ff1c?auto=format&fit=crop&q=80&w=400" alt="Mueble" className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" />
+              <Image src="https://images.unsplash.com/photo-1595515106969-1ce29566ff1c?auto=format&fit=crop&q=80&w=400" alt="Organizadores y muebles de almacenamiento para el hogar" fill className="object-cover transform group-hover:scale-105 transition-transform duration-500" sizes="(max-width: 768px) 100vw, 50vw" />
             </div>
           </div>
           <div className="flex-1 bg-card rounded shadow-sm flex overflow-hidden cursor-pointer group hover:shadow-md transition-shadow h-[250px] border border-border">
@@ -459,7 +461,7 @@ export default function Home() {
               <Link href="/search" className="bg-gradient-to-r from-[#ff4d2e] to-[#ff9100] hover:from-[#ff9100] hover:to-[#ffb703] text-white px-5 py-2 rounded-lg font-bold text-[14px] w-fit shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/50 transition-all duration-300 hover:-translate-y-0.5 btn-shine">Ver ofertas</Link>
             </div>
             <div className="w-1/2 bg-muted overflow-hidden relative">
-              <img src="https://images.unsplash.com/photo-1505843490538-5133c6c7d0e1?auto=format&fit=crop&q=80&w=400" alt="Silla" className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" />
+              <Image src="https://images.unsplash.com/photo-1505843490538-5133c6c7d0e1?auto=format&fit=crop&q=80&w=400" alt="Muebles y sillas para el hogar con descuento" fill className="object-cover transform group-hover:scale-105 transition-transform duration-500" sizes="(max-width: 768px) 100vw, 50vw" />
             </div>
           </div>
         </div>

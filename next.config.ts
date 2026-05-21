@@ -4,7 +4,35 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Configuración para dominio personalizado
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
+      {
+        protocol: "https",
+        hostname: "cdn-icons-png.flaticon.com",
+      },
+      {
+        protocol: "https",
+        hostname: "placehold.co",
+      },
+      {
+        protocol: "https",
+        hostname: "**.supabase.co",
+        pathname: "/storage/**",
+      },
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
+      },
+      {
+        protocol: "https",
+        hostname: "avatars.githubusercontent.com",
+      },
+    ],
+  },
   async headers() {
     return [
       {
@@ -26,25 +54,12 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  // Redirección de www a non-www (opcional)
   async redirects() {
     return [
-      // Producción antigua sin esta página: enviar al mismo panel dentro de /dashboard
       {
         source: "/dashboard/meli",
         destination: "/dashboard#meli-sync",
         permanent: false,
-      },
-      {
-        source: "/:path*",
-        has: [
-          {
-            type: "host",
-            value: "www.tudominio.com",
-          },
-        ],
-        destination: "https://tudominio.com/:path*",
-        permanent: true,
       },
     ];
   },

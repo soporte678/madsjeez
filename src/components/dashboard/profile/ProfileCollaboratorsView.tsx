@@ -1,54 +1,117 @@
 "use client";
 
-import React, { useState } from 'react';
-import { ChevronRight, Monitor, UserPlus, Plus } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { ChevronRight, Monitor, UserPlus, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface ProfileCollaboratorsViewProps {
   onBack: () => void;
 }
 
-interface CollaboratorRole {
-  id: string;
-  name: string;
-  permissions: string[];
-}
-
 interface Collaborator {
   id: string;
-  name: string;
-  email: string;
-  role: string;
-  status: 'active' | 'pending';
+  collaboratorEmail: string;
+  accessLevel: "FULL" | "READ_ONLY";
+  isActive: boolean;
+  updatedAt: string;
 }
 
 export default function ProfileCollaboratorsView({ onBack }: ProfileCollaboratorsViewProps) {
-  const [roles, setRoles] = useState<CollaboratorRole[]>([]);
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
-  const [showCreateRoleModal, setShowCreateRoleModal] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
-  const [newRoleName, setNewRoleName] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState('');
+  const [inviteAccess, setInviteAccess] = useState<"FULL" | "READ_ONLY">("READ_ONLY");
 
-  const handleCreateRole = () => {
-    if (!newRoleName.trim()) return;
-    setRoles(prev => [...prev, { id: Date.now().toString(), name: newRoleName, permissions: [] }]);
-    setNewRoleName('');
-    setShowCreateRoleModal(false);
+  const loadCollaborators = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/marketing/collaborators", { cache: "no-store" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "No se pudo cargar");
+      setCollaborators(data.collaborators || []);
+    } catch {
+      toast.error("No se pudo cargar colaboradores de marketing");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleInvite = () => {
+  useEffect(() => {
+    const t = setTimeout(() => {
+      loadCollaborators();
+    }, 0);
+    return () => clearTimeout(t);
+  }, []);
+
+  const handleInvite = async () => {
     if (!inviteEmail.trim()) return;
-    setCollaborators(prev => [...prev, {
-      id: Date.now().toString(),
-      name: inviteEmail.split('@')[0],
-      email: inviteEmail,
-      role: inviteRole || 'Sin rol',
-      status: 'pending'
-    }]);
-    setInviteEmail('');
-    setInviteRole('');
-    setShowInviteModal(false);
+    setSaving(true);
+    try {
+      const res = await fetch("/api/marketing/collaborators", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: inviteEmail, accessLevel: inviteAccess }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "No se pudo invitar");
+      toast.success("Acceso de colaborador guardado");
+      setInviteEmail('');
+      setInviteAccess("READ_ONLY");
+      setShowInviteModal(false);
+      await loadCollaborators();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Error invitando colaborador");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updateAccess = async (id: string, accessLevel: "FULL" | "READ_ONLY") => {
+    setSaving(true);
+    try {
+      const res = await fetch("/api/marketing/collaborators", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, accessLevel }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "No se pudo actualizar");
+      setCollaborators((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, accessLevel } : c))
+      );
+      toast.success("Permiso actualizado");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Error actualizando permiso");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const removeAccess = async (id: string) => {
+    if (!confirm("¿Quitar acceso a este colaborador?")) return;
+    setSaving(true);
+    try {
+      const res = await fetch("/api/marketing/collaborators", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "No se pudo quitar acceso");
+      setCollaborators((prev) => prev.filter((c) => c.id !== id));
+      toast.success("Acceso removido");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Error removiendo acceso");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const accessLabel = (level: "FULL" | "READ_ONLY") => {
+    if (level === "FULL") return "Control total";
+    return "Solo lectura";
   };
 
   return (
@@ -56,11 +119,19 @@ export default function ProfileCollaboratorsView({ onBack }: ProfileCollaborator
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
+          <button
+            type="button"
+            onClick={onBack}
+            className="mb-2 inline-flex items-center gap-1 text-sm text-primary hover:underline"
+          >
+            <ChevronRight size={14} className="rotate-180" />
+            Volver
+          </button>
           <h1 className="text-[22px] font-bold text-gray-800">
-            Gestioná a tus colaboradores
+            Colaboradores de Marketing MELI
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Invitá a las personas que trabajan con vos y definí qué tareas pueden realizar con tu cuenta.
+            Definí quién puede operar Mercado Libre Ads con control total o solo lectura.
           </p>
         </div>
         <button className="text-blue-600 text-sm font-medium hover:underline">
@@ -71,12 +142,6 @@ export default function ProfileCollaboratorsView({ onBack }: ProfileCollaborator
       {/* Action buttons */}
       <div className="flex items-center gap-3 justify-end">
         <button
-          onClick={() => setShowCreateRoleModal(true)}
-          className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
-        >
-          Crear rol
-        </button>
-        <button
           onClick={() => setShowInviteModal(true)}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
         >
@@ -86,7 +151,7 @@ export default function ProfileCollaboratorsView({ onBack }: ProfileCollaborator
       </div>
 
       {/* Empty state */}
-      {collaborators.length === 0 && (
+      {!loading && collaborators.length === 0 && (
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-12 flex flex-col items-center text-center">
           <div className="w-32 h-32 mb-6 relative">
             <div className="absolute inset-0 flex items-center justify-center">
@@ -117,62 +182,42 @@ export default function ProfileCollaboratorsView({ onBack }: ProfileCollaborator
                 index < collaborators.length - 1 ? 'border-b border-gray-100' : ''
               }`}
             >
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 min-w-0">
                 <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
                   <span className="text-gray-600 font-bold text-sm">
-                    {collab.name.charAt(0).toUpperCase()}
+                    {collab.collaboratorEmail.charAt(0).toUpperCase()}
                   </span>
                 </div>
-                <div>
-                  <p className="text-[15px] text-gray-800 font-medium">{collab.name}</p>
-                  <p className="text-xs text-gray-500">{collab.email} · {collab.role}</p>
+                <div className="min-w-0">
+                  <p className="text-[15px] text-gray-800 font-medium truncate">{collab.collaboratorEmail}</p>
+                  <p className="text-xs text-gray-500">Última actualización: {new Date(collab.updatedAt).toLocaleString("es-AR")}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                  collab.status === 'active'
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-yellow-100 text-yellow-700'
-                }`}>
-                  {collab.status === 'active' ? 'Activo' : 'Pendiente'}
+                <select
+                  value={collab.accessLevel}
+                  onChange={(e) => updateAccess(collab.id, e.target.value as "FULL" | "READ_ONLY")}
+                  disabled={saving}
+                  className="h-9 rounded-md border border-gray-300 px-2 text-sm"
+                >
+                  <option value="FULL">Control total</option>
+                  <option value="READ_ONLY">Solo lectura</option>
+                </select>
+                <span className={`text-xs px-2 py-1 rounded-full font-medium ${collab.accessLevel === "FULL" ? "bg-primary/10 text-primary" : "bg-amber-100 text-amber-700"}`}>
+                  {accessLabel(collab.accessLevel)}
                 </span>
-                <ChevronRight size={18} className="text-gray-400" />
+                <button
+                  type="button"
+                  onClick={() => removeAccess(collab.id)}
+                  disabled={saving}
+                  className="h-9 w-9 inline-flex items-center justify-center rounded-md border border-red-200 text-red-600 hover:bg-red-50"
+                  title="Quitar acceso"
+                >
+                  <Trash2 size={16} />
+                </button>
               </div>
             </div>
           ))}
-        </div>
-      )}
-
-      {/* Create Role Modal */}
-      {showCreateRoleModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">Crear rol</h3>
-            <p className="text-sm text-gray-500 mb-4">
-              Los roles te permiten definir qué acciones puede realizar cada colaborador.
-            </p>
-            <input
-              type="text"
-              value={newRoleName}
-              onChange={(e) => setNewRoleName(e.target.value)}
-              placeholder="Ej: Administrador, Vendedor, Contable"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-4"
-            />
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowCreateRoleModal(false)}
-                className="flex-1 py-2 px-4 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleCreateRole}
-                className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
-              >
-                Crear
-              </button>
-            </div>
-          </div>
         </div>
       )}
 
@@ -196,17 +241,15 @@ export default function ProfileCollaboratorsView({ onBack }: ProfileCollaborator
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Rol (opcional)
+                  Nivel de acceso Marketing MELI
                 </label>
                 <select
-                  value={inviteRole}
-                  onChange={(e) => setInviteRole(e.target.value)}
+                  value={inviteAccess}
+                  onChange={(e) => setInviteAccess(e.target.value as "FULL" | "READ_ONLY")}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="">Sin rol específico</option>
-                  {roles.map(role => (
-                    <option key={role.id} value={role.name}>{role.name}</option>
-                  ))}
+                  <option value="FULL">Control total (puede modificar campañas)</option>
+                  <option value="READ_ONLY">Solo lectura (solo ver, sin cambios)</option>
                 </select>
               </div>
             </div>
@@ -219,9 +262,10 @@ export default function ProfileCollaboratorsView({ onBack }: ProfileCollaborator
               </button>
               <button
                 onClick={handleInvite}
+                disabled={saving}
                 className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
               >
-                Enviar invitación
+                {saving ? "Guardando..." : "Guardar acceso"}
               </button>
             </div>
           </div>

@@ -67,6 +67,11 @@ enum MeliAdsChangeOutcome {
   NEUTRAL
 }
 
+enum MarketingAccessLevel {
+  FULL
+  READ_ONLY
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -150,6 +155,7 @@ model User {
   sellerMeliOAuth   SellerMeliOAuth?
   meliAdsSnapshots  MeliAdsSnapshot[]
   meliAdsChanges    MeliAdsChange[]
+  marketingCollaborators MarketingCollaboratorAccess[] @relation("MarketingOwner")
 
   // Reputación
   reputationHistory ReputationHistory[] @relation("ReputationHistory")
@@ -250,6 +256,21 @@ model SellerMeliOAuth {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   @@map("seller_meli_oauth")
+}
+
+model MarketingCollaboratorAccess {
+  id                String              @id @default(cuid())
+  ownerId           String              @map("owner_id")
+  owner             User                @relation("MarketingOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  collaboratorEmail String              @map("collaborator_email")
+  accessLevel       MarketingAccessLevel @default(READ_ONLY) @map("access_level")
+  isActive          Boolean             @default(true) @map("is_active")
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+
+  @@unique([ownerId, collaboratorEmail])
+  @@index([collaboratorEmail, isActive])
+  @@map("marketing_collaborator_accesses")
 }
 
 model ProductImage {

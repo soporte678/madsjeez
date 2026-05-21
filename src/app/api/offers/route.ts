@@ -231,7 +231,7 @@ export async function GET(req: Request) {
       .from('products')
       .select(`
         *,
-        images(url, order),
+        product_images(url, order, is_primary),
         seller:users(id, full_name, seller_name, reputation_color),
         category:categories(id, name, slug),
         reviews(count, rating_avg)

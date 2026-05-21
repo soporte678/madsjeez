@@ -723,3 +723,66 @@ body {
 :root[data-theme="soft"] .hover\:bg-slate-100:hover {
   background-color: #f1e9ff !important;
 }
+
+/* ============================================
+   LOGO CINÉTICO + HERO — clases movidas desde layout.tsx
+   ============================================ */
+
+@keyframes assemble {
+  0% {
+    transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(1.5);
+    opacity: 0;
+    filter: blur(8px);
+  }
+  100% {
+    transform: translate(0, 0) rotate(0) scale(1);
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+.letter-piece {
+  display: inline-block;
+  position: relative;
+  animation: assemble 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.group:hover .letter-piece {
+  animation: assemble 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.shimmer-text::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transform: skewX(-20deg);
+  animation: shine 4s infinite;
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.floating-ui {
+  animation: float 4s ease-in-out infinite;
+}
+
+.bg-pattern {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getMeliAccessTokenForUser } from "@/lib/meli/prisma-session";
 import { meliPadsDateRange, meliPadsSearchAds } from "@/lib/meli/pads-api";
+import { resolveMarketingAccess } from "@/lib/marketing/access";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,8 @@ export async function GET(req: Request) {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
-    const meli = await getMeliAccessTokenForUser(session.user.id);
+    const access = await resolveMarketingAccess(session.user.id, session.user.email);
+    const meli = await getMeliAccessTokenForUser(access.ownerUserId);
     if (!meli) return NextResponse.json({ error: "Conectá Mercado Libre primero" }, { status: 400 });
 
     const { searchParams } = new URL(req.url);

@@ -95,6 +95,7 @@ export default function MeliAdsStudioView() {
       metrics: Record<string, number>;
       deltasVsNow: Record<string, number>;
     }>;
+    accessLevel?: "FULL" | "READ_ONLY";
     errors?: string[];
   } | null>(() => {
     if (typeof window === "undefined") return null;
@@ -122,6 +123,7 @@ export default function MeliAdsStudioView() {
           metrics: Record<string, number>;
           deltasVsNow: Record<string, number>;
         }>;
+        accessLevel?: "FULL" | "READ_ONLY";
         errors?: string[];
       }) ?? null;
     } catch {
@@ -137,6 +139,8 @@ export default function MeliAdsStudioView() {
   const [expandedCampaignRows, setExpandedCampaignRows] = useState<Record<string, boolean>>({});
   const [campaignItems, setCampaignItems] = useState<Record<string, Array<{ item_id?: string; title?: string; status?: string; metrics?: Record<string, unknown> }>>>({});
   const [loadingItems, setLoadingItems] = useState<Record<string, boolean>>({});
+  const [editingBudgetRoasRow, setEditingBudgetRoasRow] = useState<string | null>(null);
+  const [editingBudgetRoasValues, setEditingBudgetRoasValues] = useState<Record<string, { budget: string; roas: string }>>({});
   const [compareDays, setCompareDays] = useState(7);
 
   const load = useCallback(async (opts?: { silent?: boolean }) => {
@@ -190,6 +194,10 @@ export default function MeliAdsStudioView() {
   };
 
   const applySelected = async () => {
+    if (snapshot?.accessLevel === "READ_ONLY") {
+      toast.error("Tu acceso es solo lectura. No podés aplicar cambios.");
+      return;
+    }
     const recs = snapshot?.recommendations ?? [];
     const actions = recs
       .filter((r) => selected[r.id])
@@ -241,6 +249,7 @@ export default function MeliAdsStudioView() {
   }
 
   const recs = snapshot?.recommendations ?? [];
+  const canApply = snapshot?.accessLevel !== "READ_ONLY";
   const positiveRecs = recs.filter((r) => r.expectedImpact === "positive");
   const negativeRecs = recs.filter((r) => r.severity === "critical" || r.category === "negative" || r.expectedImpact === "negative");
   const camps = snapshot?.campaigns ?? [];
@@ -278,6 +287,10 @@ export default function MeliAdsStudioView() {
   })();
 
   const renameCampaign = async (c: SnapshotCampaign) => {
+    if (!canApply) {
+      toast.error("Tu acceso es solo lectura. No podés editar campañas.");
+      return;
+    }
     const rowKey = `${c.site_id}-${c.id}`;
     const newName = (editingNames[rowKey] ?? "").trim();
     if (!newName) {
@@ -319,6 +332,105 @@ export default function MeliAdsStudioView() {
       toast.error("Error de red al renombrar");
     } finally {
       setRenamingId(null);
+    }
+  };
+
+  const saveBudgetRoas = async (c: SnapshotCampaign) => {
+    if (!canApply) {
+      toast.error("Tu acceso es solo lectura. No podés editar campañas.");
+      return;
+    }
+    const rowKey = `${c.site_id}-${c.id}`;
+    const values = editingBudgetRoasValues[rowKey] ?? { budget: String(num(c.budget) || 0), roas: String(num(c.roas_target) || 0) };
+    const budget = Number(values.budget);
+    const roas = Number(values.roas);
+    if (!Number.isFinite(budget) || budget < 1) {
+      toast.error("Presupuesto inválido");
+      return;
+    }
+    if (!Number.isFinite(roas) || roas < 1) {
+      toast.error("ROAS inválido");
+      return;
+    }
+    setRenamingId(`br-${rowKey}`);
+    try {
+      const res = await fetch("/api/meli/ads/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          actions: [
+            {
+              siteId: c.site_id,
+              advertiserId: c.advertiser_id,
+              campaignId: c.id,
+              recommendationTitle: "Actualizar presupuesto/ROAS",
+              applyPayload: {
+                name: c.name || `Campaña ${c.id}`,
+                status: (c.status || "active").toLowerCase(),
+                budget,
+                strategy: (c.strategy || "profitability").toLowerCase(),
+                channel: "marketplace",
+                roas_target: roas,
+              },
+            },
+          ],
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "No se pudo actualizar presupuesto/ROAS");
+      } else {
+        toast.success("Presupuesto y ROAS actualizados");
+        setEditingBudgetRoasRow(null);
+        await load({ silent: true });
+      }
+    } catch {
+      toast.error("Error de red al actualizar campaña");
+    } finally {
+      setRenamingId(null);
+    }
+  };
+
+  const updateCampaignItemStatus = async (
+    c: SnapshotCampaign,
+    item: { item_id?: string; status?: string }
+  ) => {
+    if (!canApply) {
+      toast.error("Tu acceso es solo lectura. No podés modificar productos.");
+      return;
+    }
+    if (!item.item_id) {
+      toast.error("Ítem inválido");
+      return;
+    }
+    const nextStatus = (item.status || "").toLowerCase() === "active" ? "paused" : "active";
+    try {
+      const res = await fetch("/api/meli/ads/item-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          siteId: c.site_id,
+          advertiserId: c.advertiser_id,
+          campaignId: c.id,
+          itemId: item.item_id,
+          status: nextStatus,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "No se pudo actualizar el producto");
+        return;
+      }
+      const rowKey = `${c.site_id}-${c.id}`;
+      setCampaignItems((prev) => ({
+        ...prev,
+        [rowKey]: (prev[rowKey] || []).map((it) =>
+          it.item_id === item.item_id ? { ...it, status: nextStatus } : it
+        ),
+      }));
+      toast.success(`Producto ${nextStatus === "active" ? "activado" : "pausado"}`);
+    } catch {
+      toast.error("Error de red al actualizar el producto");
     }
   };
 
@@ -531,7 +643,7 @@ export default function MeliAdsStudioView() {
                 <div key={d.day} className="flex items-center justify-between border-b border-cyan-700/10 pb-1">
                   <span>{d.day}</span>
                   <span className="text-cyan-900">Costo {money(d.avgCost)}</span>
-                  <span className={d.avgProfit >= 0 ? "text-emerald-700" : "text-red-700"}>Profit {money(d.avgProfit)}</span>
+                  <span className={d.avgProfit >= 0 ? "text-emerald-700" : "text-red-700"}>Ganancia {money(d.avgProfit)}</span>
                 </div>
               ))}
             </div>
@@ -561,12 +673,12 @@ export default function MeliAdsStudioView() {
               <tbody>
                 {[
                   { key: "cost", label: "Costo", fmt: "money" as const },
-                  { key: "revenue", label: "Revenue", fmt: "money" as const },
-                  { key: "profit", label: "Profit", fmt: "money" as const },
+                  { key: "revenue", label: "Ingresos", fmt: "money" as const },
+                  { key: "profit", label: "Ganancia", fmt: "money" as const },
                   { key: "roas", label: "ROAS", fmt: "ratio" as const },
                   { key: "acos", label: "ACOS", fmt: "pct" as const },
                   { key: "ctr", label: "CTR", fmt: "pct" as const },
-                  { key: "clicks", label: "Clicks", fmt: "count" as const },
+                  { key: "clicks", label: "Clics", fmt: "count" as const },
                   { key: "prints", label: "Impresiones", fmt: "count" as const },
                 ].map((row) => {
                   const nowVal = num(totals[row.key as keyof typeof totals]);
@@ -619,7 +731,7 @@ export default function MeliAdsStudioView() {
             <span className="text-gray-600 font-medium">Ordenar por:</span>
             {[
               { id: "name", label: "Nombre" },
-              { id: "clicks", label: "Clicks" },
+              { id: "clicks", label: "Clics" },
               { id: "prints", label: "Impresiones" },
               { id: "ctr", label: "CTR" },
               { id: "cost", label: "Costo" },
@@ -681,7 +793,7 @@ export default function MeliAdsStudioView() {
                   <th className="text-left px-3 py-2 font-medium">Estrategia</th>
                   <th className="text-right px-3 py-2 font-medium">Presupuesto</th>
                   <th className="text-right px-3 py-2 font-medium">Impresiones</th>
-                  <th className="text-right px-3 py-2 font-medium">Clicks</th>
+                  <th className="text-right px-3 py-2 font-medium">Clics</th>
                   <th className="text-right px-3 py-2 font-medium">CTR</th>
                   <th className="text-right px-3 py-2 font-medium">Costo</th>
                   <th className="text-right px-3 py-2 font-medium">ACOS</th>
@@ -725,7 +837,7 @@ export default function MeliAdsStudioView() {
                                 />
                                 <button
                                   type="button"
-                                  disabled={renamingId === rowKey}
+                                  disabled={!canApply || renamingId === rowKey}
                                   onClick={async () => {
                                     await renameCampaign(c);
                                     setEditingCampaignNameRow(null);
@@ -750,14 +862,74 @@ export default function MeliAdsStudioView() {
                                 <button
                                   type="button"
                                   title="Editar nombre de campaña"
+                                  disabled={!canApply}
                                   onClick={() => {
                                     setEditingCampaignNameRow(rowKey);
                                     setEditingNames((s) => ({ ...s, [rowKey]: c.name ?? "" }));
                                   }}
-                                  className="h-7 w-7 rounded border border-border bg-card text-primary inline-flex items-center justify-center hover:bg-muted"
+                                  className="h-7 w-7 rounded border border-border bg-card text-primary inline-flex items-center justify-center hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
                                 >
                                   <Pencil size={13} />
                                 </button>
+                                {editingBudgetRoasRow === rowKey ? (
+                                  <>
+                                    <input
+                                      value={editingBudgetRoasValues[rowKey]?.budget ?? String(num(c.budget) || 0)}
+                                      onChange={(e) =>
+                                        setEditingBudgetRoasValues((s) => ({
+                                          ...s,
+                                          [rowKey]: { ...(s[rowKey] || { budget: "", roas: "" }), budget: e.target.value },
+                                        }))
+                                      }
+                                      className="h-7 w-24 rounded border border-border bg-card px-2 text-xs text-foreground"
+                                      placeholder="Presupuesto"
+                                    />
+                                    <input
+                                      value={editingBudgetRoasValues[rowKey]?.roas ?? String(num(c.roas_target) || 0)}
+                                      onChange={(e) =>
+                                        setEditingBudgetRoasValues((s) => ({
+                                          ...s,
+                                          [rowKey]: { ...(s[rowKey] || { budget: "", roas: "" }), roas: e.target.value },
+                                        }))
+                                      }
+                                      className="h-7 w-20 rounded border border-border bg-card px-2 text-xs text-foreground"
+                                      placeholder="ROAS"
+                                    />
+                                    <button
+                                      type="button"
+                                      disabled={renamingId === `br-${rowKey}`}
+                                      onClick={() => saveBudgetRoas(c)}
+                                      className="h-7 rounded bg-primary text-primary-foreground px-2 text-xs disabled:opacity-50"
+                                    >
+                                      {renamingId === `br-${rowKey}` ? "..." : "Guardar"}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditingBudgetRoasRow(null)}
+                                      className="h-7 rounded bg-muted text-foreground px-2 text-xs"
+                                    >
+                                      Cancelar
+                                    </button>
+                                  </>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    disabled={!canApply}
+                                    onClick={() => {
+                                      setEditingBudgetRoasRow(rowKey);
+                                      setEditingBudgetRoasValues((s) => ({
+                                        ...s,
+                                        [rowKey]: {
+                                          budget: String(num(c.budget) || 0),
+                                          roas: String(num(c.roas_target) || 0),
+                                        },
+                                      }));
+                                    }}
+                                    className="h-7 rounded border border-border bg-card text-primary px-2 text-xs hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
+                                  >
+                                    Editar presupuesto/ROAS
+                                  </button>
+                                )}
                                 <button
                                   type="button"
                                   onClick={() => toggleCampaignItems(c)}
@@ -817,10 +989,19 @@ export default function MeliAdsStudioView() {
                                     <span className="font-medium text-gray-900">{it.title || it.item_id || "Ítem"}</span>
                                     <span className="text-gray-600">ID: {it.item_id || "-"}</span>
                                     <span className="text-gray-600">Estado: {statusLabel(it.status)}</span>
-                                    <span className="text-gray-700">Clicks: {count(mm.clicks ?? 0)}</span>
+                                    <span className="text-gray-700">Clics: {count(mm.clicks ?? 0)}</span>
                                     <span className="text-gray-700">Impresiones: {count(mm.prints ?? 0)}</span>
                                     <span className="text-gray-700">Costo: {money(mm.cost ?? 0)}</span>
                                     <span className="text-gray-700">ROAS: {ratio(mm.roas ?? 0)}x</span>
+                                    {canApply && it.item_id && (
+                                      <button
+                                        type="button"
+                                        onClick={() => updateCampaignItemStatus(c, it)}
+                                        className="ml-auto h-6 rounded border border-border bg-card px-2 text-[11px] text-primary hover:bg-muted"
+                                      >
+                                        {(it.status || "").toLowerCase() === "active" ? "Pausar producto" : "Activar producto"}
+                                      </button>
+                                    )}
                                   </div>
                                 );
                               })}
@@ -861,7 +1042,7 @@ export default function MeliAdsStudioView() {
             </div>
             <button
               type="button"
-              disabled={applying || loading}
+              disabled={!canApply || applying || loading}
               onClick={applySelected}
               className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-medium px-4 py-2 text-sm"
             >
@@ -869,6 +1050,11 @@ export default function MeliAdsStudioView() {
               Aplicar seleccionadas en ML
             </button>
           </div>
+          {!canApply && (
+            <div className="px-4 py-2 border-t border-border bg-amber-500/10 text-amber-900 text-xs font-medium">
+              Modo solo lectura: podés ver análisis y campañas, pero no modificar nada.
+            </div>
+          )}
           <div className="px-4 py-3 text-xs bg-muted/70 border-b border-border grid grid-cols-1 md:grid-cols-4 gap-2">
             <div className="rounded-lg border border-emerald-300 bg-emerald-50 px-2 py-1.5">
               <p className="text-[10px] uppercase tracking-wide text-emerald-700 font-semibold">Virtudes</p>
@@ -928,6 +1114,7 @@ export default function MeliAdsStudioView() {
                     <input
                       type="checkbox"
                       className="mt-1.5 h-4 w-4 rounded border-2 border-border bg-card accent-primary shadow-sm"
+                      disabled={!canApply}
                       checked={Boolean(selected[r.id])}
                       onChange={() => toggleRec(r.id)}
                     />

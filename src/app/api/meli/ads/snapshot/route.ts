@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getMeliAccessTokenForUser } from "@/lib/meli/prisma-session";
+import { resolveMarketingAccess } from "@/lib/marketing/access";
 import { meliGetSellerPromotions } from "@/lib/meli/api";
 import {
   meliPadsListAdvertisers,
@@ -216,7 +217,11 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    const meli = await getMeliAccessTokenForUser(session.user.id);
+    const access = await resolveMarketingAccess(session.user.id, session.user.email);
+    const ownerUserId = access.ownerUserId;
+    const accessLevel = access.permission;
+
+    const meli = await getMeliAccessTokenForUser(ownerUserId);
     if (!meli) {
       return NextResponse.json({ error: "Conectá Mercado Libre primero" }, { status: 400 });
     }
@@ -503,7 +508,7 @@ export async function GET(req: Request) {
       // Persistencia histórica cada sincronización (base para evolución diaria y control de impacto).
       createdSnapshot = await prisma.meliAdsSnapshot.create({
         data: {
-          userId: session.user.id,
+          userId: ownerUserId,
           metricsDays: days,
           advertisersCount: advertisers.length,
           campaignsCount: campaigns.length,
@@ -551,7 +556,7 @@ export async function GET(req: Request) {
     // Evaluar cambios aplicados pendientes con la foto actual.
       const pendingChanges = await prisma.meliAdsChange.findMany({
       where: {
-        userId: session.user.id,
+        userId: ownerUserId,
         outcome: "PENDING",
       },
       orderBy: { appliedAt: "desc" },
@@ -581,7 +586,7 @@ export async function GET(req: Request) {
     }
 
       const recentSnapshots = await prisma.meliAdsSnapshot.findMany({
-      where: { userId: session.user.id },
+      where: { userId: ownerUserId },
       orderBy: { createdAt: "desc" },
       take: 500,
       select: { createdAt: true, totals: true },
@@ -610,7 +615,7 @@ export async function GET(req: Request) {
 
       const changeSummaryRows = await prisma.meliAdsChange.groupBy({
         by: ["outcome"],
-        where: { userId: session.user.id },
+        where: { userId: ownerUserId },
         _count: { _all: true },
       });
       changeSummary = {
@@ -703,6 +708,7 @@ export async function GET(req: Request) {
       comparisons,
       promotions,
       recommendations,
+      accessLevel,
       errors,
     });
   } catch (e) {

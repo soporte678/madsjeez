@@ -22,6 +22,37 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://www.madsjeez.com.ar"),
   title: "MadsJeez - El Nuevo Standard en Compras Globales",
   description: "Tecnología, Moda y Hogar con el respaldo del Commerce Group líder en la región. Vende y compra con la mejor plataforma.",
+  keywords: ["marketplace", "compras online", "Argentina", "tecnología", "moda", "hogar", "MadsJeez"],
+  alternates: {
+    canonical: "https://www.madsjeez.com.ar",
+  },
+  openGraph: {
+    type: "website",
+    locale: "es_AR",
+    url: "https://www.madsjeez.com.ar",
+    siteName: "MadsJeez",
+    title: "MadsJeez - El Nuevo Standard en Compras Globales",
+    description: "Tecnología, Moda y Hogar con el respaldo del Commerce Group líder en la región.",
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "MadsJeez Marketplace",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "MadsJeez - El Nuevo Standard en Compras Globales",
+    description: "Tecnología, Moda y Hogar con el respaldo del Commerce Group líder en la región.",
+    images: ["/og-image.jpg"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large" },
+  },
 }
 
 export default function RootLayout({
@@ -31,63 +62,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className={`${outfit.variable} ${montserrat.variable} antialiased`}>
-      <head>
-        <style>{`
-          @keyframes assemble {
-            0% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(1.5); opacity: 0; filter: blur(8px); }
-            100% { transform: translate(0, 0) rotate(0) scale(1); opacity: 1; filter: blur(0); }
-          }
-          
-          @keyframes shine {
-            0% { left: -100%; opacity: 0; }
-            20% { opacity: 0.5; }
-            100% { left: 100%; opacity: 0; }
-          }
-
-          .letter-piece {
-            display: inline-block;
-            position: relative;
-            animation: assemble 1s cubic-bezier(0.16, 1, 0.3, 1) both;
-          }
-
-          .group:hover .letter-piece {
-            animation: assemble 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
-          }
-
-          .shimmer-text::after {
-            content: '';
-            position: absolute;
-            top: 0; left: -100%;
-            width: 50%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-            transform: skewX(-20deg);
-            animation: shine 4s infinite;
-          }
-
-          .glass-panel {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-          }
-
-          .floating-ui {
-            animation: float 4s ease-in-out infinite;
-          }
-
-          @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-15px); }
-          }
-
-          .bg-pattern {
-            background-image: radial-gradient(rgba(255,255,255,0.1) 1px, transparent 1px);
-            background-size: 30px 30px;
-          }
-
-          .scrollbar-hide::-webkit-scrollbar { display: none; }
-          .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        `}</style>
-      </head>
       <body className="min-h-full flex flex-col font-outfit">
         <ThemeToneInit />
         <ChatProvider>

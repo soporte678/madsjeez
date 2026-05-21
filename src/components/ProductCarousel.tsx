@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useRef, useState } from 'react'
+import Image from 'next/image'
 import { ChevronLeft, ChevronRight, Package, Zap } from 'lucide-react'
 import Link from 'next/link'
 
@@ -78,9 +79,9 @@ export function ProductCarousel({ title, products, linkText }: ProductCarouselPr
               className="flex-none w-[224px] snap-start p-4 group/card cursor-pointer transition-all"
             >
               <div className="bg-card group-hover/card:shadow-[0_7px_16px_0_rgba(0,0,0,0.1)] transition-shadow duration-300 rounded pb-4 h-full flex flex-col relative">
-                <div className="h-[200px] w-full mb-4 border-b border-border group-hover/card:border-transparent transition-colors overflow-hidden bg-card">
+                <div className="relative h-[200px] w-full mb-4 border-b border-border group-hover/card:border-transparent transition-colors overflow-hidden bg-card">
                   {product.image ? (
-                    <img src={product.image} alt={product.title} className="w-full h-full object-cover" />
+                    <Image src={product.image} alt={product.title} fill className="object-cover" sizes="224px" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
                       <Package className="h-16 w-16 text-muted-foreground/50" />

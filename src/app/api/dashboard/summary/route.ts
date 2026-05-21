@@ -122,7 +122,7 @@ export async function GET(request: NextRequest) {
         select: {
           status: true,
           estimatedDelivery: true,
-          actualDelivery: true,
+          deliveredAt: true,
           createdAt: true,
         }
       });
@@ -348,8 +348,8 @@ export async function GET(request: NextRequest) {
     const avgShippingDays = Number(user?.averageShippingTime || 0);
     const deliveredShipments = sellerShipments.filter((s: any) => s.status === 'delivered' || s.status === 'DELIVERED');
     const onTimeDelivered = deliveredShipments.filter((s: any) => {
-      if (!s.actualDelivery || !s.estimatedDelivery) return false;
-      return new Date(s.actualDelivery).getTime() <= new Date(s.estimatedDelivery).getTime();
+      if (!s.deliveredAt || !s.estimatedDelivery) return false;
+      return new Date(s.deliveredAt).getTime() <= new Date(s.estimatedDelivery).getTime();
     }).length;
     const onTimePct = deliveredShipments.length > 0 ? Math.round((onTimeDelivered / deliveredShipments.length) * 100) : 0;
     const fullLikeCount = activeProducts.filter(p => p.stock > 0 && p.freeShipping).length;

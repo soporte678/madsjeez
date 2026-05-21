@@ -143,7 +143,6 @@ export function RotatingProductCarousel({ title, subtitle, offset = 0 }: Rotatin
                   fill
                   className="object-cover group-hover:scale-105 transition-transform duration-500"
                   sizes="224px"
-                  unoptimized
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-muted-foreground/50">

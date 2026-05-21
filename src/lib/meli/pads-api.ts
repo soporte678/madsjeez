@@ -300,3 +300,22 @@ export async function meliPadsSearchAds(
     headers: { "api-version": "2" },
   });
 }
+
+/** Actualiza estado de un anuncio/producto dentro de PADS. */
+export async function meliPadsPutAdStatus(
+  accessToken: string,
+  siteId: string,
+  advertiserId: number,
+  itemId: string,
+  body: { status: "active" | "paused"; campaign_id?: number }
+) {
+  const path = `/marketplace/advertising/${encodeURIComponent(siteId)}/advertisers/${advertiserId}/product_ads/ads/${encodeURIComponent(itemId)}`;
+  return meliApi<unknown>(accessToken, path, {
+    method: "PUT",
+    headers: {
+      "api-version": "2",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+}

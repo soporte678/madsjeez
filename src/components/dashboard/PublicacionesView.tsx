@@ -7,7 +7,7 @@ import {
 } from "lucide-react"
 import PublicarFlow from "@/components/dashboard/PublicarFlow"
 
-interface P { id: string; title: string; description: string | null; sku: string | null; price: number; originalPrice: number | null; stock: number; isActive: boolean; views: number; sales: number; condition: string; freeShipping: boolean; shippingCost: number; qualityScore: number; categoryId: string | null; category: { name: string } | null; images: { url: string }[] }
+interface P { id: string; title: string; description: string | null; sku: string | null; price: number; originalPrice: number | null; stock: number; isActive: boolean; views: number; sales: number; condition: string; freeShipping: boolean; shippingCost: number; qualityScore: number; categoryId: string | null; category: { name: string } | null; images: { url: string }[]; source?: "prisma" | "supabase"; isCatalog?: boolean }
 interface S { active: number; paused: number; lowStock: number; noSales: number }
 
 const fmt = (v: number) => `$ ${v.toLocaleString("es-AR")}`
@@ -24,6 +24,8 @@ const getRecommendation = (p: P) => {
 }
 
 const TABS = ["Gestión de publicaciones", "Central de promociones", "Gestión de precios", "Gestión de stock"]
+const isMutableProduct = (p: P) => p.source !== "supabase"
+const rowKey = (p: P) => `${p.source || "prisma"}:${p.id}`
 
 export default function PublicacionesView() {
   const [products, setProducts] = useState<P[]>([])
@@ -95,14 +97,17 @@ export default function PublicacionesView() {
   }
 
   const toggleSelect = (id: string) => {
+    const product = filtered.find((p) => p.id === id)
+    if (product && !isMutableProduct(product)) return
     const s = new Set(selected)
     if (s.has(id)) s.delete(id)
     else s.add(id)
     setSelected(s)
   }
   const toggleAll = () => {
-    if (selected.size === filtered.length) setSelected(new Set())
-    else setSelected(new Set(filtered.map(p => p.id)))
+    const mutableIds = filtered.filter(isMutableProduct).map(p => p.id)
+    if (mutableIds.length > 0 && mutableIds.every((id) => selected.has(id))) setSelected(new Set())
+    else setSelected(new Set(mutableIds))
   }
   const bulkPause = async () => { for (const id of selected) await toggle(id, false); setSelected(new Set()) }
   const bulkActivate = async () => { for (const id of selected) await toggle(id, true); setSelected(new Set()) }
@@ -210,7 +215,7 @@ export default function PublicacionesView() {
         {/* TOOLBAR */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border w-full bg-muted/50">
           <div className="flex items-center gap-3">
-            <input type="checkbox" checked={selected.size === filtered.length && filtered.length > 0} onChange={toggleAll} className="w-4 h-4 rounded border-slate-300 text-[#3483fa] focus:ring-[#3483fa] cursor-pointer" />
+            <input type="checkbox" checked={filtered.filter(isMutableProduct).length > 0 && filtered.filter(isMutableProduct).every((p) => selected.has(p.id))} onChange={toggleAll} className="w-4 h-4 rounded border-slate-300 text-[#3483fa] focus:ring-[#3483fa] cursor-pointer" />
             <ChevronDown size={14} className="text-[#3483fa] -ml-1 cursor-pointer" />
             <span className="text-[14px] text-slate-800 font-medium">{filtered.length} publicaciones</span>
           </div>
@@ -239,6 +244,7 @@ export default function PublicacionesView() {
             {/* ROWS */}
             <div className="flex flex-col">
               {filtered.map(p => {
+                const rk = rowKey(p)
                 const rec = getRecommendation(p)
                 const comission = p.price * COMMISSION
                 const receives = p.price - comission - (p.freeShipping ? (p.shippingCost || 0) : 0)
@@ -248,11 +254,11 @@ export default function PublicacionesView() {
                 const cuotaPrice = hasCuotas ? Math.ceil(p.price / 3) : 0
 
                 return (
-                  <div key={p.id} className="pub-row-card pub-grid px-4 py-3 group">
+                  <div key={rk} className="pub-row-card pub-grid px-4 py-3 group">
 
                     {/* 1. PUBLICACIÓN */}
                     <div className="flex items-start gap-3">
-                      <input type="checkbox" checked={selected.has(p.id)} onChange={() => toggleSelect(p.id)} className="w-4 h-4 rounded border-slate-300 text-[#3483fa] focus:ring-[#3483fa] cursor-pointer mt-1" />
+                      <input type="checkbox" disabled={!isMutableProduct(p)} checked={selected.has(p.id)} onChange={() => toggleSelect(p.id)} className="w-4 h-4 rounded border-slate-300 text-[#3483fa] focus:ring-[#3483fa] cursor-pointer mt-1 disabled:opacity-40 disabled:cursor-not-allowed" />
                       <div className="flex gap-3 min-w-0">
                         <div className="w-12 h-12 bg-white border border-slate-200 rounded flex-shrink-0 overflow-hidden shadow-sm">
                           {p.images[0]?.url ? (
@@ -268,7 +274,7 @@ export default function PublicacionesView() {
                           <div className="flex items-center gap-1 text-[11px] text-slate-400 mt-1">
                             {p.sku && <span>#{p.sku}</span>}
                             {p.sku && <Copy size={12} className="cursor-pointer hover:text-slate-600" onClick={() => navigator.clipboard.writeText(p.sku || "")} />}
-                            {p.category && <span className="text-primary ml-1">{p.category.name}</span>}
+                            {(p.isCatalog || p.category) && <span className="text-primary ml-1">{p.isCatalog ? "Catálogo" : p.category?.name}</span>}
                           </div>
                           <div className="text-[11px] text-slate-700 mt-1.5 flex items-center flex-wrap gap-x-2 font-medium">
                             <span>Depósito: {p.stock} u.</span>
@@ -367,28 +373,74 @@ export default function PublicacionesView() {
                             <span className={`absolute top-[2px] w-[14px] h-[14px] bg-white rounded-full shadow transition-all ${p.isActive ? "right-[2px]" : "left-[2px]"}`} />
                           </button>
                           <div className="relative">
-                            <button onClick={() => setOpenMenu(openMenu === p.id ? null : p.id)} className="hover:bg-slate-100 rounded p-0.5">
+                            <button onClick={() => setOpenMenu(openMenu === rk ? null : rk)} className="hover:bg-slate-100 rounded p-0.5">
                               <MoreVertical size={16} className="text-slate-500 cursor-pointer hover:text-slate-800" />
                             </button>
-                            {openMenu === p.id && (
+                            {openMenu === rk && (
                               <div ref={menuRef} className="absolute right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-50 w-52 py-1">
-                                <a href={`/product/${p.id}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-4 py-2.5 text-[13px] text-slate-700 hover:bg-slate-50" onClick={() => setOpenMenu(null)}>
-                                  <Eye size={15} className="text-primary" /> Ver publicación
-                                </a>
-                                <button onClick={() => { openEdit(p); setOpenMenu(null) }} className="flex items-center gap-3 px-4 py-2.5 text-[13px] text-slate-700 hover:bg-slate-50 w-full text-left">
-                                  <Edit size={15} className="text-slate-400" /> Editar publicación
-                                </button>
-                                <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/product/${p.id}`); setOpenMenu(null) }} className="flex items-center gap-3 px-4 py-2.5 text-[13px] text-slate-700 hover:bg-slate-50 w-full text-left">
-                                  <Copy size={15} className="text-slate-400" /> Copiar enlace
-                                </button>
-                                <button onClick={() => { toggle(p.id, !p.isActive); setOpenMenu(null) }} className="flex items-center gap-3 px-4 py-2.5 text-[13px] text-slate-700 hover:bg-slate-50 w-full text-left">
-                                  {p.isActive ? <Pause size={15} className="text-primary" /> : <Play size={15} className="text-green-500" />}
-                                  {p.isActive ? "Pausar" : "Activar"}
-                                </button>
-                                <div className="border-t border-slate-100 my-1" />
-                                <button onClick={() => { remove(p.id); setOpenMenu(null) }} className="flex items-center gap-3 px-4 py-2.5 text-[13px] text-red-600 hover:bg-red-50 w-full text-left">
-                                  <Trash2 size={15} /> Eliminar
-                                </button>
+                                {[
+                                  {
+                                    id: "view",
+                                    label: "Ver publicación",
+                                    icon: <Eye size={15} className="text-primary" />,
+                                    onClick: () => {
+                                      window.open(`/product/${p.id}`, "_blank", "noopener,noreferrer")
+                                      setOpenMenu(null)
+                                    },
+                                  },
+                                  {
+                                    id: "copy",
+                                    label: "Copiar enlace",
+                                    icon: <Copy size={15} className="text-slate-400" />,
+                                    onClick: () => {
+                                      navigator.clipboard.writeText(`${window.location.origin}/product/${p.id}`)
+                                      setOpenMenu(null)
+                                    },
+                                  },
+                                  ...(p.source !== "supabase"
+                                    ? [
+                                        {
+                                          id: "edit",
+                                          label: "Editar publicación",
+                                          icon: <Edit size={15} className="text-slate-400" />,
+                                          onClick: () => {
+                                            openEdit(p)
+                                            setOpenMenu(null)
+                                          },
+                                        },
+                                        {
+                                          id: "toggle",
+                                          label: p.isActive ? "Pausar" : "Activar",
+                                          icon: p.isActive ? <Pause size={15} className="text-primary" /> : <Play size={15} className="text-green-500" />,
+                                          onClick: () => {
+                                            toggle(p.id, !p.isActive)
+                                            setOpenMenu(null)
+                                          },
+                                        },
+                                        {
+                                          id: "delete",
+                                          label: "Eliminar",
+                                          danger: true,
+                                          icon: <Trash2 size={15} />,
+                                          onClick: () => {
+                                            remove(p.id)
+                                            setOpenMenu(null)
+                                          },
+                                        },
+                                      ]
+                                    : []),
+                                ].map((action) => (
+                                  <div key={action.id}>
+                                    {action.id === "delete" && <div className="border-t border-slate-100 my-1" />}
+                                    <button
+                                      onClick={action.onClick}
+                                      className={`flex items-center gap-3 px-4 py-2.5 text-[13px] w-full text-left ${action.danger ? "text-red-600 hover:bg-red-50" : "text-slate-700 hover:bg-slate-50"}`}
+                                    >
+                                      {action.icon}
+                                      {action.label}
+                                    </button>
+                                  </div>
+                                ))}
                               </div>
                             )}
                           </div>

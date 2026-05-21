@@ -22,7 +22,7 @@ export async function GET(req: Request) {
       .from('products')
       .select(`
         *,
-        images(url, order),
+        product_images(url, order, is_primary),
         seller:users(id, name, seller_name, reputation_color),
         category:categories(id, name, slug),
         reviews(count)

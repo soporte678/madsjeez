@@ -5,6 +5,7 @@ import { getMeliAccessTokenForUser } from "@/lib/meli/prisma-session";
 import { prisma } from "@/lib/prisma";
 import { meliPadsPutCampaign } from "@/lib/meli/pads-api";
 import type { AdsApplyPayload } from "@/lib/meli/ads-analyzer";
+import { resolveMarketingAccess } from "@/lib/marketing/access";
 
 export const dynamic = "force-dynamic";
 
@@ -44,7 +45,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    const meli = await getMeliAccessTokenForUser(session.user.id);
+    const access = await resolveMarketingAccess(session.user.id, session.user.email);
+    if (access.permission !== "FULL") {
+      return NextResponse.json({ error: "Acceso solo lectura: no podés modificar campañas" }, { status: 403 });
+    }
+
+    const ownerUserId = access.ownerUserId;
+    const meli = await getMeliAccessTokenForUser(ownerUserId);
     if (!meli) {
       return NextResponse.json({ error: "Conectá Mercado Libre primero" }, { status: 400 });
     }
@@ -90,7 +97,7 @@ export async function POST(req: Request) {
       try {
         await prisma.meliAdsChange.create({
           data: {
-            userId: session.user.id,
+            userId: ownerUserId,
             campaignId,
             advertiserId: Number.isFinite(advertiserId) && advertiserId > 0 ? advertiserId : null,
             siteId,
