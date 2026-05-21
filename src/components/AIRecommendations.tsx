@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Sparkles, ChevronRight } from "lucide-react"
 import Link from "next/link"
 
@@ -8,39 +8,60 @@ export default function AIRecommendations() {
   const [products, setProducts] = useState<any[]>([])
   const [sectionTitle, setSectionTitle] = useState("Recomendados para vos")
   const [loaded, setLoaded] = useState(false)
+  const sectionRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
-    const loadRecommendations = async () => {
-      try {
-        // Get viewed products from localStorage
-        const viewedRaw = localStorage.getItem("madsjeez_viewed") || "[]"
-        const searchRaw = localStorage.getItem("madsjeez_searches") || "[]"
-        const viewedProducts = JSON.parse(viewedRaw).slice(0, 5)
-        const searchHistory = JSON.parse(searchRaw).slice(0, 5)
+    const el = sectionRef.current
+    if (!el) return
 
-        const res = await fetch("/api/ai/recommendations", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ viewedProducts, searchHistory }),
-        })
-        const data = await res.json()
-        if (data.products && data.products.length > 0) {
-          setProducts(data.products)
-          setSectionTitle(data.section_title || "Recomendados para vos")
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries[0].isIntersecting) return
+        observer.disconnect()
+
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 6000)
+
+        const load = async () => {
+          try {
+            const viewedRaw = localStorage.getItem("madsjeez_viewed") || "[]"
+            const searchRaw = localStorage.getItem("madsjeez_searches") || "[]"
+            const viewedProducts = JSON.parse(viewedRaw).slice(0, 5)
+            const searchHistory = JSON.parse(searchRaw).slice(0, 5)
+
+            const res = await fetch("/api/ai/recommendations", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ viewedProducts, searchHistory }),
+              signal: controller.signal,
+            })
+            const data = await res.json()
+            if (data.products && data.products.length > 0) {
+              setProducts(data.products)
+              setSectionTitle(data.section_title || "Recomendados para vos")
+            }
+          } catch {
+            // silencioso — la seccion simplemente no se muestra
+          } finally {
+            clearTimeout(timeoutId)
+            setLoaded(true)
+          }
         }
-      } catch (e) { console.error("Recommendations error:", e) }
-      setLoaded(true)
-    }
 
-    loadRecommendations()
+        load()
+      },
+      { rootMargin: "200px" }
+    )
+
+    observer.observe(el)
+    return () => observer.disconnect()
   }, [])
-
-  if (!loaded || products.length === 0) return null
 
   const fmt = (v: number) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(v)
 
   return (
-    <section className="py-8">
+    <section ref={sectionRef} className="py-8" aria-live="polite">
+      {(!loaded || products.length === 0) ? null : (<>
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
           <Sparkles className="text-purple-600" size={20} />
@@ -77,6 +98,7 @@ export default function AIRecommendations() {
           </Link>
         ))}
       </div>
+      </>)}
     </section>
   )
 }

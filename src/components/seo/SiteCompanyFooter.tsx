@@ -5,9 +5,9 @@ import { COMPANY } from "@/lib/company";
 export function SiteCompanyFooter() {
   return (
     <div className="space-y-4">
-      <h5 className="font-black text-[#f97316] uppercase tracking-widest text-[11px] mb-2">
+      <h4 className="font-black text-[#f97316] uppercase tracking-widest text-[11px] mb-2">
         Empresa
-      </h5>
+      </h4>
       <ul className="flex flex-col gap-2.5 text-[13px] font-medium text-slate-400">
         <li className="flex items-start gap-2">
           <MapPin className="h-4 w-4 shrink-0 text-[#00b4d8] mt-0.5" aria-hidden />

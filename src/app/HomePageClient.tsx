@@ -539,7 +539,7 @@ export default function HomePageClient() {
       </section>
 
       {/* 4. CARRUSEL: Herramientas (completa con otras categorías si faltan) */}
-      <section className="max-w-[1184px] mx-auto px-4">
+      <section className="cv-auto max-w-[1184px] mx-auto px-4">
         <LazyRotatingProductCarousel
           title="Herramientas y ferretería"
           subtitle="Prioriza la categoría; si no hay stock, muestra el resto del catálogo"
@@ -549,7 +549,7 @@ export default function HomePageClient() {
       </section>
 
       {/* 5. CARRUSEL: Deportes */}
-      <section className="max-w-[1184px] mx-auto px-4">
+      <section className="cv-auto max-w-[1184px] mx-auto px-4">
         <LazyRotatingProductCarousel
           title="Deportes y fitness"
           subtitle="Rotación continua con respaldo de otras categorías"
@@ -559,7 +559,7 @@ export default function HomePageClient() {
       </section>
 
       {/* 6. CARRUSEL: Más productos rotativos */}
-      <section className="max-w-[1184px] mx-auto px-4">
+      <section className="cv-auto max-w-[1184px] mx-auto px-4">
         <LazyRotatingProductCarousel
           title="Más productos para vos"
           subtitle="Nuestra selección se renueva automáticamente"
@@ -584,12 +584,12 @@ export default function HomePageClient() {
       </section>
 
       {/* 5. CATEGORÍAS (grilla 3×3 + carrusel automático) */}
-      <section className="max-w-[1184px] mx-auto px-4">
+      <section className="cv-auto max-w-[1184px] mx-auto px-4">
         <CategoryCarousel />
       </section>
 
       {/* 7. CARRUSEL: También puede interesarte */}
-      <section className="max-w-[1184px] mx-auto px-4">
+      <section className="cv-auto max-w-[1184px] mx-auto px-4">
         <LazyRotatingProductCarousel
           title="También puede interesarte"
           subtitle="Más productos del marketplace en rotación"
@@ -736,10 +736,10 @@ export default function HomePageClient() {
                 href="/subscriptions"
                 className={`w-full py-3.5 rounded-xl font-bold text-sm tracking-wide transition-all duration-300 text-center btn-shine ${
                   plan.featured
-                    ? 'bg-gradient-to-r from-[#ffb703] to-[#ffa60a] text-slate-900 shadow-lg shadow-yellow-500/40 hover:shadow-xl hover:shadow-yellow-500/60 hover:-translate-y-0.5'
+                    ? 'bg-gradient-to-r from-[#ffb703] to-[#ffa60a] text-slate-900 shadow-lg shadow-yellow-500/40 hover:opacity-90 hover:-translate-y-0.5'
                     : plan.name === 'PLATINUM'
-                    ? 'bg-gradient-to-r from-[#00b4d8] to-[#0096c7] text-slate-900 shadow-lg shadow-cyan-500/30 hover:shadow-xl hover:shadow-cyan-500/50 hover:-translate-y-0.5'
-                    : 'bg-gradient-to-r from-[#f97316] to-[#ff9100] text-white shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/50 hover:-translate-y-0.5'
+                    ? 'bg-gradient-to-r from-[#00b4d8] to-[#0096c7] text-slate-900 shadow-lg shadow-cyan-500/30 hover:opacity-90 hover:-translate-y-0.5'
+                    : 'bg-gradient-to-r from-[#f97316] to-[#ff9100] text-white shadow-lg shadow-orange-500/30 hover:opacity-90 hover:-translate-y-0.5'
                 }`}
               >
                 SELECCIONAR
@@ -758,7 +758,7 @@ export default function HomePageClient() {
             { icon: ShieldCheck, title: "Compra Protegida", desc: "Garantía total de satisfacción. Si no es lo que esperabas, lo resolvemos en el acto.", color: "from-[#10b981] to-[#059669]", shadow: "shadow-lime-500/30" }
           ].map((item, idx) => (
             <div key={idx} className="flex flex-col items-center text-center group cursor-pointer">
-              <div className={`w-20 h-20 rounded-[2.5rem] bg-gradient-to-br ${item.color} flex items-center justify-center text-white mb-8 shadow-lg ${item.shadow} group-hover:scale-110 group-hover:rotate-3 transition-all duration-500`}>
+              <div className={`w-20 h-20 rounded-[2.5rem] bg-gradient-to-br ${item.color} flex items-center justify-center text-white mb-8 shadow-lg ${item.shadow} group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500`}>
                 <item.icon size={36} strokeWidth={1.5} />
               </div>
               <h3 className="text-xl font-black text-slate-900 mb-4 uppercase tracking-tighter group-hover:text-[#f97316] transition-colors">{item.title}</h3>
