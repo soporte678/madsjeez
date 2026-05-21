@@ -21,16 +21,26 @@ const STATUS_OPTIONS: FlashShipmentStatus[] = [
   "PENDING_VISIT_3", "FAILED_ATTEMPT_3", "RETURNED_TO_SENDER", "CANCELLED",
 ]
 
-interface Driver { id: string; user: { name: string | null; email: string } }
+interface FlashDriverRow {
+  id: string
+  phone: string
+  vehicleType: string
+  isActive: boolean
+  createdAt: string
+  user: { name: string | null; email: string; image?: string | null }
+  _count?: { shipments: number }
+}
 
-interface PendingDriver { id: string; phone: string; vehicleType: string; createdAt: string; user: { name: string | null; email: string } }
+type Driver = FlashDriverRow
+type PendingDriver = FlashDriverRow
 
 export default function AdminFlashPage() {
   const [shipments, setShipments] = useState<FlashShipmentWithRelations[]>([])
-  const [drivers, setDrivers] = useState<Driver[]>([])
-  const [pendingDrivers, setPendingDrivers] = useState<PendingDriver[]>([])
+  const [allDrivers, setAllDrivers] = useState<FlashDriverRow[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
+  const [driverSearch, setDriverSearch] = useState("")
+  const [driverFilter, setDriverFilter] = useState<"all" | "active" | "pending">("all")
   const [filterStatus, setFilterStatus] = useState<string>("ALL")
   const [expanded, setExpanded] = useState<string | null>(null)
   const [assigning, setAssigning] = useState<string | null>(null)
@@ -43,14 +53,12 @@ export default function AdminFlashPage() {
   const load = async () => {
     setLoading(true)
     try {
-      const [sr, dr, pd] = await Promise.all([
+      const [sr, drAll] = await Promise.all([
         fetch("/api/flash/shipments?role=admin").then((r) => r.json()),
-        fetch("/api/flash/drivers?filter=active").then((r) => r.json()),
-        fetch("/api/flash/drivers?filter=pending").then((r) => r.json()),
+        fetch("/api/flash/drivers").then((r) => r.json()),
       ])
       setShipments(sr.shipments ?? [])
-      setDrivers(dr.drivers ?? [])
-      setPendingDrivers(pd.drivers ?? [])
+      setAllDrivers(drAll.drivers ?? [])
     } finally {
       setLoading(false)
     }
@@ -65,8 +73,11 @@ export default function AdminFlashPage() {
       setApprovingDriver(null) }
   }
 
-  const handleRejectDriver = async (driverId: string) => {
-    if (!confirm("¿Rechazar esta solicitud?")) return
+  const handleRejectDriver = async (driverId: string, active = false) => {
+    const msg = active
+      ? "¿Desactivar este repartidor? No podrá ingresar al panel hasta que lo apruebes de nuevo."
+      : "¿Rechazar esta solicitud?"
+    if (!confirm(msg)) return
     setApprovingDriver(driverId)
     try {
       await fetch(`/api/flash/drivers/${driverId}/approve`, { method: "DELETE" })
@@ -131,6 +142,24 @@ export default function AdminFlashPage() {
     }
   }
 
+  const drivers = allDrivers.filter((d) => d.isActive)
+  const pendingDrivers = allDrivers.filter((d) => !d.isActive)
+
+  const filteredDrivers = allDrivers.filter((d) => {
+    const matchFilter =
+      driverFilter === "all" ||
+      (driverFilter === "active" && d.isActive) ||
+      (driverFilter === "pending" && !d.isActive)
+    const q = driverSearch.trim().toLowerCase()
+    const matchSearch =
+      !q ||
+      (d.user.name ?? "").toLowerCase().includes(q) ||
+      d.user.email.toLowerCase().includes(q) ||
+      d.phone.includes(q) ||
+      d.vehicleType.toLowerCase().includes(q)
+    return matchFilter && matchSearch
+  })
+
   const filtered = shipments.filter((s) => {
     const matchStatus = filterStatus === "ALL" || s.status === filterStatus
     const q = search.toLowerCase()
@@ -174,48 +203,130 @@ export default function AdminFlashPage() {
         </Button>
       </div>
 
-      {/* Pending drivers */}
-      {pendingDrivers.length > 0 && (
-        <section>
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-sm font-bold text-amber-700">Solicitudes pendientes de aprobación</span>
-            <span className="bg-amber-100 text-amber-700 text-xs font-bold rounded-full px-2 py-0.5">{pendingDrivers.length}</span>
+      {/* Choferes registrados */}
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-bold flex items-center gap-2">
+              <Truck className="h-4 w-4 text-yellow-600" />
+              Choferes registrados
+            </h2>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {allDrivers.length} total · {drivers.length} activos
+              {pendingDrivers.length > 0 ? ` · ${pendingDrivers.length} pendientes` : ""}
+            </p>
           </div>
-          <div className="space-y-2">
-            {pendingDrivers.map((d) => (
-              <Card key={d.id}>
-                <CardContent className="p-4 flex items-center justify-between gap-4">
-                  <div>
+          <Button size="sm" variant="outline" onClick={() => setShowAddDriver((v) => !v)}>
+            <UserPlus className="h-4 w-4 mr-1" /> Agregar repartidor
+          </Button>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {(
+            [
+              { key: "all" as const, label: "Todos", count: allDrivers.length },
+              { key: "active" as const, label: "Activos", count: drivers.length },
+              { key: "pending" as const, label: "Pendientes", count: pendingDrivers.length },
+            ] as const
+          ).map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setDriverFilter(tab.key)}
+              className={`text-xs font-semibold rounded-full px-3 py-1 border transition-colors ${
+                driverFilter === tab.key
+                  ? "bg-yellow-400 border-yellow-400 text-black"
+                  : "bg-white border-gray-200 text-gray-600 hover:border-gray-300"
+              }`}
+            >
+              {tab.label} ({tab.count})
+            </button>
+          ))}
+        </div>
+
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Buscar chofer por nombre, email, teléfono..."
+            className="pl-9"
+            value={driverSearch}
+            onChange={(e) => setDriverSearch(e.target.value)}
+          />
+        </div>
+
+        <div className="space-y-2">
+          {filteredDrivers.map((d) => (
+            <Card key={d.id}>
+              <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <p className="font-semibold text-sm">{d.user.name ?? "Sin nombre"}</p>
-                    <p className="text-xs text-gray-500">{d.user.email} · {d.phone} · {d.vehicleType}</p>
-                    <p className="text-xs text-gray-400">{new Date(d.createdAt).toLocaleDateString("es-AR")}</p>
+                    <span
+                      className={`text-xs font-bold rounded-full px-2 py-0.5 ${
+                        d.isActive
+                          ? "bg-green-100 text-green-700"
+                          : "bg-amber-100 text-amber-800"
+                      }`}
+                    >
+                      {d.isActive ? "Activo" : "Pendiente"}
+                    </span>
                   </div>
+                  <p className="text-xs text-gray-500 truncate">{d.user.email}</p>
+                  <p className="text-xs text-gray-500">
+                    <Phone className="inline h-3 w-3 mr-0.5" />
+                    {d.phone} · {d.vehicleType}
+                    {d._count != null && (
+                      <> · {d._count.shipments} envío{d._count.shipments !== 1 ? "s" : ""}</>
+                    )}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    Registro: {new Date(d.createdAt).toLocaleString("es-AR")}
+                  </p>
+                </div>
+                {!d.isActive && (
                   <div className="flex gap-2 shrink-0">
-                    <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white"
+                    <Button
+                      size="sm"
+                      className="bg-green-600 hover:bg-green-700 text-white"
                       disabled={approvingDriver === d.id}
-                      onClick={() => handleApproveDriver(d.id)}>
+                      onClick={() => handleApproveDriver(d.id)}
+                    >
                       {approvingDriver === d.id ? "..." : "✓ Aprobar"}
                     </Button>
-                    <Button size="sm" variant="outline" className="border-red-300 text-red-600 hover:bg-red-50"
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-red-300 text-red-600 hover:bg-red-50"
                       disabled={approvingDriver === d.id}
-                      onClick={() => handleRejectDriver(d.id)}>
+                      onClick={() => handleRejectDriver(d.id, false)}
+                    >
                       Rechazar
                     </Button>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Drivers */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">{drivers.length} repartidores activos</p>
-        <Button size="sm" variant="outline" onClick={() => setShowAddDriver((v) => !v)}>
-          <UserPlus className="h-4 w-4 mr-1" /> Agregar repartidor
-        </Button>
-      </div>
+                )}
+                {d.isActive && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-red-200 text-red-600 hover:bg-red-50 shrink-0"
+                    disabled={approvingDriver === d.id}
+                    onClick={() => handleRejectDriver(d.id, true)}
+                  >
+                    {approvingDriver === d.id ? "..." : "Desactivar"}
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+          {filteredDrivers.length === 0 && (
+            <div className="text-center py-8 text-gray-400 text-sm border border-dashed border-gray-200 rounded-lg">
+              {allDrivers.length === 0
+                ? "Aún no hay choferes registrados. Podés agregar uno o esperar solicitudes desde /driver/login."
+                : "No hay choferes que coincidan con el filtro."}
+            </div>
+          )}
+        </div>
+      </section>
 
       {showAddDriver && (
         <Card>
@@ -254,6 +365,8 @@ export default function AdminFlashPage() {
           </CardContent>
         </Card>
       )}
+
+      <h2 className="text-sm font-bold text-gray-700 pt-2">Envíos Flash</h2>
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-3">
