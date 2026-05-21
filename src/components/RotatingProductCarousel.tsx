@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useRef, useEffect, useCallback, memo } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { ChevronLeft, ChevronRight, Truck } from "lucide-react"
@@ -13,24 +13,22 @@ export interface RotatingProductCarouselProps {
   categorySlug?: string
 }
 
-export function RotatingProductCarousel({ title, subtitle, offset = 0, categorySlug }: RotatingProductCarouselProps) {
+const fmt = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", minimumFractionDigits: 0 })
+
+function RotatingProductCarouselBase({ title, subtitle, offset = 0, categorySlug }: RotatingProductCarouselProps) {
   const { products, loading, totalCount } = useRotatingProducts({ offset, categorySlug })
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
-  const [canScrollLeft, setCanScrollLeft] = useState(false)
-  const [canScrollRight, setCanScrollRight] = useState(true)
+  const canScrollLeftRef = useRef<HTMLButtonElement>(null)
+  const canScrollRightRef = useRef<HTMLButtonElement>(null)
 
-  const displayProducts = products
-
-  const checkScroll = () => {
+  const checkScroll = useCallback(() => {
     requestAnimationFrame(() => {
-      if (scrollRef.current) {
-        const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current
-        setCanScrollLeft(scrollLeft > 10)
-        setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10)
-      }
+      if (!scrollRef.current) return
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current
+      if (canScrollLeftRef.current) canScrollLeftRef.current.style.opacity = scrollLeft > 10 ? "1" : "0"
+      if (canScrollRightRef.current) canScrollRightRef.current.style.opacity = scrollLeft < scrollWidth - clientWidth - 10 ? "1" : "0"
     })
-  }
+  }, [])
 
   useEffect(() => {
     checkScroll()
@@ -39,25 +37,13 @@ export function RotatingProductCarousel({ title, subtitle, offset = 0, categoryS
       el.addEventListener("scroll", checkScroll, { passive: true })
       return () => el.removeEventListener("scroll", checkScroll)
     }
-  }, [displayProducts])
+  }, [products, checkScroll])
 
-  const scroll = (direction: "left" | "right") => {
-    if (scrollRef.current) {
-      const scrollAmount = 320
-      scrollRef.current.scrollBy({
-        left: direction === "left" ? -scrollAmount : scrollAmount,
-        behavior: "smooth",
-      })
-    }
-  }
+  const scroll = useCallback((direction: "left" | "right") => {
+    scrollRef.current?.scrollBy({ left: direction === "left" ? -320 : 320, behavior: "smooth" })
+  }, [])
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("es-AR", {
-      style: "currency",
-      currency: "ARS",
-      minimumFractionDigits: 0,
-    }).format(price)
-  }
+  const formatPrice = useCallback((price: number) => fmt.format(price), [])
 
   if (loading) {
     return (
@@ -83,7 +69,7 @@ export function RotatingProductCarousel({ title, subtitle, offset = 0, categoryS
     )
   }
 
-  if (displayProducts.length === 0) {
+  if (products.length === 0) {
     return null
   }
 
@@ -108,22 +94,22 @@ export function RotatingProductCarousel({ title, subtitle, offset = 0, categoryS
 
       {/* Scroll Buttons */}
       <button
+        ref={canScrollLeftRef}
         onClick={() => scroll("left")}
-        className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 w-16 h-16 rounded-full bg-card/90 border border-border backdrop-blur-sm shadow-lg flex items-center justify-center text-primary hover:bg-card transition-all duration-300 ${
-          canScrollLeft ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4 pointer-events-none"
-        }`}
+        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full bg-card/90 border border-border shadow-lg flex items-center justify-center text-primary hover:bg-card transition-opacity duration-300 opacity-0 pointer-events-auto"
         aria-label="Ver productos anteriores"
+        style={{ minWidth: 44, minHeight: 44 }}
       >
-        <ChevronLeft size={28} strokeWidth={2.5} aria-hidden="true" />
+        <ChevronLeft size={24} strokeWidth={2.5} aria-hidden="true" />
       </button>
       <button
+        ref={canScrollRightRef}
         onClick={() => scroll("right")}
-        className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 w-16 h-16 rounded-full bg-card/90 border border-border backdrop-blur-sm shadow-lg flex items-center justify-center text-primary hover:bg-card transition-all duration-300 ${
-          canScrollRight ? "opacity-100 translate-x-0" : "opacity-0 translate-x-4 pointer-events-none"
-        }`}
+        className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full bg-card/90 border border-border shadow-lg flex items-center justify-center text-primary hover:bg-card transition-opacity duration-300 pointer-events-auto"
         aria-label="Ver más productos"
+        style={{ minWidth: 44, minHeight: 44 }}
       >
-        <ChevronRight size={28} strokeWidth={2.5} aria-hidden="true" />
+        <ChevronRight size={24} strokeWidth={2.5} aria-hidden="true" />
       </button>
 
       {/* Carousel */}
@@ -132,31 +118,27 @@ export function RotatingProductCarousel({ title, subtitle, offset = 0, categoryS
         className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide scroll-smooth"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
-        {displayProducts.map((product, index) => (
+        {products.map((product, index) => (
           <Link
             key={`${product.id}-${index}`}
             href={`/product/${product.id}`}
-            className="min-w-[224px] max-w-[224px] bg-card rounded-lg shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer flex-shrink-0"
-            onMouseEnter={() => setHoveredIndex(index)}
-            onMouseLeave={() => setHoveredIndex(null)}
+            className="min-w-[200px] max-w-[200px] bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 group cursor-pointer flex-shrink-0"
           >
-            <div className="relative h-[224px] overflow-hidden rounded-t-lg bg-secondary">
+            <div className="relative h-[200px] overflow-hidden rounded-t-lg bg-secondary">
               {product.image ? (
                 <Image
                   src={product.image}
                   alt={product.title}
                   fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  sizes="224px"
+                  loading="lazy"
+                  decoding="async"
+                  className="object-cover group-hover:opacity-90 transition-opacity duration-200"
+                  sizes="200px"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-muted-foreground/50">
                   <span className="text-xs">Sin imagen</span>
                 </div>
-              )}
-              
-              {hoveredIndex === index && (
-                <div className="absolute inset-0 bg-black/5 transition-opacity duration-300" />
               )}
             </div>
 
@@ -201,3 +183,5 @@ export function RotatingProductCarousel({ title, subtitle, offset = 0, categoryS
     </div>
   )
 }
+
+export const RotatingProductCarousel = memo(RotatingProductCarouselBase)

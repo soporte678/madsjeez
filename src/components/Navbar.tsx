@@ -232,14 +232,18 @@ export default function Navbar() {
         .nav-link {
           cursor: pointer;
           color: #e2e8f0;
-          transition: color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+          transition: color 0.15s ease;
         }
-        .nav-link:hover { color: #ffffff; transform: translateY(-1px); }
+        .nav-link:hover { color: #ffffff; }
         .nav-link-muted {
-          color: #cbd5e1;
-          transition: color 0.2s ease, opacity 0.2s ease;
+          color: #e2e8f0;
+          transition: color 0.15s ease;
         }
         .nav-link-muted:hover { color: #ffffff; }
+        @media (prefers-reduced-motion: reduce) {
+          .animate-wipe-out, .animate-wipe-in, .animate-slide-badge,
+          .mads-pro-gradient, .mads-jeez-shimmer { animation: none !important; }
+        }
         .touch-target {
           min-height: 44px;
           min-width: 44px;
@@ -433,7 +437,7 @@ export default function Navbar() {
                             {suggestion.type === 'product' && (
                               <div className="w-8 h-8 rounded bg-slate-100 flex items-center justify-center flex-shrink-0">
                                 {suggestion.image ? (
-                                  <img src={suggestion.image} alt="" className="w-6 h-6 object-cover rounded" />
+                                  <img src={suggestion.image} alt="" loading="lazy" decoding="async" className="w-6 h-6 object-cover rounded" />
                                 ) : (
                                   <Search size={14} className="text-slate-400" />
                                 )}
@@ -731,7 +735,7 @@ export default function Navbar() {
               </div>
             </div>
             <nav className="flex flex-col gap-1 mb-8">
-              <span className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-2 pl-2">Navegación</span>
+              <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-2 pl-2">Navegación</span>
               {[
                 { title: "Categorías", url: "/categories" },
                 { title: "Ofertas", url: "/offers", isHot: true },
@@ -742,7 +746,7 @@ export default function Navbar() {
                 { title: "MADS+ Beneficios", url: "/subscriptions" },
                 { title: "Vender en MadsJeez", url: "/seller/register" }
               ].map((item, idx) => (
-                <Link key={idx} href={item.url} onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-between px-3 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 transition-all group">
+                <Link key={idx} href={item.url} onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-between px-3 py-3 rounded-xl text-sm font-semibold text-slate-200 hover:text-white hover:bg-white/5 transition-all group" style={{minHeight:44}}>
                   <span className="flex items-center gap-2">
                     {item.isHot && <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>}
                     {item.title}

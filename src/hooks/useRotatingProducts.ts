@@ -46,6 +46,7 @@ export function useRotatingProducts(options: UseRotatingProductsOptions = {}) {
   const [rotationStep, setRotationStep] = useState(0);
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
+  const [isReady, setIsReady] = useState(true);
   const poolRef = useRef<CatalogCarouselProduct[]>([]);
   const rotationStepRef = useRef(0);
 
@@ -123,5 +124,6 @@ export function useRotatingProducts(options: UseRotatingProductsOptions = {}) {
     loading,
     totalCount,
     rotationStep,
+    setReady: setIsReady,
   };
 }

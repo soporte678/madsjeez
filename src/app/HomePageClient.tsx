@@ -610,8 +610,8 @@ export default function HomePageClient() {
           <div className="flex-1 bg-card rounded shadow-sm flex overflow-hidden cursor-pointer group hover:shadow-md transition-shadow h-[250px] border border-border">
             <div className="w-1/2 p-8 flex flex-col justify-center text-card-foreground">
               <span className="text-[10px] font-bold tracking-[2px] text-muted-foreground mb-2 uppercase">Organizá mejor</span>
-              <h3 className="text-[22px] font-bold leading-tight mb-4 text-card-foreground">MÁS ESPACIO Y<br/>ORDEN PRÁCTICO</h3>
-              <Link href="/search" className="bg-gradient-to-r from-[#f97316] to-[#ff9100] hover:from-[#ff9100] hover:to-[#ffb703] text-white px-5 py-2 rounded-lg font-bold text-[14px] w-fit shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/50 transition-all duration-300 hover:-translate-y-0.5 btn-shine">Ver ofertas</Link>
+              <p className="text-[22px] font-bold leading-tight mb-4 text-card-foreground">MÁS ESPACIO Y<br/>ORDEN PRÁCTICO</p>
+              <Link href="/search" className="bg-gradient-to-r from-[#f97316] to-[#ff9100] text-white px-5 py-2 rounded-lg font-bold text-[14px] w-fit shadow-lg shadow-orange-500/30 hover:opacity-90 transition-opacity duration-200 btn-shine">Ver ofertas</Link>
             </div>
             <div className="w-1/2 bg-muted overflow-hidden relative">
               <Image src="https://images.unsplash.com/photo-1595515106969-1ce29566ff1c?auto=format&fit=crop&q=65&w=400&fm=webp" alt="Estantería y muebles para organizar el hogar en Madsjeez" fill sizes="200px" className="object-cover transform group-hover:scale-105 transition-transform duration-500" />
@@ -620,8 +620,8 @@ export default function HomePageClient() {
           <div className="flex-1 bg-card rounded shadow-sm flex overflow-hidden cursor-pointer group hover:shadow-md transition-shadow h-[250px] border border-border">
             <div className="w-1/2 p-8 flex flex-col justify-center text-card-foreground">
               <span className="text-[10px] font-bold tracking-[2px] text-muted-foreground mb-2 uppercase">Renová tu hogar</span>
-              <h3 className="text-[22px] font-bold leading-tight mb-4 text-card-foreground">¡HOGAR Y MUEBLES!<br/>HASTA 35% OFF</h3>
-              <Link href="/search" className="bg-gradient-to-r from-[#f97316] to-[#ff9100] hover:from-[#ff9100] hover:to-[#ffb703] text-white px-5 py-2 rounded-lg font-bold text-[14px] w-fit shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/50 transition-all duration-300 hover:-translate-y-0.5 btn-shine">Ver ofertas</Link>
+              <p className="text-[22px] font-bold leading-tight mb-4 text-card-foreground">¡HOGAR Y MUEBLES!<br/>HASTA 35% OFF</p>
+              <Link href="/search" className="bg-gradient-to-r from-[#f97316] to-[#ff9100] text-white px-5 py-2 rounded-lg font-bold text-[14px] w-fit shadow-lg shadow-orange-500/30 hover:opacity-90 transition-opacity duration-200 btn-shine">Ver ofertas</Link>
             </div>
             <div className="w-1/2 bg-muted overflow-hidden relative">
               <Image src="https://images.unsplash.com/photo-1505843490538-5133c6c7d0e1?auto=format&fit=crop&q=65&w=400&fm=webp" alt="Sillón moderno para living — ofertas hogar y muebles Madsjeez" fill sizes="200px" className="object-cover transform group-hover:scale-105 transition-transform duration-500" />
@@ -767,7 +767,7 @@ export default function HomePageClient() {
               <div className={`w-20 h-20 rounded-[2.5rem] bg-gradient-to-br ${item.color} flex items-center justify-center text-white mb-8 shadow-lg ${item.shadow} group-hover:scale-110 group-hover:rotate-3 transition-all duration-500`}>
                 <item.icon size={36} strokeWidth={1.5} />
               </div>
-              <h4 className="text-xl font-black text-slate-900 mb-4 uppercase tracking-tighter group-hover:text-[#f97316] transition-colors">{item.title}</h4>
+              <h3 className="text-xl font-black text-slate-900 mb-4 uppercase tracking-tighter group-hover:text-[#f97316] transition-colors">{item.title}</h3>
               <p className="text-slate-500 font-medium leading-relaxed">{item.desc}</p>
             </div>
           ))}
@@ -804,7 +804,7 @@ export default function HomePageClient() {
               { title: "Legales", links: ["Términos", "Privacidad", "Aviso Legal"] }
             ].map((section) => (
               <div key={section.title}>
-                <h5 className="font-black text-[#f97316] uppercase tracking-widest text-[11px] mb-6">{section.title}</h5>
+                <h4 className="font-black text-[#f97316] uppercase tracking-widest text-[11px] mb-6">{section.title}</h4>
                 <ul className="flex flex-col gap-3">
                   {section.links.map((link) => (
                     <li key={link}>
