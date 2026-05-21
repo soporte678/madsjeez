@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
+import Navbar from "@/components/Navbar"
 import { AdminThemeToggle } from "@/components/admin/AdminThemeToggle"
 import {
   getStoredAdminTheme,
@@ -247,9 +248,12 @@ export function AdminLayoutClient({
   return (
     <div
       data-admin-theme={adminTheme}
-      className="admin-root flex h-screen overflow-hidden font-sans"
+      className="admin-root flex h-screen flex-col overflow-hidden font-sans"
       style={{ background: "var(--admin-bg)", color: "var(--admin-text)" }}
     >
+      <Navbar variant="admin" />
+
+      <div className="flex min-h-0 flex-1 overflow-hidden">
       <aside
         className={`hidden flex-col shadow-2xl transition-all duration-300 md:flex ${
           isSidebarOpen ? "w-[280px]" : "w-[70px]"
@@ -260,17 +264,21 @@ export function AdminLayoutClient({
           borderRight: "1px solid var(--admin-border)",
         }}
       >
-        <div className="flex h-16 shrink-0 items-center justify-between border-b border-yellow-400 bg-[#FFF159] px-4">
-          <div className={`flex items-center gap-2 text-lg font-extrabold tracking-tight text-[#2D3277] ${!isSidebarOpen && "hidden"}`}>
-            <div className="flex h-8 w-8 items-center justify-center rounded bg-[#2D3277] text-sm text-white shadow-inner">
-              MQ
-            </div>
-            <span className="truncate">MadsJeez</span>
-            <span className="text-xs font-light opacity-80">ERP</span>
-          </div>
+        <div
+          className="flex h-12 shrink-0 items-center justify-between border-b px-3"
+          style={{ borderColor: "var(--admin-border)", background: "var(--admin-surface-raised)" }}
+        >
+          {isSidebarOpen ? (
+            <span className="truncate text-xs font-bold uppercase tracking-wider" style={{ color: "var(--admin-text-muted)" }}>
+              Menú admin
+            </span>
+          ) : null}
           <button
+            type="button"
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="rounded p-1 text-[#2D3277] transition-colors hover:bg-yellow-300"
+            className="rounded p-1.5 transition-colors"
+            style={{ color: "var(--admin-text-muted)" }}
+            aria-label={isSidebarOpen ? "Contraer menú" : "Expandir menú"}
           >
             <Menu size={20} />
           </button>
@@ -405,13 +413,19 @@ export function AdminLayoutClient({
               color: "var(--admin-sidebar-text)",
             }}
           >
-            <div className="flex h-16 shrink-0 items-center justify-between border-b border-yellow-400 bg-[#FFF159] px-4">
-              <div className="flex items-center gap-2 text-lg font-extrabold tracking-tight text-[#2D3277]">
-                <div className="flex h-8 w-8 items-center justify-center rounded bg-[#2D3277] text-sm text-white shadow-inner">MQ</div>
-                <span>MadsJeez</span>
-                <span className="text-xs font-light opacity-80">ERP</span>
-              </div>
-              <button onClick={() => setIsMobileMenuOpen(false)} className="text-[#2D3277]">
+            <div
+              className="flex h-12 shrink-0 items-center justify-between border-b px-4"
+              style={{ borderColor: "var(--admin-border)", background: "var(--admin-surface-raised)" }}
+            >
+              <span className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--admin-text-muted)" }}>
+                Menú admin
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsMobileMenuOpen(false)}
+                style={{ color: "var(--admin-text-muted)" }}
+                aria-label="Cerrar menú"
+              >
                 <X size={24} />
               </button>
             </div>
@@ -580,6 +594,7 @@ export function AdminLayoutClient({
           <div className="mx-auto h-full max-w-[1600px]">{children}</div>
         </div>
       </main>
+      </div>
 
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }

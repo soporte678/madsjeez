@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
+import RainbowLogo from "@/components/brand/RainbowLogo";
 import { 
   Search, Bell, ShoppingCart, MapPin, User, ChevronDown, X, Mic, Camera,
   Sparkles, TrendingUp, History, ArrowRight, Zap
@@ -22,9 +23,16 @@ interface SearchSuggestion {
   url: string;
 }
 
-export default function Navbar() {
+type NavbarProps = {
+  /** En panel admin: mismo navbar y logo; enlaces de backoffice visibles */
+  variant?: "default" | "admin";
+};
+
+export default function Navbar({ variant = "default" }: NavbarProps) {
   const { data: session } = useSession();
   const router = useRouter();
+  const pathname = usePathname();
+  const isAdminShell = variant === "admin" || pathname.startsWith("/admin");
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -145,18 +153,6 @@ export default function Navbar() {
       setIsSearchOpen(false);
     }
   };
-
-  // Logo: colores claros y saturados para leerse sobre barra oscura (contraste AA+)
-  const logoLetters = [
-    { char: 'M', dx: '-10px', dy: '-12px', rot: '-15deg', delay: '0s', color: '#fef08a' },
-    { char: 'A', dx: '-5px', dy: '10px', rot: '10deg', delay: '0.05s', color: '#fcd34d' },
-    { char: 'D', dx: '8px', dy: '-10px', rot: '-8deg', delay: '0.1s', color: '#fdba74' },
-    { char: 'S', dx: '15px', dy: '12px', rot: '12deg', delay: '0.15s', color: '#fb923c' },
-    { char: 'J', dx: '-10px', dy: '15px', rot: '-10deg', delay: '0.2s', color: '#67e8f9' },
-    { char: 'E', dx: '5px', dy: '-15px', rot: '20deg', delay: '0.25s', color: '#7dd3fc' },
-    { char: 'E', dx: '12px', dy: '8px', rot: '-5deg', delay: '0.3s', color: '#86efac' },
-    { char: 'Z', dx: '20px', dy: '-8px', rot: '15deg', delay: '0.35s', color: '#5eead4' },
-  ];
 
   return (
     <>
@@ -308,35 +304,14 @@ export default function Navbar() {
           {/* --- FILA 1: LOGO | BÚSQUEDA | BOTÓN MADS PRO ANIMADO --- */}
           <div className="flex items-center h-12">
             
-            {/* LOGO - NUEVA PALETA */}
-            <Link href="/" aria-label="MadsJeez, ir al inicio del marketplace" className="flex items-center gap-2 cursor-pointer group w-[160px] flex-shrink-0">
-              <div className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg border border-white/10 bg-gradient-to-br from-[#162032] via-[#0f172a] to-[#16213e] shadow-lg shadow-sky-900/20 transition-all duration-300 group-hover:border-white/20 group-hover:shadow-xl group-hover:shadow-sky-900/30">
-                 <svg viewBox="0 0 100 100" className="w-6 h-6">
-                    <path d="M 15 80 L 35 30 L 55 55" stroke="#f97316" fill="none" strokeWidth="15" strokeLinecap="round"/>
-                    <path d="M 85 80 L 65 30 L 45 65" stroke="#00b4d8" fill="none" strokeWidth="15" strokeLinecap="round"/>
-                 </svg>
-                 <div className="absolute inset-0 bg-gradient-to-tr from-[#f97316]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              </div>
-              <div className="flex flex-col justify-center leading-none">
-                <span className="font-montserrat font-black text-[20px] tracking-tighter uppercase">
-                  {logoLetters.map((letter, i) => (
-                    <span 
-                      key={i} 
-                      className="letter-piece"
-                      style={{
-                        '--dx': letter.dx, 
-                        '--dy': letter.dy, 
-                        '--rot': letter.rot, 
-                        animationDelay: letter.delay,
-                        color: letter.color
-                      } as any}
-                    >
-                      {letter.char}
-                    </span>
-                  ))}
-                </span>
-              </div>
-            </Link>
+            {/* Logo compartido marketplace + admin */}
+            <div className="w-[160px] flex-shrink-0">
+              <RainbowLogo
+                href="/"
+                textSizeClassName="text-[20px] font-montserrat"
+                iconSizeClassName="h-9 w-9"
+              />
+            </div>
 
             {/* BARRA DE BÚSQUEDA INTELIGENTE */}
             <div ref={searchRef} className="w-[600px] flex-shrink-0 ml-8 relative">
@@ -530,7 +505,8 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* BOTÓN DESLIZANTE MADS PRO (Efecto Borrador) */}
+            {/* BOTÓN DESLIZANTE MADS PRO (oculto en shell admin para no competir con omnibox) */}
+            {!isAdminShell ? (
             <div className="flex-1 flex items-center justify-end">
               <Link
                 href="/subscriptions"
@@ -590,6 +566,21 @@ export default function Navbar() {
 
               </Link>
             </div>
+            ) : (
+              <div className="flex-1 flex items-center justify-end pr-2">
+                <Link
+                  href="/admin"
+                  className={cn(
+                    "rounded-full border px-4 py-1.5 text-[13px] font-semibold transition-colors",
+                    pathname.startsWith("/admin")
+                      ? "border-amber-400/50 bg-amber-400/15 text-amber-100"
+                      : "border-white/15 text-slate-300 hover:border-white/25 hover:text-white"
+                  )}
+                >
+                  Panel Admin
+                </Link>
+              </div>
+            )}
 
           </div>
 
@@ -614,6 +605,34 @@ export default function Navbar() {
 
               {/* Navegación (ml-8 para arrancar igual que el buscador) */}
               <nav className="flex flex-1 min-w-0 items-center gap-x-3 lg:gap-x-4 text-[13px] font-light ml-4 md:ml-8 overflow-x-auto scrollbar-hide pb-0.5 md:pb-0">
+                {isAdminShell ? (
+                  <>
+                    <Link
+                      href="/admin"
+                      className={cn(
+                        "nav-link whitespace-nowrap shrink-0 font-medium",
+                        pathname === "/admin" || pathname === "/admin/"
+                          ? "text-white"
+                          : undefined
+                      )}
+                    >
+                      Dashboard
+                    </Link>
+                    <Link href="/admin/flash" className="nav-link whitespace-nowrap shrink-0">
+                      Flash
+                    </Link>
+                    <Link href="/admin/kyc" className="nav-link whitespace-nowrap shrink-0">
+                      KYC
+                    </Link>
+                    <Link href="/admin/mediaciones" className="nav-link whitespace-nowrap shrink-0">
+                      Mediaciones
+                    </Link>
+                    <Link href="/" className="nav-link whitespace-nowrap shrink-0 text-amber-200/90">
+                      Ir al marketplace
+                    </Link>
+                  </>
+                ) : (
+                  <>
                 <Link href="/categories" className="flex items-center gap-0.5 nav-link whitespace-nowrap shrink-0">
                   Categorías <ChevronDown size={11} className="mt-0.5 opacity-40" />
                 </Link>
@@ -637,6 +656,8 @@ export default function Navbar() {
                 >
                   Ayuda
                 </span>
+                  </>
+                )}
               </nav>
             </div>
 
