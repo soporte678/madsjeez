@@ -4,7 +4,7 @@ import Script from "next/script";
 
 const GTM_ID = "GTM-PT9H3H6K";
 const GA_MEASUREMENT_ID =
-  process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || "G-8RENP5BJ58";
+  process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || "G-ZXW730HR8";
 
 /**
  * GTM + GA después del load (lazyOnload) para no competir con LCP / hilo principal.
@@ -23,9 +23,9 @@ export function DeferredAnalytics() {
       </Script>
       <Script
         src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-        strategy="lazyOnload"
+        strategy="afterInteractive"
       />
-      <Script id="google-analytics-base" strategy="lazyOnload">
+      <Script id="google-analytics-base" strategy="afterInteractive">
         {`
           try {
             window.dataLayer = window.dataLayer || [];
