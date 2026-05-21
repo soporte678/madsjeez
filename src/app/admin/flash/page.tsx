@@ -13,6 +13,7 @@ import {
 import { Label } from "@/components/ui/label"
 import type { FlashShipmentWithRelations } from "@/lib/flash/types"
 import type { FlashShipmentStatus } from "@prisma/client"
+import { FlashRatesPanel } from "@/components/admin/FlashRatesPanel"
 
 const STATUS_OPTIONS: FlashShipmentStatus[] = [
   "CREATED", "PAYMENT_CONFIRMED", "LABEL_GENERATED", "PACKAGE_READY",
@@ -218,6 +219,8 @@ export default function AdminFlashPage() {
           <RefreshCw className="h-4 w-4 mr-1" /> Actualizar
         </Button>
       </div>
+
+      <FlashRatesPanel />
 
       {/* Choferes registrados */}
       <section className="space-y-3">

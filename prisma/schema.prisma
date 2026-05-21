@@ -1338,23 +1338,136 @@ model FlashShipment {
   @@map("flash_shipments")
 }
 
+enum FlashDriverDutyStatus {
+  OFFLINE
+  ONLINE
+  ON_TRIP
+  ON_BREAK
+}
+
+enum FlashDriverTier {
+  BRONZE
+  SILVER
+  GOLD
+  DIAMOND
+}
+
+enum FlashEarningStatus {
+  PENDING
+  PROCESSING
+  PAID
+}
+
+enum FlashSupportTicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+
+enum FlashBlockStatus {
+  AVAILABLE
+  RESERVED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
 model FlashDriver {
-  id            String          @id @default(cuid())
-  userId        String          @unique @map("user_id")
-  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  vehicleType   String          @default("moto") @map("vehicle_type")
-  licenseNumber String?         @map("license_number")
+  id            String                @id @default(cuid())
+  userId        String                @unique @map("user_id")
+  user          User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicleType   String                @default("moto") @map("vehicle_type")
+  licenseNumber String?               @map("license_number")
   phone         String
-  isActive      Boolean         @default(true) @map("is_active")
+  isActive      Boolean               @default(true) @map("is_active")
+
+  dutyStatus    FlashDriverDutyStatus @default(OFFLINE) @map("duty_status")
+  workMode      String                @default("hybrid") @map("work_mode") // hybrid | blocks | on_demand
+  rating        Float                 @default(5)
+  tier          FlashDriverTier       @default(BRONZE)
+  acceptanceRate Float                @default(100) @map("acceptance_rate")
+  payoutCbu     String?               @map("payout_cbu")
+  connectedAt   DateTime?             @map("connected_at")
+  totalKm       Float                 @default(0) @map("total_km")
 
   shipments     FlashShipment[]
   attempts      FlashDeliveryAttempt[]
+  earnings      FlashDriverEarning[]
+  supportTickets FlashSupportTicket[]
+  blocks        FlashDriverBlock[]
 
-  createdAt     DateTime        @default(now()) @map("created_at")
-  updatedAt     DateTime        @updatedAt @map("updated_at")
+  createdAt     DateTime              @default(now()) @map("created_at")
+  updatedAt     DateTime              @updatedAt @map("updated_at")
 
   @@index([isActive])
+  @@index([dutyStatus])
   @@map("flash_drivers")
+}
+
+model FlashRateConfig {
+  id        String   @id @default("default")
+  label     String   @default("Tarifas Flash Argentina")
+  currency  String   @default("ARS")
+  settings  Json
+  updatedAt DateTime @updatedAt @map("updated_at")
+  updatedBy String?  @map("updated_by")
+
+  @@map("flash_rate_config")
+}
+
+model FlashDriverEarning {
+  id           String             @id @default(cuid())
+  driverId     String             @map("driver_id")
+  driver       FlashDriver        @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  shipmentId   String?            @unique @map("shipment_id")
+  type         String             @default("DELIVERY")
+  description  String
+  grossAmount  Float              @map("gross_amount")
+  platformFee  Float              @default(0) @map("platform_fee")
+  netAmount    Float              @map("net_amount")
+  tipAmount    Float              @default(0) @map("tip_amount")
+  extras       Json?
+  status       FlashEarningStatus @default(PENDING)
+  paidAt       DateTime?          @map("paid_at")
+  createdAt    DateTime           @default(now()) @map("created_at")
+
+  @@index([driverId, createdAt])
+  @@index([status])
+  @@map("flash_driver_earnings")
+}
+
+model FlashSupportTicket {
+  id        String                   @id @default(cuid())
+  driverId  String                   @map("driver_id")
+  driver    FlashDriver              @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  category  String
+  message   String?                  @db.Text
+  shipmentId String?                 @map("shipment_id")
+  status    FlashSupportTicketStatus @default(OPEN)
+  priority  String                   @default("normal")
+  createdAt DateTime                 @default(now()) @map("created_at")
+  updatedAt DateTime                 @updatedAt @map("updated_at")
+
+  @@index([driverId, status])
+  @@map("flash_support_tickets")
+}
+
+model FlashDriverBlock {
+  id                String           @id @default(cuid())
+  zone              String
+  startsAt          DateTime         @map("starts_at")
+  endsAt            DateTime         @map("ends_at")
+  guaranteedPay     Float            @map("guaranteed_pay")
+  estimatedPackages Int              @map("estimated_packages")
+  pickupPoint       String           @map("pickup_point")
+  status            FlashBlockStatus @default(AVAILABLE)
+  driverId          String?          @map("driver_id")
+  driver            FlashDriver?     @relation(fields: [driverId], references: [id], onDelete: SetNull)
+  createdAt         DateTime         @default(now()) @map("created_at")
+
+  @@index([status, startsAt])
+  @@index([driverId])
+  @@map("flash_driver_blocks")
 }
 
 model FlashDeliveryAttempt {
