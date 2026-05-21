@@ -3,7 +3,6 @@ import { Outfit, Montserrat } from "next/font/google"
 import "./globals.css"
 import { Providers } from "@/components/providers"
 import { ChatProvider } from "@/components/ChatContext"
-import ThemeToneInit from "@/components/theme/ThemeToneInit"
 import { DeferredAnalytics } from "@/components/seo/DeferredAnalytics"
 import { FloatingBotsLazy } from "@/components/FloatingBotsLazy"
 
@@ -69,18 +68,13 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${outfit.variable} ${montserrat.variable} antialiased`}>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link rel="preconnect" href="https://images.unsplash.com" />
-        <link
-          rel="preload"
-          as="image"
-          href="https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=900&q=65&fm=webp"
-          fetchPriority="high"
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('madsjeez-theme-tone');document.documentElement.setAttribute('data-theme',t==='soft'||t==='dark'?t:'light')}catch(e){}})();`,
+          }}
         />
       </head>
       <body className="min-h-full flex flex-col font-outfit">
-        <ThemeToneInit />
         <DeferredAnalytics />
         <ChatProvider>
           <Providers>

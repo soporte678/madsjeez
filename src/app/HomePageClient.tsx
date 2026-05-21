@@ -5,9 +5,7 @@ import dynamic from "next/dynamic"
 import Image from "next/image"
 import Link from "next/link"
 import { COMPANY } from "@/lib/company"
-const Navbar = dynamic(() => import("@/components/Navbar"), {
-  loading: () => <div className="w-full h-[100px] bg-[linear-gradient(180deg,rgba(15,23,42,0.98)_0%,rgba(15,23,42,0.95)_100%)] sticky top-0 z-[100]" />
-})
+import Navbar from "@/components/Navbar"
 const HomeSeoContent = dynamic(() => import("@/components/home/HomeSeoContent").then(m => m.HomeSeoContent), { ssr: false, loading: () => null })
 const HomeSocialProof = dynamic(() => import("@/components/home/HomeSocialProof").then(m => m.HomeSocialProof), { ssr: false, loading: () => null })
 const SiteCompanyFooter = dynamic(() => import("@/components/seo/SiteCompanyFooter").then(m => m.SiteCompanyFooter), { ssr: false, loading: () => null })
@@ -225,6 +223,7 @@ export default function HomePageClient() {
 
                 <Link
                   href={banner.id === 5 ? "/seller/register" : "/search"}
+                  prefetch={false}
                   className="mt-8 group/btn bg-gradient-to-r from-[#f97316] to-[#ff9100] text-white text-[14px] font-black py-4 px-10 rounded-2xl shadow-xl shadow-orange-500/30 hover:opacity-90 transition-opacity duration-200 inline-flex items-center gap-4 uppercase tracking-wider"
                 >
                   {banner.btn1}
@@ -318,6 +317,7 @@ export default function HomePageClient() {
             <Link 
               key={index} 
               href="/search"
+              prefetch={false}
               className="flex items-center gap-5 p-6 hover:bg-slate-50 transition-all cursor-pointer group"
             >
               <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center group-hover:scale-110 group-hover:shadow-lg transition-all duration-500">
@@ -335,7 +335,7 @@ export default function HomePageClient() {
       {/* MADSJEEZ Ads: espacios patrocinados con campanas reales */}
       <section
         id="publicidad-madsjeez-ads"
-        className="max-w-[1184px] mx-auto px-4 mb-12 scroll-mt-24 rounded-2xl border-2 border-[#3483FA]/35 bg-gradient-to-b from-sky-50/95 via-white to-white py-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]"
+        className="cv-auto max-w-[1184px] mx-auto px-4 mb-12 scroll-mt-24 rounded-2xl border-2 border-[#3483FA]/35 bg-gradient-to-b from-sky-50/95 via-white to-white py-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]"
         aria-label="Espacios publicitarios activos del marketplace"
       >
         <p className="mb-2 text-center text-xs font-black uppercase tracking-[0.2em] text-[#2968c8]">
@@ -355,7 +355,7 @@ export default function HomePageClient() {
       </section>
 
       {/* QUÉ ES MADSJEEZ — resumen para todos los perfiles */}
-      <section className="max-w-[1184px] mx-auto px-4 mb-14" aria-labelledby="about-madsjeez-heading">
+      <section className="cv-auto max-w-[1184px] mx-auto px-4 mb-14" aria-labelledby="about-madsjeez-heading">
         <div className="rounded-2xl border border-slate-200/80 bg-gradient-to-b from-slate-50 to-white shadow-sm overflow-hidden">
           <div className="px-6 py-8 md:px-10 md:py-10 border-b border-slate-100 bg-white/80">
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#3483FA] mb-2">
@@ -452,6 +452,7 @@ export default function HomePageClient() {
                 <p className="text-[13px] md:text-sm text-slate-600 leading-relaxed flex-1 mb-4">{card.text}</p>
                 <Link
                   href={card.href}
+                  prefetch={false}
                   className="inline-flex items-center gap-1 text-[13px] font-semibold text-[#1a56db] hover:text-[#1e40af] mt-auto"
                 >
                   {card.cta}
@@ -474,7 +475,7 @@ export default function HomePageClient() {
       </section>
 
       {/* MADS PRO BANNER */}
-      <section className="max-w-[1184px] mx-auto px-4 mb-10">
+      <section className="cv-auto max-w-[1184px] mx-auto px-4 mb-10">
         <div className="overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.96)_0%,rgba(15,23,42,0.90)_100%)] shadow-[0_22px_55px_rgba(2,6,23,0.28)]">
           <div className="flex flex-col sm:flex-row justify-between items-center px-6 py-5 border-b border-white/10 gap-4">
             <div className="flex items-center gap-3">
@@ -624,7 +625,7 @@ export default function HomePageClient() {
       </section>
 
       {/* PLANES DE VENDEDOR */}
-      <section className="bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] py-20 px-4">
+      <section className="cv-auto bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] py-20 px-4">
         <div className="text-center max-w-2xl mx-auto mb-16">
           <h2 className="text-4xl md:text-5xl font-black text-white mb-4 tracking-tight">
             ¿LISTO PARA <span className="bg-gradient-to-r from-[#f97316] via-[#ffb703] to-[#00b4d8] bg-clip-text text-transparent">ESCALAR?</span>
