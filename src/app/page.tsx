@@ -82,7 +82,7 @@ const heroBanners = [
     desc: "Tecnología, Moda y Hogar con el respaldo del Commerce Group líder en la región.",
     btn1: "Explorar Colección",
     Icon: ShoppingCart,
-    image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1200&q=80",
+    image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=900&q=65&fm=webp",
     bgGradient: "from-blue-600 via-slate-900 to-indigo-950",
     accent: "blue"
   },
@@ -95,7 +95,7 @@ const heroBanners = [
     desc: "Hasta 50% de beneficio directo en marcas seleccionadas. Solo por 24 horas.",
     btn1: "Cazar Ofertas",
     Icon: Zap,
-    image: "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&w=1200&q=80",
+    image: "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&w=900&q=65&fm=webp",
     bgGradient: "from-rose-700 via-slate-900 to-black",
     accent: "rose"
   },
@@ -108,7 +108,7 @@ const heroBanners = [
     desc: "Nuestra propia flota logística garantiza la entrega en menos de 24hs con seguimiento en tiempo real.",
     btn1: "Saber más",
     Icon: Truck,
-    image: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaeb55?auto=format&fit=crop&w=1200&q=80", 
+    image: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaeb55?auto=format&fit=crop&w=900&q=65&fm=webp", 
     bgGradient: "from-emerald-800 via-slate-900 to-black",
     accent: "emerald",
     isLogistics: true
@@ -122,7 +122,7 @@ const heroBanners = [
     desc: "Hardware de última generación con cuotas fijas y garantía extendida oficial.",
     btn1: "Ver Setup",
     Icon: Gamepad2,
-    image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1200&q=80",
+    image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=900&q=65&fm=webp",
     bgGradient: "from-purple-800 via-slate-900 to-indigo-950",
     accent: "purple"
   },
@@ -135,7 +135,7 @@ const heroBanners = [
     desc: "Vende en la plataforma de mayor crecimiento. Dashboard avanzado y logística integrada.",
     btn1: "Ser Vendedor Pro",
     Icon: TrendingUp,
-    image: "https://images.unsplash.com/photo-1556761175-4b46a572b786?auto=format&fit=crop&w=1200&q=80",
+    image: "https://images.unsplash.com/photo-1556761175-4b46a572b786?auto=format&fit=crop&w=900&q=65&fm=webp",
     bgGradient: "from-amber-600 via-slate-900 to-black",
     accent: "amber"
   },
@@ -148,7 +148,7 @@ const heroBanners = [
     desc: "Comprá tranquilo. Tu dinero está protegido por protocolos de seguridad de alta gama.",
     btn1: "Centro de Confianza",
     Icon: ShieldCheck,
-    image: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=1200&q=80",
+    image: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=900&q=65&fm=webp",
     bgGradient: "from-slate-700 via-slate-900 to-blue-950",
     accent: "slate"
   }

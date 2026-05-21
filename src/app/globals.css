@@ -361,48 +361,67 @@ body {
    ============================================ */
 
 .animate-pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
+  animation: pulse-glow 3s ease-in-out infinite;
+  will-change: box-shadow;
 }
 
 .animate-pulse-glow-blue {
-  animation: pulse-glow-blue 2s ease-in-out infinite;
+  animation: pulse-glow-blue 3s ease-in-out infinite;
+  will-change: box-shadow;
 }
 
 .animate-pulse-glow-yellow {
-  animation: pulse-glow-yellow 2s ease-in-out infinite;
+  animation: pulse-glow-yellow 3s ease-in-out infinite;
+  will-change: box-shadow;
 }
 
 .animate-float {
-  animation: float 4s ease-in-out infinite;
+  animation: float 6s ease-in-out infinite;
+  will-change: transform;
 }
 
 .animate-float-reverse {
-  animation: float-reverse 4s ease-in-out infinite;
+  animation: float-reverse 6s ease-in-out infinite;
+  will-change: transform;
 }
 
 .animate-bounce-soft {
-  animation: bounce-soft 2s ease-in-out infinite;
+  animation: bounce-soft 3s ease-in-out infinite;
+  will-change: transform;
 }
 
 .animate-scale-pulse {
-  animation: scale-pulse 2s ease-in-out infinite;
+  animation: scale-pulse 3s ease-in-out infinite;
+  will-change: transform;
 }
 
 .animate-gradient {
   background-size: 200% 200%;
-  animation: gradient-shift 5s ease infinite;
+  animation: gradient-shift 8s ease infinite;
 }
 
 .animate-glow-border {
-  animation: glow-border 2s ease-in-out infinite;
+  animation: glow-border 3s ease-in-out infinite;
+  will-change: box-shadow;
 }
 
 .animate-spin-slow {
-  animation: spin-slow 8s linear infinite;
+  animation: spin-slow 12s linear infinite;
+  will-change: transform;
 }
 
 .animate-wiggle {
-  animation: wiggle 1s ease-in-out infinite;
+  animation: wiggle 1.5s ease-in-out infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse-glow, .animate-pulse-glow-blue, .animate-pulse-glow-yellow,
+  .animate-float, .animate-float-reverse, .animate-bounce-soft,
+  .animate-scale-pulse, .animate-gradient, .animate-glow-border,
+  .animate-spin-slow, .animate-wiggle, .floating-ui, .letter-piece {
+    animation: none !important;
+  }
 }
 
 /* ============================================
@@ -765,8 +784,10 @@ body {
 
 .glass-panel {
   background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(16px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.1);
+  contain: layout paint;
 }
 
 .floating-ui {

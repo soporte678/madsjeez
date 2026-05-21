@@ -10,13 +10,15 @@ import { FloatingBotsLazy } from "@/components/FloatingBotsLazy"
 const outfit = Outfit({
   variable: "--font-outfit",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800", "900"],
+  weight: ["400", "500", "700", "900"],
+  display: "swap",
 })
 
 const montserrat = Montserrat({
   variable: "--font-montserrat",
   subsets: ["latin"],
   weight: ["800", "900"],
+  display: "swap",
 })
 
 export const metadata: Metadata = {
@@ -73,7 +75,7 @@ export default function RootLayout({
         <link
           rel="preload"
           as="image"
-          href="https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=60"
+          href="https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=900&q=65&fm=webp"
           fetchPriority="high"
         />
       </head>
