@@ -23,14 +23,16 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  // Protect driver routes — require NextAuth session
+  // Protect driver routes — require active FlashDriver account
   if (pathname.startsWith("/driver") && !pathname.startsWith("/driver/login")) {
     const token = await getToken({
       req: request,
       secret: process.env.NEXTAUTH_SECRET,
     })
-    if (!token) {
-      return NextResponse.redirect(new URL("/driver/login", request.url))
+    if (!token || !token.isDriver) {
+      const url = new URL("/driver/login", request.url)
+      if (token && !token.isDriver) url.searchParams.set("error", "not_driver")
+      return NextResponse.redirect(url)
     }
   }
 

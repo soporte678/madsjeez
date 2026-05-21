@@ -1,23 +1,33 @@
 "use client"
 import { useState, useEffect } from "react"
 import { signIn, useSession } from "next-auth/react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Zap, Mail, Lock, Loader2, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Suspense } from "react"
 
-export default function DriverLoginPage() {
+function DriverLoginForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { data: session, status } = useSession()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
+  const [error, setError] = useState(
+    searchParams.get("error") === "not_driver"
+      ? "Esta cuenta no tiene acceso al portal de transportistas. Contactá al administrador."
+      : ""
+  )
 
-  // Si ya está autenticado, redirigir directo al dashboard
+  // Si ya está autenticado como chofer, redirigir directo al dashboard
   useEffect(() => {
-    if (status === "authenticated") router.replace("/driver")
+    if (status === "authenticated") {
+      fetch("/api/flash/drivers/me")
+        .then((r) => r.ok ? router.replace("/driver") : setError("Esta cuenta no tiene acceso al portal de transportistas. Contactá al administrador."))
+        .catch(() => router.replace("/driver"))
+    }
   }, [status, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -127,5 +137,17 @@ export default function DriverLoginPage() {
         Madsjeez Flash — Servicio de logística
       </p>
     </div>
+  )
+}
+
+export default function DriverLoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-black">
+        <Zap className="h-10 w-10 text-yellow-400 animate-pulse" />
+      </div>
+    }>
+      <DriverLoginForm />
+    </Suspense>
   )
 }

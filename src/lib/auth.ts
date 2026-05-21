@@ -233,6 +233,12 @@ export const authOptions: NextAuthOptions = {
             token.name = dbUser.name
             token.image = dbUser.image
             token.hasAccessKey = !!dbUser.accessKey
+            // Verificar si es transportista Flash
+            const driver = await prisma.flashDriver.findUnique({
+              where: { userId: dbUser.id },
+              select: { isActive: true },
+            })
+            token.isDriver = !!driver?.isActive
           }
         }
       }
