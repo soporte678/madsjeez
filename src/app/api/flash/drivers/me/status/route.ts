@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import type { FlashDriverDutyStatus } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { requireFlashDriver } from "@/lib/flash/auth"
+import { isPrismaSchemaDriftError } from "@/lib/flash/prisma-safe"
 
 const VALID: FlashDriverDutyStatus[] = ["OFFLINE", "ONLINE", "ON_TRIP", "ON_BREAK"]
 
@@ -35,11 +36,22 @@ export async function PATCH(req: NextRequest) {
     data.workMode = body.workMode
   }
 
-  const driver = await prisma.flashDriver.update({
-    where: { id: auth.driverId },
-    data,
-    select: { dutyStatus: true, workMode: true, connectedAt: true },
-  })
-
-  return NextResponse.json({ driver })
+  try {
+    const driver = await prisma.flashDriver.update({
+      where: { id: auth.driverId },
+      data,
+      select: { dutyStatus: true, workMode: true, connectedAt: true },
+    })
+    return NextResponse.json({ driver })
+  } catch (e) {
+    if (!isPrismaSchemaDriftError(e)) throw e
+    return NextResponse.json({
+      driver: {
+        dutyStatus: data.dutyStatus ?? "OFFLINE",
+        workMode: data.workMode ?? "hybrid",
+        connectedAt: data.connectedAt ?? null,
+      },
+      warning: "Migración Flash pendiente; el estado no se guardó en la base.",
+    })
+  }
 }

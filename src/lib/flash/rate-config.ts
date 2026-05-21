@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma"
+import { isPrismaSchemaDriftError } from "@/lib/flash/prisma-safe"
 
 /** Tarifas configurables desde admin — referencia inicial AR ~3032.90 por pedido */
 export type FlashRateSettings = {
@@ -30,24 +31,34 @@ export const DEFAULT_FLASH_RATE_SETTINGS: FlashRateSettings = {
 }
 
 export async function getFlashRateSettings(): Promise<FlashRateSettings> {
-  const row = await prisma.flashRateConfig.findUnique({ where: { id: "default" } })
-  if (!row?.settings || typeof row.settings !== "object") {
-    return DEFAULT_FLASH_RATE_SETTINGS
+  try {
+    const row = await prisma.flashRateConfig.findUnique({ where: { id: "default" } })
+    if (!row?.settings || typeof row.settings !== "object") {
+      return DEFAULT_FLASH_RATE_SETTINGS
+    }
+    return { ...DEFAULT_FLASH_RATE_SETTINGS, ...(row.settings as FlashRateSettings) }
+  } catch (e) {
+    if (isPrismaSchemaDriftError(e)) return DEFAULT_FLASH_RATE_SETTINGS
+    throw e
   }
-  return { ...DEFAULT_FLASH_RATE_SETTINGS, ...(row.settings as FlashRateSettings) }
 }
 
 export async function ensureFlashRateConfig(): Promise<void> {
-  const existing = await prisma.flashRateConfig.findUnique({ where: { id: "default" } })
-  if (!existing) {
-    await prisma.flashRateConfig.create({
-      data: {
-        id: "default",
-        label: "Tarifas Flash Argentina",
-        currency: "ARS",
-        settings: DEFAULT_FLASH_RATE_SETTINGS,
-      },
-    })
+  try {
+    const existing = await prisma.flashRateConfig.findUnique({ where: { id: "default" } })
+    if (!existing) {
+      await prisma.flashRateConfig.create({
+        data: {
+          id: "default",
+          label: "Tarifas Flash Argentina",
+          currency: "ARS",
+          settings: DEFAULT_FLASH_RATE_SETTINGS,
+        },
+      })
+    }
+  } catch (e) {
+    if (isPrismaSchemaDriftError(e)) return
+    throw e
   }
 }
 

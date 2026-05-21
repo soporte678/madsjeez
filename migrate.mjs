@@ -16,7 +16,7 @@ import { spawnSync } from "child_process";
 import path from "path";
 import { existsSync } from "fs";
 
-const MIGRATE_SCRIPT_TAG = "migrate.mjs 20260519b (meli_multi_account drop constraint)";
+const MIGRATE_SCRIPT_TAG = "migrate.mjs 20260521a (flash P3009 auto-resolve)";
 
 try {
   const dotenv = await import("dotenv");
@@ -866,6 +866,42 @@ await (async function runMigrate() {
           } else {
             console.error(
               "[migrate] P3009 add_last_catalog_import_at: probe falló:",
+              probe.error || probe.reason || "(sin detalle)"
+            );
+          }
+        } else if (failedName === "20260520200000_add_flash_system") {
+          const probe = await probePublicTableExists(tunedMigrateUrl, "flash_shipments");
+          if (probe.ok) {
+            const autoOff = isPrismaMigrateAutoResolveP3009DriftDisabled();
+            if (!autoOff) {
+              const useApplied = probe.exists === true;
+              console.warn(
+                `[migrate] P3009 add_flash_system: public.flash_shipments existe=${probe.exists}; ` +
+                  `migrate resolve --${useApplied ? "applied" : "rolled-back"} automático. ` +
+                  "Desactivar: PRISMA_MIGRATE_AUTO_RESOLVE_P3009_DRIFT=0"
+              );
+              const { status: rs, combined: rc } = runPrismaMigrateResolve(
+                tunedMigrateUrl,
+                failedName,
+                useApplied
+              );
+              if (rs === 0) {
+                console.warn("[migrate] migrate resolve OK; reintentando migrate deploy (mismo bucle).");
+                attempt -= 1;
+                continue attemptLoop;
+              }
+              console.error("[migrate] migrate resolve falló:", rc.slice(0, 900));
+            } else {
+              console.error(
+                `[migrate] P3009 add_flash_system: flash_shipments existe=${probe.exists}. ` +
+                  (probe.exists
+                    ? `Manual: npx prisma migrate resolve --applied "${failedName}"`
+                    : `Manual: npx prisma migrate resolve --rolled-back "${failedName}" y redeploy.`)
+              );
+            }
+          } else {
+            console.error(
+              "[migrate] P3009 add_flash_system: no se pudo comprobar flash_shipments:",
               probe.error || probe.reason || "(sin detalle)"
             );
           }

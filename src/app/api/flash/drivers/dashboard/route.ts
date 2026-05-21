@@ -1,8 +1,15 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { requireFlashDriver } from "@/lib/flash/auth"
-import { ensureFlashRateConfig, getFlashRateSettings } from "@/lib/flash/rate-config"
 import { estimateShipmentEarning } from "@/lib/flash/earnings-calculator"
+import {
+  safeEnsureFlashRateConfig,
+  safeFlashDriverBlocks,
+  safeFlashDriverEarnings,
+  safeFlashSupportOpenCount,
+  safeGetFlashDriver,
+  safeGetFlashRateSettings,
+} from "@/lib/flash/dashboard-safe"
 
 function startOfDay(d = new Date()) {
   const x = new Date(d)
@@ -22,20 +29,15 @@ export async function GET() {
   const auth = await requireFlashDriver()
   if (auth instanceof NextResponse) return auth
 
-  await ensureFlashRateConfig()
-  const rates = await getFlashRateSettings()
+  await safeEnsureFlashRateConfig()
+  const rates = await safeGetFlashRateSettings()
 
   const now = new Date()
   const dayStart = startOfDay(now)
   const weekStart = startOfWeek(now)
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
 
-  const driver = await prisma.flashDriver.findUnique({
-    where: { id: auth.driverId },
-    include: {
-      user: { select: { name: true, email: true, image: true } },
-    },
-  })
+  const driver = await safeGetFlashDriver(auth.driverId)
 
   if (!driver) {
     return NextResponse.json({ error: "Conductor no encontrado" }, { status: 404 })
@@ -51,11 +53,7 @@ export async function GET() {
     take: 80,
   })
 
-  const earnings = await prisma.flashDriverEarning.findMany({
-    where: { driverId: auth.driverId },
-    orderBy: { createdAt: "desc" },
-    take: 100,
-  })
+  const earnings = await safeFlashDriverEarnings(auth.driverId)
 
   const sumEarnings = (from: Date, to?: Date) => {
     return earnings
@@ -95,20 +93,9 @@ export async function GET() {
     ? Math.floor((now.getTime() - driver.connectedAt.getTime()) / 60000)
     : 0
 
-  const openTickets = await prisma.flashSupportTicket.count({
-    where: { driverId: auth.driverId, status: { in: ["OPEN", "IN_PROGRESS"] } },
-  })
+  const openTickets = await safeFlashSupportOpenCount(auth.driverId)
 
-  const availableBlocks = await prisma.flashDriverBlock.findMany({
-    where: {
-      OR: [
-        { status: "AVAILABLE", startsAt: { gte: now } },
-        { driverId: auth.driverId, status: { in: ["RESERVED", "ACTIVE"] } },
-      ],
-    },
-    orderBy: { startsAt: "asc" },
-    take: 10,
-  })
+  const availableBlocks = await safeFlashDriverBlocks(auth.driverId, now)
 
   const walletPending = earnings
     .filter((e) => e.status === "PENDING")
