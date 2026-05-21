@@ -6,14 +6,15 @@ import Link from "next/link"
 import { ChevronLeft, ChevronRight, Truck } from "lucide-react"
 import { useRotatingProducts } from "@/hooks/useRotatingProducts"
 
-interface RotatingProductCarouselProps {
+export interface RotatingProductCarouselProps {
   title: string
   subtitle?: string
   offset?: number
+  categorySlug?: string
 }
 
-export function RotatingProductCarousel({ title, subtitle, offset = 0 }: RotatingProductCarouselProps) {
-  const { products, loading, totalCount } = useRotatingProducts({ offset })
+export function RotatingProductCarousel({ title, subtitle, offset = 0, categorySlug }: RotatingProductCarouselProps) {
+  const { products, loading, totalCount } = useRotatingProducts({ offset, categorySlug })
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const [canScrollLeft, setCanScrollLeft] = useState(false)

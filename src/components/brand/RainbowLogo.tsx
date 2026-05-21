@@ -9,6 +9,7 @@ type RainbowLogoProps = {
   iconSizeClassName?: string;
   /** false = solo palabra MADSJEEZ (p. ej. barra admin) */
   showIcon?: boolean;
+  onClick?: () => void;
 };
 
 const letters = [
@@ -27,6 +28,7 @@ export default function RainbowLogo({
   textSizeClassName = "text-[22px]",
   iconSizeClassName = "w-10 h-10",
   showIcon = true,
+  onClick,
 }: RainbowLogoProps) {
   const logo = (
     <div className="flex items-center gap-2 group">
@@ -56,7 +58,7 @@ export default function RainbowLogo({
   );
 
   return (
-    <Link href={href} className="inline-flex items-center cursor-pointer">
+    <Link href={href} onClick={onClick} className="inline-flex items-center cursor-pointer">
       {logo}
     </Link>
   );
