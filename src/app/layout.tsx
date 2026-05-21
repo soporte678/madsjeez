@@ -3,9 +3,11 @@ import { Outfit, Montserrat } from "next/font/google"
 import "./globals.css"
 import { Providers } from "@/components/providers"
 import { ChatProvider } from "@/components/ChatContext"
-import FloatingBots from "@/components/FloatingBots"
 import ThemeToneInit from "@/components/theme/ThemeToneInit"
 import { DeferredAnalytics } from "@/components/seo/DeferredAnalytics"
+import dynamic from "next/dynamic"
+
+const FloatingBots = dynamic(() => import("@/components/FloatingBots"), { ssr: false })
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -67,6 +69,12 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://images.unsplash.com" />
+        <link
+          rel="preload"
+          as="image"
+          href="https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=60"
+          fetchPriority="high"
+        />
       </head>
       <body className="min-h-full flex flex-col font-outfit">
         <ThemeToneInit />

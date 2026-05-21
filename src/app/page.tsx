@@ -58,26 +58,6 @@ const demoRepurchase = [
   { id: 'r5', title: 'Desodorante Antitranspirante Pack x6 Unidades', originalPrice: 19990, price: 18990, discount: '5% OFF', shipping: 'Llega mañana', image: 'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?auto=format&fit=crop&w=300&q=80' },
 ]
 
-const categoriesData = [
-  { id: 1, name: 'Autos, Motos y Otros', image: 'https://cdn-icons-png.flaticon.com/128/3204/3204061.png', slug: 'autos-motos' },
-  { id: 2, name: 'Accesorios para Vehículos', image: 'https://cdn-icons-png.flaticon.com/128/3085/3085330.png', slug: 'accesorios-vehiculos' },
-  { id: 3, name: 'Hogar, Muebles y Jardín', image: 'https://cdn-icons-png.flaticon.com/128/2550/2550232.png', slug: 'hogar-muebles' },
-  { id: 4, name: 'Celulares y Teléfonos', image: 'https://cdn-icons-png.flaticon.com/128/3014/3014493.png', slug: 'celulares' },
-  { id: 5, name: 'Ropa y Accesorios', image: 'https://cdn-icons-png.flaticon.com/128/3159/3159614.png', slug: 'ropa-accesorios' },
-  { id: 6, name: 'Computación', image: 'https://cdn-icons-png.flaticon.com/128/3081/3081559.png', slug: 'computacion' },
-  { id: 7, name: 'Electrodomésticos y Aires Ac.', image: 'https://cdn-icons-png.flaticon.com/128/3613/3613243.png', slug: 'electrodomesticos' },
-  { id: 8, name: 'Deportes y Fitness', image: 'https://cdn-icons-png.flaticon.com/128/2964/2964514.png', slug: 'deportes' },
-  { id: 9, name: 'Inmuebles', image: 'https://cdn-icons-png.flaticon.com/128/2550/2550232.png', slug: 'inmuebles' },
-  { id: 10, name: 'Herramientas', image: 'https://cdn-icons-png.flaticon.com/128/2916/2916315.png', slug: 'herramientas' },
-  { id: 11, name: 'Belleza y Cuidado Personal', image: 'https://cdn-icons-png.flaticon.com/128/1005/1005769.png', slug: 'belleza' },
-  { id: 12, name: 'Electrónica, Audio y Video', image: 'https://cdn-icons-png.flaticon.com/128/1252/1252006.png', slug: 'electronica' },
-  { id: 13, name: 'Agro', image: 'https://cdn-icons-png.flaticon.com/128/2965/2965313.png', slug: 'agro' },
-  { id: 14, name: 'Alimentos y Bebidas', image: 'https://cdn-icons-png.flaticon.com/128/3082/3082008.png', slug: 'alimentos' },
-  { id: 15, name: 'Juegos y Juguetes', image: 'https://cdn-icons-png.flaticon.com/128/3082/3082060.png', slug: 'juguetes' },
-  { id: 16, name: 'Mascotas', image: 'https://cdn-icons-png.flaticon.com/128/3047/3047928.png', slug: 'mascotas' },
-  { id: 17, name: 'Construcción', image: 'https://cdn-icons-png.flaticon.com/128/3038/3038089.png', slug: 'construccion' },
-  { id: 18, name: 'Cámaras y Accesorios', image: 'https://cdn-icons-png.flaticon.com/128/3004/3004613.png', slug: 'camaras' },
-]
 
 // Configuración de letras para el logo cinético
 const logoLetters = [
@@ -191,7 +171,7 @@ export default function Home() {
   }, [])
 
   useEffect(() => {
-    async function fetchProducts() {
+    const timer = setTimeout(async () => {
       const supabase = createClient()
       const { data: prods } = await supabase
         .from('products')
@@ -213,8 +193,8 @@ export default function Home() {
         setProducts(mapped.slice(0, 6))
         setRecentProducts(mapped.slice(6, 12))
       }
-    }
-    fetchProducts()
+    }, 2000)
+    return () => clearTimeout(timer)
   }, [])
 
   const handleSearch = (e: React.FormEvent) => {
@@ -230,16 +210,19 @@ export default function Home() {
 
       {/* HERO SECTION */}
       <section className="relative bg-black overflow-hidden h-[550px] md:h-[700px] flex items-center group pb-16 md:pb-24">
-        {heroBanners.map((banner, index) => (
+        {heroBanners.map((banner, index) => {
+          const isActive = currentSlide === index
+          const isAdjacent = index === (currentSlide + 1) % heroBanners.length
+          if (!isActive && !isAdjacent) return null
+          return (
           <div 
             key={banner.id} 
             className={`absolute inset-0 w-full h-full transition-all duration-1000 ease-[cubic-bezier(0.23,1,0.32,1)] ${
-              currentSlide === index ? "opacity-100 z-10 translate-x-0" : "opacity-0 z-0 translate-x-12 pointer-events-none"
+              isActive ? "opacity-100 z-10 translate-x-0" : "opacity-0 z-0 translate-x-12 pointer-events-none"
             }`}
           >
             <div className={`absolute inset-0 bg-gradient-to-br ${banner.bgGradient}`}></div>
-            <div className="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-blue-500/10 blur-[150px] animate-pulse"></div>
-            <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-yellow-500/5 blur-[120px]"></div>
+            {isActive && <div className="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-blue-500/10 blur-[80px]"></div>}
             <div className="absolute inset-0 bg-pattern opacity-[0.15]"></div>
 
             <div className="max-w-7xl mx-auto px-4 h-full flex flex-col md:flex-row items-center justify-between gap-12 relative z-20">
@@ -320,13 +303,15 @@ export default function Home() {
               </div>
             </div>
           </div>
-        ))}
+          )
+        })}
         
         <div className="absolute bottom-16 left-1/2 -translate-x-1/2 flex items-center gap-4 z-[50]">
           {heroBanners.map((_, index) => (
             <button
               key={index}
               onClick={() => setCurrentSlide(index)}
+              aria-label={`Ver slide ${index + 1}`}
               className={`transition-all duration-700 rounded-full ${
                 currentSlide === index 
                   ? "w-16 h-2 bg-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.8)]" 
@@ -447,7 +432,7 @@ export default function Home() {
 
       {/* 5. CATEGORÍAS (Grilla 3 filas con scroll) */}
       <section className="max-w-[1184px] mx-auto px-4">
-        <CategoryCarousel categories={categoriesData} />
+        <CategoryCarousel />
       </section>
 
       {/* 6. CARRUSEL: También puede interesarte */}
