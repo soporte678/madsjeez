@@ -56,6 +56,7 @@ type PreviewRow = {
   skipReason?: string;
   meliCategoryId?: string | null;
   hasVariations?: boolean;
+  isCatalogListing?: boolean;
 };
 
 type ImportPreview = {
@@ -87,12 +88,15 @@ type LocalUnpublished = {
 
 type QuickFilter =
   | "all"
+  | "standard_only"
   | "active_only"
   | "updates_only"
   | "new_only"
   | "skip_only"
   | "price_diff"
   | "stock_diff";
+
+type MeliListingKind = "standard" | "catalog" | "all";
 
 const fmtMoney = (n: number) =>
   new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
@@ -206,6 +210,7 @@ export default function MeliIntegrationView() {
   const [localUnpublished, setLocalUnpublished] = useState<LocalUnpublished[]>([]);
   const [loadingLocal, setLoadingLocal] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
+  const [listingKind, setListingKind] = useState<MeliListingKind>("standard");
 
   const loadStatus = useCallback(async () => {
     setLoadingStatus(true);
@@ -333,6 +338,7 @@ export default function MeliIntegrationView() {
         maxPages: "50",
         sampleSize: "2000",
         accountId: selectedAccountId,
+        listingKind,
       });
       const r = await fetch(`/api/meli/import?${qs.toString()}`);
       const d = await r.json();
@@ -368,6 +374,7 @@ export default function MeliIntegrationView() {
   const filteredRows = useMemo(() => {
     let rows = importPreview?.rows ?? [];
     const q = search.trim().toLowerCase();
+    if (quickFilter === "standard_only") rows = rows.filter((x) => !x.isCatalogListing);
     if (quickFilter === "active_only") rows = rows.filter((x) => x.status.toLowerCase() === "active");
     if (quickFilter === "updates_only") rows = rows.filter((x) => x.action === "update");
     if (quickFilter === "new_only") rows = rows.filter((x) => x.action === "create");
@@ -430,6 +437,57 @@ export default function MeliIntegrationView() {
   const headerPullIndeterminate =
     filteredRows.some((x) => selectedPullIds.has(x.id)) && !headerPullChecked;
 
+  const runImportAllStandard = async () => {
+    if (!selectedAccountId) {
+      toast.error("Seleccioná una cuenta de Mercado Libre");
+      return;
+    }
+    if (
+      !window.confirm(
+        "¿Importar automáticamente TODAS las publicaciones estándar de esta cuenta ML? (sin catálogo ML). Puede tardar varios minutos."
+      )
+    ) {
+      return;
+    }
+    setImporting(true);
+    setRowPullErrors({});
+    try {
+      const r = await fetch("/api/meli/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          maxPages: 50,
+          accountId: selectedAccountId,
+          persistImages: true,
+          listingKind: "standard",
+          importAll: true,
+          confirmed: true,
+        }),
+      });
+      const d = await r.json();
+      if (!r.ok) {
+        toast.error(d.error || "Error al importar");
+        return;
+      }
+      const skippedN = Number(d.skipped) || 0;
+      toast.success(
+        `Importación automática: ${d.imported} nuevas, ${d.updated} actualizadas` +
+          (skippedN > 0 ? `, ${skippedN} omitidas` : "")
+      );
+      await loadImportPreview(true);
+      await loadStatus();
+      if (d.errorCount > 0) {
+        toast.message(`${d.errorCount} avisos`, {
+          description: (d.errors || []).slice(0, 3).join(" · "),
+        });
+      }
+    } catch {
+      toast.error("Error de red al importar");
+    } finally {
+      setImporting(false);
+    }
+  };
+
   const runImport = async () => {
     if (!importPreview?.rows?.length) {
       toast.error("Primero cargá la vista previa del catálogo");
@@ -450,6 +508,7 @@ export default function MeliIntegrationView() {
           maxPages: 50,
           accountId: selectedAccountId,
           persistImages: true,
+          listingKind,
           requireConfirm: true,
           confirmed: true,
           itemIds: ids,
@@ -722,11 +781,24 @@ export default function MeliIntegrationView() {
                 Importar publicaciones (Mercado Libre {"→"} MADSJEEZ)
               </h3>
               <p className="mt-1 text-sm text-slate-400">
-                Traé título, fotos, precio y stock desde Mercado Libre. Marcá solo las filas que querés aplicar.
+                Traé título, fotos, precio y stock desde Mercado Libre. Por defecto solo publicaciones{" "}
+                <strong className="text-slate-200">estándar</strong> (sin catálogo ML).
               </p>
             </div>
           </div>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="flex items-center gap-2 text-sm text-slate-300">
+              <span>Tipo en ML:</span>
+              <select
+                value={listingKind}
+                onChange={(e) => setListingKind(e.target.value as MeliListingKind)}
+                className={meliSelect}
+              >
+                <option value="standard">Solo estándar (sin catálogo)</option>
+                <option value="catalog">Solo catálogo ML</option>
+                <option value="all">Todas</option>
+              </select>
+            </label>
             <button
               type="button"
               disabled={!meliStatus?.connected || loadingImportPreview || importing}
@@ -739,6 +811,16 @@ export default function MeliIntegrationView() {
                 <RefreshCw className="h-4 w-4" />
               )}
               {loadingImportPreview ? "Leyendo catálogo..." : "Cargar / refrescar vista previa"}
+            </button>
+            <button
+              type="button"
+              disabled={!meliStatus?.connected || importing}
+              onClick={runImportAllStandard}
+              className={meliBtnGradient}
+              title="Importa todas las publicaciones estándar de la cuenta activa sin seleccionar fila por fila"
+            >
+              {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              Importar todas (solo estándar)
             </button>
             <button
               type="button"
@@ -805,6 +887,7 @@ export default function MeliIntegrationView() {
                     className={meliSelect}
                   >
                     <option value="all">Todas</option>
+                    <option value="standard_only">Solo estándar (sin catálogo)</option>
                     <option value="active_only">Solo activas</option>
                     <option value="updates_only">Solo para actualizar</option>
                     <option value="new_only">Solo nuevas (crear)</option>

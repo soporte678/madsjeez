@@ -17,6 +17,7 @@ import {
   mapMeliItemToProductCore,
   primaryPriceFromMeliItem,
 } from "./item-mapper";
+import { isMeliCatalogListing, type MeliListingKind } from "./listing-kind";
 
 export { extractSellerSku };
 
@@ -37,6 +38,7 @@ export type MeliImportPreviewRow = {
   skipReason?: string;
   meliCategoryId: string | null;
   hasVariations: boolean;
+  isCatalogListing: boolean;
 };
 
 export type MeliImportItemResult = {
@@ -119,7 +121,7 @@ async function importSingleMeliItem(
   itemId: string,
   errors: string[],
   itemResults: MeliImportItemResult[],
-  options: { persistImages: boolean },
+  options: { persistImages: boolean; listingKind: MeliListingKind },
   dedupe: SellerDedupeIndex
 ): Promise<{ kind: "imported" | "updated" | "skipped" }> {
   const itemRes = await meliGetItem(accessToken, itemId);
@@ -130,6 +132,19 @@ async function importSingleMeliItem(
     return { kind: "skipped" };
   }
   const item = itemRes.data as MeliItemDetail;
+
+  if (options.listingKind === "standard" && isMeliCatalogListing(item)) {
+    const msg = "Publicación de catálogo ML (omitida; solo estándar)";
+    errors.push(`${itemId}: ${msg}`);
+    itemResults.push({ itemId: item.id, ok: false, error: msg });
+    return { kind: "skipped" };
+  }
+  if (options.listingKind === "catalog" && !isMeliCatalogListing(item)) {
+    const msg = "Publicación estándar (omitida; solo catálogo ML)";
+    errors.push(`${itemId}: ${msg}`);
+    itemResults.push({ itemId: item.id, ok: false, error: msg });
+    return { kind: "skipped" };
+  }
 
   let plainDescription = "";
   const descRes = await meliGetItemDescription(accessToken, itemId);
@@ -247,6 +262,8 @@ export async function importMeliItemsForUser(
     maxPages?: number;
     itemIds?: string[];
     persistImages?: boolean;
+    /** standard = solo tradicionales (catalog_listing=false en ML) */
+    listingKind?: MeliListingKind;
   }
 ): Promise<{
   imported: number;
@@ -257,6 +274,7 @@ export async function importMeliItemsForUser(
 }> {
   const maxPages = Math.min(Math.max(options?.maxPages ?? 50, 1), 100);
   const persistImages = options?.persistImages !== false;
+  const listingKind = options?.listingKind ?? "all";
   const filterIds = options?.itemIds?.length
     ? [...new Set(options.itemIds.map((x) => String(x).trim()).filter(Boolean))]
     : null;
@@ -282,7 +300,7 @@ export async function importMeliItemsForUser(
         itemId,
         errors,
         itemResults,
-        { persistImages },
+        { persistImages, listingKind },
         dedupe
       );
       if (r.kind === "imported") imported++;
@@ -297,7 +315,7 @@ export async function importMeliItemsForUser(
   const seenIds = new Set<string>();
 
   while (pages < maxPages) {
-    const search = await meliSearchUserItems(accessToken, meliUserId, scrollId);
+    const search = await meliSearchUserItems(accessToken, meliUserId, scrollId, listingKind);
     if (!search.ok) {
       errors.push(`items/search HTTP ${search.status}`);
       break;
@@ -321,7 +339,7 @@ export async function importMeliItemsForUser(
         itemId,
         errors,
         itemResults,
-        { persistImages },
+        { persistImages, listingKind },
         dedupe
       );
       if (r.kind === "imported") imported++;
@@ -339,7 +357,7 @@ export async function previewMeliItemsForUser(
   prismaUserId: string,
   accessToken: string,
   meliUserId: string,
-  options?: { maxPages?: number; sampleSize?: number }
+  options?: { maxPages?: number; sampleSize?: number; listingKind?: MeliListingKind }
 ): Promise<{
   totalFound: number;
   uniqueFound: number;
@@ -358,6 +376,7 @@ export async function previewMeliItemsForUser(
 }> {
   const maxPages = Math.min(Math.max(options?.maxPages ?? 30, 1), 100);
   const sampleCap = Math.min(Math.max(options?.sampleSize ?? 25, 5), 2000);
+  const listingKind = options?.listingKind ?? "all";
 
   let scrollId: string | undefined;
   let pages = 0;
@@ -381,7 +400,7 @@ export async function previewMeliItemsForUser(
   const dedupe = createSellerDedupeIndex(sellerProducts);
 
   while (pages < maxPages) {
-    const search = await meliSearchUserItems(accessToken, meliUserId, scrollId);
+    const search = await meliSearchUserItems(accessToken, meliUserId, scrollId, listingKind);
     if (!search.ok) {
       warnings.push(`items/search HTTP ${search.status}`);
       break;
@@ -417,6 +436,15 @@ export async function previewMeliItemsForUser(
         continue;
       }
       const item = itemRes.data as MeliItemDetail;
+      const catalogListing = isMeliCatalogListing(item);
+      if (listingKind === "standard" && catalogListing) {
+        skippedDuplicates++;
+        continue;
+      }
+      if (listingKind === "catalog" && !catalogListing) {
+        skippedDuplicates++;
+        continue;
+      }
       const status = (item.status || "unknown").toLowerCase();
       const condition = mapCondition(item.condition);
       const listingType = (item.listing_type_id || "unknown").toLowerCase();
@@ -483,6 +511,7 @@ export async function previewMeliItemsForUser(
         skipReason,
         meliCategoryId: item.category_id || null,
         hasVariations: Boolean(item.variations?.length),
+        isCatalogListing: catalogListing,
       });
     }
 

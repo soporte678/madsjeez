@@ -1,4 +1,5 @@
 import type { MeliItemDetail } from "./types";
+import { meliListingKindSearchParam, type MeliListingKind } from "./listing-kind";
 
 /** Mercado Libre API helpers (server-only). */
 
@@ -35,9 +36,14 @@ export type MeliItemsSearchResponse = {
 export async function meliSearchUserItems(
   accessToken: string,
   meliUserId: string,
-  scrollId?: string
+  scrollId?: string,
+  listingKind: MeliListingKind = "all"
 ) {
   const qs = new URLSearchParams({ limit: "100" });
+  const catalogListing = meliListingKindSearchParam(listingKind);
+  if (catalogListing != null) {
+    qs.set("catalog_listing", catalogListing);
+  }
   if (scrollId) {
     qs.set("search_type", "scan");
     qs.set("scroll_id", scrollId);

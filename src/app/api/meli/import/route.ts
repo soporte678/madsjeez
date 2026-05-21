@@ -3,7 +3,13 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getMeliAccessTokenForUser } from "@/lib/meli/prisma-session";
 import { importMeliItemsForUser, previewMeliItemsForUser } from "@/lib/meli/import-service";
+import type { MeliListingKind } from "@/lib/meli/listing-kind";
 import { prisma } from "@/lib/prisma";
+
+function parseListingKind(raw: unknown): MeliListingKind {
+  if (raw === "standard" || raw === "catalog" || raw === "all") return raw;
+  return "all";
+}
 
 function accountIdFrom(body: Record<string, unknown>, url: URL): string | undefined {
   const b = typeof body.accountId === "string" ? body.accountId : undefined;
@@ -22,6 +28,7 @@ export async function GET(req: Request) {
     const maxPages = Math.min(Math.max(Number(url.searchParams.get("maxPages") || 30), 1), 100);
     const sampleSize = Math.min(Math.max(Number(url.searchParams.get("sampleSize") || 500), 5), 2000);
     const aid = url.searchParams.get("accountId") || undefined;
+    const listingKind = parseListingKind(url.searchParams.get("listingKind") || "standard");
 
     const tok = await getMeliAccessTokenForUser(session.user.id, aid);
     if (!tok) {
@@ -36,6 +43,7 @@ export async function GET(req: Request) {
     const preview = await previewMeliItemsForUser(session.user.id, tok.accessToken, tok.meliUserId, {
       maxPages,
       sampleSize,
+      listingKind,
     });
 
     return NextResponse.json({
@@ -43,6 +51,7 @@ export async function GET(req: Request) {
       accountId: tok.accountId,
       meliUserId: tok.meliUserId,
       accountLabel: oauth?.label || oauth?.nickname || oauth?.meliUserId,
+      listingKind,
       preview,
       lastSuccessfulImportAt: oauth?.lastCatalogImportAt?.toISOString() ?? null,
     });
@@ -72,9 +81,13 @@ export async function POST(req: Request) {
     const confirmed = Boolean(body.confirmed);
     const persistImages = body.persistImages !== false;
     const aid = accountIdFrom(body, url);
-    const itemIds = Array.isArray(body.itemIds)
-      ? body.itemIds.map((x: unknown) => String(x)).filter(Boolean)
-      : undefined;
+    const listingKind = parseListingKind(body.listingKind ?? "standard");
+    const importAll = Boolean(body.importAll);
+    const itemIds = importAll
+      ? undefined
+      : Array.isArray(body.itemIds)
+        ? body.itemIds.map((x: unknown) => String(x)).filter(Boolean)
+        : undefined;
 
     const tok = await getMeliAccessTokenForUser(session.user.id, aid);
     if (!tok) {
@@ -88,10 +101,12 @@ export async function POST(req: Request) {
       const preview = await previewMeliItemsForUser(session.user.id, tok.accessToken, tok.meliUserId, {
         maxPages,
         sampleSize: 50,
+        listingKind,
       });
       return NextResponse.json({
         ok: false,
         needsConfirmation: true,
+        listingKind,
         preview,
         message: "Revisá la vista previa y confirmá para importar.",
       });
@@ -105,6 +120,7 @@ export async function POST(req: Request) {
       {
         maxPages,
         persistImages,
+        listingKind,
         ...(itemIds?.length ? { itemIds } : {}),
       }
     );
@@ -120,6 +136,8 @@ export async function POST(req: Request) {
     return NextResponse.json({
       ok: true,
       accountId: tok.accountId,
+      listingKind,
+      importAll,
       imported: result.imported,
       updated: result.updated,
       skipped: result.skipped,

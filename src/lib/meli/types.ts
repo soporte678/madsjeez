@@ -33,6 +33,9 @@ export type MeliItemDetail = {
   original_price?: number | null;
   currency_id?: string;
   status?: string;
+  /** true = publicación de catálogo ML; false/omitido = tradicional */
+  catalog_listing?: boolean;
+  catalog_product_id?: string | null;
   listing_type_id?: string;
   available_quantity?: number;
   sold_quantity?: number;
