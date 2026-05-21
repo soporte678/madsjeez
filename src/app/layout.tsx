@@ -1,11 +1,11 @@
 import type { Metadata } from "next"
 import { Outfit, Montserrat } from "next/font/google"
-import Script from "next/script"
 import "./globals.css"
 import { Providers } from "@/components/providers"
 import { ChatProvider } from "@/components/ChatContext"
 import FloatingBots from "@/components/FloatingBots"
 import ThemeToneInit from "@/components/theme/ThemeToneInit"
+import { DeferredAnalytics } from "@/components/seo/DeferredAnalytics"
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -69,19 +69,8 @@ export default function RootLayout({
         <link rel="preconnect" href="https://images.unsplash.com" />
       </head>
       <body className="min-h-full flex flex-col font-outfit">
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-ZXW730HR8"
-          strategy="afterInteractive"
-        />
-        <Script id="ga4-init" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-ZXW730HR8');
-          `}
-        </Script>
         <ThemeToneInit />
+        <DeferredAnalytics />
         <ChatProvider>
           <Providers>
             {children}
