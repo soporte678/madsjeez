@@ -157,11 +157,6 @@ export default function Navbar() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&family=Outfit:wght@300;400;500;600&display=swap');
-        
-        .font-montserrat { font-family: 'Montserrat', sans-serif; }
-        .font-outfit { font-family: 'Outfit', sans-serif; }
-
         @keyframes assemble {
           0% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity: 0; }
           100% { transform: translate(0, 0) rotate(0) scale(1); opacity: 1; }

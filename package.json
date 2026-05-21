@@ -60,6 +60,7 @@
     "@types/pg": "^8.20.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "autoprefixer": "^10.5.0",
     "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
@@ -70,5 +71,13 @@
   },
   "engines": {
     "node": ">=20.9.0"
-  }
+  },
+  "browserslist": [
+    "chrome >= 109",
+    "firefox >= 110",
+    "safari >= 16",
+    "edge >= 109",
+    "not dead",
+    "not op_mini all"
+  ]
 }

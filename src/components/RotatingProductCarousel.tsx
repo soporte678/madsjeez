@@ -22,18 +22,20 @@ export function RotatingProductCarousel({ title, subtitle, offset = 0 }: Rotatin
   const displayProducts = products
 
   const checkScroll = () => {
-    if (scrollRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current
-      setCanScrollLeft(scrollLeft > 10)
-      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10)
-    }
+    requestAnimationFrame(() => {
+      if (scrollRef.current) {
+        const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current
+        setCanScrollLeft(scrollLeft > 10)
+        setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10)
+      }
+    })
   }
 
   useEffect(() => {
     checkScroll()
     const el = scrollRef.current
     if (el) {
-      el.addEventListener("scroll", checkScroll)
+      el.addEventListener("scroll", checkScroll, { passive: true })
       return () => el.removeEventListener("scroll", checkScroll)
     }
   }, [displayProducts])
