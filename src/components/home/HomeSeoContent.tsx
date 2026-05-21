@@ -14,7 +14,7 @@ export function HomeSeoContent() {
     >
       <article className="rounded-2xl border border-slate-200/80 bg-white shadow-sm overflow-hidden">
         <div className="px-6 py-8 md:px-10 md:py-10 border-b border-slate-100">
-          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#3483FA] mb-2">
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#1a56db] mb-2">
             Guía del marketplace
           </p>
           <h2
@@ -38,7 +38,7 @@ export function HomeSeoContent() {
             </h3>
             <p className="mb-4">
               Desde la home podés explorar{" "}
-              <Link href="/search" className="text-[#3483FA] font-semibold hover:underline">
+              <Link href="/search" className="text-[#1a56db] font-semibold hover:underline">
                 todo el catálogo
               </Link>
               , filtrar por categoría o palabra clave y comparar precios entre publicaciones. Cada
@@ -50,7 +50,7 @@ export function HomeSeoContent() {
             <p className="mb-4">
               Si tenés dudas antes de comprar, podés consultar al vendedor desde la ficha del
               producto o revisar opiniones de otros compradores. Las{" "}
-              <Link href="/offers" className="text-[#3483FA] font-semibold hover:underline">
+              <Link href="/offers" className="text-[#1a56db] font-semibold hover:underline">
                 ofertas y promociones
               </Link>{" "}
               del marketplace se actualizan con campañas de vendedores y eventos estacionales, para
@@ -70,7 +70,7 @@ export function HomeSeoContent() {
               Los comercios, ferreterías, tiendas de electrónica y emprendimientos pueden{" "}
               <Link
                 href="/seller/register"
-                className="text-[#3483FA] font-semibold hover:underline"
+                className="text-[#1a56db] font-semibold hover:underline"
               >
                 registrarse como vendedores
               </Link>{" "}
@@ -87,7 +87,7 @@ export function HomeSeoContent() {
               La logística integrada y los acuerdos con transportistas ayudan a cumplir plazos de
               entrega prometidos, mientras el equipo de soporte acompaña reclamos y casos excepcionales
               desde el{" "}
-              <Link href="/help" className="text-[#3483FA] font-semibold hover:underline">
+              <Link href="/help" className="text-[#1a56db] font-semibold hover:underline">
                 centro de ayuda
               </Link>
               .
@@ -146,7 +146,7 @@ export function HomeSeoContent() {
               recorré categorías y ofertas. Si tenés un negocio,{" "}
               <Link
                 href="/vender"
-                className="text-[#3483FA] font-semibold hover:underline"
+                className="text-[#1a56db] font-semibold hover:underline"
               >
                 conocé cómo vender en Madsjeez
               </Link>{" "}

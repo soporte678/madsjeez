@@ -190,7 +190,7 @@ export function RotatingProductCarousel({ title, subtitle, offset = 0 }: Rotatin
 
               {product.sellerName && (
                 <div className="mt-2 text-[11px] text-muted-foreground">
-                  por <span className="text-muted-foreground/90">{product.sellerName}</span>
+                  por <span className="text-muted-foreground">{product.sellerName}</span>
                 </div>
               )}
             </div>

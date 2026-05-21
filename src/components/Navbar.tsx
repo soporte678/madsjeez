@@ -228,12 +228,12 @@ export default function Navbar() {
         .search-shadow { box-shadow: 0 1px 2px 0 rgba(0,0,0,0.2); }
         .nav-link {
           cursor: pointer;
-          color: rgba(226, 232, 240, 0.88);
+          color: #e2e8f0;
           transition: color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
         }
         .nav-link:hover { color: #ffffff; transform: translateY(-1px); }
         .nav-link-muted {
-          color: rgba(203, 213, 225, 0.95);
+          color: #cbd5e1;
           transition: color 0.2s ease, opacity 0.2s ease;
         }
         .nav-link-muted:hover { color: #ffffff; }

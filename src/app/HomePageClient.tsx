@@ -381,7 +381,7 @@ export default function HomePageClient() {
                 Operado desde {COMPANY.address.city} por{" "}
                 <strong className="text-slate-800">{COMPANY.founder.name}</strong>, {COMPANY.founder.role}.{" "}
                 {COMPANY.mission}{" "}
-                <Link href="/quienes-somos" className="text-[#3483FA] font-semibold hover:underline">
+                <Link href="/quienes-somos" className="text-[#1a56db] font-semibold hover:underline">
                   Conocé nuestra historia y visión
                 </Link>
                 .
@@ -444,7 +444,7 @@ export default function HomePageClient() {
                 className="flex flex-col rounded-xl border border-slate-100 bg-white p-5 shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:border-[#3483FA]/30 hover:shadow-md transition-all duration-300"
               >
                 <div className="flex items-start gap-3 mb-3">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#3483FA]/10 text-[#3483FA]">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#1a56db]/10 text-[#1a56db]">
                     <card.Icon className="h-5 w-5" strokeWidth={2} />
                   </span>
                   <h3 className="text-[16px] font-bold text-slate-900 leading-snug pt-1">{card.title}</h3>
@@ -452,7 +452,7 @@ export default function HomePageClient() {
                 <p className="text-[13px] md:text-sm text-slate-600 leading-relaxed flex-1 mb-4">{card.text}</p>
                 <Link
                   href={card.href}
-                  className="inline-flex items-center gap-1 text-[13px] font-semibold text-[#3483FA] hover:text-[#2968c8] mt-auto"
+                  className="inline-flex items-center gap-1 text-[13px] font-semibold text-[#1a56db] hover:text-[#1e40af] mt-auto"
                 >
                   {card.cta}
                   <ChevronRight className="h-4 w-4" />
