@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { requireAdminRequest } from "@/lib/admin-api"
 
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions)
-  if (!session?.user) return NextResponse.json({ error: "No autenticado" }, { status: 401 })
+  const admin = await requireAdminRequest(req)
+  if (admin instanceof NextResponse) return admin
 
   const email = req.nextUrl.searchParams.get("email")?.trim().toLowerCase()
   if (!email) return NextResponse.json({ error: "Email requerido" }, { status: 400 })

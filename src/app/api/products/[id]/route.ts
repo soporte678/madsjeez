@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { isMarketplaceAdminEmail } from "@/lib/admin-api"
 
 async function assertCanManageProduct(productId: string) {
   const session = await getServerSession(authOptions)
@@ -22,7 +23,7 @@ async function assertCanManageProduct(productId: string) {
     }
   }
 
-  const isAdmin = (session.user as { role?: string }).role === "ADMIN"
+  const isAdmin = await isMarketplaceAdminEmail(session.user.email)
   if (!isAdmin && product.sellerId !== session.user.id) {
     return {
       error: NextResponse.json({ error: "No tienes permiso para modificar este producto" }, { status: 403 }),

@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { requireAdminRequest } from "@/lib/admin-api"
 
 // All MercadoLibre Argentina categories with subcategories
 const MELI_CATEGORIES = [
@@ -325,7 +326,10 @@ function slugify(text: string): string {
     .trim()
 }
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  const admin = await requireAdminRequest(request)
+  if (admin instanceof NextResponse) return admin
+
   try {
     let created = 0
 

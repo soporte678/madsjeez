@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { isMarketplaceAdminEmail } from "@/lib/admin-api"
 
 // PUT /api/questions/[id] - Responder una pregunta
 export async function PUT(
@@ -138,7 +139,7 @@ export async function DELETE(
 
     // Solo el comprador puede eliminar sus preguntas pendientes
     const isBuyer = question.buyerId === session.user.id
-    const isAdmin = (session.user as any).role === "ADMIN"
+    const isAdmin = await isMarketplaceAdminEmail(session.user.email)
     
     if (!isBuyer && !isAdmin) {
       return NextResponse.json(

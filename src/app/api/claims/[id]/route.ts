@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { isMarketplaceAdminEmail } from "@/lib/admin-api"
 import { ClaimStatus } from "@prisma/client"
 
 const RESOLUTION_ALLOWED_STATUSES = new Set<ClaimStatus>([
@@ -137,7 +138,7 @@ export async function PUT(
     }
 
     const isSeller = claim.sellerId === session.user.id
-    const isAdmin = (session.user as { role?: string }).role === "ADMIN"
+    const isAdmin = await isMarketplaceAdminEmail(session.user.email)
 
     // Solo el vendedor o admin pueden resolver
     if (!isSeller && !isAdmin) {

@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { adminJson, requireFlashAdmin } from "@/lib/flash/auth"
 
-// POST /api/flash/drivers/[id]/approve — admin activa un transportista pendiente
-export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getServerSession(authOptions)
-  if (!session?.user) return NextResponse.json({ error: "No autenticado" }, { status: 401 })
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const admin = await requireFlashAdmin(req)
+  if (admin instanceof NextResponse) return admin
 
   const { id } = await params
 
@@ -16,13 +14,12 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     include: { user: { select: { name: true, email: true } } },
   })
 
-  return NextResponse.json({ driver })
+  return adminJson(admin, { driver })
 }
 
-// DELETE /api/flash/drivers/[id]/approve — rechazar / desactivar transportista
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getServerSession(authOptions)
-  if (!session?.user) return NextResponse.json({ error: "No autenticado" }, { status: 401 })
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const admin = await requireFlashAdmin(req)
+  if (admin instanceof NextResponse) return admin
 
   const { id } = await params
 
@@ -31,5 +28,5 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     data: { isActive: false },
   })
 
-  return NextResponse.json({ ok: true })
+  return adminJson(admin, { ok: true })
 }

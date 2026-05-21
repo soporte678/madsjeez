@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { Pool } from "pg";
 import { getGa4TrafficSummary } from "@/lib/ga4";
+import { requireAdminRequest } from "@/lib/admin-api";
 
 export const dynamic = "force-dynamic";
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -29,7 +30,10 @@ function isMissingWebVisitsTable(err: unknown): boolean {
   );
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const admin = await requireAdminRequest(request);
+  if (admin instanceof NextResponse) return admin;
+
   try {
     const ga4 = await getGa4TrafficSummary().catch(() => null);
     if (ga4) {

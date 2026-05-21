@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { logFlashAudit } from "@/lib/flash/audit"
+import { adminActorId, adminJson, requireFlashAdmin } from "@/lib/flash/auth"
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getServerSession(authOptions)
-  if (!session?.user) return NextResponse.json({ error: "No autenticado" }, { status: 401 })
+  const admin = await requireFlashAdmin(req)
+  if (admin instanceof NextResponse) return admin
 
   const { id } = await params
   const { driverId } = await req.json()
@@ -16,9 +15,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     prisma.flashDriver.findUnique({ where: { id: driverId } }),
   ])
 
-  if (!shipment) return NextResponse.json({ error: "Envío no encontrado" }, { status: 404 })
-  if (!driver) return NextResponse.json({ error: "Chofer no encontrado" }, { status: 404 })
-  if (!driver.isActive) return NextResponse.json({ error: "Chofer inactivo" }, { status: 400 })
+  if (!shipment) return adminJson(admin, { error: "Envío no encontrado" }, { status: 404 })
+  if (!driver) return adminJson(admin, { error: "Chofer no encontrado" }, { status: 404 })
+  if (!driver.isActive) return adminJson(admin, { error: "Chofer inactivo" }, { status: 400 })
 
   const updated = await prisma.flashShipment.update({
     where: { id },
@@ -28,7 +27,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   await logFlashAudit({
     shipmentId: id,
-    actorId: (session.user as { id: string }).id,
+    actorId: adminActorId(admin),
     actorRole: "ADMIN",
     action: "DRIVER_ASSIGNED",
     previousStatus: shipment.status,
@@ -36,5 +35,5 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     metadata: { driverId },
   })
 
-  return NextResponse.json({ shipment: updated })
+  return adminJson(admin, { shipment: updated })
 }

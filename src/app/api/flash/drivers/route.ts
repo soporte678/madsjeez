@@ -1,19 +1,21 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { adminActorId, adminJson, requireFlashAdmin } from "@/lib/flash/auth"
 
-// GET — lista choferes (admin): activos + pendientes de aprobación
+// GET — lista choferes (solo admin del panel /admin)
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions)
-  if (!session?.user) return NextResponse.json({ error: "No autenticado" }, { status: 401 })
+  const admin = await requireFlashAdmin(req)
+  if (admin instanceof NextResponse) return admin
 
   const { searchParams } = new URL(req.url)
-  const filter = searchParams.get("filter") // "active" | "pending" | undefined = all
+  const filter = searchParams.get("filter")
 
-  const where = filter === "active" ? { isActive: true }
-    : filter === "pending" ? { isActive: false }
-    : {}
+  const where =
+    filter === "active"
+      ? { isActive: true }
+      : filter === "pending"
+        ? { isActive: false }
+        : {}
 
   const drivers = await prisma.flashDriver.findMany({
     where,
@@ -24,23 +26,29 @@ export async function GET(req: NextRequest) {
     orderBy: { createdAt: "desc" },
   })
 
-  return NextResponse.json({ drivers })
+  return adminJson(admin, { drivers })
 }
 
-// POST — registra un nuevo chofer
+// POST — registra un nuevo chofer (admin)
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions)
-  if (!session?.user) return NextResponse.json({ error: "No autenticado" }, { status: 401 })
+  const admin = await requireFlashAdmin(req)
+  if (admin instanceof NextResponse) return admin
 
   const { userId, vehicleType, licenseNumber, phone } = await req.json()
 
   const existing = await prisma.flashDriver.findUnique({ where: { userId } })
-  if (existing) return NextResponse.json({ error: "Este usuario ya es chofer" }, { status: 409 })
+  if (existing) return adminJson(admin, { error: "Este usuario ya es chofer" }, { status: 409 })
 
   const driver = await prisma.flashDriver.create({
-    data: { userId, vehicleType: vehicleType ?? "moto", licenseNumber, phone },
+    data: {
+      userId,
+      vehicleType: vehicleType ?? "moto",
+      licenseNumber,
+      phone,
+      isActive: true,
+    },
     include: { user: { select: { name: true, email: true } } },
   })
 
-  return NextResponse.json({ driver }, { status: 201 })
+  return adminJson(admin, { driver }, { status: 201 })
 }

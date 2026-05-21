@@ -35,8 +35,8 @@ export default function SetupReputationPage() {
     )
   }
 
-  if (!session || session.user?.role !== "ADMIN") {
-    router.push("/")
+  if (!session) {
+    router.push("/admin/login")
     return null
   }
 

@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { isMarketplaceAdminEmail } from "@/lib/admin-api"
 
 interface WholesalePriceInput {
   min_quantity: number
@@ -36,7 +37,7 @@ async function assertCanManageWholesalePrices(productId: string) {
     }
   }
 
-  const isAdmin = (session.user as { role?: string }).role === "ADMIN"
+  const isAdmin = await isMarketplaceAdminEmail(session.user.email)
   if (!isAdmin && product.sellerId !== session.user.id) {
     return {
       error: NextResponse.json({ error: "No tienes permiso para modificar precios de este producto" }, { status: 403 }),

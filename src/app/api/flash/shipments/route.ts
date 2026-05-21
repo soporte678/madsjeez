@@ -5,8 +5,18 @@ import { prisma } from "@/lib/prisma"
 import { validateFlashAddress } from "@/lib/flash/types"
 import { generateQrToken } from "@/lib/flash/qr"
 import { logFlashAudit } from "@/lib/flash/audit"
+import { adminJson, requireFlashAdmin } from "@/lib/flash/auth"
 
-// POST /api/flash/shipments — crea un envío Flash al confirmar pago
+const shipmentInclude = {
+  order: { select: { orderNumber: true, buyer: { select: { name: true, email: true } } } },
+  driver: { include: { user: { select: { name: true, email: true } } } },
+  attempts: { include: { photos: true }, orderBy: { attemptNumber: "asc" } as const },
+  authorizedPeople: { select: { id: true, name: true, dni: true } },
+  deliveryProof: true,
+  auditLogs: { orderBy: { createdAt: "asc" } as const },
+}
+
+// POST — comprador crea envío Flash
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session?.user) return NextResponse.json({ error: "No autenticado" }, { status: 401 })
@@ -23,13 +33,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Datos incompletos", details: errors }, { status: 422 })
   }
 
-  // Verificar que la orden existe y pertenece al usuario
   const order = await prisma.order.findFirst({
     where: { id: orderId, buyerId: (session.user as { id: string }).id },
   })
   if (!order) return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 })
 
-  // No crear duplicado
   const existing = await prisma.flashShipment.findUnique({ where: { orderId } })
   if (existing) return NextResponse.json({ shipment: existing }, { status: 200 })
 
@@ -69,17 +77,41 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ shipment }, { status: 201 })
 }
 
-// GET /api/flash/shipments — lista envíos del vendedor o comprador
+// GET — listado (admin panel | vendedor | comprador | chofer)
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions)
-  if (!session?.user) return NextResponse.json({ error: "No autenticado" }, { status: 401 })
-
-  const userId = (session.user as { id: string }).id
   const { searchParams } = new URL(req.url)
   const role = searchParams.get("role") ?? "buyer"
   const page = parseInt(searchParams.get("page") ?? "1")
   const limit = 20
   const skip = (page - 1) * limit
+
+  if (role === "admin") {
+    const admin = await requireFlashAdmin(req)
+    if (admin instanceof NextResponse) return admin
+
+    const [shipments, total] = await Promise.all([
+      prisma.flashShipment.findMany({
+        where: {},
+        include: shipmentInclude,
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.flashShipment.count(),
+    ])
+
+    return adminJson(admin, {
+      shipments,
+      total,
+      page,
+      pages: Math.ceil(total / limit),
+    })
+  }
+
+  const session = await getServerSession(authOptions)
+  if (!session?.user) return NextResponse.json({ error: "No autenticado" }, { status: 401 })
+
+  const userId = (session.user as { id: string }).id
 
   let where = {}
   if (role === "seller") {
@@ -87,25 +119,14 @@ export async function GET(req: NextRequest) {
   } else if (role === "driver") {
     const driver = await prisma.flashDriver.findUnique({ where: { userId } })
     where = driver ? { driverId: driver.id } : { id: "none" }
-  } else if (role === "admin") {
-    where = {} // all shipments
   } else {
     where = { order: { buyerId: userId } }
-  }
-
-  const include = {
-    order: { select: { orderNumber: true, buyer: { select: { name: true, email: true } } } },
-    driver: { include: { user: { select: { name: true, email: true } } } },
-    attempts: { include: { photos: true }, orderBy: { attemptNumber: "asc" } as const },
-    authorizedPeople: { select: { id: true, name: true, dni: true } },
-    deliveryProof: true,
-    auditLogs: { orderBy: { createdAt: "asc" } as const },
   }
 
   const [shipments, total] = await Promise.all([
     prisma.flashShipment.findMany({
       where,
-      include,
+      include: shipmentInclude,
       orderBy: { createdAt: "desc" },
       skip,
       take: limit,

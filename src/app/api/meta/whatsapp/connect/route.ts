@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { isMarketplaceAdminEmail } from "@/lib/admin-api"
 
 // API para conectar número de WhatsApp Business
 export async function POST(request: Request) {
@@ -12,7 +13,7 @@ export async function POST(request: Request) {
     }
 
     const { phoneNumber, businessName, sellerId } = await request.json()
-    const isAdmin = (session.user as { role?: string }).role === "ADMIN"
+    const isAdmin = await isMarketplaceAdminEmail(session.user.email)
     if (!isAdmin && sellerId !== session.user.id) {
       return NextResponse.json({ error: "No tienes permiso para modificar este vendedor" }, { status: 403 })
     }
