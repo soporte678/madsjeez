@@ -218,13 +218,12 @@ export const authOptions: NextAuthOptions = {
       return true
     },
     async jwt({ token, user, account, trigger }) {
-      // Si es login inicial, obtener datos de la BD
-      if (trigger === "signIn" || !token.id) {
-        if (token.email) {
-          const dbUser = await prisma.user.findUnique({
-            where: { email: token.email as string }
-          })
-          if (dbUser) {
+      if (token.email) {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: token.email as string },
+        })
+        if (dbUser) {
+          if (trigger === "signIn" || !token.id) {
             token.id = dbUser.id
             token.role = dbUser.role
             token.isSeller = dbUser.isSeller
@@ -233,13 +232,12 @@ export const authOptions: NextAuthOptions = {
             token.name = dbUser.name
             token.image = dbUser.image
             token.hasAccessKey = !!dbUser.accessKey
-            // Verificar si es transportista Flash
-            const driver = await prisma.flashDriver.findUnique({
-              where: { userId: dbUser.id },
-              select: { isActive: true },
-            })
-            token.isDriver = !!driver?.isActive
           }
+          const driver = await prisma.flashDriver.findUnique({
+            where: { userId: dbUser.id },
+            select: { isActive: true },
+          })
+          token.isDriver = !!driver?.isActive
         }
       }
       return token
