@@ -3,13 +3,15 @@
 import { useState, useEffect } from "react"
 import dynamic from "next/dynamic"
 import Image from "next/image"
-import Navbar from "@/components/Navbar"
-import { HomeSeoContent } from "@/components/home/HomeSeoContent"
-import { HomeSocialProof } from "@/components/home/HomeSocialProof"
-import { SiteCompanyFooter } from "@/components/seo/SiteCompanyFooter"
-import { SiteSocialFooter } from "@/components/seo/SiteSocialFooter"
-import { COMPANY } from "@/lib/company"
 import Link from "next/link"
+import { COMPANY } from "@/lib/company"
+const Navbar = dynamic(() => import("@/components/Navbar"), {
+  loading: () => <div className="w-full h-[100px] bg-[linear-gradient(180deg,rgba(15,23,42,0.98)_0%,rgba(15,23,42,0.95)_100%)] sticky top-0 z-[100]" />
+})
+const HomeSeoContent = dynamic(() => import("@/components/home/HomeSeoContent").then(m => m.HomeSeoContent), { ssr: false, loading: () => null })
+const HomeSocialProof = dynamic(() => import("@/components/home/HomeSocialProof").then(m => m.HomeSocialProof), { ssr: false, loading: () => null })
+const SiteCompanyFooter = dynamic(() => import("@/components/seo/SiteCompanyFooter").then(m => m.SiteCompanyFooter), { ssr: false, loading: () => null })
+const SiteSocialFooter = dynamic(() => import("@/components/seo/SiteSocialFooter").then(m => m.SiteSocialFooter), { ssr: false, loading: () => null })
 import {
   ShoppingCart,
   Gamepad2,

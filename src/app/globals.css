@@ -523,11 +523,8 @@ body {
 .bg-mesh {
   background-color: var(--background);
   background-image:
-    radial-gradient(at 40% 20%, rgba(255, 77, 46, 0.14) 0px, transparent 52%),
-    radial-gradient(at 82% 0%, rgba(0, 180, 216, 0.12) 0px, transparent 50%),
-    radial-gradient(at 0% 48%, rgba(255, 183, 3, 0.12) 0px, transparent 50%),
-    radial-gradient(at 78% 52%, rgba(219, 39, 119, 0.1) 0px, transparent 52%),
-    radial-gradient(at 0% 100%, rgba(16, 185, 129, 0.08) 0px, transparent 50%);
+    radial-gradient(at 40% 20%, rgba(255, 77, 46, 0.12) 0px, transparent 52%),
+    radial-gradient(at 82% 0%, rgba(0, 180, 216, 0.10) 0px, transparent 50%);
 }
 
 /* ============================================
