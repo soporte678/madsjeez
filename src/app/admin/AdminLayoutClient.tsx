@@ -3,6 +3,12 @@
 import { useEffect, useState } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
+import { AdminThemeToggle } from "@/components/admin/AdminThemeToggle"
+import {
+  getStoredAdminTheme,
+  storeAdminTheme,
+  type AdminTheme,
+} from "@/lib/admin-theme"
 import {
   Activity,
   CreditCard,
@@ -146,6 +152,16 @@ export function AdminLayoutClient({
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(
     menuGroups.reduce((acc, group) => ({ ...acc, [group.title]: true }), {})
   )
+  const [adminTheme, setAdminTheme] = useState<AdminTheme>("dark")
+
+  useEffect(() => {
+    setAdminTheme(getStoredAdminTheme())
+  }, [])
+
+  const handleThemeChange = (theme: AdminTheme) => {
+    setAdminTheme(theme)
+    storeAdminTheme(theme)
+  }
 
   const user = propUser || { id: "", email: "", user_metadata: {} }
   const role = propRole || null
@@ -229,11 +245,20 @@ export function AdminLayoutClient({
   if (isLoginPage) return <>{children}</>
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-950 font-sans text-slate-100">
+    <div
+      data-admin-theme={adminTheme}
+      className="admin-root flex h-screen overflow-hidden font-sans"
+      style={{ background: "var(--admin-bg)", color: "var(--admin-text)" }}
+    >
       <aside
-        className={`hidden flex-col bg-slate-900 text-slate-300 shadow-2xl transition-all duration-300 md:flex ${
+        className={`hidden flex-col shadow-2xl transition-all duration-300 md:flex ${
           isSidebarOpen ? "w-[280px]" : "w-[70px]"
         }`}
+        style={{
+          background: "var(--admin-sidebar-bg)",
+          color: "var(--admin-sidebar-text)",
+          borderRight: "1px solid var(--admin-border)",
+        }}
       >
         <div className="flex h-16 shrink-0 items-center justify-between border-b border-yellow-400 bg-[#FFF159] px-4">
           <div className={`flex items-center gap-2 text-lg font-extrabold tracking-tight text-[#2D3277] ${!isSidebarOpen && "hidden"}`}>
@@ -251,7 +276,10 @@ export function AdminLayoutClient({
           </button>
         </div>
 
-        <div className={`flex shrink-0 items-center border-b border-slate-800 bg-slate-950 p-4 ${!isSidebarOpen && "justify-center"}`}>
+        <div
+          className={`flex shrink-0 items-center border-b p-4 ${!isSidebarOpen && "justify-center"}`}
+          style={{ borderColor: "var(--admin-border)", background: "var(--admin-bg)" }}
+        >
           <div className="mr-3 flex h-10 w-10 shrink-0 items-center justify-center rounded bg-blue-600 font-bold text-white shadow-lg">
             {adminUser.avatar_url ? (
               <img src={adminUser.avatar_url} alt="" className="h-full w-full rounded object-cover" />
@@ -261,28 +289,34 @@ export function AdminLayoutClient({
           </div>
           {isSidebarOpen ? (
             <div className="overflow-hidden">
-              <p className="truncate text-sm font-bold text-white">{displayName}</p>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-blue-400">
+              <p className="truncate text-sm font-bold" style={{ color: "var(--admin-text)" }}>
+                {displayName}
+              </p>
+              <p
+                className="text-[10px] font-bold uppercase tracking-wider"
+                style={{ color: "var(--admin-accent)" }}
+              >
                 {role?.name || "Admin"} Nivel {role?.level || 1}
               </p>
             </div>
           ) : null}
         </div>
 
-        <nav className="custom-scrollbar flex-1 overflow-y-auto py-2">
+        <nav className="admin-scrollbar custom-scrollbar flex-1 overflow-y-auto py-2">
           {menuGroups.map((group) => (
             <div key={group.title} className="mb-2">
               {isSidebarOpen ? (
                 <button
                   onClick={() => toggleGroup(group.title)}
-                  className="flex w-full items-center justify-between px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-slate-500 transition-colors hover:text-slate-300"
+                  className="flex w-full items-center justify-between px-4 py-2 text-[11px] font-bold uppercase tracking-widest transition-colors"
+                  style={{ color: "var(--admin-sidebar-muted)" }}
                 >
                   {group.title}
                   {expandedGroups[group.title] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                 </button>
               ) : (
                 <div className="px-2 py-1">
-                  <div className="my-2 h-px bg-slate-700" />
+                  <div className="my-2 h-px" style={{ background: "var(--admin-border)" }} />
                 </div>
               )}
 
@@ -296,17 +330,34 @@ export function AdminLayoutClient({
                         href={item.href}
                         className={`flex w-full items-center rounded-md text-sm transition-all ${
                           isSidebarOpen ? "px-3 py-2" : "justify-center px-2 py-2"
-                        } ${
+                        } ${isActive ? "font-medium text-white shadow-md" : ""}`}
+                        style={
                           isActive
-                            ? "bg-blue-600 font-medium text-white shadow-md"
-                            : "text-slate-400 hover:bg-slate-800 hover:text-white"
-                        }`}
+                            ? { background: "var(--admin-nav-active)", color: "#fff" }
+                            : {
+                                color: "var(--admin-sidebar-muted)",
+                              }
+                        }
+                        onMouseEnter={(e) => {
+                          if (!isActive) {
+                            e.currentTarget.style.background = "var(--admin-hover)"
+                            e.currentTarget.style.color = "var(--admin-text)"
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isActive) {
+                            e.currentTarget.style.background = ""
+                            e.currentTarget.style.color = "var(--admin-sidebar-muted)"
+                          }
+                        }}
                         title={!isSidebarOpen ? item.label : undefined}
                       >
-                        <item.icon
-                          size={18}
-                          className={`${isSidebarOpen ? "mr-3" : ""} ${isActive ? "text-white" : "text-slate-500"}`}
-                        />
+                        <span
+                          className={isSidebarOpen ? "mr-3 inline-flex" : "inline-flex"}
+                          style={{ color: isActive ? "#fff" : "var(--admin-sidebar-muted)" }}
+                        >
+                          <item.icon size={18} />
+                        </span>
                         {isSidebarOpen ? <span className="truncate">{item.label}</span> : null}
                       </Link>
                     )
@@ -317,12 +368,21 @@ export function AdminLayoutClient({
           ))}
         </nav>
 
-        <div className="shrink-0 border-t border-slate-800 p-4">
+        <div className="shrink-0 border-t p-4" style={{ borderColor: "var(--admin-border)" }}>
           <button
             onClick={handleLogout}
-            className={`flex w-full items-center rounded-md text-slate-400 transition-all hover:bg-slate-800 hover:text-white ${
+            className={`flex w-full items-center rounded-md transition-all ${
               isSidebarOpen ? "px-3 py-2" : "justify-center px-2 py-2"
             }`}
+            style={{ color: "var(--admin-sidebar-muted)" }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "var(--admin-hover)"
+              e.currentTarget.style.color = "var(--admin-text)"
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = ""
+              e.currentTarget.style.color = "var(--admin-sidebar-muted)"
+            }}
             title={!isSidebarOpen ? "Cerrar sesión" : undefined}
           >
             <LogOut size={18} className={isSidebarOpen ? "mr-3" : ""} />
@@ -333,8 +393,18 @@ export function AdminLayoutClient({
 
       {isMobileMenuOpen ? (
         <>
-          <div className="fixed inset-0 z-40 bg-slate-900/80 backdrop-blur-sm md:hidden" onClick={() => setIsMobileMenuOpen(false)} />
-          <aside className="fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col bg-slate-900 text-slate-300 shadow-2xl md:hidden">
+          <div
+            className="fixed inset-0 z-40 backdrop-blur-sm md:hidden"
+            style={{ background: "color-mix(in srgb, var(--admin-sidebar-bg) 85%, transparent)" }}
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+          <aside
+            className="fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col shadow-2xl md:hidden"
+            style={{
+              background: "var(--admin-sidebar-bg)",
+              color: "var(--admin-sidebar-text)",
+            }}
+          >
             <div className="flex h-16 shrink-0 items-center justify-between border-b border-yellow-400 bg-[#FFF159] px-4">
               <div className="flex items-center gap-2 text-lg font-extrabold tracking-tight text-[#2D3277]">
                 <div className="flex h-8 w-8 items-center justify-center rounded bg-[#2D3277] text-sm text-white shadow-inner">MQ</div>
@@ -350,7 +420,8 @@ export function AdminLayoutClient({
                 <div key={group.title} className="mb-4">
                   <button
                     onClick={() => toggleGroup(group.title)}
-                    className="flex w-full items-center justify-between px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-slate-500"
+                    className="flex w-full items-center justify-between px-4 py-2 text-[11px] font-bold uppercase tracking-widest"
+                    style={{ color: "var(--admin-sidebar-muted)" }}
                   >
                     {group.title}
                     {expandedGroups[group.title] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
@@ -365,12 +436,20 @@ export function AdminLayoutClient({
                             href={item.href}
                             onClick={() => setIsMobileMenuOpen(false)}
                             className={`flex w-full items-center rounded-md px-3 py-2 text-sm transition-all ${
-                              isActive
-                                ? "bg-blue-600 font-medium text-white"
-                                : "text-slate-400 hover:bg-slate-800 hover:text-white"
+                              isActive ? "font-medium text-white" : ""
                             }`}
+                            style={
+                              isActive
+                                ? { background: "var(--admin-nav-active)", color: "#fff" }
+                                : { color: "var(--admin-sidebar-muted)" }
+                            }
                           >
-                            <item.icon size={16} className={`mr-3 ${isActive ? "text-white" : "text-slate-500"}`} />
+                            <span
+                              className="mr-3 inline-flex"
+                              style={{ color: isActive ? "#fff" : "var(--admin-sidebar-muted)" }}
+                            >
+                              <item.icon size={16} />
+                            </span>
                             <span className="truncate">{item.label}</span>
                           </Link>
                         )
@@ -380,8 +459,12 @@ export function AdminLayoutClient({
                 </div>
               ))}
             </nav>
-            <div className="border-t border-slate-800 p-4">
-              <button onClick={handleLogout} className="flex w-full items-center rounded-md px-3 py-2 text-slate-400 hover:bg-slate-800 hover:text-white">
+            <div className="border-t p-4" style={{ borderColor: "var(--admin-border)" }}>
+              <button
+                onClick={handleLogout}
+                className="flex w-full items-center rounded-md px-3 py-2"
+                style={{ color: "var(--admin-sidebar-muted)" }}
+              >
                 <LogOut size={18} className="mr-3" />
                 <span className="text-sm">Cerrar sesión</span>
               </button>
@@ -390,14 +473,32 @@ export function AdminLayoutClient({
         </>
       ) : null}
 
-      <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-slate-950">
-        <header className="z-10 flex h-16 shrink-0 items-center justify-between border-b border-slate-800 bg-slate-950/95 px-4 shadow-sm backdrop-blur md:px-6">
+      <main
+        className="flex min-w-0 flex-1 flex-col overflow-hidden"
+        style={{ background: "var(--admin-bg)" }}
+      >
+        <header
+          className="z-10 flex h-16 shrink-0 items-center justify-between border-b px-4 shadow-sm backdrop-blur md:px-6"
+          style={{
+            borderColor: "var(--admin-border)",
+            background: "var(--admin-header-bg)",
+          }}
+        >
           <div className="flex max-w-3xl flex-1 items-center">
-            <button className="mr-3 text-slate-300 md:hidden" onClick={() => setIsMobileMenuOpen(true)}>
+            <button
+              className="mr-3 md:hidden"
+              style={{ color: "var(--admin-text-muted)" }}
+              onClick={() => setIsMobileMenuOpen(true)}
+            >
               <Menu size={24} />
             </button>
             <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" size={18} />
+              <span
+                className="absolute left-3 top-1/2 -translate-y-1/2 inline-flex"
+                style={{ color: "var(--admin-text-muted)" }}
+              >
+                <Search size={18} />
+              </span>
               <input
                 id="omnibox"
                 type="text"
@@ -409,23 +510,62 @@ export function AdminLayoutClient({
                   }
                 }}
                 placeholder="Omnibox: Buscar por ID de orden, usuario, tracking... (Ctrl+K)"
-                className="w-full rounded-lg border border-slate-800 bg-slate-900 py-2.5 pl-10 pr-4 text-sm text-white outline-none transition-all placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15"
+                className="w-full rounded-lg border py-2.5 pl-10 pr-4 text-sm outline-none transition-all focus:ring-2 focus:ring-blue-500/20"
+                style={{
+                  background: "var(--admin-input-bg)",
+                  color: "var(--admin-text)",
+                  borderColor: "var(--admin-border)",
+                }}
               />
-              <div className="absolute right-3 top-1/2 hidden -translate-y-1/2 items-center gap-1 text-[10px] font-bold text-slate-500 md:flex">
-                <span className="rounded border border-slate-700 bg-slate-800 px-1.5 py-0.5">CTRL</span>
-                <span className="rounded border border-slate-700 bg-slate-800 px-1.5 py-0.5">K</span>
+              <div
+                className="absolute right-3 top-1/2 hidden -translate-y-1/2 items-center gap-1 text-[10px] font-bold md:flex"
+                style={{ color: "var(--admin-text-muted)" }}
+              >
+                <span
+                  className="rounded border px-1.5 py-0.5"
+                  style={{
+                    borderColor: "var(--admin-border)",
+                    background: "var(--admin-surface-raised)",
+                  }}
+                >
+                  CTRL
+                </span>
+                <span
+                  className="rounded border px-1.5 py-0.5"
+                  style={{
+                    borderColor: "var(--admin-border)",
+                    background: "var(--admin-surface-raised)",
+                  }}
+                >
+                  K
+                </span>
               </div>
             </div>
           </div>
 
           <div className="ml-4 flex items-center gap-3">
-            <button className="relative hidden rounded-full p-2 text-slate-400 transition-colors hover:bg-slate-900 hover:text-white sm:block">
+            <AdminThemeToggle theme={adminTheme} onChange={handleThemeChange} />
+            <button
+              className="relative hidden rounded-full p-2 transition-colors sm:block"
+              style={{ color: "var(--admin-text-muted)" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "var(--admin-hover)"
+                e.currentTarget.style.color = "var(--admin-text)"
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = ""
+                e.currentTarget.style.color = "var(--admin-text-muted)"
+              }}
+            >
               <Bell size={20} />
               {notifications > 0 ? (
-                <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 animate-pulse rounded-full border-2 border-slate-950 bg-red-500" />
+                <span
+                  className="absolute right-1.5 top-1.5 h-2.5 w-2.5 animate-pulse rounded-full border-2 bg-red-500"
+                  style={{ borderColor: "var(--admin-bg)" }}
+                />
               ) : null}
             </button>
-            <div className="hidden h-6 w-px bg-slate-800 sm:block" />
+            <div className="hidden h-6 w-px sm:block" style={{ background: "var(--admin-border)" }} />
             <div className="flex items-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2 py-1 text-xs font-bold text-emerald-300">
               <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
               <span className="hidden sm:inline">Operativo</span>
@@ -433,7 +573,10 @@ export function AdminLayoutClient({
           </div>
         </header>
 
-        <div className="custom-scrollbar flex-1 overflow-auto bg-slate-950 p-4 md:p-6 lg:p-8">
+        <div
+          className="admin-scrollbar custom-scrollbar flex-1 overflow-auto p-4 md:p-6 lg:p-8"
+          style={{ background: "var(--admin-bg)" }}
+        >
           <div className="mx-auto h-full max-w-[1600px]">{children}</div>
         </div>
       </main>
@@ -441,8 +584,7 @@ export function AdminLayoutClient({
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { border-radius: 10px; }
       `}</style>
     </div>
   )
