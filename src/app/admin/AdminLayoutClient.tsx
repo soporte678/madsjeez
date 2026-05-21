@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
-import Navbar from "@/components/Navbar"
+import { AdminNavbar } from "@/components/admin/AdminNavbar"
 import { AdminThemeToggle } from "@/components/admin/AdminThemeToggle"
 import {
   getStoredAdminTheme,
@@ -25,7 +25,6 @@ import {
   PackageX,
   RefreshCcw,
   Scale,
-  Search,
   Settings,
   ShieldAlert,
   Smartphone,
@@ -35,7 +34,6 @@ import {
   Users,
   X,
   Zap,
-  Bell,
   ChevronDown,
   ChevronRight,
 } from "lucide-react"
@@ -148,8 +146,6 @@ export function AdminLayoutClient({
   const pathname = usePathname()
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [notifications] = useState(3)
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(
     menuGroups.reduce((acc, group) => ({ ...acc, [group.title]: true }), {})
   )
@@ -203,18 +199,6 @@ export function AdminLayoutClient({
     }
   }, [router])
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if ((event.ctrlKey || event.metaKey) && event.key === "k") {
-        event.preventDefault()
-        document.getElementById("omnibox")?.focus()
-      }
-    }
-
-    window.addEventListener("keydown", handleKeyDown)
-    return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [])
-
   const toggleGroup = (title: string) => {
     setExpandedGroups((prev) => ({ ...prev, [title]: !prev[title] }))
   }
@@ -251,7 +235,7 @@ export function AdminLayoutClient({
       className="admin-root flex h-screen flex-col overflow-hidden font-sans"
       style={{ background: "var(--admin-bg)", color: "var(--admin-text)" }}
     >
-      <Navbar variant="admin" />
+      <AdminNavbar />
 
       <div className="flex min-h-0 flex-1 overflow-hidden">
       <aside
@@ -492,94 +476,26 @@ export function AdminLayoutClient({
         style={{ background: "var(--admin-bg)" }}
       >
         <header
-          className="z-10 flex h-16 shrink-0 items-center justify-between border-b px-4 shadow-sm backdrop-blur md:px-6"
+          className="z-10 flex h-12 shrink-0 items-center justify-between border-b px-4 md:px-6"
           style={{
             borderColor: "var(--admin-border)",
             background: "var(--admin-header-bg)",
           }}
         >
-          <div className="flex max-w-3xl flex-1 items-center">
-            <button
-              className="mr-3 md:hidden"
-              style={{ color: "var(--admin-text-muted)" }}
-              onClick={() => setIsMobileMenuOpen(true)}
-            >
-              <Menu size={24} />
-            </button>
-            <div className="relative w-full">
-              <span
-                className="absolute left-3 top-1/2 -translate-y-1/2 inline-flex"
-                style={{ color: "var(--admin-text-muted)" }}
-              >
-                <Search size={18} />
-              </span>
-              <input
-                id="omnibox"
-                type="text"
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" && searchQuery.trim()) {
-                    router.push(`/admin/search?q=${encodeURIComponent(searchQuery.trim())}`)
-                  }
-                }}
-                placeholder="Omnibox: Buscar por ID de orden, usuario, tracking... (Ctrl+K)"
-                className="w-full rounded-lg border py-2.5 pl-10 pr-4 text-sm outline-none transition-all focus:ring-2 focus:ring-blue-500/20"
-                style={{
-                  background: "var(--admin-input-bg)",
-                  color: "var(--admin-text)",
-                  borderColor: "var(--admin-border)",
-                }}
-              />
-              <div
-                className="absolute right-3 top-1/2 hidden -translate-y-1/2 items-center gap-1 text-[10px] font-bold md:flex"
-                style={{ color: "var(--admin-text-muted)" }}
-              >
-                <span
-                  className="rounded border px-1.5 py-0.5"
-                  style={{
-                    borderColor: "var(--admin-border)",
-                    background: "var(--admin-surface-raised)",
-                  }}
-                >
-                  CTRL
-                </span>
-                <span
-                  className="rounded border px-1.5 py-0.5"
-                  style={{
-                    borderColor: "var(--admin-border)",
-                    background: "var(--admin-surface-raised)",
-                  }}
-                >
-                  K
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="ml-4 flex items-center gap-3">
+          <button
+            type="button"
+            className="rounded-md p-2 md:hidden"
+            style={{ color: "var(--admin-text-muted)" }}
+            onClick={() => setIsMobileMenuOpen(true)}
+            aria-label="Abrir menú"
+          >
+            <Menu size={22} />
+          </button>
+          <p className="hidden text-sm font-semibold md:block" style={{ color: "var(--admin-text-muted)" }}>
+            Backoffice MadsJeez
+          </p>
+          <div className="ml-auto flex items-center gap-3">
             <AdminThemeToggle theme={adminTheme} onChange={handleThemeChange} />
-            <button
-              className="relative hidden rounded-full p-2 transition-colors sm:block"
-              style={{ color: "var(--admin-text-muted)" }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "var(--admin-hover)"
-                e.currentTarget.style.color = "var(--admin-text)"
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = ""
-                e.currentTarget.style.color = "var(--admin-text-muted)"
-              }}
-            >
-              <Bell size={20} />
-              {notifications > 0 ? (
-                <span
-                  className="absolute right-1.5 top-1.5 h-2.5 w-2.5 animate-pulse rounded-full border-2 bg-red-500"
-                  style={{ borderColor: "var(--admin-bg)" }}
-                />
-              ) : null}
-            </button>
-            <div className="hidden h-6 w-px sm:block" style={{ background: "var(--admin-border)" }} />
             <div className="flex items-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2 py-1 text-xs font-bold text-emerald-300">
               <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
               <span className="hidden sm:inline">Operativo</span>

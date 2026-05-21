@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import RainbowLogo from "@/components/brand/RainbowLogo";
 import { 
   Search, Bell, ShoppingCart, MapPin, User, ChevronDown, X, Mic, Camera,
@@ -23,16 +23,9 @@ interface SearchSuggestion {
   url: string;
 }
 
-type NavbarProps = {
-  /** En panel admin: mismo navbar y logo; enlaces de backoffice visibles */
-  variant?: "default" | "admin";
-};
-
-export default function Navbar({ variant = "default" }: NavbarProps) {
+export default function Navbar() {
   const { data: session } = useSession();
   const router = useRouter();
-  const pathname = usePathname();
-  const isAdminShell = variant === "admin" || pathname.startsWith("/admin");
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -505,8 +498,7 @@ export default function Navbar({ variant = "default" }: NavbarProps) {
               )}
             </div>
 
-            {/* BOTÓN DESLIZANTE MADS PRO (oculto en shell admin para no competir con omnibox) */}
-            {!isAdminShell ? (
+            {/* BOTÓN DESLIZANTE MADS PRO */}
             <div className="flex-1 flex items-center justify-end">
               <Link
                 href="/subscriptions"
@@ -566,21 +558,6 @@ export default function Navbar({ variant = "default" }: NavbarProps) {
 
               </Link>
             </div>
-            ) : (
-              <div className="flex-1 flex items-center justify-end pr-2">
-                <Link
-                  href="/admin"
-                  className={cn(
-                    "rounded-full border px-4 py-1.5 text-[13px] font-semibold transition-colors",
-                    pathname.startsWith("/admin")
-                      ? "border-amber-400/50 bg-amber-400/15 text-amber-100"
-                      : "border-white/15 text-slate-300 hover:border-white/25 hover:text-white"
-                  )}
-                >
-                  Panel Admin
-                </Link>
-              </div>
-            )}
 
           </div>
 
@@ -605,34 +582,6 @@ export default function Navbar({ variant = "default" }: NavbarProps) {
 
               {/* Navegación (ml-8 para arrancar igual que el buscador) */}
               <nav className="flex flex-1 min-w-0 items-center gap-x-3 lg:gap-x-4 text-[13px] font-light ml-4 md:ml-8 overflow-x-auto scrollbar-hide pb-0.5 md:pb-0">
-                {isAdminShell ? (
-                  <>
-                    <Link
-                      href="/admin"
-                      className={cn(
-                        "nav-link whitespace-nowrap shrink-0 font-medium",
-                        pathname === "/admin" || pathname === "/admin/"
-                          ? "text-white"
-                          : undefined
-                      )}
-                    >
-                      Dashboard
-                    </Link>
-                    <Link href="/admin/flash" className="nav-link whitespace-nowrap shrink-0">
-                      Flash
-                    </Link>
-                    <Link href="/admin/kyc" className="nav-link whitespace-nowrap shrink-0">
-                      KYC
-                    </Link>
-                    <Link href="/admin/mediaciones" className="nav-link whitespace-nowrap shrink-0">
-                      Mediaciones
-                    </Link>
-                    <Link href="/" className="nav-link whitespace-nowrap shrink-0 text-amber-200/90">
-                      Ir al marketplace
-                    </Link>
-                  </>
-                ) : (
-                  <>
                 <Link href="/categories" className="flex items-center gap-0.5 nav-link whitespace-nowrap shrink-0">
                   Categorías <ChevronDown size={11} className="mt-0.5 opacity-40" />
                 </Link>
@@ -656,8 +605,6 @@ export default function Navbar({ variant = "default" }: NavbarProps) {
                 >
                   Ayuda
                 </span>
-                  </>
-                )}
               </nav>
             </div>
 
