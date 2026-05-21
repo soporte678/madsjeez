@@ -5,9 +5,7 @@ import { Providers } from "@/components/providers"
 import { ChatProvider } from "@/components/ChatContext"
 import ThemeToneInit from "@/components/theme/ThemeToneInit"
 import { DeferredAnalytics } from "@/components/seo/DeferredAnalytics"
-import dynamic from "next/dynamic"
-
-const FloatingBots = dynamic(() => import("@/components/FloatingBots"), { ssr: false })
+import { FloatingBotsLazy } from "@/components/FloatingBotsLazy"
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -82,7 +80,7 @@ export default function RootLayout({
         <ChatProvider>
           <Providers>
             {children}
-            <FloatingBots />
+            <FloatingBotsLazy />
           </Providers>
         </ChatProvider>
       </body>
