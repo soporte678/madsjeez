@@ -13,7 +13,7 @@ interface RotatingProductCarouselProps {
 }
 
 export function RotatingProductCarousel({ title, subtitle, offset = 0 }: RotatingProductCarouselProps) {
-  const { products, loading, totalCount } = useRotatingProducts(offset)
+  const { products, loading, totalCount } = useRotatingProducts({ offset })
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
@@ -111,16 +111,18 @@ export function RotatingProductCarousel({ title, subtitle, offset = 0 }: Rotatin
         className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 w-16 h-16 rounded-full bg-card/90 border border-border backdrop-blur-sm shadow-lg flex items-center justify-center text-primary hover:bg-card transition-all duration-300 ${
           canScrollLeft ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4 pointer-events-none"
         }`}
+        aria-label="Ver productos anteriores"
       >
-        <ChevronLeft size={28} strokeWidth={2.5} />
+        <ChevronLeft size={28} strokeWidth={2.5} aria-hidden="true" />
       </button>
       <button
         onClick={() => scroll("right")}
         className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 w-16 h-16 rounded-full bg-card/90 border border-border backdrop-blur-sm shadow-lg flex items-center justify-center text-primary hover:bg-card transition-all duration-300 ${
           canScrollRight ? "opacity-100 translate-x-0" : "opacity-0 translate-x-4 pointer-events-none"
         }`}
+        aria-label="Ver más productos"
       >
-        <ChevronRight size={28} strokeWidth={2.5} />
+        <ChevronRight size={28} strokeWidth={2.5} aria-hidden="true" />
       </button>
 
       {/* Carousel */}

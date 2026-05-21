@@ -157,16 +157,18 @@ export function ProductCarousel({ title, products, linkText }: ProductCarouselPr
         <button
           onClick={(e) => { e.preventDefault(); scroll('left') }}
           className="absolute left-[-24px] top-[55%] -translate-y-1/2 bg-card border border-border w-16 h-16 rounded-full shadow-[0_2px_4px_0_rgba(0,0,0,.19)] flex items-center justify-center text-primary hover:shadow-[0_4px_8px_0_rgba(0,0,0,.19)] transition-shadow z-10"
+          aria-label="Ver productos anteriores"
         >
-          <ChevronLeft size={32} strokeWidth={2} />
+          <ChevronLeft size={32} strokeWidth={2} aria-hidden="true" />
         </button>
       )}
       {showRightArrow && (
         <button
           onClick={(e) => { e.preventDefault(); scroll('right') }}
           className="absolute right-[-24px] top-[55%] -translate-y-1/2 bg-card border border-border w-16 h-16 rounded-full shadow-[0_2px_4px_0_rgba(0,0,0,.19)] flex items-center justify-center text-primary hover:shadow-[0_4px_8px_0_rgba(0,0,0,.19)] transition-shadow z-10 opacity-0 group-hover:opacity-100"
+          aria-label="Ver más productos"
         >
-          <ChevronRight size={32} strokeWidth={2} />
+          <ChevronRight size={32} strokeWidth={2} aria-hidden="true" />
         </button>
       )}
     </div>

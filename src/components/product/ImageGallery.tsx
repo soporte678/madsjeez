@@ -72,16 +72,18 @@ export function ImageGallery({ images, title, videoUrl }: { images: GalleryImage
                   <button
                     onClick={() => { setSelectedIndex(selectedIndex - 1); setShowVideo(false) }}
                     className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/90 shadow-md rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white"
+                    aria-label="Imagen anterior"
                   >
-                    <ChevronLeft size={20} />
+                    <ChevronLeft size={20} aria-hidden="true" />
                   </button>
                 )}
                 {selectedIndex < images.length - 1 && (
                   <button
                     onClick={() => { setSelectedIndex(selectedIndex + 1); setShowVideo(false) }}
                     className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/90 shadow-md rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white"
+                    aria-label="Siguiente imagen"
                   >
-                    <ChevronRight size={20} />
+                    <ChevronRight size={20} aria-hidden="true" />
                   </button>
                 )}
               </>
