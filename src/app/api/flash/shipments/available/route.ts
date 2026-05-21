@@ -30,10 +30,12 @@ export async function GET(req: NextRequest) {
       status: true,
       city: true,
       province: true,
-      // Dirección de entrega (no mostramos datos del destinatario completos por privacidad)
       street: true,
       streetNumber: true,
       postalCode: true,
+      shippingTier: true,
+      shippingPrice: true,
+      priorityScore: true,
       createdAt: true,
       updatedAt: true,
       order: {
@@ -49,7 +51,7 @@ export async function GET(req: NextRequest) {
         },
       },
     },
-    orderBy: { updatedAt: "desc" },
+    orderBy: [{ priorityScore: "desc" }, { createdAt: "asc" }],
     take: 50,
   })
 

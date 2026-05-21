@@ -27,6 +27,9 @@ type AvailableShipment = {
   street: string
   streetNumber: string
   postalCode: string
+  shippingTier: string | null
+  shippingPrice: number | null
+  priorityScore: number
   updatedAt: string
   order: {
     orderNumber: string
@@ -162,6 +165,27 @@ export default function DriverPedidosPage() {
                     <span>
                       {s.street} {s.streetNumber} — {s.city}, {s.province}
                     </span>
+                  </div>
+                  <div className="flex items-center gap-2 mb-1">
+                    {s.shippingTier && (
+                      <span className={`text-[10px] font-bold rounded-full px-2 py-0.5 ${
+                        s.shippingTier === "flash_plus"
+                          ? "bg-orange-100 text-orange-700"
+                          : s.shippingTier === "flash_local"
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-blue-100 text-blue-700"
+                      }`}>
+                        {s.shippingTier === "flash_plus" ? "PLUS" : s.shippingTier === "flash_local" ? "LOCAL" : "NORMAL"}
+                      </span>
+                    )}
+                    {s.shippingPrice != null && (
+                      <span className="text-sm font-bold text-emerald-400">
+                        ${s.shippingPrice.toLocaleString("es-AR")}
+                      </span>
+                    )}
+                    {s.priorityScore >= 100 && (
+                      <span className="text-[10px] text-orange-400 font-bold">⚡ PRIORIDAD</span>
+                    )}
                   </div>
                   {s.order.seller.storeName && (
                     <p className="text-xs text-slate-500">

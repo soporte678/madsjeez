@@ -1326,6 +1326,16 @@ model FlashShipment {
   qrToken          String               @unique @map("qr_token")
   labelPrintCount  Int                  @default(0) @map("label_print_count")
 
+  // Tier de envío Flash (flash_local, flash_plus, flash_normal)
+  shippingTier     String?              @map("shipping_tier")
+  shippingPrice    Float?               @map("shipping_price")
+  priorityScore    Int                  @default(50) @map("priority_score")
+
+  // Pago del envío al conductor
+  paymentStatus    String               @default("pending") @map("payment_status") // pending | paid_by_customer | driver_assigned | ready_to_settle | settled_to_driver | failed | refunded | cancelled
+  settlementId     String?              @unique @map("settlement_id")
+  settlement       FlashDriverSettlement? @relation("ShipmentSettlement")
+
   // Estimado de entrega
   estimatedDelivery DateTime?           @map("estimated_delivery")
 
@@ -1392,6 +1402,9 @@ model FlashDriver {
   tier          FlashDriverTier       @default(BRONZE)
   acceptanceRate Float                @default(100) @map("acceptance_rate")
   payoutCbu     String?               @map("payout_cbu")
+  mpLinked      Boolean               @default(false) @map("mp_linked")
+  mpAccountRef  String?               @map("mp_account_ref")  // MercadoPago account reference (non-sensitive)
+  mpLinkedAt    DateTime?             @map("mp_linked_at")
   connectedAt   DateTime?             @map("connected_at")
   totalKm       Float                 @default(0) @map("total_km")
 
@@ -1400,6 +1413,7 @@ model FlashDriver {
   earnings      FlashDriverEarning[]
   supportTickets FlashSupportTicket[]
   blocks        FlashDriverBlock[]
+  settlements   FlashDriverSettlement[]
 
   createdAt     DateTime              @default(now()) @map("created_at")
   updatedAt     DateTime              @updatedAt @map("updated_at")
@@ -1555,6 +1569,63 @@ model FlashAuditLog {
   @@index([shipmentId])
   @@index([createdAt])
   @@map("flash_audit_logs")
+}
+
+// ---------------------------------------------------------------------------
+// Flash Shipping Options (configurable desde admin)
+// ---------------------------------------------------------------------------
+model FlashShippingOption {
+  id            String   @id @default(cuid())
+  code          String   @unique                    // flash_local | flash_plus | flash_normal
+  name          String                               // "Flash Local — Entrega lo antes posible"
+  description   String
+  price         Float                                // ARS
+  priority      Int      @default(50)                // flash_plus=100, flash_local=70, flash_normal=50
+  coverageType  String   @map("coverage_type")       // local_radius | priority_radius | flex_zone
+  radiusKm      Float?   @map("radius_km")           // radio en km para local/plus
+  isActive      Boolean  @default(true) @map("is_active")
+  estimatedTime String?  @map("estimated_time")      // "Menos de 2 hs"
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("flash_shipping_options")
+}
+
+model FlashZone {
+  id                  String   @id @default(cuid())
+  name                String                          // "CABA + GBA Norte"
+  type                String                          // flex | local
+  city                String?
+  province            String?
+  postalCodes         String[] @map("postal_codes")   // ["1000","1001",...]
+  radiusKm            Float?   @map("radius_km")
+  centerLat           Float?   @map("center_lat")
+  centerLng           Float?   @map("center_lng")
+  isActive            Boolean  @default(true) @map("is_active")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  @@map("flash_zones")
+}
+
+model FlashDriverSettlement {
+  id                String    @id @default(cuid())
+  shipmentId        String    @unique @map("shipment_id")
+  shipment          FlashShipment @relation("ShipmentSettlement", fields: [shipmentId], references: [id], onDelete: Cascade)
+  driverId          String    @map("driver_id")
+  driver            FlashDriver @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  amount            Float
+  provider          String    @default("mercadopago")
+  status            String    @default("pending") // pending | processing | settled | failed | refunded
+  externalPaymentId String?   @map("external_payment_id")
+  paidAt            DateTime? @map("paid_at")
+  errorMessage      String?   @map("error_message")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@index([driverId])
+  @@index([status])
+  @@map("flash_driver_settlements")
 }
 
 model WebVisit {

@@ -118,7 +118,7 @@ function CheckoutContent() {
 
   /** Cotización servidor (Zipnova o monto legacy); null = aún no cotizado o dirección incompleta. */
   const [shippingMethod, setShippingMethod] = useState<"standard" | "flash">("standard");
-  const [flashData, setFlashData] = useState<FlashAddressData | null>(null);
+  const [flashData, setFlashData] = useState<(FlashAddressData & { shippingTier: string; shippingPrice: number; priorityScore: number }) | null>(null);
 
   const [shippingQuote, setShippingQuote] = useState<{
     shipping_full: number;
@@ -303,21 +303,34 @@ function CheckoutContent() {
     shippingAddress.number,
   ]);
 
-  const shippingFull = !needsPaidShipping
-    ? 0
-    : shippingQuote != null
-      ? shippingQuote.shipping_full
-      : null;
+  // Flash shipping overrides standard shipping cost
+  const flashShippingCost = shippingMethod === "flash" && flashData ? flashData.shippingPrice : 0;
+
+  const shippingFull = shippingMethod === "flash"
+    ? flashShippingCost
+    : !needsPaidShipping
+      ? 0
+      : shippingQuote != null
+        ? shippingQuote.shipping_full
+        : null;
   /** Coherente con checkout MP (escrow): el comprador abona el 50% del envío (o lo que devuelva la API). */
   const buyerShippingShare =
-    shippingFull != null && shippingFull > 0
-      ? shippingQuote?.buyer_shipping_share ??
-        Math.round((shippingFull / 2) * 100) / 100
-      : 0;
+    shippingMethod === "flash"
+      ? flashShippingCost // Flash: comprador paga 100% del envío (va al conductor)
+      : shippingFull != null && shippingFull > 0
+        ? shippingQuote?.buyer_shipping_share ??
+          Math.round((shippingFull / 2) * 100) / 100
+        : 0;
   const totalKnown =
-    shippingFull != null ? subtotal + (shippingFull > 0 ? buyerShippingShare : 0) : null;
+    shippingMethod === "flash" && flashData
+      ? subtotal + flashShippingCost
+      : shippingFull != null
+        ? subtotal + (shippingFull > 0 ? buyerShippingShare : 0)
+        : null;
   const quoteUnresolved =
-    needsPaidShipping && (shippingQuote === null || shippingQuoteLoading);
+    shippingMethod === "flash"
+      ? false // Flash has fixed price, no quote needed
+      : needsPaidShipping && (shippingQuote === null || shippingQuoteLoading);
 
   const sellerIds = new Set(cartItems.map((i) => i.product.seller_id));
   const multiSeller = sellerIds.size > 1;
@@ -704,8 +717,11 @@ function CheckoutContent() {
                       {/* Flash form */}
                       {shippingMethod === "flash" && (
                         <FlashShippingForm
-                          onConfirm={(data) => { setFlashData(data); handleAdvanceToPayment(); }}
-                          onBack={() => setShippingMethod("standard")}
+                          onConfirm={(data) => {
+                            setFlashData(data);
+                            handleAdvanceToPayment();
+                          }}
+                          onBack={() => { setShippingMethod("standard"); setFlashData(null); }}
                         />
                       )}
 
@@ -878,6 +894,13 @@ function CheckoutContent() {
                               <p className="text-sm text-gray-600">Entre {flashData.betweenStreet1} y {flashData.betweenStreet2}</p>
                               <p className="text-sm text-gray-600">{flashData.city}, {flashData.province} — CP {flashData.postalCode}</p>
                               <p className="text-sm text-gray-600">WhatsApp: {flashData.recipientPhone}</p>
+                              <div className="mt-2 flex items-center gap-2">
+                                <span className="inline-flex items-center gap-1 text-xs font-bold bg-yellow-100 text-yellow-800 rounded-full px-2.5 py-1">
+                                  <Zap className="h-3 w-3 fill-yellow-600" />
+                                  {flashData.shippingTier === "flash_plus" ? "Flash Plus" : flashData.shippingTier === "flash_local" ? "Flash Local" : "Flash Normal"}
+                                </span>
+                                <span className="text-sm font-bold text-gray-800">${flashData.shippingPrice.toLocaleString("es-AR")}</span>
+                              </div>
                             </>
                           ) : (
                             <>
@@ -1016,50 +1039,71 @@ function CheckoutContent() {
                         <span>${subtotal.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between items-start gap-2">
-                        <span className="text-gray-600 shrink-0">Envío (total logística)</span>
-                        <span className="text-right">
-                          {!needsPaidShipping && "Gratis"}
-                          {needsPaidShipping && !addressEnoughForQuote && (
-                            <span className="text-gray-500 text-sm">Completá calle, ciudad, CP…</span>
-                          )}
-                          {needsPaidShipping && addressEnoughForQuote && shippingQuoteLoading && (
-                            <span className="text-gray-500 text-sm inline-flex items-center gap-2">
-                              <span className="inline-block h-3.5 w-3.5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                              Cotizando…
+                        <span className="text-gray-600 shrink-0">
+                          {shippingMethod === "flash" ? (
+                            <span className="flex items-center gap-1">
+                              <Zap className="h-3.5 w-3.5 text-yellow-500 fill-yellow-500" />
+                              Envío Flash
                             </span>
+                          ) : "Envío (total logística)"}
+                        </span>
+                        <span className="text-right">
+                          {shippingMethod === "flash" && flashData ? (
+                            <span className="font-semibold">${flashData.shippingPrice.toLocaleString("es-AR")}</span>
+                          ) : shippingMethod === "flash" && !flashData ? (
+                            <span className="text-gray-500 text-sm">Completá datos Flash…</span>
+                          ) : (
+                            <>
+                              {!needsPaidShipping && "Gratis"}
+                              {needsPaidShipping && !addressEnoughForQuote && (
+                                <span className="text-gray-500 text-sm">Completá calle, ciudad, CP…</span>
+                              )}
+                              {needsPaidShipping && addressEnoughForQuote && shippingQuoteLoading && (
+                                <span className="text-gray-500 text-sm inline-flex items-center gap-2">
+                                  <span className="inline-block h-3.5 w-3.5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                  Cotizando…
+                                </span>
+                              )}
+                              {needsPaidShipping &&
+                                addressEnoughForQuote &&
+                                !shippingQuoteLoading &&
+                                shippingQuoteError && (
+                                  <span className="text-red-600 text-sm leading-snug">{shippingQuoteError}</span>
+                                )}
+                              {needsPaidShipping &&
+                                addressEnoughForQuote &&
+                                !shippingQuoteLoading &&
+                                !shippingQuoteError &&
+                                shippingFull === 0 &&
+                                "Gratis"}
+                              {needsPaidShipping &&
+                                addressEnoughForQuote &&
+                                !shippingQuoteLoading &&
+                                !shippingQuoteError &&
+                                shippingFull != null &&
+                                shippingFull > 0 && (
+                                  <span>${shippingFull.toLocaleString("es-AR")}</span>
+                                )}
+                            </>
                           )}
-                          {needsPaidShipping &&
-                            addressEnoughForQuote &&
-                            !shippingQuoteLoading &&
-                            shippingQuoteError && (
-                              <span className="text-red-600 text-sm leading-snug">{shippingQuoteError}</span>
-                            )}
-                          {needsPaidShipping &&
-                            addressEnoughForQuote &&
-                            !shippingQuoteLoading &&
-                            !shippingQuoteError &&
-                            shippingFull === 0 &&
-                            "Gratis"}
-                          {needsPaidShipping &&
-                            addressEnoughForQuote &&
-                            !shippingQuoteLoading &&
-                            !shippingQuoteError &&
-                            shippingFull != null &&
-                            shippingFull > 0 && (
-                              <span>${shippingFull.toLocaleString("es-AR")}</span>
-                            )}
                         </span>
                       </div>
-                      {shippingFull != null && shippingFull > 0 && (
+                      {shippingMethod === "flash" && flashData && (
+                        <p className="text-[11px] text-yellow-700">
+                          ⚡ {flashData.shippingTier === "flash_plus" ? "Flash Plus — Prioridad alta" : flashData.shippingTier === "flash_local" ? "Flash Local" : "Flash Normal — Cobertura ampliada"}
+                          . El costo del envío corresponde al conductor asignado.
+                        </p>
+                      )}
+                      {shippingMethod !== "flash" && shippingFull != null && shippingFull > 0 && (
                         <div className="flex justify-between text-sm text-gray-600">
                           <span>Pagás ahora (parte del envío)</span>
                           <span>${buyerShippingShare.toLocaleString("es-AR")}</span>
                         </div>
                       )}
-                      {shippingQuote?.used_zipnova && shippingFull != null && shippingFull > 0 && (
+                      {shippingMethod !== "flash" && shippingQuote?.used_zipnova && shippingFull != null && shippingFull > 0 && (
                         <p className="text-[11px] text-gray-500">Cotización en vivo vía Zipnova.</p>
                       )}
-                      {!shippingQuote?.used_zipnova &&
+                      {shippingMethod !== "flash" && !shippingQuote?.used_zipnova &&
                         needsPaidShipping &&
                         shippingFull != null &&
                         shippingFull > 0 &&
@@ -1083,7 +1127,7 @@ function CheckoutContent() {
                       </span>
                     </div>
 
-                    {shippingFull != null && shippingFull > 0 && (
+                    {shippingMethod !== "flash" && shippingFull != null && shippingFull > 0 && (
                       <p className="mt-2 text-xs text-gray-500 leading-snug">
                         El otro 50% del envío lo absorbe el vendedor desde su liquidación. Si viniste por un afiliado,
                         su comisión queda retenida en escrow hasta cumplir la política de devoluciones.
