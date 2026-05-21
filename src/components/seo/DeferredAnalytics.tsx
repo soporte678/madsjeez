@@ -13,7 +13,7 @@ const GTM_ID = "GTM-PT9H3H6K";
 export function DeferredAnalytics() {
   return (
     <>
-      <Script id="gtag-stub" strategy="beforeInteractive">
+      <Script id="gtag-stub" strategy="afterInteractive">
         {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=window.gtag||gtag;`}
       </Script>
       <Script id="google-tag-manager" strategy="lazyOnload">
