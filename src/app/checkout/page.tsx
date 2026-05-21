@@ -24,6 +24,8 @@ import {
   Zap,
 } from "lucide-react";
 import { FlashShippingForm } from "@/components/flash/FlashShippingForm";
+import { FlashShippingSelector, FLASH_OPTIONS_MOCK } from "@/components/flash/FlashShippingSelector";
+import type { FlashOption } from "@/components/flash/FlashShippingSelector";
 import type { FlashAddressData } from "@/lib/flash/types";
 import { toast } from "sonner";
 import {
@@ -119,6 +121,7 @@ function CheckoutContent() {
   /** Cotización servidor (Zipnova o monto legacy); null = aún no cotizado o dirección incompleta. */
   const [shippingMethod, setShippingMethod] = useState<"standard" | "flash">("standard");
   const [flashData, setFlashData] = useState<FlashAddressData | null>(null);
+  const [flashOption, setFlashOption] = useState<FlashOption | null>(null);
 
   const [shippingQuote, setShippingQuote] = useState<{
     shipping_full: number;
@@ -430,7 +433,11 @@ function CheckoutContent() {
         body: JSON.stringify({
           shipping: shippingAddress,
           buyer_email: session.user.email ?? undefined,
-          flash: shippingMethod === "flash" ? flashData : undefined,
+          flash: shippingMethod === "flash" && flashData ? {
+            ...flashData,
+            shippingCode: flashOption?.code,
+            shippingPrice: flashOption?.price,
+          } : undefined,
         }),
       });
 
@@ -701,12 +708,21 @@ function CheckoutContent() {
                         </button>
                       </div>
 
-                      {/* Flash form */}
+                      {/* Flash: selector de modalidad + formulario */}
                       {shippingMethod === "flash" && (
-                        <FlashShippingForm
-                          onConfirm={(data) => { setFlashData(data); handleAdvanceToPayment(); }}
-                          onBack={() => setShippingMethod("standard")}
-                        />
+                        <div className="space-y-5">
+                          <FlashShippingSelector
+                            options={FLASH_OPTIONS_MOCK}
+                            selected={flashOption}
+                            onSelect={setFlashOption}
+                          />
+                          {flashOption && (
+                            <FlashShippingForm
+                              onConfirm={(data) => { setFlashData(data); handleAdvanceToPayment(); }}
+                              onBack={() => { setFlashOption(null); setShippingMethod("standard"); }}
+                            />
+                          )}
+                        </div>
                       )}
 
                       {/* Standard form */}
@@ -871,6 +887,11 @@ function CheckoutContent() {
                           </p>
                           {shippingMethod === "flash" && flashData ? (
                             <>
+                              {flashOption && (
+                                <p className="text-sm font-semibold text-yellow-700 mb-1">
+                                  {flashOption.name} — ${flashOption.price.toLocaleString("es-AR")}
+                                </p>
+                              )}
                               <p className="text-sm text-gray-600">{flashData.recipientName} · DNI {flashData.recipientDni}</p>
                               <p className="text-sm text-gray-600">
                                 {flashData.street} {flashData.streetNumber}{flashData.apartment ? `, ${flashData.apartment}` : ""}
@@ -1016,38 +1037,50 @@ function CheckoutContent() {
                         <span>${subtotal.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between items-start gap-2">
-                        <span className="text-gray-600 shrink-0">Envío (total logística)</span>
+                        <span className="text-gray-600 shrink-0">
+                          {shippingMethod === "flash" && flashOption
+                            ? flashOption.name
+                            : "Envío (total logística)"}
+                        </span>
                         <span className="text-right">
-                          {!needsPaidShipping && "Gratis"}
-                          {needsPaidShipping && !addressEnoughForQuote && (
-                            <span className="text-gray-500 text-sm">Completá calle, ciudad, CP…</span>
-                          )}
-                          {needsPaidShipping && addressEnoughForQuote && shippingQuoteLoading && (
-                            <span className="text-gray-500 text-sm inline-flex items-center gap-2">
-                              <span className="inline-block h-3.5 w-3.5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                              Cotizando…
+                          {shippingMethod === "flash" && flashOption ? (
+                            <span className="font-semibold">
+                              ${flashOption.price.toLocaleString("es-AR")}
                             </span>
+                          ) : (
+                            <>
+                              {!needsPaidShipping && "Gratis"}
+                              {needsPaidShipping && !addressEnoughForQuote && (
+                                <span className="text-gray-500 text-sm">Completá calle, ciudad, CP…</span>
+                              )}
+                              {needsPaidShipping && addressEnoughForQuote && shippingQuoteLoading && (
+                                <span className="text-gray-500 text-sm inline-flex items-center gap-2">
+                                  <span className="inline-block h-3.5 w-3.5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                  Cotizando…
+                                </span>
+                              )}
+                              {needsPaidShipping &&
+                                addressEnoughForQuote &&
+                                !shippingQuoteLoading &&
+                                shippingQuoteError && (
+                                  <span className="text-red-600 text-sm leading-snug">{shippingQuoteError}</span>
+                                )}
+                              {needsPaidShipping &&
+                                addressEnoughForQuote &&
+                                !shippingQuoteLoading &&
+                                !shippingQuoteError &&
+                                shippingFull === 0 &&
+                                "Gratis"}
+                              {needsPaidShipping &&
+                                addressEnoughForQuote &&
+                                !shippingQuoteLoading &&
+                                !shippingQuoteError &&
+                                shippingFull != null &&
+                                shippingFull > 0 && (
+                                  <span>${shippingFull.toLocaleString("es-AR")}</span>
+                                )}
+                            </>
                           )}
-                          {needsPaidShipping &&
-                            addressEnoughForQuote &&
-                            !shippingQuoteLoading &&
-                            shippingQuoteError && (
-                              <span className="text-red-600 text-sm leading-snug">{shippingQuoteError}</span>
-                            )}
-                          {needsPaidShipping &&
-                            addressEnoughForQuote &&
-                            !shippingQuoteLoading &&
-                            !shippingQuoteError &&
-                            shippingFull === 0 &&
-                            "Gratis"}
-                          {needsPaidShipping &&
-                            addressEnoughForQuote &&
-                            !shippingQuoteLoading &&
-                            !shippingQuoteError &&
-                            shippingFull != null &&
-                            shippingFull > 0 && (
-                              <span>${shippingFull.toLocaleString("es-AR")}</span>
-                            )}
                         </span>
                       </div>
                       {shippingFull != null && shippingFull > 0 && (
@@ -1077,9 +1110,11 @@ function CheckoutContent() {
                     <div className="flex justify-between text-lg font-semibold">
                       <span>Total a pagar</span>
                       <span>
-                        {totalKnown != null
-                          ? `$${totalKnown.toLocaleString("es-AR")}`
-                          : `$${subtotal.toLocaleString("es-AR")} + envío`}
+                        {shippingMethod === "flash" && flashOption
+                          ? `$${(subtotal + flashOption.price).toLocaleString("es-AR")}`
+                          : totalKnown != null
+                            ? `$${totalKnown.toLocaleString("es-AR")}`
+                            : `$${subtotal.toLocaleString("es-AR")} + envío`}
                       </span>
                     </div>
 

@@ -13,6 +13,7 @@ import {
   ChevronRight,
   QrCode,
   RefreshCw,
+  AlertTriangle,
 } from "lucide-react"
 import { FlashQrScanner } from "@/components/flash/FlashQrScanner"
 import { DriverShell } from "@/components/driver/DriverShell"
@@ -64,6 +65,30 @@ export default function DriverDashboardPage() {
       onDutyChange={setDutyStatus}
     >
       {showScanner && <FlashQrScanner onClose={() => setShowScanner(false)} />}
+
+      {/* Alerta: MercadoPago no vinculado */}
+      {data.driver.mercadoPagoLinked === false && (
+        <div className="mb-4 flex items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
+          <AlertTriangle className="h-5 w-5 shrink-0 text-amber-400 mt-0.5" />
+          <div className="min-w-0 flex-1">
+            <p className="font-bold text-sm text-white">
+              Para recibir pagos de envíos Flash, vinculá tu billetera de MercadoPago.
+            </p>
+            {data.driver.mercadoPagoStatus === "pending" && (
+              <p className="text-xs text-amber-300 mt-1">Vinculación en proceso — aguardá la confirmación.</p>
+            )}
+            {data.driver.mercadoPagoStatus === "error" && (
+              <p className="text-xs text-red-400 mt-1">Error en la vinculación. Intentá de nuevo.</p>
+            )}
+            <Link
+              href="/driver/perfil?vincular-mp=1"
+              className="mt-2 inline-flex items-center gap-1.5 rounded-xl bg-amber-400 px-4 py-2 text-xs font-bold text-black hover:bg-amber-300 transition-colors"
+            >
+              Vincular MercadoPago
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Ganancias destacadas */}
       <DriverCard accent="green" className="mb-4 bg-gradient-to-br from-emerald-950/80 to-[#121820]">

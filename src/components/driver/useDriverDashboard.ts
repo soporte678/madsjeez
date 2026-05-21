@@ -15,6 +15,8 @@ export type DriverDashboardData = {
     acceptanceRate: number
     connectedMinutes: number
     totalKm: number
+    mercadoPagoLinked?: boolean
+    mercadoPagoStatus?: "not_linked" | "pending" | "linked" | "error"
   }
   summary: {
     earnedToday: number
