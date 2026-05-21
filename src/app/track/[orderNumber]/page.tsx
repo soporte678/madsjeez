@@ -32,7 +32,7 @@ type TrackData = {
   deliveryProof?: {
     receiverName: string
     receiverType: string
-    deliveredAt: string
+    signedAt: string
     photos: string[]
   } | null
   order: {
@@ -208,7 +208,7 @@ export default function TrackPage({ params }: { params: Promise<{ orderNumber: s
               {" "}({data.deliveryProof.receiverType})
             </p>
             <p className="text-xs text-gray-400 mt-1">
-              {new Date(data.deliveryProof.deliveredAt).toLocaleString("es-AR", {
+              {new Date(data.deliveryProof.signedAt).toLocaleString("es-AR", {
                 dateStyle: "long",
                 timeStyle: "short",
               })}

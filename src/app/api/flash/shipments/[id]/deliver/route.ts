@@ -31,7 +31,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   })
   if (!driver) return NextResponse.json({ error: "No sos chofer" }, { status: 403 })
 
-  const shipment = await prisma.flashShipment.findUnique({ where: { id } })
+  const shipment = await prisma.flashShipment.findUnique({
+    where: { id },
+    select: { id: true, status: true, driverId: true, recipientDni: true, shippingPrice: true },
+  })
   if (!shipment) return NextResponse.json({ error: "Envío no encontrado" }, { status: 404 })
 
   // Validar DNI del titular si corresponde
@@ -71,6 +74,28 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     newStatus: "DELIVERED",
     metadata: { receiverType, receiverName },
   })
+
+  // Auto-crear liquidación pendiente para el conductor
+  if (shipment.shippingPrice && shipment.shippingPrice > 0) {
+    try {
+      await prisma.flashDriverSettlement.create({
+        data: {
+          shipmentId: id,
+          driverId: driver.id,
+          amount: shipment.shippingPrice,
+          provider: "mercadopago",
+          status: "pending",
+        },
+      })
+      await prisma.flashShipment.update({
+        where: { id },
+        data: { paymentStatus: "ready_to_settle" },
+      })
+    } catch (settlementErr) {
+      // Non-fatal: unique constraint may fail if already created, or table not migrated
+      console.error("auto-settlement create (non-fatal):", settlementErr)
+    }
+  }
 
   return NextResponse.json({ proof })
 }

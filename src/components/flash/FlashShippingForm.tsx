@@ -12,6 +12,8 @@ type FlashOption = {
   description: string
   price: number
   priority: number
+  coverageType: string
+  radiusKm: number | null
   estimatedTime: string | null
   available: boolean
   unavailableReason: string | null
@@ -34,34 +36,38 @@ export function FlashShippingForm({ onConfirm, onBack, loading }: Props) {
   const set = (k: keyof FlashAddressData, v: string) =>
     setForm((p) => ({ ...p, [k]: v }))
 
-  // Fetch shipping options when address changes
+  // Fetch shipping options when address changes (debounced)
   useEffect(() => {
     const cp = form.postalCode ?? ""
     const city = form.city ?? ""
     const province = form.province ?? ""
 
-    setOptionsLoading(true)
-    const params = new URLSearchParams()
-    if (cp) params.set("postalCode", cp)
-    if (city) params.set("city", city)
-    if (province) params.set("province", province)
+    const timer = setTimeout(() => {
+      setOptionsLoading(true)
+      const params = new URLSearchParams()
+      if (cp) params.set("postalCode", cp)
+      if (city) params.set("city", city)
+      if (province) params.set("province", province)
 
-    fetch(`/api/flash/shipping-options?${params}`)
-      .then((r) => r.json())
-      .then((d) => {
-        setOptions(d.options ?? [])
-        // Auto-select recommended if nothing selected
-        if (!selectedTier) {
-          const rec = (d.options ?? []).find((o: FlashOption) => o.recommended && o.available)
-          if (rec) setSelectedTier(rec.code)
-          else {
-            const first = (d.options ?? []).find((o: FlashOption) => o.available)
-            if (first) setSelectedTier(first.code)
+      fetch(`/api/flash/shipping-options?${params}`)
+        .then((r) => r.json())
+        .then((d) => {
+          setOptions(d.options ?? [])
+          // Auto-select recommended if nothing selected
+          if (!selectedTier) {
+            const rec = (d.options ?? []).find((o: FlashOption) => o.recommended && o.available)
+            if (rec) setSelectedTier(rec.code)
+            else {
+              const first = (d.options ?? []).find((o: FlashOption) => o.available)
+              if (first) setSelectedTier(first.code)
+            }
           }
-        }
-      })
-      .catch(() => {})
-      .finally(() => setOptionsLoading(false))
+        })
+        .catch(() => {})
+        .finally(() => setOptionsLoading(false))
+    }, 500)
+
+    return () => clearTimeout(timer)
   }, [form.postalCode, form.city, form.province])
 
   const selectedOption = options.find((o) => o.code === selectedTier)

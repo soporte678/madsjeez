@@ -53,7 +53,7 @@ export async function GET(
         select: {
           receiverName: true,
           receiverType: true,
-          deliveredAt: true,
+          signedAt: true,
           photos: true,
         },
       },

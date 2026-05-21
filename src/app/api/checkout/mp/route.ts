@@ -237,8 +237,31 @@ export async function POST(req: Request) {
       }
     }
 
-    // Flash shipping: cost goes 100% to driver, not via Zipnova/escrow split
-    const flashShippingCost = body.flash?.shippingPrice ?? 0;
+    // Flash shipping: validate server-side price matches DB, cost goes 100% to driver
+    let flashShippingCost = body.flash?.shippingPrice ?? 0;
+    if (body.flash?.shippingTier && flashShippingCost > 0) {
+      try {
+        const dbOption = await prisma.flashShippingOption.findUnique({
+          where: { code: body.flash.shippingTier },
+          select: { price: true, isActive: true },
+        });
+        if (dbOption?.isActive && dbOption.price !== flashShippingCost) {
+          console.warn(
+            `checkout/mp flash price mismatch: client=${flashShippingCost}, db=${dbOption.price}, tier=${body.flash.shippingTier}. Using DB price.`
+          );
+          flashShippingCost = dbOption.price;
+          body.flash.shippingPrice = dbOption.price;
+        }
+        if (dbOption && !dbOption.isActive) {
+          return NextResponse.json(
+            { code: "FLASH_TIER_INACTIVE", error: "La opción de envío Flash seleccionada no está disponible." },
+            { status: 400 }
+          );
+        }
+      } catch {
+        // Table not migrated — accept client price (fallback pricing)
+      }
+    }
     const effectiveShippingCost = flashShippingCost > 0 ? 0 : shippingCostFull; // Flash shipping is added separately to MP items
 
     let split = computeCheckoutEscrowSplit({
