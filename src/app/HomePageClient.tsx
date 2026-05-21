@@ -174,22 +174,26 @@ export default function HomePageClient() {
         className="relative bg-black overflow-hidden h-[550px] md:h-[700px] flex items-center group pb-16 md:pb-24"
         aria-labelledby="home-marketplace-h1"
       >
-        {heroBanners.map((banner, index) => (
+        {heroBanners.map((banner, index) => {
+          const isActive = currentSlide === index
+          const isAdjacent = index === (currentSlide + 1) % heroBanners.length
+          if (!isActive && !isAdjacent) return null
+          return (
           <div
             key={banner.id}
             className={`absolute inset-0 w-full h-full transition-all duration-1000 ease-[cubic-bezier(0.23,1,0.32,1)] ${
-              currentSlide === index
+              isActive
                 ? "opacity-100 z-10 translate-x-0"
                 : "opacity-0 z-0 translate-x-12 pointer-events-none"
             }`}
-            aria-hidden={currentSlide !== index}
+            aria-hidden={!isActive}
           >
             <div className={`absolute inset-0 bg-gradient-to-br ${banner.bgGradient}`} />
-            <div className="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-blue-500/10 blur-[150px] hidden md:block" />
-            <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-yellow-500/5 blur-[120px] hidden md:block" />
+            {isActive && <div className="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-blue-500/10 blur-[80px] hidden md:block" />}
             <div className="absolute inset-0 bg-pattern opacity-[0.15]" />
           </div>
-        ))}
+          )
+        })}
 
         {(() => {
           const banner = heroBanners[currentSlide]
@@ -608,7 +612,7 @@ export default function HomePageClient() {
               <Link href="/search" className="bg-gradient-to-r from-[#f97316] to-[#ff9100] hover:from-[#ff9100] hover:to-[#ffb703] text-white px-5 py-2 rounded-lg font-bold text-[14px] w-fit shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/50 transition-all duration-300 hover:-translate-y-0.5 btn-shine">Ver ofertas</Link>
             </div>
             <div className="w-1/2 bg-muted overflow-hidden relative">
-              <img src="https://images.unsplash.com/photo-1595515106969-1ce29566ff1c?auto=format&fit=crop&q=80&w=400" alt="Estantería y muebles para organizar el hogar en Madsjeez" className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" />
+              <Image src="https://images.unsplash.com/photo-1595515106969-1ce29566ff1c?auto=format&fit=crop&q=65&w=400&fm=webp" alt="Estantería y muebles para organizar el hogar en Madsjeez" fill sizes="200px" className="object-cover transform group-hover:scale-105 transition-transform duration-500" />
             </div>
           </div>
           <div className="flex-1 bg-card rounded shadow-sm flex overflow-hidden cursor-pointer group hover:shadow-md transition-shadow h-[250px] border border-border">
@@ -618,7 +622,7 @@ export default function HomePageClient() {
               <Link href="/search" className="bg-gradient-to-r from-[#f97316] to-[#ff9100] hover:from-[#ff9100] hover:to-[#ffb703] text-white px-5 py-2 rounded-lg font-bold text-[14px] w-fit shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/50 transition-all duration-300 hover:-translate-y-0.5 btn-shine">Ver ofertas</Link>
             </div>
             <div className="w-1/2 bg-muted overflow-hidden relative">
-              <img src="https://images.unsplash.com/photo-1505843490538-5133c6c7d0e1?auto=format&fit=crop&q=80&w=400" alt="Sillón moderno para living — ofertas hogar y muebles Madsjeez" className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" />
+              <Image src="https://images.unsplash.com/photo-1505843490538-5133c6c7d0e1?auto=format&fit=crop&q=65&w=400&fm=webp" alt="Sillón moderno para living — ofertas hogar y muebles Madsjeez" fill sizes="200px" className="object-cover transform group-hover:scale-105 transition-transform duration-500" />
             </div>
           </div>
         </div>

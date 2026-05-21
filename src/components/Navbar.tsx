@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import RainbowLogo from "@/components/brand/RainbowLogo";
 import { 
@@ -426,7 +427,7 @@ export default function Navbar() {
                             {suggestion.type === 'product' && (
                               <div className="w-8 h-8 rounded bg-slate-100 flex items-center justify-center flex-shrink-0">
                                 {suggestion.image ? (
-                                  <img src={suggestion.image} alt="" className="w-6 h-6 object-cover rounded" />
+                                  <Image src={suggestion.image} alt="" width={24} height={24} className="w-6 h-6 object-cover rounded" unoptimized={suggestion.image.startsWith('http')} />
                                 ) : (
                                   <Search size={14} className="text-slate-400" />
                                 )}

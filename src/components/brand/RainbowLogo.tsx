@@ -35,7 +35,7 @@ export default function RainbowLogo({
           className={`relative ${iconSizeClassName} rounded-xl overflow-hidden shadow-lg border border-white/15 flex-shrink-0`}
         >
           <Image
-            src="/brand/madsjeez-icon-512.png"
+            src="/brand/madsjeez-icon-512.webp"
             alt="MadsJeez Marketplace"
             width={80}
             height={80}

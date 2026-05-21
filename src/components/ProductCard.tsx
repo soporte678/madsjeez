@@ -49,7 +49,7 @@ export function ProductCard({
   return (
     <div className="bg-white rounded-lg border border-gray-200 hover:shadow-lg transition-shadow duration-200 overflow-hidden group">
       <div className="relative">
-        <Link href={`/products/${id}`}>
+        <Link href={`/product/${id}`}>
           <div className="relative h-48 w-full overflow-hidden bg-gray-50">
             <Image
               src={image}
@@ -79,7 +79,7 @@ export function ProductCard({
         <Button
           variant="ghost"
           size="icon"
-          className="absolute top-2 right-2 bg-white/80 hover:bg-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+          className="absolute top-2 right-2 bg-white/80 hover:bg-white rounded-full p-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
         >
           <Heart className="w-4 h-4" />
         </Button>
@@ -89,7 +89,7 @@ export function ProductCard({
         <div className="flex items-start justify-between mb-2">
           <div className="flex-1">
             <div className="text-xs text-gray-500 mb-1">{seller}</div>
-            <Link href={`/products/${id}`}>
+            <Link href={`/product/${id}`}>
               <h3 className="text-sm font-medium text-gray-900 line-clamp-2 hover:text-blue-600 transition-colors cursor-pointer">
                 {title}
               </h3>
