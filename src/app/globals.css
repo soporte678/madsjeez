@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "../styles/admin-theme.css";
+@import "../styles/driver-dashboard.css";
 
 :root {
   /*

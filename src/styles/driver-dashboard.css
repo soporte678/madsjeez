@@ -1,0 +1,10 @@
+/* Panel chofer Flash — ocultar widgets del marketplace */
+body.driver-mode [class*="FloatingFab"],
+body.driver-mode [class*="floating"],
+body.driver-mode .fixed.bottom-6.right-6 {
+  display: none !important;
+}
+
+body.driver-mode {
+  background: #0b0f14;
+}

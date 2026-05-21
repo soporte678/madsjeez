@@ -1,16 +1,18 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
+import { DriverShell } from "@/components/driver/DriverShell"
 import {
-  Zap, ArrowLeft, Phone, Truck, CreditCard, Lock, Loader2, CheckCircle2, AlertCircle,
+  Phone, Truck, CreditCard, Lock, Loader2, CheckCircle2, AlertCircle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+
+const inputClass =
+  "mt-1 border-white/10 bg-[#0b0f14] text-white placeholder:text-slate-500 focus-visible:ring-[#facc15]/40"
 
 type DriverProfile = {
   id: string
@@ -128,65 +130,49 @@ export default function DriverProfilePage() {
 
   if (loading || status === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="h-10 w-10 text-yellow-400 animate-spin" />
+      <div className="flex min-h-[100dvh] items-center justify-center bg-[#0b0f14]">
+        <Loader2 className="h-10 w-10 animate-spin text-[#facc15]" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-10">
-      <div className="max-w-md mx-auto px-4 py-6">
-        <div className="flex items-center gap-3 mb-6">
-          <Link
-            href="/driver"
-            className="p-2 rounded-lg border bg-white hover:bg-gray-50"
-            aria-label="Volver al panel"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-          <div className="flex items-center gap-2 flex-1">
-            <div className="bg-yellow-400 rounded-full p-2">
-              <Zap className="h-5 w-5 text-black fill-black" />
-            </div>
-            <h1 className="font-black text-lg">Mi perfil</h1>
-          </div>
-        </div>
+    <DriverShell onScan={() => router.push("/driver")}>
+      <h2 className="mb-4 text-lg font-bold text-white">Mi perfil</h2>
 
         {error && (
-          <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-4">
+          <div className="mb-4 flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">
             <AlertCircle className="h-4 w-4 shrink-0" /> {error}
           </div>
         )}
         {success && (
-          <div className="flex items-center gap-2 text-green-700 text-sm bg-green-50 border border-green-200 rounded-lg px-3 py-2 mb-4">
+          <div className="mb-4 flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300">
             <CheckCircle2 className="h-4 w-4 shrink-0" /> {success}
           </div>
         )}
 
-        <Card className="mb-4">
-          <CardContent className="p-4">
-            <h2 className="text-sm font-bold mb-3 flex items-center gap-2">
-              <Phone className="h-4 w-4 text-yellow-600" />
+        <div className="mb-4 rounded-2xl border border-white/[0.08] bg-[#121820] p-4">
+            <h2 className="mb-3 flex items-center gap-2 text-sm font-bold text-white">
+              <Phone className="h-4 w-4 text-[#facc15]" />
               Datos de contacto
             </h2>
             <form onSubmit={handleSaveProfile} className="space-y-3">
               <div>
-                <Label className="text-xs">Teléfono</Label>
+                <Label className="text-xs text-slate-400">Teléfono</Label>
                 <Input
                   type="tel"
                   value={profile.phone}
                   onChange={(e) => setProfile((p) => ({ ...p, phone: e.target.value }))}
                   required
-                  className="mt-1"
+                  className={inputClass}
                 />
               </div>
               <div>
-                <Label className="text-xs flex items-center gap-1">
+                <Label className="flex items-center gap-1 text-xs text-slate-400">
                   <Truck className="h-3 w-3" /> Vehículo
                 </Label>
                 <select
-                  className="w-full border rounded-md px-3 py-2 text-sm bg-white mt-1"
+                  className="mt-1 w-full rounded-md border border-white/10 bg-[#0b0f14] px-3 py-2 text-sm text-white"
                   value={profile.vehicleType}
                   onChange={(e) => setProfile((p) => ({ ...p, vehicleType: e.target.value }))}
                 >
@@ -197,34 +183,32 @@ export default function DriverProfilePage() {
                 </select>
               </div>
               <div>
-                <Label className="text-xs flex items-center gap-1">
+                <Label className="flex items-center gap-1 text-xs text-slate-400">
                   <CreditCard className="h-3 w-3" /> Licencia (opcional)
                 </Label>
                 <Input
                   value={profile.licenseNumber}
                   onChange={(e) => setProfile((p) => ({ ...p, licenseNumber: e.target.value }))}
                   placeholder="Número de licencia"
-                  className="mt-1"
+                  className={inputClass}
                 />
               </div>
               <Button
                 type="submit"
                 disabled={saving}
-                className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-bold"
+                className="w-full rounded-xl bg-[#facc15] font-bold text-black hover:bg-[#fde047]"
               >
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Guardar datos"}
               </Button>
             </form>
-          </CardContent>
-        </Card>
+        </div>
 
-        <Card>
-          <CardContent className="p-4">
-            <h2 className="text-sm font-bold mb-1 flex items-center gap-2">
-              <Lock className="h-4 w-4 text-yellow-600" />
+        <div className="rounded-2xl border border-white/[0.08] bg-[#121820] p-4">
+            <h2 className="mb-1 flex items-center gap-2 text-sm font-bold text-white">
+              <Lock className="h-4 w-4 text-[#facc15]" />
               Contraseña de acceso
             </h2>
-            <p className="text-xs text-gray-500 mb-3">
+            <p className="mb-3 text-xs text-slate-500">
               {hasPassword
                 ? "Cambiá la contraseña que te dio el administrador por una personal."
                 : "Definí tu contraseña para ingresar al panel."}
@@ -232,7 +216,7 @@ export default function DriverProfilePage() {
             <form onSubmit={handleChangePassword} className="space-y-3">
               {hasPassword && (
                 <div>
-                  <Label className="text-xs">Contraseña actual</Label>
+                  <Label className="text-xs text-slate-400">Contraseña actual</Label>
                   <Input
                     type="password"
                     autoComplete="current-password"
@@ -240,12 +224,12 @@ export default function DriverProfilePage() {
                     onChange={(e) =>
                       setPasswordForm((p) => ({ ...p, currentPassword: e.target.value }))
                     }
-                    className="mt-1"
+                    className={inputClass}
                   />
                 </div>
               )}
               <div>
-                <Label className="text-xs">Nueva contraseña</Label>
+                <Label className="text-xs text-slate-400">Nueva contraseña</Label>
                 <Input
                   type="password"
                   autoComplete="new-password"
@@ -255,11 +239,11 @@ export default function DriverProfilePage() {
                   }
                   minLength={8}
                   required
-                  className="mt-1"
+                  className={inputClass}
                 />
               </div>
               <div>
-                <Label className="text-xs">Confirmar nueva contraseña</Label>
+                <Label className="text-xs text-slate-400">Confirmar nueva contraseña</Label>
                 <Input
                   type="password"
                   autoComplete="new-password"
@@ -269,21 +253,18 @@ export default function DriverProfilePage() {
                   }
                   minLength={8}
                   required
-                  className="mt-1"
+                  className={inputClass}
                 />
               </div>
               <Button
                 type="submit"
-                variant="outline"
                 disabled={savingPwd}
-                className="w-full font-semibold"
+                className="w-full rounded-xl border border-white/15 bg-white/5 font-semibold text-white hover:bg-white/10"
               >
                 {savingPwd ? <Loader2 className="h-4 w-4 animate-spin" /> : "Cambiar contraseña"}
               </Button>
             </form>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+        </div>
+    </DriverShell>
   )
 }
