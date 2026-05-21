@@ -2,10 +2,11 @@
 import { useEffect, useState } from "react"
 import { useSession } from "next-auth/react"
 import { FlashStatusBadge } from "@/components/flash/FlashStatusBadge"
+import { FlashQrScanner } from "@/components/flash/FlashQrScanner"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import {
-  Zap, Package, MapPin, Phone, User, Navigation,
+  Zap, Package, MapPin, Phone, Navigation,
   QrCode, CheckCircle2, RefreshCw, Clock,
 } from "lucide-react"
 import type { FlashShipmentWithRelations } from "@/lib/flash/types"
@@ -14,6 +15,7 @@ export default function DriverDashboardPage() {
   const { data: session, status } = useSession()
   const [shipments, setShipments] = useState<FlashShipmentWithRelations[]>([])
   const [loading, setLoading] = useState(true)
+  const [showScanner, setShowScanner] = useState(false)
   const [today] = useState(() => new Date().toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" }))
 
   const load = async () => {
@@ -57,6 +59,7 @@ export default function DriverDashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-8">
+      {showScanner && <FlashQrScanner onClose={() => setShowScanner(false)} />}
       <div className="max-w-md mx-auto px-4 py-6">
         {/* Header */}
         <div className="flex items-center gap-3 mb-5">
@@ -67,9 +70,18 @@ export default function DriverDashboardPage() {
             <h1 className="font-black text-xl">⚡ FLASH</h1>
             <p className="text-xs text-gray-500 capitalize">{today}</p>
           </div>
-          <Button variant="outline" size="sm" onClick={load}>
-            <RefreshCw className="h-4 w-4" />
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              className="bg-yellow-400 hover:bg-yellow-500 text-black font-bold"
+              onClick={() => setShowScanner(true)}
+            >
+              <QrCode className="h-4 w-4 mr-1" /> Escanear
+            </Button>
+            <Button variant="outline" size="sm" onClick={load}>
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         {/* Daily stats */}
