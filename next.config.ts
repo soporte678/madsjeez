@@ -5,6 +5,9 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  turbopack: {
+    root: __dirname,
+  },
   images: {
     minimumCacheTTL: 60 * 60 * 24 * 30,
     formats: ["image/avif", "image/webp"],

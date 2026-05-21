@@ -160,19 +160,21 @@ export default function Navbar() {
 
         .letter-piece {
           display: inline-block;
-          animation: assemble 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
           text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
         }
-
-        .group:hover .letter-piece {
-          animation: assemble 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+        @media (min-width: 768px) {
+          .letter-piece { animation: assemble 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
+          .group:hover .letter-piece { animation: assemble 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .letter-piece { animation: none !important; }
         }
 
         /* --- Animación de barrido de luz para la insignia MADS PRO --- */
         @keyframes sweep {
-          0% { left: -100%; }
-          20% { left: 200%; }
-          100% { left: 200%; }
+          0% { transform: translateX(-200%); }
+          20% { transform: translateX(300%); }
+          100% { transform: translateX(300%); }
         }
 
         .mads-pro-badge {
@@ -194,11 +196,12 @@ export default function Navbar() {
         .mads-pro-badge::after {
           content: '';
           position: absolute;
-          top: 0; left: -100%;
+          top: 0; left: 0;
           width: 50%; height: 100%;
           background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.5), transparent);
-          transform: skewX(-20deg);
+          transform: translateX(-200%) skewX(-20deg);
           animation: sweep 3s infinite ease-in-out;
+          will-change: transform;
         }
 
         /* --- ANIMACIÓN DEL EFECTO BORRADOR (WIPER) --- */

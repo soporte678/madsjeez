@@ -360,19 +360,24 @@ body {
    CLASES DE UTILIDAD PARA EFECTOS
    ============================================ */
 
-.animate-pulse-glow {
-  animation: pulse-glow 3s ease-in-out infinite;
-  will-change: box-shadow;
-}
-
-.animate-pulse-glow-blue {
-  animation: pulse-glow-blue 3s ease-in-out infinite;
-  will-change: box-shadow;
-}
-
+.animate-pulse-glow,
+.animate-pulse-glow-blue,
 .animate-pulse-glow-yellow {
-  animation: pulse-glow-yellow 3s ease-in-out infinite;
-  will-change: box-shadow;
+  animation: none;
+}
+@media (min-width: 768px) {
+  .animate-pulse-glow {
+    animation: pulse-glow 3s ease-in-out infinite;
+    will-change: box-shadow;
+  }
+  .animate-pulse-glow-blue {
+    animation: pulse-glow-blue 3s ease-in-out infinite;
+    will-change: box-shadow;
+  }
+  .animate-pulse-glow-yellow {
+    animation: pulse-glow-yellow 3s ease-in-out infinite;
+    will-change: box-shadow;
+  }
 }
 
 .animate-float {
@@ -781,20 +786,36 @@ body {
 }
 
 .glass-panel {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.1);
   contain: layout paint;
 }
-
-.floating-ui {
-  animation: float 4s ease-in-out infinite;
+@media (min-width: 768px) {
+  .glass-panel {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
 }
 
-.bg-pattern {
-  background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
-  background-size: 30px 30px;
+.floating-ui {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .floating-ui {
+    display: block;
+    animation: float 4s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .floating-ui { animation: none !important; }
+  }
+}
+
+@media (min-width: 768px) {
+  .bg-pattern {
+    background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+    background-size: 30px 30px;
+  }
 }
 
 .scrollbar-hide::-webkit-scrollbar {

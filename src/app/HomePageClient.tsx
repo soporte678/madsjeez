@@ -15,26 +15,27 @@ const SiteSocialFooter = dynamic(() => import("@/components/seo/SiteSocialFooter
 import {
   ShoppingCart,
   Gamepad2,
-  Sparkles,
   ChevronRight,
-  Check,
   Truck,
   Zap,
   ShieldCheck,
   TrendingUp,
   CreditCard,
-  Package,
-  Navigation,
-  Box,
-  Clock,
-  Tv,
-  Utensils,
-  Store,
-  Building2,
-  Rocket,
-  ShoppingBag,
-  Users,
 } from "lucide-react"
+
+const Sparkles = dynamic(() => import("lucide-react").then(m => ({ default: m.Sparkles })))
+const Package = dynamic(() => import("lucide-react").then(m => ({ default: m.Package })))
+const Navigation = dynamic(() => import("lucide-react").then(m => ({ default: m.Navigation })))
+const Box = dynamic(() => import("lucide-react").then(m => ({ default: m.Box })))
+const Clock = dynamic(() => import("lucide-react").then(m => ({ default: m.Clock })))
+const Tv = dynamic(() => import("lucide-react").then(m => ({ default: m.Tv })))
+const Utensils = dynamic(() => import("lucide-react").then(m => ({ default: m.Utensils })))
+const Store = dynamic(() => import("lucide-react").then(m => ({ default: m.Store })))
+const Building2 = dynamic(() => import("lucide-react").then(m => ({ default: m.Building2 })))
+const Rocket = dynamic(() => import("lucide-react").then(m => ({ default: m.Rocket })))
+const ShoppingBag = dynamic(() => import("lucide-react").then(m => ({ default: m.ShoppingBag })))
+const Users = dynamic(() => import("lucide-react").then(m => ({ default: m.Users })))
+const Check = dynamic(() => import("lucide-react").then(m => ({ default: m.Check })))
 const AIRecommendations = dynamic(() => import("@/components/AIRecommendations"), {
   ssr: false,
   loading: () => null,
@@ -52,18 +53,6 @@ const PaidAdBannerSlot = dynamic(
   () => import("@/components/ads/PaidAdBannerSlot").then((m) => m.PaidAdBannerSlot),
   { loading: () => <div className="h-24 animate-pulse rounded-xl bg-slate-100" /> }
 )
-
-// Configuración de letras para el logo cinético
-const logoLetters = [
-  { char: "M", dx: "-30px", dy: "-40px", rot: "-45deg", delay: "0s" },
-  { char: "A", dx: "-15px", dy: "40px", rot: "25deg", delay: "0.05s" },
-  { char: "D", dx: "20px", dy: "-35px", rot: "-20deg", delay: "0.1s" },
-  { char: "S", dx: "35px", dy: "25px", rot: "45deg", delay: "0.15s" },
-  { char: "J", dx: "-20px", dy: "35px", rot: "-35deg", delay: "0.2s", isBlue: true },
-  { char: "E", dx: "15px", dy: "-45px", rot: "50deg", delay: "0.25s", isBlue: true },
-  { char: "E", dx: "30px", dy: "20px", rot: "-15deg", delay: "0.3s", isBlue: true },
-  { char: "Z", dx: "45px", dy: "-20px", rot: "35deg", delay: "0.35s", isBlue: true },
-]
 
 // Configuración de banners
 const heroBanners = [
@@ -156,16 +145,22 @@ const heroBanners = [
 
 export default function HomePageClient() {
   const [currentSlide, setCurrentSlide] = useState(0)
+  const [heroAutoplay, setHeroAutoplay] = useState(false)
 
   const heroSlideCount = heroBanners.length
 
   useEffect(() => {
-    if (heroSlideCount <= 1) return
+    const t = setTimeout(() => setHeroAutoplay(true), 2000)
+    return () => clearTimeout(t)
+  }, [])
+
+  useEffect(() => {
+    if (!heroAutoplay || heroSlideCount <= 1) return
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev >= heroSlideCount - 1 ? 0 : prev + 1))
     }, 6000)
     return () => clearInterval(timer)
-  }, [heroSlideCount])
+  }, [heroAutoplay, heroSlideCount])
 
   return (
     <main className="min-h-screen bg-mesh font-outfit text-slate-900 overflow-x-hidden">
@@ -183,16 +178,15 @@ export default function HomePageClient() {
           return (
           <div
             key={banner.id}
-            className={`absolute inset-0 w-full h-full transition-all duration-1000 ease-[cubic-bezier(0.23,1,0.32,1)] ${
+            className={`absolute inset-0 w-full h-full transition-opacity duration-700 ${
               isActive
-                ? "opacity-100 z-10 translate-x-0"
-                : "opacity-0 z-0 translate-x-12 pointer-events-none"
+                ? "opacity-100 z-10"
+                : "opacity-0 z-0 pointer-events-none"
             }`}
             aria-hidden={!isActive}
           >
             <div className={`absolute inset-0 bg-gradient-to-br ${banner.bgGradient}`} />
             {isActive && <div className="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-blue-500/10 blur-[80px] hidden md:block" />}
-            <div className="absolute inset-0 bg-pattern opacity-[0.15]" />
           </div>
           )
         })}
@@ -202,7 +196,7 @@ export default function HomePageClient() {
           return (
             <div className="max-w-7xl mx-auto px-4 h-full w-full flex flex-col md:flex-row items-center justify-between gap-12 relative z-20">
               <div className="w-full md:w-3/5 text-left pt-6 md:pt-0">
-                <div className="glass-panel inline-flex items-center gap-2 px-5 py-2 rounded-full text-white font-bold text-[11px] tracking-[0.3em] uppercase mb-4 shadow-2xl">
+                <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full text-white font-bold text-[11px] tracking-[0.3em] uppercase mb-4 shadow-lg border border-white/20 bg-white/10">
                   <span className="w-2.5 h-2.5 rounded-full bg-white shadow-[0_0_10px_#fff]" />
                   {banner.badge}
                 </div>
@@ -231,7 +225,7 @@ export default function HomePageClient() {
 
                 <Link
                   href={banner.id === 5 ? "/seller/register" : "/search"}
-                  className="mt-8 group/btn bg-gradient-to-r from-[#f97316] to-[#ff9100] hover:from-[#ff9100] hover:to-[#ffb703] text-white text-[14px] font-black py-4 px-10 rounded-2xl shadow-xl shadow-orange-500/30 hover:shadow-2xl hover:shadow-orange-500/50 transition-all duration-300 hover:-translate-y-2 inline-flex items-center gap-4 uppercase tracking-wider btn-shine"
+                  className="mt-8 group/btn bg-gradient-to-r from-[#f97316] to-[#ff9100] text-white text-[14px] font-black py-4 px-10 rounded-2xl shadow-xl shadow-orange-500/30 hover:opacity-90 transition-opacity duration-200 inline-flex items-center gap-4 uppercase tracking-wider"
                 >
                   {banner.btn1}
                   <div className="w-8 h-8 rounded-full bg-white text-[#f97316] flex items-center justify-center group-hover/btn:scale-110 group-hover/btn:rotate-12 transition-all">
@@ -241,7 +235,7 @@ export default function HomePageClient() {
               </div>
 
               <div className="hidden lg:flex relative w-1/2 h-[80%] items-center justify-end">
-                <div className="relative w-[480px] h-[520px] glass-panel p-4 rounded-[3.5rem] shadow-[0_50px_100px_rgba(0,0,0,0.6)] border-white/20 transform rotate-2 hover:rotate-0 transition-transform duration-1000 group-hover:scale-[1.02]">
+                <div className="relative w-[480px] h-[520px] p-4 rounded-[3.5rem] shadow-[0_50px_100px_rgba(0,0,0,0.6)] border border-white/20 bg-white/5 transform rotate-2 hover:rotate-0 transition-transform duration-700">
                   <div className="relative w-full h-full rounded-[2.8rem] overflow-hidden bg-slate-900">
                     <Image
                       src={banner.image}
@@ -484,12 +478,12 @@ export default function HomePageClient() {
         <div className="overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.96)_0%,rgba(15,23,42,0.90)_100%)] shadow-[0_22px_55px_rgba(2,6,23,0.28)]">
           <div className="flex flex-col sm:flex-row justify-between items-center px-6 py-5 border-b border-white/10 gap-4">
             <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-r from-[#db2777] to-[#ec4899] text-white px-4 py-1.5 rounded-full font-black italic text-lg tracking-tight shadow-lg shadow-pink-500/30 animate-pulse-glow">
+              <div className="bg-gradient-to-r from-[#db2777] to-[#ec4899] text-white px-4 py-1.5 rounded-full font-black italic text-lg tracking-tight shadow-lg shadow-pink-500/30 md:animate-pulse-glow">
                 mads+
               </div>
               <span className="font-bold text-[15px] text-white">VIVI MADSJEEZ COMO UN EXPERTO</span>
             </div>
-            <Link href="/subscriptions" className="bg-gradient-to-r from-[#f97316] to-[#ff9100] hover:from-[#ff9100] hover:to-[#ffb703] text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/50 transition-all duration-300 hover:-translate-y-1 btn-shine">
+            <Link href="/subscriptions" className="bg-gradient-to-r from-[#f97316] to-[#ff9100] text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-orange-500/30 hover:opacity-90 transition-opacity duration-200">
               Suscribirme desde $ 3.490
             </Link>
           </div>
@@ -524,7 +518,6 @@ export default function HomePageClient() {
       {/* 2. CARRUSEL: Relacionado con tus visitas */}
       <section className="max-w-[1184px] mx-auto px-4">
         <LazyRotatingProductCarousel
-          eager
           title="Relacionado con tus visitas"
           subtitle="Rotación automática en todo el catálogo"
           offset={12}
