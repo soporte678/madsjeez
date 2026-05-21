@@ -5,9 +5,10 @@ import { FlashStatusBadge } from "@/components/flash/FlashStatusBadge"
 import { FlashQrScanner } from "@/components/flash/FlashQrScanner"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import Link from "next/link"
 import {
   Zap, Package, MapPin, Phone, Navigation,
-  QrCode, CheckCircle2, RefreshCw, Clock,
+  QrCode, CheckCircle2, RefreshCw, Clock, User,
 } from "lucide-react"
 import type { FlashShipmentWithRelations } from "@/lib/flash/types"
 
@@ -77,6 +78,11 @@ export default function DriverDashboardPage() {
               onClick={() => setShowScanner(true)}
             >
               <QrCode className="h-4 w-4 mr-1" /> Escanear
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/driver/perfil" aria-label="Mi perfil">
+                <User className="h-4 w-4" />
+              </Link>
             </Button>
             <Button variant="outline" size="sm" onClick={load}>
               <RefreshCw className="h-4 w-4" />

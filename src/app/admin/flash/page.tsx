@@ -46,7 +46,12 @@ export default function AdminFlashPage() {
   const [assigning, setAssigning] = useState<string | null>(null)
   const [updating, setUpdating] = useState<string | null>(null)
   const [showAddDriver, setShowAddDriver] = useState(false)
-  const [newDriver, setNewDriver] = useState({ email: "", phone: "", vehicleType: "moto" })
+  const [newDriver, setNewDriver] = useState({
+    email: "",
+    phone: "",
+    vehicleType: "moto",
+    provisionalPassword: "",
+  })
   const [addingDriver, setAddingDriver] = useState(false)
   const [approvingDriver, setApprovingDriver] = useState<string | null>(null)
 
@@ -105,21 +110,32 @@ export default function AdminFlashPage() {
   }
 
   const handleAddDriver = async () => {
-    if (!newDriver.email || !newDriver.phone) return
+    if (!newDriver.email || !newDriver.phone || !newDriver.provisionalPassword) return
+    if (newDriver.provisionalPassword.length < 8) {
+      alert("La contraseña provisional debe tener al menos 8 caracteres.")
+      return
+    }
     setAddingDriver(true)
     try {
-      // Buscar usuario por email
-      const userRes = await fetch(`/api/admin/users/lookup?email=${encodeURIComponent(newDriver.email)}`)
-      const userData = await userRes.json()
-      if (!userRes.ok || !userData.id) { alert(userData.error ?? "Usuario no encontrado"); return }
       const r = await fetch("/api/flash/drivers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: userData.id, phone: newDriver.phone, vehicleType: newDriver.vehicleType }),
+        body: JSON.stringify({
+          email: newDriver.email.trim(),
+          phone: newDriver.phone,
+          vehicleType: newDriver.vehicleType,
+          provisionalPassword: newDriver.provisionalPassword,
+        }),
       })
       const d = await r.json()
-      if (!r.ok) { alert(d.error ?? "Error al registrar"); return }
-      setNewDriver({ email: "", phone: "", vehicleType: "moto" })
+      if (!r.ok) {
+        alert(d.error ?? "Error al registrar")
+        return
+      }
+      alert(
+        `Chofer registrado.\n\nEmail: ${d.driver?.user?.email ?? newDriver.email}\nContraseña provisional: la que ingresaste.\n\nEl chofer puede cambiarla en /driver/perfil`
+      )
+      setNewDriver({ email: "", phone: "", vehicleType: "moto", provisionalPassword: "" })
       setShowAddDriver(false)
       await load()
     } finally {
@@ -335,9 +351,12 @@ export default function AdminFlashPage() {
               <p className="font-semibold text-sm">Registrar nuevo repartidor</p>
               <button onClick={() => setShowAddDriver(false)}><X className="h-4 w-4 text-gray-400" /></button>
             </div>
-            <div className="grid grid-cols-3 gap-3">
-              <div className="col-span-3 sm:col-span-1">
-                <Label className="text-xs">Email del usuario *</Label>
+            <p className="text-xs text-gray-500 mb-3">
+              Si el email no existe en Madsjeez, se crea la cuenta. La contraseña provisional la puede cambiar el chofer en Mi perfil.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="sm:col-span-2">
+                <Label className="text-xs">Email *</Label>
                 <Input placeholder="repartidor@email.com" value={newDriver.email}
                   onChange={(e) => setNewDriver((p) => ({ ...p, email: e.target.value }))} />
               </div>
@@ -357,9 +376,28 @@ export default function AdminFlashPage() {
                   <option value="furgoneta">Furgoneta</option>
                 </select>
               </div>
+              <div className="sm:col-span-2">
+                <Label className="text-xs">Contraseña provisional * (mín. 8 caracteres)</Label>
+                <Input
+                  type="password"
+                  placeholder="Temporal para primer ingreso"
+                  value={newDriver.provisionalPassword}
+                  onChange={(e) => setNewDriver((p) => ({ ...p, provisionalPassword: e.target.value }))}
+                  minLength={8}
+                />
+              </div>
             </div>
-            <Button size="sm" className="mt-3 bg-yellow-400 hover:bg-yellow-500 text-black font-bold"
-              onClick={handleAddDriver} disabled={addingDriver || !newDriver.email || !newDriver.phone}>
+            <Button
+              size="sm"
+              className="mt-3 bg-yellow-400 hover:bg-yellow-500 text-black font-bold"
+              onClick={handleAddDriver}
+              disabled={
+                addingDriver ||
+                !newDriver.email ||
+                !newDriver.phone ||
+                newDriver.provisionalPassword.length < 8
+              }
+            >
               {addingDriver ? "Registrando..." : "Confirmar"}
             </Button>
           </CardContent>
