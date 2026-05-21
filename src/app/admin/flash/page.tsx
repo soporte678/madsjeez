@@ -23,9 +23,12 @@ const STATUS_OPTIONS: FlashShipmentStatus[] = [
 
 interface Driver { id: string; user: { name: string | null; email: string } }
 
+interface PendingDriver { id: string; phone: string; vehicleType: string; createdAt: string; user: { name: string | null; email: string } }
+
 export default function AdminFlashPage() {
   const [shipments, setShipments] = useState<FlashShipmentWithRelations[]>([])
   const [drivers, setDrivers] = useState<Driver[]>([])
+  const [pendingDrivers, setPendingDrivers] = useState<PendingDriver[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [filterStatus, setFilterStatus] = useState<string>("ALL")
@@ -35,18 +38,41 @@ export default function AdminFlashPage() {
   const [showAddDriver, setShowAddDriver] = useState(false)
   const [newDriver, setNewDriver] = useState({ email: "", phone: "", vehicleType: "moto" })
   const [addingDriver, setAddingDriver] = useState(false)
+  const [approvingDriver, setApprovingDriver] = useState<string | null>(null)
 
   const load = async () => {
     setLoading(true)
     try {
-      const [sr, dr] = await Promise.all([
+      const [sr, dr, pd] = await Promise.all([
         fetch("/api/flash/shipments?role=admin").then((r) => r.json()),
-        fetch("/api/flash/drivers").then((r) => r.json()),
+        fetch("/api/flash/drivers?filter=active").then((r) => r.json()),
+        fetch("/api/flash/drivers?filter=pending").then((r) => r.json()),
       ])
       setShipments(sr.shipments ?? [])
       setDrivers(dr.drivers ?? [])
+      setPendingDrivers(pd.drivers ?? [])
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleApproveDriver = async (driverId: string) => {
+    setApprovingDriver(driverId)
+    try {
+      await fetch(`/api/flash/drivers/${driverId}/approve`, { method: "POST" })
+      await load()
+    } finally {
+      setApprovingDriver(null) }
+  }
+
+  const handleRejectDriver = async (driverId: string) => {
+    if (!confirm("¿Rechazar esta solicitud?")) return
+    setApprovingDriver(driverId)
+    try {
+      await fetch(`/api/flash/drivers/${driverId}/approve`, { method: "DELETE" })
+      await load()
+    } finally {
+      setApprovingDriver(null)
     }
   }
 
@@ -147,6 +173,41 @@ export default function AdminFlashPage() {
           <RefreshCw className="h-4 w-4 mr-1" /> Actualizar
         </Button>
       </div>
+
+      {/* Pending drivers */}
+      {pendingDrivers.length > 0 && (
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-sm font-bold text-amber-700">Solicitudes pendientes de aprobación</span>
+            <span className="bg-amber-100 text-amber-700 text-xs font-bold rounded-full px-2 py-0.5">{pendingDrivers.length}</span>
+          </div>
+          <div className="space-y-2">
+            {pendingDrivers.map((d) => (
+              <Card key={d.id}>
+                <CardContent className="p-4 flex items-center justify-between gap-4">
+                  <div>
+                    <p className="font-semibold text-sm">{d.user.name ?? "Sin nombre"}</p>
+                    <p className="text-xs text-gray-500">{d.user.email} · {d.phone} · {d.vehicleType}</p>
+                    <p className="text-xs text-gray-400">{new Date(d.createdAt).toLocaleDateString("es-AR")}</p>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white"
+                      disabled={approvingDriver === d.id}
+                      onClick={() => handleApproveDriver(d.id)}>
+                      {approvingDriver === d.id ? "..." : "✓ Aprobar"}
+                    </Button>
+                    <Button size="sm" variant="outline" className="border-red-300 text-red-600 hover:bg-red-50"
+                      disabled={approvingDriver === d.id}
+                      onClick={() => handleRejectDriver(d.id)}>
+                      Rechazar
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Drivers */}
       <div className="flex items-center justify-between">

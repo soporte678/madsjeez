@@ -3,13 +3,20 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
-// GET — lista choferes activos (admin)
-export async function GET() {
+// GET — lista choferes (admin): activos + pendientes de aprobación
+export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session?.user) return NextResponse.json({ error: "No autenticado" }, { status: 401 })
 
+  const { searchParams } = new URL(req.url)
+  const filter = searchParams.get("filter") // "active" | "pending" | undefined = all
+
+  const where = filter === "active" ? { isActive: true }
+    : filter === "pending" ? { isActive: false }
+    : {}
+
   const drivers = await prisma.flashDriver.findMany({
-    where: { isActive: true },
+    where,
     include: {
       user: { select: { name: true, email: true, image: true } },
       _count: { select: { shipments: true } },
