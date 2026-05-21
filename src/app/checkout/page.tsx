@@ -21,7 +21,10 @@ import {
   Plus,
   Minus,
   Trash2,
+  Zap,
 } from "lucide-react";
+import { FlashShippingForm } from "@/components/flash/FlashShippingForm";
+import type { FlashAddressData } from "@/lib/flash/types";
 import { toast } from "sonner";
 import {
   ANALYTICS_CURRENCY,
@@ -114,6 +117,9 @@ function CheckoutContent() {
   });
 
   /** Cotización servidor (Zipnova o monto legacy); null = aún no cotizado o dirección incompleta. */
+  const [shippingMethod, setShippingMethod] = useState<"standard" | "flash">("standard");
+  const [flashData, setFlashData] = useState<FlashAddressData | null>(null);
+
   const [shippingQuote, setShippingQuote] = useState<{
     shipping_full: number;
     buyer_shipping_share: number;
@@ -424,6 +430,7 @@ function CheckoutContent() {
         body: JSON.stringify({
           shipping: shippingAddress,
           buyer_email: session.user.email ?? undefined,
+          flash: shippingMethod === "flash" ? flashData : undefined,
         }),
       });
 
@@ -655,118 +662,163 @@ function CheckoutContent() {
                 {step === 1 && (
                   <Card>
                     <CardContent className="p-6">
-                      <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
+                      <h2 className="text-xl font-semibold mb-5 flex items-center gap-2">
                         <MapPin className="h-5 w-5" />
-                        Dirección de envío
+                        Método de envío
                       </h2>
 
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="col-span-2">
-                            <Label>Nombre del destinatario *</Label>
-                            <Input
-                              value={shippingAddress.recipient}
-                              onChange={(e) =>
-                                setShippingAddress({ ...shippingAddress, recipient: e.target.value })
-                              }
-                              placeholder="Nombre y apellido"
-                            />
-                          </div>
-
-                          <div className="col-span-2">
-                            <Label>Calle *</Label>
-                            <Input
-                              value={shippingAddress.street}
-                              onChange={(e) =>
-                                setShippingAddress({ ...shippingAddress, street: e.target.value })
-                              }
-                              placeholder="Nombre de la calle"
-                            />
-                          </div>
-
-                          <div>
-                            <Label>Número *</Label>
-                            <Input
-                              value={shippingAddress.number}
-                              onChange={(e) =>
-                                setShippingAddress({ ...shippingAddress, number: e.target.value })
-                              }
-                              placeholder="123"
-                            />
-                          </div>
-
-                          <div>
-                            <Label>Depto/Piso (opcional)</Label>
-                            <Input
-                              value={shippingAddress.apartment}
-                              onChange={(e) =>
-                                setShippingAddress({ ...shippingAddress, apartment: e.target.value })
-                              }
-                              placeholder="4B"
-                            />
-                          </div>
-
-                          <div>
-                            <Label>Ciudad *</Label>
-                            <Input
-                              value={shippingAddress.city}
-                              onChange={(e) =>
-                                setShippingAddress({ ...shippingAddress, city: e.target.value })
-                              }
-                              placeholder="Ciudad"
-                            />
-                          </div>
-
-                          <div>
-                            <Label>Provincia *</Label>
-                            <Input
-                              value={shippingAddress.state}
-                              onChange={(e) =>
-                                setShippingAddress({ ...shippingAddress, state: e.target.value })
-                              }
-                              placeholder="Provincia"
-                            />
-                          </div>
-
-                          <div>
-                            <Label>Código postal *</Label>
-                            <Input
-                              value={shippingAddress.zip}
-                              onChange={(e) =>
-                                setShippingAddress({ ...shippingAddress, zip: e.target.value })
-                              }
-                              placeholder="1000"
-                            />
-                          </div>
-
-                          <div>
-                            <Label>Teléfono *</Label>
-                            <Input
-                              value={shippingAddress.phone}
-                              onChange={(e) =>
-                                setShippingAddress({ ...shippingAddress, phone: e.target.value })
-                              }
-                              placeholder="+54 11 1234-5678"
-                            />
-                          </div>
-                        </div>
-
-                        <Button
-                          className="w-full mt-6 bg-primary hover:bg-primary-hover"
-                          onClick={handleAdvanceToPayment}
-                          disabled={
-                            !shippingAddress.recipient ||
-                            !shippingAddress.street ||
-                            !shippingAddress.number ||
-                            !shippingAddress.city ||
-                            !shippingAddress.state ||
-                            !shippingAddress.zip ||
-                            !shippingAddress.phone
-                          }
+                      {/* Shipping method selector */}
+                      <div className="grid grid-cols-2 gap-3 mb-6">
+                        <button
+                          onClick={() => setShippingMethod("standard")}
+                          className={`flex items-center gap-3 border rounded-xl p-4 text-left transition-colors ${
+                            shippingMethod === "standard"
+                              ? "border-primary bg-primary/5"
+                              : "border-gray-200 hover:border-gray-300"
+                          }`}
                         >
-                          Continuar
-                        </Button>
+                          <Package className="h-5 w-5 text-gray-500 shrink-0" />
+                          <div>
+                            <p className="font-semibold text-sm">Envío estándar</p>
+                            <p className="text-xs text-gray-500">3–7 días hábiles</p>
+                          </div>
+                        </button>
+                        <button
+                          onClick={() => setShippingMethod("flash")}
+                          className={`flex items-center gap-3 border rounded-xl p-4 text-left transition-colors ${
+                            shippingMethod === "flash"
+                              ? "border-yellow-400 bg-yellow-50"
+                              : "border-gray-200 hover:border-yellow-200"
+                          }`}
+                        >
+                          <div className="bg-yellow-400 rounded-full p-1 shrink-0">
+                            <Zap className="h-4 w-4 text-black fill-black" />
+                          </div>
+                          <div>
+                            <p className="font-black text-sm">⚡ Flash</p>
+                            <p className="text-xs text-gray-500">Menos de 24 hs</p>
+                          </div>
+                        </button>
                       </div>
+
+                      {/* Flash form */}
+                      {shippingMethod === "flash" && (
+                        <FlashShippingForm
+                          onConfirm={(data) => { setFlashData(data); handleAdvanceToPayment(); }}
+                          onBack={() => setShippingMethod("standard")}
+                        />
+                      )}
+
+                      {/* Standard form */}
+                      {shippingMethod === "standard" && (
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="col-span-2">
+                              <Label>Nombre del destinatario *</Label>
+                              <Input
+                                value={shippingAddress.recipient}
+                                onChange={(e) =>
+                                  setShippingAddress({ ...shippingAddress, recipient: e.target.value })
+                                }
+                                placeholder="Nombre y apellido"
+                              />
+                            </div>
+
+                            <div className="col-span-2">
+                              <Label>Calle *</Label>
+                              <Input
+                                value={shippingAddress.street}
+                                onChange={(e) =>
+                                  setShippingAddress({ ...shippingAddress, street: e.target.value })
+                                }
+                                placeholder="Nombre de la calle"
+                              />
+                            </div>
+
+                            <div>
+                              <Label>Número *</Label>
+                              <Input
+                                value={shippingAddress.number}
+                                onChange={(e) =>
+                                  setShippingAddress({ ...shippingAddress, number: e.target.value })
+                                }
+                                placeholder="123"
+                              />
+                            </div>
+
+                            <div>
+                              <Label>Depto/Piso (opcional)</Label>
+                              <Input
+                                value={shippingAddress.apartment}
+                                onChange={(e) =>
+                                  setShippingAddress({ ...shippingAddress, apartment: e.target.value })
+                                }
+                                placeholder="4B"
+                              />
+                            </div>
+
+                            <div>
+                              <Label>Ciudad *</Label>
+                              <Input
+                                value={shippingAddress.city}
+                                onChange={(e) =>
+                                  setShippingAddress({ ...shippingAddress, city: e.target.value })
+                                }
+                                placeholder="Ciudad"
+                              />
+                            </div>
+
+                            <div>
+                              <Label>Provincia *</Label>
+                              <Input
+                                value={shippingAddress.state}
+                                onChange={(e) =>
+                                  setShippingAddress({ ...shippingAddress, state: e.target.value })
+                                }
+                                placeholder="Provincia"
+                              />
+                            </div>
+
+                            <div>
+                              <Label>Código postal *</Label>
+                              <Input
+                                value={shippingAddress.zip}
+                                onChange={(e) =>
+                                  setShippingAddress({ ...shippingAddress, zip: e.target.value })
+                                }
+                                placeholder="1000"
+                              />
+                            </div>
+
+                            <div>
+                              <Label>Teléfono *</Label>
+                              <Input
+                                value={shippingAddress.phone}
+                                onChange={(e) =>
+                                  setShippingAddress({ ...shippingAddress, phone: e.target.value })
+                                }
+                                placeholder="+54 11 1234-5678"
+                              />
+                            </div>
+                          </div>
+
+                          <Button
+                            className="w-full mt-6 bg-primary hover:bg-primary-hover"
+                            onClick={handleAdvanceToPayment}
+                            disabled={
+                              !shippingAddress.recipient ||
+                              !shippingAddress.street ||
+                              !shippingAddress.number ||
+                              !shippingAddress.city ||
+                              !shippingAddress.state ||
+                              !shippingAddress.zip ||
+                              !shippingAddress.phone
+                            }
+                          >
+                            Continuar
+                          </Button>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 )}
@@ -809,16 +861,37 @@ function CheckoutContent() {
 
                       <div className="space-y-4 mb-6">
                         <div className="bg-gray-50 p-4 rounded-lg">
-                          <p className="font-medium mb-2">Dirección de envío</p>
-                          <p className="text-sm text-gray-600">{shippingAddress.recipient}</p>
-                          <p className="text-sm text-gray-600">
-                            {shippingAddress.street} {shippingAddress.number}
-                            {shippingAddress.apartment && `, ${shippingAddress.apartment}`}
+                          <p className="font-medium mb-2 flex items-center gap-2">
+                            Dirección de envío
+                            {shippingMethod === "flash" && (
+                              <span className="inline-flex items-center gap-1 text-xs font-bold bg-yellow-400 text-black rounded-full px-2 py-0.5">
+                                <Zap className="h-3 w-3 fill-black" /> Flash
+                              </span>
+                            )}
                           </p>
-                          <p className="text-sm text-gray-600">
-                            {shippingAddress.zip}, {shippingAddress.city}, {shippingAddress.state}
-                          </p>
-                          <p className="text-sm text-gray-600">Tel: {shippingAddress.phone}</p>
+                          {shippingMethod === "flash" && flashData ? (
+                            <>
+                              <p className="text-sm text-gray-600">{flashData.recipientName} · DNI {flashData.recipientDni}</p>
+                              <p className="text-sm text-gray-600">
+                                {flashData.street} {flashData.streetNumber}{flashData.apartment ? `, ${flashData.apartment}` : ""}
+                              </p>
+                              <p className="text-sm text-gray-600">Entre {flashData.betweenStreet1} y {flashData.betweenStreet2}</p>
+                              <p className="text-sm text-gray-600">{flashData.city}, {flashData.province} — CP {flashData.postalCode}</p>
+                              <p className="text-sm text-gray-600">WhatsApp: {flashData.recipientPhone}</p>
+                            </>
+                          ) : (
+                            <>
+                              <p className="text-sm text-gray-600">{shippingAddress.recipient}</p>
+                              <p className="text-sm text-gray-600">
+                                {shippingAddress.street} {shippingAddress.number}
+                                {shippingAddress.apartment && `, ${shippingAddress.apartment}`}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                {shippingAddress.zip}, {shippingAddress.city}, {shippingAddress.state}
+                              </p>
+                              <p className="text-sm text-gray-600">Tel: {shippingAddress.phone}</p>
+                            </>
+                          )}
                         </div>
 
                         <div className="bg-gray-50 p-4 rounded-lg">

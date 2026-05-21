@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { createServerClient, type CookieOptions } from "@supabase/ssr"
 import { getSupabaseService } from "@/lib/supabase/service"
+import { getToken } from "next-auth/jwt"
 
 const CANONICAL_HOST = "www.madsjeez.com.ar"
 
@@ -21,6 +22,17 @@ export async function middleware(request: NextRequest) {
   if (hostRedirect) return hostRedirect
 
   const { pathname } = request.nextUrl
+
+  // Protect driver routes — require NextAuth session
+  if (pathname.startsWith("/driver") && !pathname.startsWith("/driver/login")) {
+    const token = await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET,
+    })
+    if (!token) {
+      return NextResponse.redirect(new URL("/driver/login", request.url))
+    }
+  }
 
   // Only protect admin routes except login
   if (pathname.startsWith("/admin") && !pathname.startsWith("/admin/login")) {

@@ -173,6 +173,8 @@ model User {
   campaigns         Campaign[]
   coupons           Coupon[]
   cart              Cart?
+  // Flash
+  flashDriver       FlashDriver?
   sellerMeliOAuthAccounts SellerMeliOAuth[]
   sellerZipnovaOAuth SellerZipnovaOAuth?
   meliAdsSnapshots  MeliAdsSnapshot[]
@@ -381,6 +383,7 @@ model Order {
   claims        Claim[]
   messages      OrderMessage[]
   shipment        Shipment?
+  flashShipment   FlashShipment?
   supportTickets  SupportTicket[]
   
   createdAt     DateTime    @default(now()) @map("created_at")
@@ -1252,6 +1255,188 @@ model FAQ {
   updatedAt   DateTime @updatedAt @map("updated_at")
   
   @@map("faqs")
+}
+
+// ============================================
+// SISTEMA FLASH — LOGÍSTICA PROPIA
+// ============================================
+
+enum FlashShipmentStatus {
+  CREATED
+  PAYMENT_CONFIRMED
+  LABEL_GENERATED
+  PACKAGE_READY
+  ASSIGNED_TO_DRIVER
+  IN_TRANSIT
+  ARRIVED_AT_ADDRESS
+  DELIVERED
+  FAILED_ATTEMPT_1
+  PENDING_VISIT_2
+  FAILED_ATTEMPT_2
+  PENDING_VISIT_3
+  FAILED_ATTEMPT_3
+  RETURNED_TO_SENDER
+  CANCELLED
+}
+
+enum FlashReceiverType {
+  TITULAR
+  AUTHORIZED
+  FAMILY
+  NEIGHBOR
+}
+
+enum FlashAttemptStatus {
+  IN_PROGRESS
+  DELIVERED
+  CLIENT_NOT_FOUND
+}
+
+model FlashShipment {
+  id               String               @id @default(cuid())
+  orderId          String               @unique @map("order_id")
+  order            Order                @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  // Datos del destinatario
+  recipientName    String               @map("recipient_name")
+  recipientDni     String               @map("recipient_dni")
+  recipientPhone   String               @map("recipient_phone")
+
+  // Dirección completa
+  street           String
+  streetNumber     String               @map("street_number")
+  floor            String?
+  apartment        String?
+  betweenStreet1   String               @map("between_street1")
+  betweenStreet2   String               @map("between_street2")
+  city             String
+  province         String
+  postalCode       String               @map("postal_code")
+
+  // Control operativo
+  status           FlashShipmentStatus  @default(CREATED)
+  driverId         String?              @map("driver_id")
+  driver           FlashDriver?         @relation(fields: [driverId], references: [id], onDelete: SetNull)
+  labelUrl         String?              @map("label_url")
+  qrToken          String               @unique @map("qr_token")
+  labelPrintCount  Int                  @default(0) @map("label_print_count")
+
+  // Estimado de entrega
+  estimatedDelivery DateTime?           @map("estimated_delivery")
+
+  attempts         FlashDeliveryAttempt[]
+  authorizedPeople FlashAuthorizedRecipient[]
+  deliveryProof    FlashDeliveryProof?
+  auditLogs        FlashAuditLog[]
+
+  createdAt        DateTime             @default(now()) @map("created_at")
+  updatedAt        DateTime             @updatedAt @map("updated_at")
+
+  @@index([orderId])
+  @@index([driverId])
+  @@index([status])
+  @@map("flash_shipments")
+}
+
+model FlashDriver {
+  id            String          @id @default(cuid())
+  userId        String          @unique @map("user_id")
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicleType   String          @default("moto") @map("vehicle_type")
+  licenseNumber String?         @map("license_number")
+  phone         String
+  isActive      Boolean         @default(true) @map("is_active")
+
+  shipments     FlashShipment[]
+  attempts      FlashDeliveryAttempt[]
+
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+
+  @@index([isActive])
+  @@map("flash_drivers")
+}
+
+model FlashDeliveryAttempt {
+  id            String              @id @default(cuid())
+  shipmentId    String              @map("shipment_id")
+  shipment      FlashShipment       @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  driverId      String              @map("driver_id")
+  driver        FlashDriver         @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  attemptNumber Int                 @map("attempt_number")
+
+  arrivedAt     DateTime?           @map("arrived_at")
+  completedAt   DateTime?           @map("completed_at")
+
+  latitude      Float?
+  longitude     Float?
+
+  status        FlashAttemptStatus  @default(IN_PROGRESS)
+  notes         String?             @db.Text
+
+  photos        FlashAttemptPhoto[]
+
+  createdAt     DateTime            @default(now()) @map("created_at")
+
+  @@index([shipmentId])
+  @@index([driverId])
+  @@map("flash_delivery_attempts")
+}
+
+model FlashAttemptPhoto {
+  id         String               @id @default(cuid())
+  attemptId  String               @map("attempt_id")
+  attempt    FlashDeliveryAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  url        String
+  uploadedAt DateTime             @default(now()) @map("uploaded_at")
+
+  @@index([attemptId])
+  @@map("flash_attempt_photos")
+}
+
+model FlashDeliveryProof {
+  id            String            @id @default(cuid())
+  shipmentId    String            @unique @map("shipment_id")
+  shipment      FlashShipment     @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+
+  receiverType  FlashReceiverType @map("receiver_type")
+  receiverName  String            @map("receiver_name")
+  receiverDni   String            @map("receiver_dni")
+
+  photos        String[]
+  signedAt      DateTime          @default(now()) @map("signed_at")
+
+  @@map("flash_delivery_proofs")
+}
+
+model FlashAuthorizedRecipient {
+  id         String        @id @default(cuid())
+  shipmentId String        @map("shipment_id")
+  shipment   FlashShipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  name       String
+  dni        String
+
+  @@index([shipmentId])
+  @@map("flash_authorized_recipients")
+}
+
+model FlashAuditLog {
+  id             String               @id @default(cuid())
+  shipmentId     String               @map("shipment_id")
+  shipment       FlashShipment        @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  actorId        String               @map("actor_id")
+  actorRole      String               @map("actor_role")
+  action         String
+  previousStatus FlashShipmentStatus? @map("previous_status")
+  newStatus      FlashShipmentStatus? @map("new_status")
+  metadata       Json?
+
+  createdAt      DateTime             @default(now()) @map("created_at")
+
+  @@index([shipmentId])
+  @@index([createdAt])
+  @@map("flash_audit_logs")
 }
 
 model WebVisit {

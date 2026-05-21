@@ -27,7 +27,9 @@ import {
   type StockReservationLine,
 } from "@/lib/orders/stock-reservation";
 import { pushStockToMeliForProductIds } from "@/lib/meli/stock-sync";
-import { randomUUID } from "crypto";
+import { randomUUID, randomBytes } from "crypto";
+import type { FlashAddressData } from "@/lib/flash/types";
+import { logFlashAudit } from "@/lib/flash/audit";
 
 function sleepMs(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
@@ -78,6 +80,7 @@ export async function POST(req: Request) {
       guest_email?: string | null;
       guest_phone?: string | null;
       guest_document?: string | null;
+      flash?: FlashAddressData;
     };
     const shippingAddressRaw = body.shipping ?? {};
     const guestClaim = buildGuestClaim(session.user.email, {
@@ -631,6 +634,45 @@ export async function POST(req: Request) {
     }
 
     await prisma.cartItem.deleteMany({ where: { cartId: cart.id } });
+
+    // Crear envío Flash si el comprador eligió ese método
+    // orderId es el UUID de Supabase — la FK se satisface directo en la DB
+    if (body.flash && persistedOrder) {
+      try {
+        const fd = body.flash;
+        const qrToken = randomBytes(32).toString("hex");
+        {
+          const flashShipment = await prisma.flashShipment.create({
+            data: {
+              orderId,
+              qrToken,
+              status: "CREATED",
+              recipientName: fd.recipientName,
+              recipientDni: fd.recipientDni,
+              recipientPhone: fd.recipientPhone,
+              street: fd.street,
+              streetNumber: fd.streetNumber,
+              floor: fd.floor ?? null,
+              apartment: fd.apartment ?? null,
+              betweenStreet1: fd.betweenStreet1,
+              betweenStreet2: fd.betweenStreet2,
+              city: fd.city,
+              province: fd.province,
+              postalCode: fd.postalCode,
+            },
+          });
+          await logFlashAudit({
+            shipmentId: flashShipment.id,
+            action: "SHIPMENT_CREATED",
+            actorId: buyerPrismaId,
+            actorRole: "SYSTEM",
+            newStatus: "CREATED",
+          });
+        }
+      } catch (flashErr) {
+        console.error("checkout/mp flash shipment create (non-fatal):", flashErr);
+      }
+    }
 
     return NextResponse.json({
       init_point: mpData.init_point,
