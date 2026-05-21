@@ -98,7 +98,7 @@ const fmtMoney = (n: number) =>
   new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
 
 function formatRelativeSync(iso: string | null): string {
-  if (!iso) return "Sin importaciones completadas aÃƒÂºn.";
+  if (!iso) return "Sin importaciones completadas aún.";
   const t = new Date(iso).getTime();
   if (Number.isNaN(t)) return "Sin datos de fecha.";
   const diff = Date.now() - t;
@@ -108,7 +108,7 @@ function formatRelativeSync(iso: string | null): string {
   const h = Math.floor(m / 60);
   if (h < 48) return `Hace ${h} horas.`;
   const d = Math.floor(h / 24);
-  return `Hace ${d} dÃƒÂ­as.`;
+  return `Hace ${d} días.`;
 }
 
 function statusBadgeClasses(status: string): string {
@@ -127,7 +127,7 @@ function statusLabelEs(status: string): string {
     paused: "Pausada",
     closed: "Cerrada",
     inactive: "Inactiva",
-    under_review: "En revisiÃƒÂ³n",
+    under_review: "En revisión",
   };
   return map[s] || status;
 }
@@ -146,7 +146,7 @@ function listingLabelEs(listingType: string): string {
   const t = listingType.toLowerCase();
   if (t.includes("gold_pro")) return "Premium (gold_pro)";
   if (t.includes("gold_special")) return "Premium especial";
-  if (t === "free") return "ClÃƒÂ¡sica";
+  if (t === "free") return "Clásica";
   return listingType;
 }
 
@@ -248,12 +248,12 @@ export default function MeliIntegrationView() {
       window.history.replaceState({}, "", `${window.location.pathname}${window.location.hash}`);
     const errorMessages: Record<string, string> = {
       meli_db_schema:
-        "Falta esquema de Mercado Libre en la base (tabla/columnas). Si acabÃƒÂ¡s de desplegar, esperÃƒÂ¡ el pre-deploy de migraciones; si no, ejecutÃƒÂ¡ prisma migrate deploy con la DATABASE_URL de producciÃƒÂ³n y reconectÃƒÂ¡ ML.",
-      invalid_state: "La sesiÃƒÂ³n de OAuth caducÃƒÂ³ o es invÃƒÂ¡lida. ProbÃƒÂ¡ Ã¢â‚¬Å“Conectar Mercado LibreÃ¢â‚¬Â de nuevo.",
+        "Falta esquema de Mercado Libre en la base (tabla/columnas). Si acabás de desplegar, esperá el pre-deploy de migraciones; si no, ejecutá prisma migrate deploy con la DATABASE_URL de producción y reconectá ML.",
+      invalid_state: "La sesión de OAuth caducó o es inválida. Probá “Conectar Mercado Libre” de nuevo.",
       meli_not_configured: "Faltan variables MELI_APP_ID / MELI_CLIENT_SECRET / MELI_REDIRECT_URI en el servidor.",
-      users_me_failed: "Mercado Libre no devolviÃƒÂ³ tu usuario. ReintentÃƒÂ¡ o revisÃƒÂ¡ permisos de la app.",
+      users_me_failed: "Mercado Libre no devolvió tu usuario. Reintentá o revisá permisos de la app.",
       no_meli_user: "No se pudo leer tu ID de usuario en Mercado Libre.",
-      oauth_error: "Error al guardar la conexiÃƒÂ³n. RevisÃƒÂ¡ logs del servidor.",
+      oauth_error: "Error al guardar la conexión. Revisá logs del servidor.",
     };
 
     if (ok) {
@@ -324,7 +324,7 @@ export default function MeliIntegrationView() {
 
   const loadImportPreview = async (preserveErrors = false) => {
     if (!selectedAccountId) {
-      toast.error("SeleccionÃƒÂ¡ una cuenta de Mercado Libre");
+      toast.error("Seleccioná una cuenta de Mercado Libre");
       return;
     }
     setLoadingImportPreview(true);
@@ -351,11 +351,11 @@ export default function MeliIntegrationView() {
         setSelectedPullIds(new Set(preview.rows.filter((x) => x.action !== "skip").map((x) => x.id)));
         setSelectedPushIds(new Set());
         setPage(1);
-        toast.success(`CatÃƒÂ¡logo leÃƒÂ­do: ${preview.rows.length} publicaciones en esta vista previa.`);
+        toast.success(`Catálogo leído: ${preview.rows.length} publicaciones en esta vista previa.`);
       }
       if (preview?.warnings?.length) {
         toast.message("Avisos al leer Mercado Libre", {
-          description: preview.warnings.slice(0, 4).join(" Ã‚Â· "),
+          description: preview.warnings.slice(0, 4).join(" · "),
         });
       }
     } catch {
@@ -432,12 +432,12 @@ export default function MeliIntegrationView() {
 
   const runImport = async () => {
     if (!importPreview?.rows?.length) {
-      toast.error("Primero cargÃƒÂ¡ la vista previa del catÃƒÂ¡logo");
+      toast.error("Primero cargá la vista previa del catálogo");
       return;
     }
     const ids = [...selectedPullIds];
     if (!ids.length) {
-      toast.error("SeleccionÃƒÂ¡ al menos una publicaciÃƒÂ³n para importar o actualizar en MADSJEEZ");
+      toast.error("Seleccioná al menos una publicación para importar o actualizar en MADSJEEZ");
       return;
     }
     setImporting(true);
@@ -462,7 +462,7 @@ export default function MeliIntegrationView() {
       }
       if (d.needsConfirmation) {
         setImportPreview(d.preview || null);
-        toast.message("ConfirmÃƒÂ¡ la importaciÃƒÂ³n luego de revisar la vista previa.");
+        toast.message("Confirmá la importación luego de revisar la vista previa.");
         return;
       }
       const skippedN = Number(d.skipped) || 0;
@@ -479,7 +479,7 @@ export default function MeliIntegrationView() {
       await loadStatus();
       if (d.errorCount > 0) {
         toast.message(`${d.errorCount} avisos`, {
-          description: (d.errors || []).slice(0, 3).join(" Ã‚Â· "),
+          description: (d.errors || []).slice(0, 3).join(" · "),
         });
       }
     } catch {
@@ -492,7 +492,7 @@ export default function MeliIntegrationView() {
   const runPushToMeli = async () => {
     const ids = [...selectedPushIds];
     if (!ids.length) {
-      toast.error("SeleccionÃƒÂ¡ publicaciones ya vinculadas para enviar precio y stock a Mercado Libre.");
+      toast.error("Seleccioná publicaciones ya vinculadas para enviar precio y stock a Mercado Libre.");
       return;
     }
     setPushing(true);
@@ -515,7 +515,7 @@ export default function MeliIntegrationView() {
         else if (x.error) errMap[x.meliItemId] = x.error;
       }
       setRowPushErrors(errMap);
-      toast.success(`ActualizaciÃƒÂ³n enviada a ML: ${okn} correctas de ${ids.length}.`);
+      toast.success(`Actualización enviada a ML: ${okn} correctas de ${ids.length}.`);
       await loadImportPreview(true);
     } catch {
       toast.error("Error de red");
@@ -544,11 +544,11 @@ export default function MeliIntegrationView() {
       const r = await fetch("/api/meli/promotions/sync", { method: "POST" });
       const d = await r.json();
       if (!r.ok) {
-        toast.error(d.error || "Error al sincronizar campaÃƒÂ±as");
+        toast.error(d.error || "Error al sincronizar campañas");
         return;
       }
       toast.success(
-        `CampaÃƒÂ±as: ${d.created} nuevas, ${d.updated} actualizadas (${d.rawCount} promos en ML)`
+        `Campañas: ${d.created} nuevas, ${d.updated} actualizadas (${d.rawCount} promos en ML)`
       );
     } catch {
       toast.error("Error de red");
@@ -571,14 +571,14 @@ export default function MeliIntegrationView() {
   }
 
   if (status === "unauthenticated") {
-    return <p className="text-muted-foreground">IniciÃƒÂ¡ sesiÃƒÂ³n para usar Mercado Libre.</p>;
+    return <p className="text-slate-400">Iniciá sesión para usar Mercado Libre.</p>;
   }
 
   const activeAccount = meliStatus?.accounts?.find((a) => a.id === selectedAccountId);
   const linkedCount = activeAccount?.linkedProducts ?? 0;
 
   return (
-    <div className="w-full max-w-7xl space-y-6 mx-auto pb-8">
+    <div className="mx-auto w-full max-w-7xl space-y-6 rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.08),transparent_28%),radial-gradient(circle_at_top_right,rgba(139,92,246,0.09),transparent_30%),linear-gradient(180deg,rgba(2,6,23,0.98)_0%,rgba(3,7,18,0.98)_100%)] p-4 pb-8 shadow-[0_32px_80px_rgba(2,6,23,0.38)] md:p-6">
       <section className={`${meliPanel} ${meliGlowViolet} p-6 md:p-8`}>
         <div
           className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-violet-600/20 blur-3xl"
@@ -599,15 +599,15 @@ export default function MeliIntegrationView() {
               </span>
             </h2>
             <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-300">
-              ConectÃƒÂ¡ una o varias cuentas ML. ImportÃƒÂ¡ publicaciones completas (categorÃƒÂ­as, atributos, variaciones e
-              imÃƒÂ¡genes en nuestra base) o enviÃƒÂ¡ cambios a ML. El stock se sincroniza automÃƒÂ¡ticamente; Mercado Libre es la
-              referencia principal. No se duplican tÃƒÂ­tulo ni SKU en tu catÃƒÂ¡logo.
+              Conectá una o varias cuentas ML. Importá publicaciones completas (categorías, atributos, variaciones e
+              imágenes en nuestra base) o enviá cambios a ML. El stock se sincroniza automáticamente; Mercado Libre es la
+              referencia principal. No se duplican título ni SKU en tu catálogo.
             </p>
             <a
               href="/dashboard#meli-ads-studio"
               className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-cyan-400 hover:text-cyan-300"
             >
-              Mercado Libre Ads Ã¢â‚¬â€ datos en vivo y anÃƒÂ¡lisis
+              Mercado Libre Ads · datos en vivo y análisis
               <ExternalLink className="h-3.5 w-3.5 opacity-80" />
             </a>
           </div>
@@ -617,7 +617,7 @@ export default function MeliIntegrationView() {
       <section className={`${meliPanel} ${meliGlowViolet} p-6`}>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-violet-300/90">Estado de conexiÃƒÂ³n</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-violet-300/90">Estado de conexión</p>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               {meliStatus?.connected ? (
                 <span className="inline-flex items-center rounded-full border border-emerald-400/40 bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-300">
@@ -646,14 +646,14 @@ export default function MeliIntegrationView() {
                   {meliStatus.accounts.map((a) => (
                     <option key={a.id} value={a.id}>
                       {a.label || a.nickname || `ML ${a.meliUserId}`}
-                      {a.isPrimary ? " Ã‚Â· principal" : ""} ({a.linkedProducts} vinculadas)
+                      {a.isPrimary ? " · principal" : ""} ({a.linkedProducts} vinculadas)
                     </option>
                   ))}
                 </select>
               </div>
             )}
             <p className="mt-3 text-xs text-slate-400">
-              ÃƒÅ¡ltima importaciÃƒÂ³n exitosa:{" "}
+              Última importación exitosa:{" "}
               <span className="font-medium text-slate-200">{formatRelativeSync(lastSuccessfulImportAt)}</span>
             </p>
           </div>
@@ -668,7 +668,7 @@ export default function MeliIntegrationView() {
           rel="noreferrer"
           className="mt-4 inline-flex items-center gap-1 text-xs text-cyan-400/90 hover:text-cyan-300"
         >
-          DocumentaciÃƒÂ³n OAuth ML <ExternalLink className="h-3 w-3" />
+          Documentación OAuth ML <ExternalLink className="h-3 w-3" />
         </a>
       </section>
 
@@ -687,7 +687,7 @@ export default function MeliIntegrationView() {
           </div>
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-white">Importar desde ML</p>
-            <p className="text-xs text-slate-400">CatÃƒÂ¡logo ML Ã¢â€ â€™ MADSJEEZ</p>
+            <p className="text-xs text-slate-400">Catálogo ML {"→"} MADSJEEZ</p>
           </div>
           <ChevronRight className="h-5 w-5 shrink-0 text-slate-500 transition-transform group-hover:translate-x-0.5 group-hover:text-violet-300" />
         </button>
@@ -705,7 +705,7 @@ export default function MeliIntegrationView() {
           </div>
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-white">Exportar hacia ML</p>
-            <p className="text-xs text-slate-400">Precio y stock Ã¢â€ â€™ Mercado Libre</p>
+            <p className="text-xs text-slate-400">Precio y stock {"→"} Mercado Libre</p>
           </div>
           <ChevronRight className="h-5 w-5 shrink-0 text-slate-500 transition-transform group-hover:translate-x-0.5 group-hover:text-cyan-300" />
         </button>
@@ -719,10 +719,10 @@ export default function MeliIntegrationView() {
             </div>
             <div>
               <h3 className="text-lg font-semibold text-white">
-                Importar publicaciones (Mercado Libre Ã¢â€ â€™ MADSJEEZ)
+                Importar publicaciones (Mercado Libre {"→"} MADSJEEZ)
               </h3>
               <p className="mt-1 text-sm text-slate-400">
-                TraÃƒÂ© tÃƒÂ­tulo, fotos, precio y stock desde Mercado Libre. MarcÃƒÂ¡ solo las filas que querÃƒÂ©s aplicar.
+                Traé título, fotos, precio y stock desde Mercado Libre. Marcá solo las filas que querés aplicar.
               </p>
             </div>
           </div>
@@ -738,7 +738,7 @@ export default function MeliIntegrationView() {
               ) : (
                 <RefreshCw className="h-4 w-4" />
               )}
-              {loadingImportPreview ? "Leyendo catÃƒÂ¡logo..." : "Cargar / refrescar vista previa"}
+              {loadingImportPreview ? "Leyendo catálogo..." : "Cargar / refrescar vista previa"}
             </button>
             <button
               type="button"
@@ -754,7 +754,7 @@ export default function MeliIntegrationView() {
           {importPreview && (
             <div className="rounded-xl border border-white/10 bg-slate-950/40 p-4 space-y-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
               <p className="text-xs font-medium text-slate-200">
-                Resumen: {importPreview.uniqueFound} publicaciones ÃƒÂºnicas escaneadas ({importPreview.totalFound}{" "}
+                Resumen: {importPreview.uniqueFound} publicaciones únicas escaneadas ({importPreview.totalFound}{" "}
                 registros en respuesta paginada de ML).
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
@@ -780,7 +780,7 @@ export default function MeliIntegrationView() {
 
               <div className="flex flex-col lg:flex-row gap-3 lg:items-end">
                 <div className="flex-1 min-w-[200px]">
-                  <label className="mb-1 block text-xs font-medium text-slate-400">Buscar por t?tulo, MLA o SKU</label>
+                  <label className="mb-1 block text-xs font-medium text-slate-400">Buscar por título, MLA o SKU</label>
                   <div className="relative">
                     <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
                     <input
@@ -790,12 +790,12 @@ export default function MeliIntegrationView() {
                         setPage(1);
                       }}
                       className={`${meliInput} pl-9`}
-                      placeholder="Ej. bujÃƒÂ­a, MLA123Ã¢â‚¬Â¦"
+                      placeholder="Ej. bujía, MLA123..."
                     />
                   </div>
                 </div>
                 <div className="w-full sm:w-56">
-                  <label className="mb-1 block text-xs font-medium text-slate-400">Filtro r?pido</label>
+                  <label className="mb-1 block text-xs font-medium text-slate-400">Filtro rápido</label>
                   <select
                     value={quickFilter}
                     onChange={(e) => {
@@ -808,13 +808,13 @@ export default function MeliIntegrationView() {
                     <option value="active_only">Solo activas</option>
                     <option value="updates_only">Solo para actualizar</option>
                     <option value="new_only">Solo nuevas (crear)</option>
-                    <option value="skip_only">Omitidas (duplicado tÃƒÂ­tulo/SKU)</option>
+                    <option value="skip_only">Omitidas (duplicado título/SKU)</option>
                     <option value="price_diff">Precio distinto al local</option>
                     <option value="stock_diff">Stock distinto al local</option>
                   </select>
                 </div>
                 <div className="w-full sm:w-44">
-                  <label className="mb-1 block text-xs font-medium text-slate-400">Por p?gina</label>
+                  <label className="mb-1 block text-xs font-medium text-slate-400">Por página</label>
                   <select
                     value={pageSize}
                     onChange={(e) => {
@@ -843,10 +843,10 @@ export default function MeliIntegrationView() {
                   onClick={clearPullSelection}
                   className={meliPagerBtn}
                 >
-                  Limpiar selecciÃƒÂ³n
+                  Limpiar selección
                 </button>
                 <span className="self-center text-slate-400">
-                  Mostrando {pageRows.length} de {filteredRows.length} filtradas Ã‚Â· pÃƒÂ¡gina {safePage} / {totalPages}
+                  Mostrando {pageRows.length} de {filteredRows.length} filtradas · página {safePage} / {totalPages}
                 </span>
               </div>
 
@@ -926,19 +926,19 @@ export default function MeliIntegrationView() {
                             <div className="text-[10px] text-muted-foreground mt-0.5 pl-12">{s.id}</div>
                           </td>
                           <td className="px-2 py-2 align-middle text-muted-foreground whitespace-nowrap">
-                            {s.sellerSku || "Ã¢â‚¬â€"}
+                            {s.sellerSku || "—"}
                           </td>
                           <td className="px-2 py-2 align-middle text-right whitespace-nowrap">
                             {s.localPrice != null && priceDiff ? (
                               <span className="text-foreground">
                                 <span className="line-through opacity-60">{fmtMoney(Number(s.localPrice))}</span>
-                                <span className="mx-1">Ã¢â€ â€™</span>
+                                <span className="mx-1">→</span>
                                 <span className="font-semibold">{fmtMoney(s.meliPrice)}</span>
                               </span>
                             ) : (
                               <span className="font-medium">{fmtMoney(s.meliPrice)}</span>
                             )}
-                            <div className="text-[10px] text-muted-foreground">se aplicarÃƒÂ¡ precio de ML</div>
+                            <div className="text-[10px] text-muted-foreground">Se aplicará precio de ML</div>
                           </td>
                           <td className="px-2 py-2 align-middle text-right">{s.meliStock}</td>
                           <td className="px-2 py-2 align-middle text-right">
@@ -946,14 +946,14 @@ export default function MeliIntegrationView() {
                               stockDiff ? (
                                 <span>
                                   <span className="line-through opacity-60">{s.localStock}</span>
-                                  <span className="mx-1">Ã¢â€ â€™</span>
+                                  <span className="mx-1">→</span>
                                   <span className="font-semibold">{s.meliStock}</span>
                                 </span>
                               ) : (
                                 s.localStock
                               )
                             ) : (
-                              "Ã¢â‚¬â€"
+                              "—"
                             )}
                           </td>
                           <td className="px-2 py-2 align-middle">
@@ -990,7 +990,7 @@ export default function MeliIntegrationView() {
                                 <AlertTriangle className="w-4 h-4" />
                               </span>
                             ) : (
-                              <span className="text-muted-foreground">Ã¢â‚¬â€</span>
+                              <span className="text-muted-foreground">—</span>
                             )}
                           </td>
                         </tr>
@@ -1020,9 +1020,9 @@ export default function MeliIntegrationView() {
               </div>
 
               <p className="text-[11px] text-muted-foreground">
-                CondiciÃƒÂ³n ML: se guarda como {conditionLabelEs("new")} / usado / reacondicionado segÃƒÂºn corresponda.
-                Columna precio: al importar, los valores de Mercado Libre reemplazan el catÃƒÂ¡logo local para esa
-                publicaciÃƒÂ³n.
+                Condición ML: se guarda como {conditionLabelEs("new")} / usado / reacondicionado según corresponda.
+                Columna precio: al importar, los valores de Mercado Libre reemplazan el catálogo local para esa
+                publicación.
               </p>
             </div>
           )}
@@ -1277,8 +1277,8 @@ export default function MeliIntegrationView() {
           },
           {
             label: "Campañas activas",
-            value: "-",
-            sub: "Mercado Libre",
+            value: promoPreview ? "1" : "0",
+            sub: promoPreview ? "Promociones cargadas desde ML" : "Sin promociones sincronizadas",
           },
         ].map((m) => (
           <div
