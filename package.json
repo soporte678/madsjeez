@@ -26,9 +26,11 @@
     "download:meli-seller-eco": "tsx scripts/download-meli-seller.ts --store bullservice --resume --eco",
     "optimize:images": "node scripts/optimize-static-images.mjs",
     "backfill:store-slugs": "node scripts/backfill-store-slugs.mjs",
-    "flash:provision-driver": "node scripts/provision-flash-driver.mjs"
+    "flash:provision-driver": "node scripts/provision-flash-driver.mjs",
+    "merchant:sync": "node scripts/sync-google-merchant.mjs"
   },
   "dependencies": {
+    "@google-analytics/data": "^6.0.0",
     "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^5.2.2",
     "@prisma/adapter-pg": "^7.8.0",
@@ -53,6 +55,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "google-auth-library": "^10.6.2",
+    "googleapis": "^172.0.0",
     "html5-qrcode": "^2.3.8",
     "lucide-react": "^1.11.0",
     "mercadopago": "^2.12.0",
