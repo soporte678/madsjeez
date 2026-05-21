@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 import { supabaseService } from "@/lib/supabase/service";
 import { getSupabaseUserFromBearer } from "@/lib/supabase-auth-request";
+import type { SellerMpRow } from "@/lib/mercadopago/seller-access-token";
+import { createCheckoutProPreferenceWithSellerTokenRetry } from "@/lib/mercadopago/preference-with-token-retry";
+import { roundMoney } from "@/lib/checkout/escrow-split";
 
 interface OrderItemRow {
   quantity: number;
@@ -123,14 +127,46 @@ export async function POST(request: Request) {
       );
     }
 
-    const { data: mpConnection, error: mpError } = await supabaseService
+    const mpSelect = "seller_id, mp_access_token, mp_refresh_token, mp_token_expires_at, is_active";
+
+    let mpRow: SellerMpRow | null = null;
+    const byUuid = await supabaseService
       .from("seller_mercadopago")
-      .select("mp_access_token, is_active")
+      .select(mpSelect)
       .eq("seller_id", sellerId)
       .eq("is_active", true)
-      .single();
+      .maybeSingle();
+    if (!byUuid.error && byUuid.data?.mp_access_token) {
+      mpRow = byUuid.data as SellerMpRow;
+    }
 
-    if (mpError || !mpConnection?.mp_access_token) {
+    if (!mpRow?.mp_access_token) {
+      const { data: prof } = await supabaseService
+        .from("profiles")
+        .select("email")
+        .eq("id", sellerId)
+        .maybeSingle();
+      const email = typeof prof?.email === "string" ? prof.email.trim().toLowerCase() : "";
+      if (email) {
+        const prismaSeller = await prisma.user.findFirst({
+          where: { email: { equals: email, mode: "insensitive" } },
+          select: { id: true },
+        });
+        if (prismaSeller?.id) {
+          const byPrisma = await supabaseService
+            .from("seller_mercadopago")
+            .select(mpSelect)
+            .eq("seller_id", prismaSeller.id)
+            .eq("is_active", true)
+            .maybeSingle();
+          if (!byPrisma.error && byPrisma.data?.mp_access_token) {
+            mpRow = byPrisma.data as SellerMpRow;
+          }
+        }
+      }
+    }
+
+    if (!mpRow?.mp_access_token) {
       return NextResponse.json(
         {
           error:
@@ -140,17 +176,25 @@ export async function POST(request: Request) {
       );
     }
 
-    const totalBuyerPays = subtotal + totalShipping;
-    const commissionOnProducts = Math.round(subtotal * 0.1 * 100) / 100;
-    const sellerShippingShare = Math.round(totalShipping * 0.5 * 100) / 100;
-    const marketplaceFee = commissionOnProducts + sellerShippingShare;
-    const sellerReceives = totalBuyerPays - marketplaceFee;
+    const payerEmail = String(buyer_email || authUser.email || "").trim();
+    if (!payerEmail) {
+      return NextResponse.json(
+        { error: "Falta email del pagador (payer) para Mercado Pago.", code: "PAYER_EMAIL_REQUIRED" },
+        { status: 400 }
+      );
+    }
+
+    const totalBuyerPays = roundMoney(subtotal + totalShipping);
+    const commissionOnProducts = roundMoney((subtotal * 10) / 100);
+    const sellerShippingShare = totalShipping > 0 ? roundMoney(totalShipping / 2) : 0;
+    const marketplaceFee = roundMoney(commissionOnProducts + sellerShippingShare);
+    const sellerReceives = roundMoney(totalBuyerPays - marketplaceFee);
 
     const mpItems: MercadoPagoPreference["items"] = typedLines.map((row) => ({
       id: row.product_id,
       title: row.product?.title ?? "Producto",
       quantity: row.quantity,
-      unit_price: Number(row.unit_price),
+      unit_price: roundMoney(Number(row.unit_price)),
       currency_id: "ARS",
     }));
 
@@ -159,18 +203,18 @@ export async function POST(request: Request) {
         id: "shipping",
         title: "Costo de envío",
         quantity: 1,
-        unit_price: totalShipping,
+        unit_price: roundMoney(totalShipping),
         currency_id: "ARS",
       });
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, "");
 
     const preference: MercadoPagoPreference = {
       items: mpItems,
       marketplace_fee: marketplaceFee,
       payer: {
-        email: buyer_email || authUser.email || "",
+        email: payerEmail,
       },
       external_reference: order_id,
       notification_url: `${appUrl}/api/webhooks/mercadopago`,
@@ -182,25 +226,27 @@ export async function POST(request: Request) {
       auto_return: "approved",
     };
 
-    const mpResponse = await fetch("https://api.mercadopago.com/checkout/preferences", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${mpConnection.mp_access_token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(preference),
+    const mpPref = await createCheckoutProPreferenceWithSellerTokenRetry({
+      supabase: supabaseService,
+      mpRow,
+      mpSelect,
+      preference,
     });
 
-    if (!mpResponse.ok) {
-      const errorData = await mpResponse.json().catch(() => ({}));
-      console.error("Error creando preferencia de MercadoPago:", errorData);
+    if (!mpPref.ok) {
+      console.error("Error creando preferencia de MercadoPago:", mpPref.body);
+      const statusOut = mpPref.httpStatus >= 500 ? 502 : 400;
       return NextResponse.json(
-        { error: "Error creando preferencia de pago", details: errorData },
-        { status: 500 }
+        {
+          code: "MP_PREFERENCE_FAILED",
+          error: mpPref.summarizedMessage,
+          details: mpPref.body,
+        },
+        { status: statusOut }
       );
     }
 
-    const mpData = await mpResponse.json();
+    const mpData = mpPref.data;
 
     const { error: paymentError } = await supabaseService.from("payments").insert({
       order_id,
@@ -227,7 +273,7 @@ export async function POST(request: Request) {
     await supabaseService
       .from("seller_mercadopago")
       .update({ last_used_at: new Date().toISOString() })
-      .eq("seller_id", sellerId);
+      .eq("seller_id", mpRow.seller_id);
 
     return NextResponse.json({
       preference_id: mpData.id,

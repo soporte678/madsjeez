@@ -4,11 +4,16 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import RainbowLogo from "@/components/brand/RainbowLogo";
 import { 
   Search, Bell, ShoppingCart, MapPin, User, ChevronDown, X, Mic, Camera,
   Sparkles, TrendingUp, History, ArrowRight, Zap
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
+import {
+  hasSeenNovedadesPanelThisSession,
+  openNovedadesPanel,
+} from "@/lib/novedades-panel";
 
 interface SearchSuggestion {
   id: string;
@@ -142,18 +147,6 @@ export default function Navbar() {
     }
   };
 
-  // Logo: colores claros y saturados para leerse sobre barra oscura (contraste AA+)
-  const logoLetters = [
-    { char: 'M', dx: '-10px', dy: '-12px', rot: '-15deg', delay: '0s', color: '#fef08a' },
-    { char: 'A', dx: '-5px', dy: '10px', rot: '10deg', delay: '0.05s', color: '#fcd34d' },
-    { char: 'D', dx: '8px', dy: '-10px', rot: '-8deg', delay: '0.1s', color: '#fdba74' },
-    { char: 'S', dx: '15px', dy: '12px', rot: '12deg', delay: '0.15s', color: '#fb923c' },
-    { char: 'J', dx: '-10px', dy: '15px', rot: '-10deg', delay: '0.2s', color: '#67e8f9' },
-    { char: 'E', dx: '5px', dy: '-15px', rot: '20deg', delay: '0.25s', color: '#7dd3fc' },
-    { char: 'E', dx: '12px', dy: '8px', rot: '-5deg', delay: '0.3s', color: '#86efac' },
-    { char: 'Z', dx: '20px', dy: '-8px', rot: '15deg', delay: '0.35s', color: '#5eead4' },
-  ];
-
   return (
     <>
       <style>{`
@@ -186,8 +179,13 @@ export default function Navbar() {
         }
 
         .mads-pro-shell {
-          background: var(--card);
-          border: 1px solid var(--border);
+          background:
+            linear-gradient(180deg, rgba(15, 23, 42, 0.94), rgba(15, 23, 42, 0.82)),
+            radial-gradient(circle at top left, rgba(59, 130, 246, 0.12), transparent 58%);
+          border: 1px solid rgba(148, 163, 184, 0.18);
+          box-shadow:
+            inset 0 1px 0 rgba(255,255,255,0.05),
+            0 10px 30px rgba(2, 6, 23, 0.25);
         }
 
         .mads-pro-badge::after {
@@ -228,11 +226,35 @@ export default function Navbar() {
         .animate-wipe-in { animation: wipeIn2 8s infinite cubic-bezier(0.64, 0, 0.36, 1); }
 
         .search-shadow { box-shadow: 0 1px 2px 0 rgba(0,0,0,0.2); }
-        .nav-link { cursor: pointer; color: rgba(226, 232, 240, 0.92); transition: all 0.2s ease; }
-        .nav-link:hover { color: #fcd34d; transform: translateY(-1px); }
+        .nav-link {
+          cursor: pointer;
+          color: rgba(226, 232, 240, 0.88);
+          transition: color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+        }
+        .nav-link:hover { color: #ffffff; transform: translateY(-1px); }
+        .nav-link-muted {
+          color: rgba(203, 213, 225, 0.95);
+          transition: color 0.2s ease, opacity 0.2s ease;
+        }
+        .nav-link-muted:hover { color: #ffffff; }
+        .touch-target {
+          min-height: 44px;
+          min-width: 44px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .nav-icon {
+          color: rgba(226, 232, 240, 0.92);
+          transition: color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+        }
+        .nav-icon:hover {
+          color: #ffffff;
+          transform: translateY(-1px);
+        }
         
         .search-glow:focus-within { 
-          box-shadow: 0 0 0 3px rgba(255, 77, 46, 0.16), 0 4px 20px rgba(255, 77, 46, 0.11); 
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16), 0 8px 28px rgba(14, 116, 244, 0.16); 
         }
         
         .suggestion-item { 
@@ -249,7 +271,7 @@ export default function Navbar() {
         }
         
         .gradient-text {
-          background: linear-gradient(90deg, #ff4d2e, #ffb703, #00b4d8, #ff4d2e);
+          background: linear-gradient(90deg, #f97316, #ffb703, #00b4d8, #f97316);
           background-size: 200% auto;
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
@@ -264,56 +286,37 @@ export default function Navbar() {
       `}</style>
 
       {/* Barra oscura: logo y enlaces legibles; acento ámbar solo en borde */}
-      <header className="bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#0f172a] w-full sticky top-0 z-[100] border-b-2 border-[#ffb703]/50 h-[100px] flex flex-col justify-center font-outfit shadow-lg shadow-black/25">
+      <header className="w-full sticky top-0 z-[100] flex h-[100px] flex-col justify-center border-b border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.98)_0%,rgba(15,23,42,0.95)_46%,rgba(17,24,39,0.94)_100%)] font-outfit shadow-[0_18px_40px_rgba(2,6,23,0.34)] backdrop-blur-xl">
         <div className="max-w-[1200px] mx-auto px-4 lg:px-0 w-full">
           
           {/* --- FILA 1: LOGO | BÚSQUEDA | BOTÓN MADS PRO ANIMADO --- */}
           <div className="flex items-center h-12">
             
-            {/* LOGO - NUEVA PALETA */}
-            <Link href="/" className="flex items-center gap-2 cursor-pointer group w-[160px] flex-shrink-0">
-              <div className="relative w-9 h-9 bg-gradient-to-br from-[#1a1a2e] to-[#16213e] rounded-lg flex items-center justify-center shadow-lg shadow-orange-500/30 overflow-hidden group-hover:shadow-xl group-hover:shadow-orange-500/40 transition-all duration-300">
-                 <svg viewBox="0 0 100 100" className="w-6 h-6">
-                    <path d="M 15 80 L 35 30 L 55 55" stroke="#ff4d2e" fill="none" strokeWidth="15" strokeLinecap="round"/>
-                    <path d="M 85 80 L 65 30 L 45 65" stroke="#00b4d8" fill="none" strokeWidth="15" strokeLinecap="round"/>
-                 </svg>
-                 <div className="absolute inset-0 bg-gradient-to-tr from-[#ff4d2e]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              </div>
-              <div className="flex flex-col justify-center leading-none">
-                <span className="font-montserrat font-black text-[20px] tracking-tighter uppercase">
-                  {logoLetters.map((letter, i) => (
-                    <span 
-                      key={i} 
-                      className="letter-piece"
-                      style={{
-                        '--dx': letter.dx, 
-                        '--dy': letter.dy, 
-                        '--rot': letter.rot, 
-                        animationDelay: letter.delay,
-                        color: letter.color
-                      } as any}
-                    >
-                      {letter.char}
-                    </span>
-                  ))}
-                </span>
-              </div>
-            </Link>
+            {/* Logo compartido marketplace + admin */}
+            <div className="w-[160px] flex-shrink-0">
+              <RainbowLogo
+                href="/"
+                textSizeClassName="text-[20px] font-montserrat"
+                iconSizeClassName="h-9 w-9"
+              />
+            </div>
 
             {/* BARRA DE BÚSQUEDA INTELIGENTE */}
             <div ref={searchRef} className="w-[600px] flex-shrink-0 ml-8 relative">
               <form onSubmit={handleSearch}>
                 <div 
                   className={cn(
-                    "flex items-center bg-white rounded-xl h-11 px-4 transition-all duration-300 search-glow border-2",
-                    isSearchOpen ? "border-[#ff4d2e] shadow-lg shadow-orange-500/20" : "border-transparent"
+                    "search-glow flex h-11 items-center rounded-2xl border bg-[rgba(15,23,42,0.72)] px-4 transition-all duration-300 backdrop-blur-xl",
+                    isSearchOpen
+                      ? "border-[#60a5fa] shadow-lg shadow-sky-500/20"
+                      : "border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
                   )}
                 >
                   <input 
                     ref={inputRef}
                     type="text" 
                     placeholder="Buscar productos, marcas y más..." 
-                    className="flex-1 outline-none text-[16px] text-slate-800 placeholder-slate-400 font-light bg-transparent"
+                    className="flex-1 bg-transparent text-[16px] font-light text-slate-50 placeholder:text-slate-400 outline-none"
                     value={searchQuery}
                     onChange={(e) => {
                       setSearchQuery(e.target.value);
@@ -328,31 +331,33 @@ export default function Navbar() {
                     <button 
                       type="button"
                       onClick={clearSearch}
-                      className="p-1 hover:bg-slate-100 rounded-full transition-colors mr-1"
+                      aria-label="Limpiar búsqueda"
+                      className="touch-target mr-1 rounded-full p-1 transition-colors hover:bg-white/10"
                     >
-                      <X size={16} className="text-slate-400" />
+                      <X size={16} className="text-slate-400" aria-hidden />
                     </button>
                   )}
-                  <div className="h-6 w-[1px] bg-slate-200 mx-2"></div>
+                  <div className="mx-2 h-6 w-[1px] bg-white/10"></div>
                   <button 
                     type="button" 
-                    className="p-1.5 text-slate-400 hover:text-[#ff4d2e] transition-colors"
-                    title="Búsqueda por voz"
+                    aria-label="Búsqueda por voz"
+                    className="touch-target p-1.5 text-slate-300 transition-colors hover:text-slate-100"
                   >
-                    <Mic size={18} />
+                    <Mic size={18} aria-hidden />
                   </button>
                   <button 
                     type="button" 
-                    className="p-1.5 text-slate-400 hover:text-[#00b4d8] transition-colors mr-1"
-                    title="Búsqueda por imagen"
+                    aria-label="Búsqueda por imagen"
+                    className="touch-target mr-1 p-1.5 text-slate-300 transition-colors hover:text-slate-100"
                   >
-                    <Camera size={18} />
+                    <Camera size={18} aria-hidden />
                   </button>
                   <button 
                     type="submit" 
-                    className="bg-gradient-to-r from-[#ff4d2e] to-[#ff9100] text-white p-2 rounded-lg hover:from-[#ff9100] hover:to-[#ffb703] transition-all duration-300 shadow-md shadow-orange-500/30 hover:shadow-lg hover:shadow-orange-500/40 hover:scale-105"
+                    aria-label="Buscar productos"
+                    className="touch-target rounded-xl bg-gradient-to-r from-[#f97316] via-[#ff9100] to-[#ffb703] p-2 text-white shadow-md shadow-orange-500/30 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-orange-500/40"
                   >
-                    <Search size={18} strokeWidth={2.5} />
+                    <Search size={18} strokeWidth={2.5} aria-hidden />
                   </button>
                 </div>
               </form>
@@ -363,7 +368,7 @@ export default function Navbar() {
                   {/* Loading state */}
                   {isLoading && (
                     <div className="p-4 flex items-center justify-center gap-2 text-slate-400">
-                      <div className="w-5 h-5 border-2 border-[#ff4d2e] border-t-transparent rounded-full animate-spin" />
+                      <div className="w-5 h-5 border-2 border-[#f97316] border-t-transparent rounded-full animate-spin" />
                       <span className="text-sm">Buscando...</span>
                     </div>
                   )}
@@ -373,8 +378,8 @@ export default function Navbar() {
                     <div className="max-h-[400px] overflow-y-auto">
                       {/* Título de sección */}
                       {searchQuery && (
-                        <div className="px-4 py-2 bg-gradient-to-r from-[#ff4d2e]/5 to-[#ffb703]/5 border-b border-slate-100">
-                          <span className="text-xs font-bold text-[#ff4d2e] uppercase tracking-wider flex items-center gap-1">
+                        <div className="px-4 py-2 bg-gradient-to-r from-[#f97316]/5 to-[#ffb703]/5 border-b border-slate-100">
+                          <span className="text-xs font-bold text-[#f97316] uppercase tracking-wider flex items-center gap-1">
                             <Sparkles size={12} />
                             Sugerencias inteligentes
                           </span>
@@ -393,7 +398,7 @@ export default function Navbar() {
                       
                       {/* Tendencias */}
                       {!searchQuery && (
-                        <div className="px-4 py-2 bg-gradient-to-r from-[#ffb703]/10 to-[#ff4d2e]/5 border-b border-slate-100">
+                        <div className="px-4 py-2 bg-gradient-to-r from-[#ffb703]/10 to-[#f97316]/5 border-b border-slate-100">
                           <span className="text-xs font-bold text-[#ffb703] uppercase tracking-wider flex items-center gap-1">
                             <TrendingUp size={12} />
                             Tendencias
@@ -416,7 +421,7 @@ export default function Navbar() {
                               <History size={16} className="text-slate-400 flex-shrink-0" />
                             )}
                             {suggestion.type === 'trending' && (
-                              <TrendingUp size={16} className="text-[#ff4d2e] flex-shrink-0" />
+                              <TrendingUp size={16} className="text-[#f97316] flex-shrink-0" />
                             )}
                             {suggestion.type === 'product' && (
                               <div className="w-8 h-8 rounded bg-slate-100 flex items-center justify-center flex-shrink-0">
@@ -428,12 +433,12 @@ export default function Navbar() {
                               </div>
                             )}
                             {suggestion.type === 'category' && (
-                              <div className="w-8 h-8 rounded bg-gradient-to-br from-[#ff4d2e]/10 to-[#ffb703]/10 flex items-center justify-center flex-shrink-0">
-                                <ArrowRight size={14} className="text-[#ff4d2e]" />
+                              <div className="w-8 h-8 rounded bg-gradient-to-br from-[#f97316]/10 to-[#ffb703]/10 flex items-center justify-center flex-shrink-0">
+                                <ArrowRight size={14} className="text-[#f97316]" />
                               </div>
                             )}
                             {suggestion.type === 'brand' && (
-                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#00b4d8]/10 to-[#ff4d2e]/10 flex items-center justify-center flex-shrink-0">
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#00b4d8]/10 to-[#f97316]/10 flex items-center justify-center flex-shrink-0">
                                 <Zap size={14} className="text-[#00b4d8]" />
                               </div>
                             )}
@@ -453,11 +458,12 @@ export default function Navbar() {
                             
                             {suggestion.type === 'history' && (
                               <button
+                                type="button"
                                 onClick={(e) => removeFromHistory(e, suggestion.title)}
-                                className="p-1 hover:bg-slate-100 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                title="Eliminar del historial"
+                                aria-label={`Eliminar "${suggestion.title}" del historial`}
+                                className="touch-target p-1 hover:bg-slate-100 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                               >
-                                <X size={14} className="text-slate-400" />
+                                <X size={14} className="text-slate-400" aria-hidden />
                               </button>
                             )}
                           </button>
@@ -475,7 +481,7 @@ export default function Navbar() {
                               setSearchHistory([]);
                               localStorage.removeItem('madsjeez_search_history');
                             }}
-                            className="text-xs text-[#ff4d2e] hover:text-[#ff9100] font-medium"
+                            className="text-xs text-[#f97316] hover:text-[#ff9100] font-medium"
                           >
                             Borrar historial
                           </button>
@@ -487,18 +493,22 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* BOTÓN DESLIZANTE MADS PRO (Efecto Borrador) */}
+            {/* BOTÓN DESLIZANTE MADS PRO */}
             <div className="flex-1 flex items-center justify-end">
-              <div className="mads-pro-shell relative overflow-hidden w-[340px] h-[36px] hover:shadow-md transition-shadow rounded-full shadow-sm cursor-pointer flex items-center px-1.5">
+              <Link
+                href="/subscriptions"
+                aria-label="Suscribite a Mads Pro con envíos gratis"
+                className="mads-pro-shell relative flex h-[38px] w-[340px] cursor-pointer items-center overflow-hidden rounded-full px-1.5 transition-all duration-300 hover:-translate-y-[1px] hover:border-white/20 hover:shadow-[0_14px_36px_rgba(2,6,23,0.32)]"
+              >
                  
                  {/* 1. TEXTO DE LA IZQUIERDA (Aparece cuando el botón está a la derecha) */}
                  <div className="absolute left-6 w-[230px] flex items-center justify-center animate-wipe-out">
-                    <span className="text-[var(--foreground)] font-black text-[19px] tracking-tight drop-shadow-sm">Suscribite a</span>
+                    <span className="font-black tracking-tight text-white/92 drop-shadow-sm text-[18px]">Suscribite a</span>
                  </div>
 
                  {/* 2. TEXTOS DE LA DERECHA (Aparecen cuando el botón está a la izquierda) */}
                  <div className="absolute left-[92px] w-auto flex items-center gap-1.5 animate-wipe-in">
-                    <span className="text-[var(--foreground)] font-semibold text-[12px] whitespace-nowrap">y disfrutá</span>
+                    <span className="whitespace-nowrap text-[12px] font-semibold text-slate-200">y disfrutá</span>
                     
                     {/* Contenedor Caja + Envíos Reparado (Sin superposición) */}
                     <div className="flex items-center gap-1">
@@ -529,9 +539,9 @@ export default function Navbar() {
                        </div>
                        
                        {/* Texto de envíos (Separado y legible) */}
-                       <div className="flex flex-col leading-[1.05] justify-center border-l border-slate-200 pl-1.5 py-0.5">
-                          <span className="text-[var(--foreground)] font-black text-[8.5px] uppercase tracking-wider">Envíos gratis</span>
-                          <span className="text-[var(--foreground)] font-black text-[8.5px] uppercase tracking-wider mt-[1px]">en tus compras</span>
+                       <div className="flex flex-col justify-center border-l border-white/12 py-0.5 pl-1.5 leading-[1.05]">
+                          <span className="text-[8.5px] font-black uppercase tracking-wider text-slate-100">Envíos gratis</span>
+                          <span className="mt-[1px] text-[8.5px] font-black uppercase tracking-wider text-slate-100">en tus compras</span>
                        </div>
                     </div>
                  </div>
@@ -541,7 +551,7 @@ export default function Navbar() {
                     <span className="font-montserrat font-black text-white text-[11px] italic tracking-tight">MADS PRO</span>
                  </div>
 
-              </div>
+              </Link>
             </div>
 
           </div>
@@ -553,26 +563,43 @@ export default function Navbar() {
             <div className="flex items-center">
               
               {/* Ubicación (Ancho fijo alineado con el Logo) */}
-              <div className="flex items-center gap-1 cursor-pointer w-[160px] flex-shrink-0 group">
-                <MapPin size={18} className="text-slate-400 group-hover:text-[#fcd34d]" />
+              <button
+                type="button"
+                aria-label="Dirección de envío: Capital Federal, Av. Corrientes 1234"
+                className="flex items-center gap-1 cursor-pointer w-[160px] flex-shrink-0 group text-left"
+              >
+                <MapPin size={18} className="text-slate-300 transition-colors group-hover:text-slate-100" aria-hidden />
                 <div className="flex flex-col leading-none">
-                  <span className="text-[10px] text-slate-400 group-hover:text-slate-300 whitespace-nowrap">Enviar a Capital Federal</span>
-                  <span className="text-[12px] text-slate-200 font-normal truncate group-hover:text-white">Av. Corrientes 1234, CABA</span>
+                  <span className="nav-link-muted whitespace-nowrap text-[10px]">Enviar a Capital Federal</span>
+                  <span className="truncate text-[12px] font-medium text-slate-100 transition-colors group-hover:text-white">Av. Corrientes 1234, CABA</span>
                 </div>
-              </div>
+              </button>
 
               {/* Navegación (ml-8 para arrancar igual que el buscador) */}
-              <nav className="flex items-center gap-x-4 text-[13px] font-light ml-8 w-[480px]">
-                <Link href="/categories" className="flex items-center gap-0.5 nav-link whitespace-nowrap">
+              <nav className="flex flex-1 min-w-0 items-center gap-x-3 lg:gap-x-4 text-[13px] font-light ml-4 md:ml-8 overflow-x-auto scrollbar-hide pb-0.5 md:pb-0">
+                <Link href="/categories" className="flex items-center gap-0.5 nav-link whitespace-nowrap shrink-0">
                   Categorías <ChevronDown size={11} className="mt-0.5 opacity-40" />
                 </Link>
-                <Link href="/offers" className="nav-link whitespace-nowrap">Ofertas</Link>
-                <Link href="/coupons" className="nav-link whitespace-nowrap">Cupones</Link>
-                <Link href="/supermarket" className="nav-link whitespace-nowrap">Supermercado</Link>
-                <Link href="/fashion" className="nav-link whitespace-nowrap">Moda</Link>
-                <Link href="/dashboard/publicaciones" className="nav-link whitespace-nowrap">Vender</Link>
-                <Link href="/blog" className="nav-link whitespace-nowrap">Blog</Link>
-                <Link href="/help" className="nav-link whitespace-nowrap">Ayuda</Link>
+                <Link href="/offers" className="nav-link whitespace-nowrap shrink-0">Ofertas</Link>
+                <Link href="/deals" className="nav-link whitespace-nowrap shrink-0">Descuentos</Link>
+                <Link href="/coupons/public" className="nav-link whitespace-nowrap shrink-0">Cupones</Link>
+                <Link href="/search" className="nav-link whitespace-nowrap shrink-0">Catálogo</Link>
+                <Link href="/notifications" className="nav-link whitespace-nowrap shrink-0 hidden sm:inline">Alertas</Link>
+                <Link href="/subscriptions" className="nav-link whitespace-nowrap shrink-0 hidden md:inline">MADS+</Link>
+                <Link href="/seller/register" className="nav-link whitespace-nowrap shrink-0 hidden lg:inline">Vender</Link>
+                {/* Reservan el hueco del nav (visibility) sin mostrar ni enlazar */}
+                <span
+                  className="nav-link whitespace-nowrap shrink-0 hidden xl:inline invisible pointer-events-none select-none"
+                  aria-hidden="true"
+                >
+                  Mi panel
+                </span>
+                <span
+                  className="nav-link whitespace-nowrap shrink-0 invisible pointer-events-none select-none"
+                  aria-hidden="true"
+                >
+                  Ayuda
+                </span>
               </nav>
             </div>
 
@@ -587,7 +614,7 @@ export default function Navbar() {
               ) : (
                 <>
                   <Link href="/dashboard" className="flex items-center gap-1.5 cursor-pointer nav-link group flex-shrink-0">
-                    <User size={16} className="text-slate-300 group-hover:text-[#fcd34d]" />
+                    <User size={16} className="text-slate-300 transition-colors group-hover:text-white" />
                     <span className="whitespace-nowrap font-normal">{session.user?.name || "Mi cuenta"}</span>
                     <ChevronDown size={10} className="opacity-50 group-hover:rotate-180 transition-transform" />
                   </Link>
@@ -599,11 +626,22 @@ export default function Navbar() {
               )}
               
               <div className="flex items-center gap-4 ml-1">
-                 <Link href="/notifications" className="relative cursor-pointer nav-link">
-                    <Bell size={18} strokeWidth={1.5} className="text-slate-200 hover:text-[#fcd34d]" />
-                 </Link>
-                 <Link href="/cart" className="cursor-pointer nav-link relative">
-                    <ShoppingCart size={18} strokeWidth={1.5} className="text-slate-200 hover:text-[#fcd34d]" />
+                 <button
+                   type="button"
+                   className="touch-target relative cursor-pointer nav-icon"
+                   aria-label="Novedades y alertas"
+                   onClick={() => {
+                     if (hasSeenNovedadesPanelThisSession()) {
+                       router.push("/notifications")
+                       return
+                     }
+                     openNovedadesPanel()
+                   }}
+                 >
+                    <Bell size={18} strokeWidth={1.5} className="nav-icon" aria-hidden />
+                 </button>
+                 <Link href="/cart" aria-label="Carrito de compras" className="touch-target relative cursor-pointer nav-icon">
+                    <ShoppingCart size={18} strokeWidth={1.5} className="nav-icon" aria-hidden />
                  </Link>
               </div>
             </div>

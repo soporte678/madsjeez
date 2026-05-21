@@ -1,5 +1,7 @@
 import { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { prisma } from "@/lib/prisma";
+import { ensureStoreSlugForUser } from "@/lib/public-store";
 import Link from "next/link";
 import { Header } from "@/components/Header";
 import { ProductCard } from "@/components/product/ProductCard";
@@ -112,11 +114,16 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return {
     title: `${seller.full_name || "Vendedor"} | MADSJEEZ`,
     description: `Tienda oficial de ${seller.full_name || "vendedor"} en MADSJEEZ`,
+    robots: { index: false, follow: true },
   };
 }
 
 export default async function SellerPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+
+  const slug = await ensureStoreSlugForUser(id);
+  if (slug) redirect(`/tienda/${slug}`);
+
   const seller = await getSeller(id);
 
   if (!seller) {

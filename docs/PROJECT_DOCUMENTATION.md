@@ -47,7 +47,8 @@ madsjeez-marketplace/
 │   └── .env.local               # Variables de entorno
 ├── packages/shared-types/       # Tipos compartidos
 ├── supabase/migrations/         # 4 archivos SQL
-├── docs/legal/                  # 6 documentos legales
+├── docs/legal/                  # Documentos legales
+├── docs/api/                    # Referencia API (`/docs/api`) y checklist listo para producción
 └── turbo.json                   # Configuración monorepo
 ```
 

@@ -68,7 +68,12 @@ export async function GET() {
     )
       ? 2500
       : 0;
-    const total = subtotal + shippingCost;
+    /** Cobro al comprador en checkout MP: subtotal + 50% envío (ver escrow-split). */
+    const buyerShippingShare =
+      shippingCost > 0 ? Math.round((shippingCost / 2) * 100) / 100 : 0;
+    const sellerShippingShare =
+      shippingCost > 0 ? Math.round((shippingCost - buyerShippingShare) * 100) / 100 : 0;
+    const totalChargedToBuyer = Math.round((subtotal + buyerShippingShare) * 100) / 100;
 
     return NextResponse.json({
       cart,
@@ -76,8 +81,13 @@ export async function GET() {
         itemCount: cart.items.reduce((sum: number, item: { quantity: number }) => sum + item.quantity, 0),
         subtotal,
         shippingCost,
+        buyerShippingShare,
+        sellerShippingShare,
         tax: 0,
-        total,
+        /** Total que pagará el comprador al ir a Mercado Pago. */
+        total: totalChargedToBuyer,
+        /** Total subtotal + envío completo (solo referencia logística). */
+        totalWithFullShipping: Math.round((subtotal + shippingCost) * 100) / 100,
       },
     });
   } catch (error) {
@@ -87,7 +97,16 @@ export async function GET() {
     if (isMissingColumnError(error)) {
       return NextResponse.json({
         cart: { items: [] },
-        summary: { itemCount: 0, subtotal: 0, shippingCost: 0, tax: 0, total: 0 },
+        summary: {
+          itemCount: 0,
+          subtotal: 0,
+          shippingCost: 0,
+          buyerShippingShare: 0,
+          sellerShippingShare: 0,
+          tax: 0,
+          total: 0,
+          totalWithFullShipping: 0,
+        },
       });
     }
     return NextResponse.json(
@@ -180,7 +199,7 @@ export async function PATCH(request: Request) {
 
     const cart = await prisma.cart.findUnique({
       where: { userId: session.user.id },
-      include: { items: true },
+      include: { items: { include: { product: { select: { stock: true } } } } },
     });
 
     if (!cart) {
@@ -195,6 +214,10 @@ export async function PATCH(request: Request) {
     if (quantity <= 0) {
       await prisma.cartItem.delete({ where: { id: itemId } });
     } else {
+      const stock = item.product?.stock ?? 0;
+      if (quantity > stock) {
+        return NextResponse.json({ error: "Stock insuficiente" }, { status: 400 });
+      }
       await prisma.cartItem.update({
         where: { id: itemId },
         data: { quantity },

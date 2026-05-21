@@ -2,10 +2,12 @@ import { Metadata } from "next";
 import Link from "next/link";
 import { Header } from "@/components/Header";
 import { Card, CardContent } from "@/components/ui/card";
+import { canonicalMeta } from "@/lib/seo/canonical";
 
 export const metadata: Metadata = {
   title: "Términos y Condiciones | MADSJEEZ",
   description: "Términos y condiciones de uso de la plataforma MADSJEEZ Marketplace",
+  ...canonicalMeta("/legal/terminos"),
 };
 
 export default function TerminosPage() {

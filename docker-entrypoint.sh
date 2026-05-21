@@ -1,42 +1,48 @@
 #!/bin/sh
 set -e
 
-echo "=== Entrypoint iniciado ==="
-echo "=== Node version: $(node --version) ==="
-echo "=== NPM version: $(npm --version) ==="
+# Next.js standalone usa la variable HOSTNAME para el bind. En Docker/K8s/Railway
+# HOSTNAME suele ser el nombre del contenedor (p. ej. replica-xyz), no una interfaz
+# válida → el servidor no escucha en 0.0.0.0 y el healthcheck da "service unavailable".
+export HOSTNAME="0.0.0.0"
 
-# Verificar que existen archivos necesarios
-if [ ! -f "package.json" ]; then
-    echo "ERROR: package.json no encontrado"
-    exit 1
+PORT="${PORT:-3000}"
+export PORT
+
+echo "=== Entrypoint standalone ==="
+echo "=== Node $(node --version) · PORT=${PORT} · HOSTNAME=${HOSTNAME} ==="
+
+if [ ! -f "./server.js" ]; then
+  echo "ERROR: falta ./server.js (¿next.config output standalone y COPY .next/standalone?)"
+  exit 1
 fi
 
-# Permite mitigar incidentes de arranque si la DB está inestable
+# Migraciones: por defecto `node migrate.mjs` en **segundo plano** para que Next escuche
+# de inmediato y el healthcheck de Railway (`/railway-health.txt`) no falle mientras migrate
+# corre (puede tardar hasta ~300s con pooler o red lenta).
+#
+# Si necesitás que el proceso no sirva tráfico hasta tener schema al día: SKIP_DB_MIGRATIONS_ON_BOOT=true
+# y ejecutá migrate en un job aparte con URL directa :5432.
 if [ "$SKIP_DB_MIGRATIONS_ON_BOOT" = "true" ]; then
-    echo "WARNING: SKIP_DB_MIGRATIONS_ON_BOOT=true, saltando migraciones"
-elif [ -n "$DATABASE_URL" ]; then
-    echo "=== DATABASE_URL configurada (runtime) ==="
-    echo "=== Ejecutando migraciones de Prisma ==="
-    # Prisma 7 lee DATABASE_URL desde prisma.config.ts (datasource.url). No ignorar fallos.
-    export DATABASE_URL
-    if ! npx prisma migrate deploy; then
-        echo "ERROR: prisma migrate deploy falló — revisá logs y _prisma_migrations"
-        exit 1
+  echo "INFO: SKIP_DB_MIGRATIONS_ON_BOOT=true — sin migrate en boot"
+elif [ -n "$DATABASE_URL" ] && [ -f "./migrate.mjs" ]; then
+  echo "INFO: migrate en background (máx ~300s); Next arranca ya para healthchecks."
+  (
+    set +e
+  if command -v timeout >/dev/null 2>&1; then
+    timeout 300 node ./migrate.mjs
+  else
+    node ./migrate.mjs
+  fi
+    mig=$?
+    if [ "$mig" != 0 ]; then
+      echo "WARN: migrate deploy terminó con código $mig (timeout=124). Revisá logs [migrate]: si ves db.*.supabase.co y P1001, quitá DIRECT_DATABASE_URL con host db.* o redeploy con migrate.mjs actual (session pooler :5432). O ejecutá migrate a mano con URI Session del panel Supabase."
+    else
+      echo "INFO: migrate deploy completó OK."
     fi
-
-    echo "=== Verificando/creado columna access_key via fallback SQL ==="
-    node -e "
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
-prisma.\$executeRawUnsafe('ALTER TABLE \"users\" ADD COLUMN IF NOT EXISTS \"access_key\" VARCHAR(191);')
-  .then(() => { console.log('OK: columna access_key verificada'); return prisma.\$disconnect(); })
-  .catch(e => { console.log('INFO:', e.message); return prisma.\$disconnect().catch(() => {}); });
-" || echo "WARNING: Fallback SQL fallo (ignorado)"
-else
-    echo "WARNING: DATABASE_URL no configurada en runtime, saltando migraciones"
+  ) &
+elif [ -n "$DATABASE_URL" ]; then
+  echo "WARN: DATABASE_URL definida pero falta ./migrate.mjs; omitiendo migrate"
 fi
 
-# Iniciar la aplicación
-echo "=== Iniciando aplicación ==="
-echo "=== Comando: $@ ==="
-exec "$@"
+exec node server.js

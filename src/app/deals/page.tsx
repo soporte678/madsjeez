@@ -23,7 +23,15 @@ export default function DealsPage() {
         const response = await fetch("/api/products?deals=true")
         if (response.ok) {
           const data = await response.json()
-          setProducts(data.filter((p: Product) => p.original_price && p.price < p.original_price))
+          const list = Array.isArray(data) ? data : data.products ?? []
+          setProducts(
+            list.filter(
+              (p: Product) =>
+                Boolean(p.original_price) &&
+                p.price < (p.original_price as number) &&
+                Boolean(p.images?.[0]?.url?.trim())
+            )
+          )
         }
       } catch (error) {
         console.error("Error fetching deals:", error)

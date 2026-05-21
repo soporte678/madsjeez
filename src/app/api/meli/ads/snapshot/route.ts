@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getMeliAccessTokenForUser } from "@/lib/meli/prisma-session";
-import { resolveMarketingAccess } from "@/lib/marketing/access";
 import { meliGetSellerPromotions } from "@/lib/meli/api";
 import {
   meliPadsListAdvertisers,
@@ -15,12 +15,51 @@ import {
   meliPadsSearchCampaignsBasicAltPath,
   meliPadsSearchCampaignsWithMetricsAltPath,
   meliPadsGetCampaignWithMetrics,
+  type MeliPadsAdvertiser,
   type MeliPadsCampaignRow,
   type MeliPadsCampaignMetrics,
 } from "@/lib/meli/pads-api";
 import { analyzePadsCampaigns } from "@/lib/meli/ads-analyzer";
+import {
+  coreToJsonRecord,
+  getArgentinaDateKey,
+  lastNDayKeys,
+  MELI_ADS_BUCKET_TZ,
+  rollupTotalsCores,
+  totalsJsonToCore,
+} from "@/lib/meli/ads-daily-bucket";
 
 export const dynamic = "force-dynamic";
+
+const SOURCE_DAILY_CUTOFF = "daily_cutoff";
+
+/** Evita TypeError si PADS devuelve `advertisers` no iterable o filas incompletas. */
+function normalizePadsAdvertisers(raw: unknown, errorSink: string[]): MeliPadsAdvertiser[] {
+  if (!Array.isArray(raw)) {
+    if (raw != null) errorSink.push("PADS advertisers: la respuesta no es un array");
+    return [];
+  }
+  const out: MeliPadsAdvertiser[] = [];
+  for (const entry of raw) {
+    if (!entry || typeof entry !== "object") continue;
+    const o = entry as Record<string, unknown>;
+    const siteRaw = o.site_id;
+    const advRaw = o.advertiser_id;
+    const site_id = typeof siteRaw === "string" ? siteRaw.trim() : "";
+    const advertiser_id =
+      typeof advRaw === "number"
+        ? advRaw
+        : typeof advRaw === "string" && advRaw.trim() !== ""
+          ? Number(advRaw.replace(",", "."))
+          : NaN;
+    if (!site_id || !Number.isFinite(advertiser_id)) {
+      errorSink.push("PADS advertisers: fila ignorada (site_id o advertiser_id inválido)");
+      continue;
+    }
+    out.push({ ...(entry as MeliPadsAdvertiser), site_id, advertiser_id });
+  }
+  return out;
+}
 
 type CampaignEnriched = MeliPadsCampaignRow & {
   site_id: string;
@@ -81,11 +120,20 @@ function pickMetric(obj: Record<string, unknown> | undefined, keys: string[]): n
 }
 
 function padsSearchResults(data: unknown): MeliPadsCampaignRow[] {
+  if (Array.isArray(data)) return data as MeliPadsCampaignRow[];
   if (!data || typeof data !== "object") return [];
   const o = data as Record<string, unknown>;
-  for (const key of ["results", "campaigns", "elements"]) {
+  for (const key of ["results", "campaigns", "elements", "items"]) {
     const arr = o[key];
     if (Array.isArray(arr) && arr.length > 0) return arr as MeliPadsCampaignRow[];
+  }
+  const nested = o.data;
+  if (nested && typeof nested === "object") {
+    const inner = nested as Record<string, unknown>;
+    for (const key of ["results", "campaigns", "elements"]) {
+      const arr = inner[key];
+      if (Array.isArray(arr) && arr.length > 0) return arr as MeliPadsCampaignRow[];
+    }
   }
   const fallback = o.results;
   return Array.isArray(fallback) ? (fallback as MeliPadsCampaignRow[]) : [];
@@ -154,6 +202,67 @@ function sumMetrics(rows: CampaignEnriched[]) {
   };
 }
 
+/** Lectura PADS con métricas solo para `dayKey` (YYYY-MM-DD): base del histórico diario sin solapar ventanas largas. */
+async function padsCampaignsSingleDaySlice(
+  accessToken: string,
+  advertisers: { advertiser_id: number; site_id: string }[],
+  dayKey: string,
+  errorSink: string[]
+): Promise<CampaignEnriched[]> {
+  const out: CampaignEnriched[] = [];
+  for (const adv of advertisers) {
+    try {
+      let camp = await meliPadsSearchCampaignsWithMetricsRange(
+        accessToken,
+        adv.site_id,
+        adv.advertiser_id,
+        dayKey,
+        dayKey,
+        0,
+        50
+      );
+      if (!camp.ok || padsSearchResults(camp.data).length === 0) {
+        if (!camp.ok) {
+          errorSink.push(`PADS día ${dayKey} (${adv.advertiser_id}): métricas HTTP ${camp.status}`);
+        }
+        camp = await meliPadsSearchCampaignsBasic(accessToken, adv.site_id, adv.advertiser_id, 0, 50);
+      }
+      if (padsSearchResults(camp.data).length === 0) {
+        const altWithMetrics = await meliPadsSearchCampaignsWithMetricsAltPath(
+          accessToken,
+          adv.site_id,
+          adv.advertiser_id,
+          dayKey,
+          dayKey,
+          0,
+          50
+        );
+        if (altWithMetrics.ok && padsSearchResults(altWithMetrics.data).length > 0) {
+          camp = altWithMetrics;
+        }
+      }
+      const currentRows = padsSearchResults(camp.data).map((r) => ({
+        row: r as MeliPadsCampaignRow,
+        metrics: normalizeMetrics((r as MeliPadsCampaignRow).metrics as Record<string, unknown>),
+      }));
+      for (const row of currentRows) {
+        const r = row.row as MeliPadsCampaignRow;
+        out.push({
+          ...r,
+          metrics: row.metrics,
+          site_id: adv.site_id,
+          advertiser_id: adv.advertiser_id,
+        });
+      }
+    } catch (e) {
+      errorSink.push(
+        `PADS día único (${dayKey}) advertiser ${adv.advertiser_id}: ${e instanceof Error ? e.message : "unknown"}`
+      );
+    }
+  }
+  return out;
+}
+
 function campaignTrendScore(current?: Record<string, unknown>, previous?: Record<string, unknown>): number {
   if (!current || !previous) return 0;
   const curCtr = pickMetric(current, ["ctr"]);
@@ -195,21 +304,6 @@ function parseCompareDaysParam(raw: string | null): number[] {
   return unique.length > 0 ? unique.slice(0, 8) : defaults;
 }
 
-function nearestSnapshotByDays<T extends { createdAt: Date }>(rows: T[], daysAgo: number): T | null {
-  if (rows.length === 0) return null;
-  const target = Date.now() - daysAgo * 86_400_000;
-  let best: T | null = null;
-  let bestDiff = Number.POSITIVE_INFINITY;
-  for (const r of rows) {
-    const diff = Math.abs(r.createdAt.getTime() - target);
-    if (diff < bestDiff) {
-      bestDiff = diff;
-      best = r;
-    }
-  }
-  return best;
-}
-
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -217,11 +311,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    const access = await resolveMarketingAccess(session.user.id, session.user.email);
-    const ownerUserId = access.ownerUserId;
-    const accessLevel = access.permission;
-
-    const meli = await getMeliAccessTokenForUser(ownerUserId);
+    const meli = await getMeliAccessTokenForUser(session.user.id);
     if (!meli) {
       return NextResponse.json({ error: "Conectá Mercado Libre primero" }, { status: 400 });
     }
@@ -235,7 +325,7 @@ export async function GET(req: Request) {
 
     const errors: string[] = [];
     const advRes = await meliPadsListAdvertisers(meli.accessToken);
-    const advertisers = advRes.data?.advertisers ?? [];
+    const advertisers = normalizePadsAdvertisers(advRes.data?.advertisers, errors);
     if (!advRes.ok) {
       errors.push(`PADS advertisers HTTP ${advRes.status}`);
     }
@@ -436,8 +526,9 @@ export async function GET(req: Request) {
             prevByCampaignId.set(Number(p.row.id), p.metrics);
           }
         }
-        if (camp.data.metrics_summary != null) {
-          metricsSummaryByAdvertiser[String(adv.advertiser_id)] = camp.data.metrics_summary;
+        const metricsSummary = camp.data?.metrics_summary;
+        if (metricsSummary != null) {
+          metricsSummaryByAdvertiser[String(adv.advertiser_id)] = metricsSummary;
         }
 
         diagnosticsByAdvertiser[String(adv.advertiser_id)] = {
@@ -468,15 +559,27 @@ export async function GET(req: Request) {
     }
 
     let promotions: unknown = null;
-    const promoRes = await meliGetSellerPromotions(meli.accessToken, meli.meliUserId);
-    if (promoRes.ok) promotions = promoRes.data;
+    try {
+      const promoRes = await meliGetSellerPromotions(meli.accessToken, meli.meliUserId);
+      if (promoRes.ok) promotions = promoRes.data;
+    } catch (e) {
+      errors.push(
+        `Promociones vendedor: ${e instanceof Error ? e.message : "fetch_error"}`
+      );
+    }
 
     let recommendations: ReturnType<typeof analyzePadsCampaigns> = [];
     if (analyze && campaigns.length > 0) {
-      recommendations = analyzePadsCampaigns({
-        advertisers,
-        campaigns,
-      });
+      try {
+        recommendations = analyzePadsCampaigns({
+          advertisers,
+          campaigns,
+        });
+      } catch (e) {
+        errors.push(
+          `Análisis de campañas: ${e instanceof Error ? e.message : "analyze_error"}`
+        );
+      }
     }
 
     const totals = sumMetrics(campaigns);
@@ -486,6 +589,29 @@ export async function GET(req: Request) {
         metrics: c.metrics_prev,
       }))
     );
+
+    const bucketDateKey = getArgentinaDateKey();
+    const dailySliceCampaigns = await padsCampaignsSingleDaySlice(
+      meli.accessToken,
+      advertisers,
+      bucketDateKey,
+      errors
+    );
+    let totalsForPersist = sumMetrics(dailySliceCampaigns);
+    let persistedMetricsDays = 1;
+    if (
+      advertisers.length > 0 &&
+      totalsForPersist.cost === 0 &&
+      totalsForPersist.clicks === 0 &&
+      totalsForPersist.prints === 0 &&
+      campaigns.length > 0
+    ) {
+      totalsForPersist = totals;
+      persistedMetricsDays = days;
+      errors.push(
+        "PADS histórico diario: sin métricas de un solo día en ML; este corte usa la ventana larga como respaldo."
+      );
+    }
 
     const monthStart = new Date();
     monthStart.setDate(1);
@@ -497,6 +623,14 @@ export async function GET(req: Request) {
 
     let createdSnapshot: { id: string; createdAt: Date } | null = null;
     let dailyStats: Array<{ day: string; snapshots: number; avgCost: number; avgRevenue: number; avgProfit: number }> = [];
+    let rolledTotals: Array<{ windowDays: number; daysIncluded: number; totals: Record<string, number> }> = [];
+    let dailyHistory: Array<{ bucketDateKey: string; updatedAt: string; totals: Record<string, number> }> = [];
+    let dailyCutoffMeta: {
+      timezone: string;
+      bucketDateKey: string;
+      source: string;
+      snapshotUpdatedAt: string | null;
+    } | null = null;
     let changeSummary = { positive: 0, negative: 0, neutral: 0, pending: 0 };
     let comparisons: Array<{
       daysAgo: number;
@@ -505,117 +639,218 @@ export async function GET(req: Request) {
       deltasVsNow: Record<string, number>;
     }> = [];
     try {
-      // Persistencia histórica cada sincronización (base para evolución diaria y control de impacto).
-      createdSnapshot = await prisma.meliAdsSnapshot.create({
-        data: {
-          userId: ownerUserId,
-          metricsDays: days,
-          advertisersCount: advertisers.length,
-          campaignsCount: campaigns.length,
-          recommendationsCount: recommendations.length,
-          totals: totals as unknown as object,
-          deltas: {
-            prints: totals.prints - previousTotals.prints,
-            clicks: totals.clicks - previousTotals.clicks,
-            ctr: totals.ctr - previousTotals.ctr,
-            cost: totals.cost - previousTotals.cost,
-            acos: totals.acos - previousTotals.acos,
-            roas: totals.roas - previousTotals.roas,
-            budget: totals.budget - previousTotals.budget,
-            revenue: totals.revenue - previousTotals.revenue,
-            profit: totals.profit - previousTotals.profit,
-          } as unknown as object,
-          diagnostics: diagnosticsByAdvertiser as unknown as object,
-          errors: errors as unknown as object,
+      const prevBucketKey = lastNDayKeys(bucketDateKey, 2)[0];
+      const prevSnap = await prisma.meliAdsSnapshot.findFirst({
+        where: {
+          userId: session.user.id,
+          bucketDateKey: prevBucketKey,
+          source: SOURCE_DAILY_CUTOFF,
         },
-        select: { id: true, createdAt: true },
+        select: { totals: true },
+      });
+      const prevDailyCore = prevSnap?.totals
+        ? totalsJsonToCore(prevSnap.totals as Record<string, unknown>)
+        : null;
+      const zeroPersistDeltas = {
+        prints: 0,
+        clicks: 0,
+        ctr: 0,
+        cost: 0,
+        acos: 0,
+        roas: 0,
+        budget: 0,
+        revenue: 0,
+        profit: 0,
+      };
+      const deltasPayload = (prevDailyCore
+        ? {
+            prints: totalsForPersist.prints - prevDailyCore.prints,
+            clicks: totalsForPersist.clicks - prevDailyCore.clicks,
+            ctr: totalsForPersist.ctr - prevDailyCore.ctr,
+            cost: totalsForPersist.cost - prevDailyCore.cost,
+            acos: totalsForPersist.acos - prevDailyCore.acos,
+            roas: totalsForPersist.roas - prevDailyCore.roas,
+            budget: totalsForPersist.budget - prevDailyCore.budget,
+            revenue: totalsForPersist.revenue - prevDailyCore.revenue,
+            profit: totalsForPersist.profit - prevDailyCore.profit,
+          }
+        : zeroPersistDeltas) as unknown as object;
+
+      const snapshotPersistPayload = {
+        metricsDays: persistedMetricsDays,
+        advertisersCount: advertisers.length,
+        campaignsCount: campaigns.length,
+        recommendationsCount: recommendations.length,
+        totals: totalsForPersist as unknown as object,
+        deltas: deltasPayload,
+        diagnostics: diagnosticsByAdvertiser as unknown as object,
+        errors: errors as unknown as object,
+        source: SOURCE_DAILY_CUTOFF,
+        bucketDateKey,
+      };
+
+      const existingDaily = await prisma.meliAdsSnapshot.findFirst({
+        where: {
+          userId: session.user.id,
+          bucketDateKey,
+          source: SOURCE_DAILY_CUTOFF,
+        },
+        select: { id: true },
       });
 
-      if (campaigns.length > 0) {
-        await prisma.meliAdsCampaignSnapshot.createMany({
-          data: campaigns.map((c) => ({
-            snapshotId: createdSnapshot.id,
-            campaignId: Number(c.id),
-            advertiserId: Number(c.advertiser_id),
-            siteId: c.site_id,
-            name: c.name ?? null,
-            status: c.status ?? null,
-            strategy: c.strategy ?? null,
-            budget: c.budget != null ? Number(c.budget) : null,
-            roasTarget: c.roas_target != null ? Number(c.roas_target) : null,
-            metrics: (c.metrics ?? null) as unknown as object | null,
-            metricsPrev: (c.metrics_prev ?? null) as unknown as object | null,
-            trendScore: campaignTrendScore(
-              c.metrics as unknown as Record<string, unknown> | undefined,
-              c.metrics_prev as unknown as Record<string, unknown> | undefined
-            ),
-          })),
+      createdSnapshot = await prisma.$transaction(async (tx) => {
+        let snapshotId: string;
+        let createdAt: Date;
+
+        if (existingDaily) {
+          await tx.meliAdsCampaignSnapshot.deleteMany({ where: { snapshotId: existingDaily.id } });
+          await tx.meliAdsSnapshot.update({
+            where: { id: existingDaily.id },
+            data: snapshotPersistPayload,
+          });
+          const refreshed = await tx.meliAdsSnapshot.findUniqueOrThrow({
+            where: { id: existingDaily.id },
+            select: { createdAt: true },
+          });
+          snapshotId = existingDaily.id;
+          createdAt = refreshed.createdAt;
+        } else {
+          const row = await tx.meliAdsSnapshot.create({
+            data: {
+              userId: session.user.id,
+              ...snapshotPersistPayload,
+            },
+            select: { id: true, createdAt: true },
+          });
+          snapshotId = row.id;
+          createdAt = row.createdAt;
+        }
+
+        if (campaigns.length > 0) {
+          await tx.meliAdsCampaignSnapshot.createMany({
+            data: campaigns.map((c) => ({
+              snapshotId,
+              campaignId: Number(c.id),
+              advertiserId: Number(c.advertiser_id),
+              siteId: c.site_id,
+              name: c.name ?? null,
+              status: c.status ?? null,
+              strategy: c.strategy ?? null,
+              budget: c.budget != null ? Number(c.budget) : null,
+              roasTarget: c.roas_target != null ? Number(c.roas_target) : null,
+              metrics: c.metrics != null ? (c.metrics as Prisma.InputJsonValue) : Prisma.JsonNull,
+              metricsPrev: c.metrics_prev != null ? (c.metrics_prev as Prisma.InputJsonValue) : Prisma.JsonNull,
+              trendScore: campaignTrendScore(
+                c.metrics as unknown as Record<string, unknown> | undefined,
+                c.metrics_prev as unknown as Record<string, unknown> | undefined
+              ),
+            })),
+          });
+        }
+
+        return { id: snapshotId, createdAt };
+      });
+
+      const persistedMeta = await prisma.meliAdsSnapshot.findUnique({
+        where: { id: createdSnapshot!.id },
+        select: { updatedAt: true },
+      });
+      dailyCutoffMeta = {
+        timezone: MELI_ADS_BUCKET_TZ,
+        bucketDateKey,
+        source: SOURCE_DAILY_CUTOFF,
+        snapshotUpdatedAt: persistedMeta?.updatedAt.toISOString() ?? null,
+      };
+
+      const pendingChanges = await prisma.meliAdsChange.findMany({
+        where: {
+          userId: session.user.id,
+          outcome: "PENDING",
+        },
+        orderBy: { appliedAt: "desc" },
+        take: 200,
+      });
+      const byCampaign = new Map<string, CampaignEnriched>();
+      for (const c of campaigns) byCampaign.set(`${c.site_id}:${c.id}`, c);
+      for (const ch of pendingChanges) {
+        const key = `${ch.siteId}:${ch.campaignId}`;
+        const cmp = byCampaign.get(key);
+        if (!cmp) continue;
+        const evalRes = evaluateChangeOutcome(
+          cmp.metrics as unknown as Record<string, unknown> | undefined,
+          cmp.metrics_prev as unknown as Record<string, unknown> | undefined
+        );
+        if (evalRes.outcome === "PENDING") continue;
+        await prisma.meliAdsChange.update({
+          where: { id: ch.id },
+          data: {
+            outcome: evalRes.outcome,
+            outcomeScore: evalRes.score,
+            outcomeSummary: evalRes.summary,
+            evaluatedAt: new Date(),
+            evaluatedSnapshotId: createdSnapshot?.id ?? null,
+          },
         });
       }
 
-    // Evaluar cambios aplicados pendientes con la foto actual.
-      const pendingChanges = await prisma.meliAdsChange.findMany({
-      where: {
-        userId: ownerUserId,
-        outcome: "PENDING",
-      },
-      orderBy: { appliedAt: "desc" },
-      take: 200,
-    });
-    const byCampaign = new Map<string, CampaignEnriched>();
-    for (const c of campaigns) byCampaign.set(`${c.site_id}:${c.id}`, c);
-    for (const ch of pendingChanges) {
-      const key = `${ch.siteId}:${ch.campaignId}`;
-      const cmp = byCampaign.get(key);
-      if (!cmp) continue;
-      const evalRes = evaluateChangeOutcome(
-        cmp.metrics as unknown as Record<string, unknown> | undefined,
-        cmp.metrics_prev as unknown as Record<string, unknown> | undefined
-      );
-      if (evalRes.outcome === "PENDING") continue;
-      await prisma.meliAdsChange.update({
-        where: { id: ch.id },
-        data: {
-          outcome: evalRes.outcome,
-          outcomeScore: evalRes.score,
-          outcomeSummary: evalRes.summary,
-          evaluatedAt: new Date(),
-          evaluatedSnapshotId: createdSnapshot?.id ?? null,
+      const dailyRows = await prisma.meliAdsSnapshot.findMany({
+        where: {
+          userId: session.user.id,
+          source: SOURCE_DAILY_CUTOFF,
+          bucketDateKey: { not: null },
         },
+        orderBy: { bucketDateKey: "desc" },
+        take: 120,
+        select: { bucketDateKey: true, totals: true, updatedAt: true },
       });
-    }
 
-      const recentSnapshots = await prisma.meliAdsSnapshot.findMany({
-      where: { userId: ownerUserId },
-      orderBy: { createdAt: "desc" },
-      take: 500,
-      select: { createdAt: true, totals: true },
-    });
-      const dailyMap = new Map<string, { cost: number; revenue: number; profit: number; snapshots: number }>();
-      for (const s of recentSnapshots) {
-        const day = s.createdAt.toISOString().slice(0, 10);
-        const t = (s.totals ?? {}) as Record<string, unknown>;
-        const agg = dailyMap.get(day) ?? { cost: 0, revenue: 0, profit: 0, snapshots: 0 };
-        agg.cost += n(t.cost);
-        agg.revenue += n(t.revenue);
-        agg.profit += n(t.profit);
-        agg.snapshots += 1;
-        dailyMap.set(day, agg);
+      const byBucket = new Map<string, { totals: Record<string, unknown>; updatedAt: Date }>();
+      for (const row of dailyRows) {
+        if (row.bucketDateKey) {
+          byBucket.set(row.bucketDateKey, {
+            totals: (row.totals ?? {}) as Record<string, unknown>,
+            updatedAt: row.updatedAt,
+          });
+        }
       }
-      dailyStats = Array.from(dailyMap.entries())
-      .map(([day, x]) => ({
-        day,
-        snapshots: x.snapshots,
-        avgCost: x.snapshots > 0 ? x.cost / x.snapshots : 0,
-        avgRevenue: x.snapshots > 0 ? x.revenue / x.snapshots : 0,
-        avgProfit: x.snapshots > 0 ? x.profit / x.snapshots : 0,
-      }))
-      .sort((a, b) => (a.day < b.day ? -1 : 1))
-      .slice(-30);
+
+      const dailyAsc = [...dailyRows].sort((a, b) =>
+        (a.bucketDateKey ?? "") < (b.bucketDateKey ?? "") ? -1 : 1
+      );
+      dailyStats = dailyAsc.slice(-30).map((row) => {
+        const t = (row.totals ?? {}) as Record<string, unknown>;
+        return {
+          day: row.bucketDateKey ?? "",
+          snapshots: 1,
+          avgCost: n(t.cost),
+          avgRevenue: n(t.revenue),
+          avgProfit: n(t.profit),
+        };
+      });
+
+      dailyHistory = dailyAsc.slice(-90).map((row) => ({
+        bucketDateKey: row.bucketDateKey ?? "",
+        updatedAt: row.updatedAt.toISOString(),
+        totals: coreToJsonRecord(totalsJsonToCore((row.totals ?? {}) as Record<string, unknown>)),
+      }));
+
+      rolledTotals = [7, 15, 20].map((windowDays) => {
+        const keys = lastNDayKeys(bucketDateKey, windowDays);
+        const cores = keys
+          .map((k) => byBucket.get(k))
+          .filter(Boolean)
+          .map((entry) => totalsJsonToCore(entry!.totals));
+        const rolled = rollupTotalsCores(cores);
+        return {
+          windowDays,
+          daysIncluded: cores.length,
+          totals: coreToJsonRecord(rolled),
+        };
+      });
 
       const changeSummaryRows = await prisma.meliAdsChange.groupBy({
         by: ["outcome"],
-        where: { userId: ownerUserId },
+        where: { userId: session.user.id },
         _count: { _all: true },
       });
       changeSummary = {
@@ -626,33 +861,25 @@ export async function GET(req: Request) {
       };
 
       const totalsNow = {
-        prints: totals.prints,
-        clicks: totals.clicks,
-        ctr: totals.ctr,
-        cost: totals.cost,
-        acos: totals.acos,
-        roas: totals.roas,
-        budget: totals.budget,
-        revenue: totals.revenue,
-        profit: totals.profit,
+        prints: totalsForPersist.prints,
+        clicks: totalsForPersist.clicks,
+        ctr: totalsForPersist.ctr,
+        cost: totalsForPersist.cost,
+        acos: totalsForPersist.acos,
+        roas: totalsForPersist.roas,
+        budget: totalsForPersist.budget,
+        revenue: totalsForPersist.revenue,
+        profit: totalsForPersist.profit,
       };
       comparisons = compareDays.map((d) => {
-        const near = nearestSnapshotByDays(recentSnapshots, d);
-        const nearTotals = (near?.totals ?? {}) as Record<string, unknown>;
-        const base = {
-          prints: n(nearTotals.prints),
-          clicks: n(nearTotals.clicks),
-          ctr: n(nearTotals.ctr),
-          cost: n(nearTotals.cost),
-          acos: n(nearTotals.acos),
-          roas: n(nearTotals.roas),
-          budget: n(nearTotals.budget),
-          revenue: n(nearTotals.revenue),
-          profit: n(nearTotals.profit),
-        };
+        const keysWindow = lastNDayKeys(bucketDateKey, d + 1);
+        const targetKey = keysWindow[0];
+        const hit = targetKey ? byBucket.get(targetKey) : undefined;
+        const baseCore = hit ? totalsJsonToCore(hit.totals) : rollupTotalsCores([]);
+        const base = coreToJsonRecord(baseCore);
         return {
           daysAgo: d,
-          snapshotAt: near?.createdAt ? near.createdAt.toISOString() : null,
+          snapshotAt: hit ? hit.updatedAt.toISOString() : null,
           metrics: base,
           deltasVsNow: {
             prints: totalsNow.prints - base.prints,
@@ -703,16 +930,19 @@ export async function GET(req: Request) {
         nextInvoiceProjection,
         daysElapsed,
       },
+      dailyCutoff: dailyCutoffMeta,
+      rolledTotals,
+      dailyHistory,
       dailyStats,
       changeSummary,
       comparisons,
       promotions,
       recommendations,
-      accessLevel,
       errors,
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "snapshot_error";
+    console.error("[GET /api/meli/ads/snapshot]", e);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

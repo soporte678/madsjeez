@@ -49,7 +49,7 @@ interface UseQuestionsReturn {
   isLoading: boolean
   error: string | null
   refresh: () => void
-  askQuestion: (productId: string, question: string) => Promise<void>
+  askQuestion: (productId: string, question: string, images?: string[]) => Promise<void>
   answerQuestion: (questionId: string, answer: string) => Promise<void>
   deleteQuestion: (questionId: string) => Promise<void>
 }

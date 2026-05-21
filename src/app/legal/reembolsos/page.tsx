@@ -3,10 +3,12 @@ import { Header } from "@/components/Header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { canonicalMeta } from "@/lib/seo/canonical";
 
 export const metadata: Metadata = {
   title: "Política de Reembolsos | MADSJEEZ",
   description: "Política de reembolsos y devoluciones de MADSJEEZ Marketplace",
+  ...canonicalMeta("/legal/reembolsos"),
 };
 
 export default function ReembolsosPage() {

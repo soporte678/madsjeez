@@ -3,6 +3,10 @@ import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { createClient } from "@supabase/supabase-js"
+import {
+  listMergedSellerPublications,
+  parseSellerPublicationQuery,
+} from "@/lib/dashboard/seller-publications-query"
 
 function getSupabaseClient() {
   return createClient(
@@ -14,39 +18,16 @@ function getSupabaseClient() {
 export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    if (!session?.user?.id || !session.user?.email) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 })
     }
 
     const { searchParams } = new URL(request.url)
-    const status = searchParams.get("status")
-    const page = parseInt(searchParams.get("page") || "1")
-    const limit = parseInt(searchParams.get("limit") || "20")
-    const skip = (page - 1) * limit
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1)
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "20", 10) || 20))
+    const q = parseSellerPublicationQuery(searchParams)
 
-    // Try Prisma first (legacy products)
     const userId = session.user.id
-    const where: any = { sellerId: userId }
-    if (status === "active") where.isActive = true
-    if (status === "paused") where.isActive = false
-    if (status === "low_stock") where.stock = { lte: 5 }
-    if (status === "no_sales") where.sales = 0
-
-    const [prismaProducts, prismaTotal] = await Promise.all([
-      prisma.product.findMany({
-        where,
-        orderBy: { createdAt: "desc" },
-        skip,
-        take: limit,
-        include: {
-          category: { select: { name: true } },
-          images: { select: { url: true }, take: 1 },
-        },
-      }),
-      prisma.product.count({ where }),
-    ])
-
-    // Also fetch from Supabase (imported products)
     const supabase = getSupabaseClient()
     const { data: supabaseUser } = await supabase
       .from("users")
@@ -54,114 +35,77 @@ export async function GET(request: Request) {
       .eq("email", session.user.email)
       .maybeSingle()
 
-    let supabaseProducts: any[] = []
-    let supabaseTotal = 0
+    const { products, total, totalPages, page: outPage } = await listMergedSellerPublications({
+      prisma,
+      supabase,
+      prismaUserId: userId,
+      supabaseUserId: supabaseUser?.id ?? null,
+      q,
+      page,
+      limit,
+    })
 
-    if (supabaseUser?.id) {
-      let supabaseQuery = supabase
-        .from("products")
-        .select("*, product_images(*), categories:category_id(id, name)", { count: "exact" })
-        .eq("seller_id", supabaseUser.id)
-        .order("created_at", { ascending: false })
-        .range(skip, skip + limit - 1)
-
-      if (status === "active") supabaseQuery = supabaseQuery.eq("is_active", true)
-      if (status === "paused") supabaseQuery = supabaseQuery.eq("is_active", false)
-      if (status === "low_stock") supabaseQuery = supabaseQuery.lte("stock", 5)
-      if (status === "no_sales") supabaseQuery = supabaseQuery.eq("sales", 0)
-
-      const { data, count, error } = await supabaseQuery
-      if (!error && data) {
-        supabaseProducts = data
-        supabaseTotal = count || 0
-      }
-    }
-
-    // Transform Supabase products to match Prisma format
-    const transformedSupabaseProducts = supabaseProducts.map((p: any) => ({
+    const productsOut = products.map((p) => ({
       id: p.id,
       title: p.title,
       description: p.description,
       sku: p.sku,
       price: p.price,
-      originalPrice: p.original_price,
+      originalPrice: p.originalPrice,
       stock: p.stock,
-      isActive: p.is_active,
+      isActive: p.isActive,
       views: p.views,
       sales: p.sales,
       condition: p.condition,
-      freeShipping: p.free_shipping,
-      shippingCost: p.shipping_cost,
-      qualityScore: p.quality_score || 0,
-      categoryId: p.category_id,
-      category: p.categories ? { name: p.categories.name } : null,
-      images: (p.product_images || []).map((img: any) => ({ url: img.url })),
-      meliItemId: p.meli_item_id || null,
-      source: "supabase" as const,
-      createdAt: p.created_at,
-      updatedAt: p.updated_at,
+      freeShipping: p.freeShipping,
+      shippingCost: p.shippingCost,
+      qualityScore: p.qualityScore,
+      categoryId: p.categoryId,
+      category: p.category ? { id: p.category.id, name: p.category.name } : null,
+      images:
+        p.images?.length && (p.images[0]?.url || "").length > 0
+          ? p.images
+          : [{ url: "https://via.placeholder.com/48" }],
+      createdAt: p.createdAt,
+      updatedAt: p.createdAt,
     }))
 
-    const transformedPrismaProducts = prismaProducts.map((p: any) => ({
-      ...p,
-      source: "prisma" as const,
-    }))
-
-    // Combine and de-duplicate MELI imports.
-    // If the same MELI item exists in both stores, prefer Prisma row (editable from this dashboard).
-    const combined = [...transformedPrismaProducts, ...transformedSupabaseProducts].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    )
-    const dedupedByMeli = new Map<string, any>()
-    const duplicateKeys = new Set<string>()
-
-    for (const product of combined) {
-      const key = product.meliItemId ? `meli:${product.meliItemId}` : `${product.source}:${product.id}`
-      const existing = dedupedByMeli.get(key)
-      if (!existing) {
-        dedupedByMeli.set(key, product)
-        continue
-      }
-      duplicateKeys.add(key)
-      if (existing.source !== "prisma" && product.source === "prisma") {
-        dedupedByMeli.set(key, product)
-      }
-    }
-
-    const allProducts = Array.from(dedupedByMeli.entries())
-      .map(([key, product]) => {
-        if (duplicateKeys.has(key)) {
-          return {
-            ...product,
-            isCatalog: true,
-            category: { name: "Catálogo" },
-          }
-        }
-        return { ...product, isCatalog: false }
-      })
-      .slice(0, limit)
-
-    const total = allProducts.length
-
-    // Summary counts from both sources
     const prismaActive = await prisma.product.count({ where: { sellerId: userId, isActive: true } })
     const prismaPaused = await prisma.product.count({ where: { sellerId: userId, isActive: false } })
     const prismaLowStock = await prisma.product.count({ where: { sellerId: userId, stock: { lte: 5 } } })
     const prismaNoSales = await prisma.product.count({ where: { sellerId: userId, sales: 0 } })
 
-    let supabaseActive = 0, supabasePaused = 0, supabaseLowStock = 0, supabaseNoSales = 0
+    let supabaseActive = 0,
+      supabasePaused = 0,
+      supabaseLowStock = 0,
+      supabaseNoSales = 0
     if (supabaseUser?.id) {
-      const { count: a } = await supabase.from("products").select("*", { count: "exact", head: true }).eq("seller_id", supabaseUser.id).eq("is_active", true)
-      const { count: pa } = await supabase.from("products").select("*", { count: "exact", head: true }).eq("seller_id", supabaseUser.id).eq("is_active", false)
-      const { count: l } = await supabase.from("products").select("*", { count: "exact", head: true }).eq("seller_id", supabaseUser.id).lte("stock", 5)
-      const { count: n } = await supabase.from("products").select("*", { count: "exact", head: true }).eq("seller_id", supabaseUser.id).eq("sales", 0)
+      const { count: a } = await supabase
+        .from("products")
+        .select("*", { count: "exact", head: true })
+        .eq("seller_id", supabaseUser.id)
+        .eq("is_active", true)
+      const { count: pa } = await supabase
+        .from("products")
+        .select("*", { count: "exact", head: true })
+        .eq("seller_id", supabaseUser.id)
+        .eq("is_active", false)
+      const { count: l } = await supabase
+        .from("products")
+        .select("*", { count: "exact", head: true })
+        .eq("seller_id", supabaseUser.id)
+        .lte("stock", 5)
+      const { count: n } = await supabase
+        .from("products")
+        .select("*", { count: "exact", head: true })
+        .eq("seller_id", supabaseUser.id)
+        .eq("sales", 0)
       supabaseActive = a || 0
       supabasePaused = pa || 0
       supabaseLowStock = l || 0
       supabaseNoSales = n || 0
     }
 
-    // Top products from both sources
     const prismaTop = await prisma.product.findMany({
       where: { sellerId: userId },
       orderBy: { sales: "desc" },
@@ -169,26 +113,32 @@ export async function GET(request: Request) {
       select: { id: true, title: true, sales: true, price: true, views: true },
     })
 
-    const supabaseTop = supabaseProducts
-      .sort((a: any, b: any) => (b.sales || 0) - (a.sales || 0))
-      .slice(0, 5)
-      .map((p: any) => ({
-        id: p.id,
-        title: p.title,
-        sales: p.sales || 0,
-        price: p.price,
-        views: p.views || 0,
+    let supabaseTop: { id: string; title: string; sales: number; price: number; views: number }[] = []
+    if (supabaseUser?.id) {
+      const { data: sbTop } = await supabase
+        .from("products")
+        .select("id, title, sales, price, views")
+        .eq("seller_id", supabaseUser.id)
+        .order("sales", { ascending: false })
+        .limit(5)
+      supabaseTop = (sbTop || []).map((p: Record<string, unknown>) => ({
+        id: String(p.id),
+        title: String(p.title),
+        sales: Number(p.sales ?? 0),
+        price: Number(p.price ?? 0),
+        views: Number(p.views ?? 0),
       }))
+    }
 
     const topProducts = [...prismaTop, ...supabaseTop]
       .sort((a, b) => (b.sales || 0) - (a.sales || 0))
       .slice(0, 5)
 
     return NextResponse.json({
-      products: allProducts,
+      products: productsOut,
       total,
-      page,
-      totalPages: Math.ceil(total / limit),
+      page: outPage,
+      totalPages,
       summary: {
         active: prismaActive + supabaseActive,
         paused: prismaPaused + supabasePaused,

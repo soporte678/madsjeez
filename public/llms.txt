@@ -1,0 +1,45 @@
+# MadsJeez Marketplace
+
+> MadsJeez es un marketplace argentino para comprar y vender online: catálogo por categorías, ofertas de vendedores, pagos con Mercado Pago, envíos y panel profesional para tiendas y emprendimientos.
+
+Sitio principal: https://www.madsjeez.com.ar
+
+MadsJeez conecta compradores con vendedores verificados en Argentina. Podés buscar productos, comparar publicaciones, pagar con medios digitales seguros y hacer seguimiento de pedidos. Los comercios publican con fotos y stock, gestionan ventas desde el panel, promocionan con MADSJEEZ Ads y pueden integrar Mercado Libre y Mercado Pago según su plan.
+
+Contacto de soporte: soporte@madsjeez.com
+
+## Comprar
+
+- [Inicio](https://www.madsjeez.com.ar/): Home del marketplace con categorías, carruseles de productos y ofertas destacadas
+- [Buscar productos](https://www.madsjeez.com.ar/search): Búsqueda por texto, filtros y categorías
+- [Ofertas](https://www.madsjeez.com.ar/offers): Promociones activas de vendedores y campañas del marketplace
+- [Catálogo](https://www.madsjeez.com.ar/catalog): Listado general de productos publicados
+- [Categorías](https://www.madsjeez.com.ar/categories): Árbol de categorías y subcategorías del marketplace
+
+## Vender
+
+- [Cómo vender](https://www.madsjeez.com.ar/vender): Información para comercios, ferreterías y emprendedores que quieren vender online
+- [Registro de vendedor](https://www.madsjeez.com.ar/seller/register): Alta de cuenta vendedor y publicación de productos
+- [Publicar producto](https://www.madsjeez.com.ar/sell): Crear una nueva publicación
+- [Planes y suscripciones](https://www.madsjeez.com.ar/subscriptions): Planes Plata, Gold y Platinum con beneficios y comisiones
+
+## Empresa y confianza
+
+- [Quiénes somos](https://www.madsjeez.com.ar/quienes-somos): Fundador Ezequiel Armando Ziegler, visión del marketplace y contacto en Spegazzini, Buenos Aires
+- [Marketplace por provincia](https://www.madsjeez.com.ar/marketplace): Landings SEO por provincia y ciudad en Argentina
+- [Feed Google Shopping](https://www.madsjeez.com.ar/feeds/google-shopping.xml): Catálogo XML para Google Merchant Center
+
+## Ayuda y legales
+
+- [Centro de ayuda](https://www.madsjeez.com.ar/help): Preguntas frecuentes, compras, envíos y postventa
+- [Términos y condiciones](https://www.madsjeez.com.ar/legal/terminos): Condiciones de uso del marketplace
+- [Política de privacidad](https://www.madsjeez.com.ar/legal/privacidad): Tratamiento de datos personales
+- [Política de cookies](https://www.madsjeez.com.ar/legal/cookies): Uso de cookies y tecnologías similares
+- [Reembolsos y devoluciones](https://www.madsjeez.com.ar/legal/reembolsos): Política de devoluciones y reclamos
+
+## Optional
+
+- [Mapa del sitio](https://www.madsjeez.com.ar/sitemap.xml): URLs indexables para buscadores (productos, categorías y páginas estáticas)
+- [Robots](https://www.madsjeez.com.ar/robots.txt): Reglas de rastreo; rutas privadas como /dashboard/ y /api/ no están pensadas para indexación
+- [Documentación API interna](https://www.madsjeez.com.ar/docs/api): Referencia técnica para integraciones y desarrolladores
+- [Ofertas relámpago](https://www.madsjeez.com.ar/offers): Campañas FLASH_SALE con duración limitada cuando están activas

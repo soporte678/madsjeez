@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
 
     const { productId, reviews } = await req.json()
     const genAI = new GoogleGenerativeAI(apiKey)
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
 
     // Get reviews from DB if not provided
     let reviewsData = reviews

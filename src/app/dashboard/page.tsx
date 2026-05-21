@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, Suspense } from 'react';
+import Link from "next/link";
 import {
   Search, Bell, ShoppingCart, User, ChevronDown, ChevronRight,
   ShoppingBag, Tag, Megaphone, FileText, CreditCard, Settings,
@@ -36,8 +37,83 @@ import MarketingCentralView from "@/components/dashboard/MarketingCentralView";
 import AdvertisingView from "@/components/dashboard/AdvertisingView";
 import MeliIntegrationView from "@/components/dashboard/MeliIntegrationView";
 import MeliAdsStudioView from "@/components/dashboard/MeliAdsStudioView";
+import { StorePublicPanel } from "@/components/dashboard/StorePublicPanel";
 import ThemeToneSwitcher from "@/components/theme/ThemeToneSwitcher";
 import RainbowLogo from "@/components/brand/RainbowLogo";
+
+type InterestItem = {
+  id: string;
+  title: string;
+  location: string;
+  price: string;
+  note: string;
+  status: "nuevo" | "contactado" | "seguimiento";
+  createdAt: string;
+};
+
+type SavedSearchItem = {
+  id: string;
+  label: string;
+  category: "vehiculos" | "inmuebles";
+  alerts: boolean;
+  createdAt: string;
+};
+
+type PostSaleCase = {
+  id: string;
+  title: string;
+  orderRef: string;
+  buyer: string;
+  reason: string;
+  type: "reclamos" | "devoluciones" | "mediaciones";
+  status: "abierto" | "en_revision" | "resuelto";
+  createdAt: string;
+};
+
+type CatalogProductItem = {
+  id: string;
+  title: string;
+  sku: string;
+  brand: string;
+  status: "sugerido" | "vinculado" | "pausado";
+  stock: string;
+  price: string;
+  updatedAt: string;
+};
+
+type ShippingAddressItem = {
+  id: string;
+  label: string;
+  address: string;
+  city: string;
+  active: boolean;
+};
+
+type PickupScheduleItem = {
+  id: string;
+  day: string;
+  range: string;
+  enabled: boolean;
+};
+
+type LearningResourceItem = {
+  id: string;
+  title: string;
+  category: "ventas" | "logistica" | "catalogo" | "marketing";
+  level: "base" | "intermedio" | "pro";
+  summary: string;
+  completed: boolean;
+};
+
+const VEHICLE_INTERESTS_KEY = "madsjeez_dashboard_vehicle_interests";
+const PROPERTY_INTERESTS_KEY = "madsjeez_dashboard_property_interests";
+const SAVED_SEARCHES_KEY = "madsjeez_dashboard_saved_searches";
+const POSTSALE_CASES_KEY = "madsjeez_dashboard_postsale_cases";
+const CATALOG_PRODUCTS_KEY = "madsjeez_dashboard_catalog_products";
+const SHIPPING_ADDRESSES_KEY = "madsjeez_dashboard_shipping_addresses";
+const PICKUP_SCHEDULES_KEY = "madsjeez_dashboard_pickup_schedules";
+const EXPRESS_ENABLED_KEY = "madsjeez_dashboard_express_enabled";
+const LEARNING_RESOURCES_KEY = "madsjeez_dashboard_learning_resources";
 
 export default function App() {
   // Siempre igual en servidor y primer cliente (evita hydration mismatch). El hash se aplica en cliente.
@@ -92,6 +168,34 @@ export default function App() {
   const [activePosventaTab, setActivePosventaTab] = useState('reclamos');
   const [activeCatalogoTab, setActiveCatalogoTab] = useState('sugerencias');
   const [activeFavoritosTab, setActiveFavoritosTab] = useState('favoritos');
+  const [vehicleInterests, setVehicleInterests] = useState<InterestItem[]>([]);
+  const [propertyInterests, setPropertyInterests] = useState<InterestItem[]>([]);
+  const [savedSearches, setSavedSearches] = useState<SavedSearchItem[]>([]);
+  const [postSaleCases, setPostSaleCases] = useState<PostSaleCase[]>([]);
+  const [catalogProducts, setCatalogProducts] = useState<CatalogProductItem[]>([]);
+  const [shippingAddresses, setShippingAddresses] = useState<ShippingAddressItem[]>([]);
+  const [pickupSchedules, setPickupSchedules] = useState<PickupScheduleItem[]>([]);
+  const [expressEnabled, setExpressEnabled] = useState(false);
+  const [learningResources, setLearningResources] = useState<LearningResourceItem[]>([]);
+  const [vehicleDraft, setVehicleDraft] = useState({ title: "", location: "", price: "", note: "" });
+  const [propertyDraft, setPropertyDraft] = useState({ title: "", location: "", price: "", note: "" });
+  const [searchDraft, setSearchDraft] = useState({ label: "", category: "vehiculos" as "vehiculos" | "inmuebles" });
+  const [catalogDraft, setCatalogDraft] = useState({ title: "", sku: "", brand: "", stock: "", price: "" });
+  const [addressDraft, setAddressDraft] = useState({ label: "", address: "", city: "" });
+  const [postSaleDraft, setPostSaleDraft] = useState({
+    title: "",
+    orderRef: "",
+    buyer: "",
+    reason: "",
+    type: "reclamos" as "reclamos" | "devoluciones" | "mediaciones",
+  });
+  const [showVehicleForm, setShowVehicleForm] = useState(false);
+  const [showPropertyForm, setShowPropertyForm] = useState(false);
+  const [showSearchForm, setShowSearchForm] = useState(false);
+  const [showPostSaleForm, setShowPostSaleForm] = useState(false);
+  const [showCatalogForm, setShowCatalogForm] = useState(false);
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [learningQuery, setLearningQuery] = useState("");
   
   // Estado para el widget del Asistente
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
@@ -111,6 +215,103 @@ export default function App() {
         console.error('Error fetching user:', err);
       });
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const rawVehicles = localStorage.getItem(VEHICLE_INTERESTS_KEY);
+      const rawProperties = localStorage.getItem(PROPERTY_INTERESTS_KEY);
+      const rawSearches = localStorage.getItem(SAVED_SEARCHES_KEY);
+      const rawPostSale = localStorage.getItem(POSTSALE_CASES_KEY);
+      const rawCatalog = localStorage.getItem(CATALOG_PRODUCTS_KEY);
+      const rawAddresses = localStorage.getItem(SHIPPING_ADDRESSES_KEY);
+      const rawSchedules = localStorage.getItem(PICKUP_SCHEDULES_KEY);
+      const rawExpress = localStorage.getItem(EXPRESS_ENABLED_KEY);
+      const rawLearning = localStorage.getItem(LEARNING_RESOURCES_KEY);
+      if (rawVehicles) setVehicleInterests(JSON.parse(rawVehicles));
+      if (rawProperties) setPropertyInterests(JSON.parse(rawProperties));
+      if (rawSearches) setSavedSearches(JSON.parse(rawSearches));
+      if (rawPostSale) setPostSaleCases(JSON.parse(rawPostSale));
+      if (rawCatalog) setCatalogProducts(JSON.parse(rawCatalog));
+      if (rawAddresses) setShippingAddresses(JSON.parse(rawAddresses));
+      if (rawSchedules) setPickupSchedules(JSON.parse(rawSchedules));
+      if (rawExpress) setExpressEnabled(rawExpress === "true");
+      if (rawLearning) {
+        setLearningResources(JSON.parse(rawLearning));
+      } else {
+        setLearningResources([
+          { id: "lr-1", title: "Optimizar publicaciones para vender más", category: "ventas", level: "base", summary: "Checklist para mejorar título, precio, fotos y conversión.", completed: false },
+          { id: "lr-2", title: "Configurar logística y tiempos de despacho", category: "logistica", level: "intermedio", summary: "Buenas prácticas para envíos, horarios de colecta y SLA.", completed: false },
+          { id: "lr-3", title: "Subir productos al catálogo con criterio", category: "catalogo", level: "intermedio", summary: "Cómo ordenar fichas, SKU y marcas para escalar catálogo.", completed: true },
+          { id: "lr-4", title: "Campañas para mover stock lento", category: "marketing", level: "pro", summary: "Acciones comerciales para recuperar publicaciones con baja rotación.", completed: false },
+        ]);
+      }
+      if (!rawAddresses) {
+        setShippingAddresses([
+          { id: "addr-1", label: "Depósito central", address: "Av. Circunvalación 1550", city: "Rosario", active: true },
+        ]);
+      }
+      if (!rawSchedules) {
+        setPickupSchedules([
+          { id: "sch-1", day: "Lunes a viernes", range: "09:00 a 18:00", enabled: true },
+          { id: "sch-2", day: "Sábados", range: "09:00 a 13:00", enabled: false },
+        ]);
+      }
+      if (!rawCatalog) {
+        setCatalogProducts([
+          { id: "cat-1", title: "Kit carburador premium", sku: "MDS-CARB-01", brand: "MadsJeez", status: "sugerido", stock: "14", price: "58990", updatedAt: new Date().toISOString() },
+          { id: "cat-2", title: "Repuesto bujía 2T", sku: "MDS-BUJ-02", brand: "MadsJeez", status: "vinculado", stock: "22", price: "3200", updatedAt: new Date().toISOString() },
+        ]);
+      }
+    } catch (error) {
+      console.error("Error loading dashboard local data:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(VEHICLE_INTERESTS_KEY, JSON.stringify(vehicleInterests));
+  }, [vehicleInterests]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(PROPERTY_INTERESTS_KEY, JSON.stringify(propertyInterests));
+  }, [propertyInterests]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(SAVED_SEARCHES_KEY, JSON.stringify(savedSearches));
+  }, [savedSearches]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(POSTSALE_CASES_KEY, JSON.stringify(postSaleCases));
+  }, [postSaleCases]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(CATALOG_PRODUCTS_KEY, JSON.stringify(catalogProducts));
+  }, [catalogProducts]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(SHIPPING_ADDRESSES_KEY, JSON.stringify(shippingAddresses));
+  }, [shippingAddresses]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(PICKUP_SCHEDULES_KEY, JSON.stringify(pickupSchedules));
+  }, [pickupSchedules]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(EXPRESS_ENABLED_KEY, String(expressEnabled));
+  }, [expressEnabled]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(LEARNING_RESOURCES_KEY, JSON.stringify(learningResources));
+  }, [learningResources]);
 
   // Fetch cart item count
   useEffect(() => {
@@ -152,9 +353,9 @@ export default function App() {
       isParent: true,
       isOpen: comprasOpen,
       setIsOpen: setComprasOpen,
-      subItems: [
+        subItems: [
         { id: 'compras', label: 'Compras' },
-        { id: 'carrito', label: 'Carrito' },
+        { id: 'carrito', label: 'Carrito (panel)' },
         { id: 'preguntas', label: 'Preguntas' },
         { id: 'opiniones', label: 'Opiniones' },
         { id: 'favoritos', label: 'Favoritos' },
@@ -175,11 +376,12 @@ export default function App() {
         { id: 'resumen', label: 'Resumen' },
         { id: 'ventas-novedades', label: 'Novedades' },
         { id: 'publicaciones', label: 'Publicaciones' },
+        { id: 'mi-tienda', label: 'Mi tienda pública' },
         { id: 'meli-sync', label: 'Mercado Libre' },
         { id: 'preguntas', label: 'Preguntas' },
         { id: 'ventas-lista', label: 'Ventas' },
         { id: 'posventa', label: 'Posventa' },
-        { id: 'metricas', label: 'Métricas' },
+        { id: 'metricas', label: 'Métricas (resumen)' },
         { id: 'reputacion', label: 'Reputación' },
         { id: 'productos-catalogo', label: 'Productos de catálogo' },
         { id: 'preferencias-venta', label: 'Preferencias de venta' },
@@ -194,7 +396,7 @@ export default function App() {
       isOpen: marketingOpen,
       setIsOpen: setMarketingOpen,
       subItems: [
-        { id: 'marketing-ia', label: '✨ Marketing IA' },
+        { id: 'marketing-ia', label: '✨ Marketing IA (beta)' },
         { id: 'meli-ads-studio', label: 'Mercado Libre Ads' },
         { id: 'central-marketing', label: 'Central de marketing' },
         { id: 'publicidad', label: 'Publicidad' },
@@ -294,52 +496,280 @@ export default function App() {
 
   const renderVehiculosInteres = () => (
     <div className="flex-1 flex flex-col gap-6 w-full max-w-5xl">
-      <h1 className="text-[26px] font-semibold text-foreground">Vehículos de interés</h1>
-      <div className="flex items-center gap-2 mb-4">
-        <button className="flex items-center gap-1 text-muted-foreground text-sm font-semibold hover:bg-muted px-3 py-1.5 rounded-md border border-border"><Filter size={14}/> Filtrar</button>
-      </div>
-      <div className="bg-card rounded-xl shadow-sm border border-border p-24 flex flex-col items-center justify-center text-center">
-        <div className="relative mb-6">
-           <Car size={48} className="text-muted-foreground/40" />
-           <div className="absolute -bottom-2 -right-2 bg-muted p-1 rounded-full border-2 border-card"><Search size={14} className="text-muted-foreground"/></div>
+      <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 shadow-sm lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <h1 className="text-[26px] font-semibold text-foreground">Vehiculos de interes</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Guarda oportunidades, deja notas y marca en que punto va cada contacto.</p>
         </div>
-        <h3 className="text-lg font-semibold text-foreground mb-2">Aquí encontrarás los vehículos en los que te intereses</h3>
-        <p className="text-sm text-muted-foreground">Aparecerán aquí cuando contactes a un vendedor desde una publicación.</p>
+        <button onClick={() => setShowVehicleForm((prev) => !prev)} className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary-hover transition-colors">
+          <Plus size={16} />
+          Agregar vehiculo
+        </button>
       </div>
+
+      {showVehicleForm && (
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <div className="grid gap-3 md:grid-cols-2">
+            <input value={vehicleDraft.title} onChange={(e) => setVehicleDraft((prev) => ({ ...prev, title: e.target.value }))} placeholder="Modelo o publicacion" className="rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-primary" />
+            <input value={vehicleDraft.location} onChange={(e) => setVehicleDraft((prev) => ({ ...prev, location: e.target.value }))} placeholder="Ubicacion" className="rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-primary" />
+            <input value={vehicleDraft.price} onChange={(e) => setVehicleDraft((prev) => ({ ...prev, price: e.target.value }))} placeholder="Precio visto" className="rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-primary" />
+            <input value={vehicleDraft.note} onChange={(e) => setVehicleDraft((prev) => ({ ...prev, note: e.target.value }))} placeholder="Nota o detalle del vendedor" className="rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-primary" />
+          </div>
+          <div className="mt-4 flex gap-3">
+            <button
+              onClick={() => {
+                if (!vehicleDraft.title.trim()) return;
+                setVehicleInterests((prev) => [
+                  {
+                    id: `veh-${Date.now()}`,
+                    title: vehicleDraft.title.trim(),
+                    location: vehicleDraft.location.trim(),
+                    price: vehicleDraft.price.trim(),
+                    note: vehicleDraft.note.trim(),
+                    status: "nuevo",
+                    createdAt: new Date().toISOString(),
+                  },
+                  ...prev,
+                ]);
+                setVehicleDraft({ title: "", location: "", price: "", note: "" });
+                setShowVehicleForm(false);
+              }}
+              className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary-hover transition-colors"
+            >
+              Guardar interes
+            </button>
+            <button onClick={() => setShowVehicleForm(false)} className="rounded-md border border-border px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors">
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {vehicleInterests.length === 0 ? (
+        <div className="bg-card rounded-xl shadow-sm border border-border p-24 flex flex-col items-center justify-center text-center">
+          <div className="relative mb-6">
+             <Car size={48} className="text-muted-foreground/40" />
+             <div className="absolute -bottom-2 -right-2 bg-muted p-1 rounded-full border-2 border-card"><Search size={14} className="text-muted-foreground"/></div>
+          </div>
+          <h3 className="text-lg font-semibold text-foreground mb-2">Todavia no guardaste vehiculos</h3>
+          <p className="text-sm text-muted-foreground">Puedes cargarlos manualmente mientras conectamos esta vista con contactos reales.</p>
+        </div>
+      ) : (
+        <div className="grid gap-4">
+          {vehicleInterests.map((item) => (
+            <div key={item.id} className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">{item.title}</h3>
+                  <div className="mt-2 flex flex-wrap gap-3 text-sm text-muted-foreground">
+                    {item.location && <span className="inline-flex items-center gap-1"><MapPin size={14} /> {item.location}</span>}
+                    {item.price && <span className="inline-flex items-center gap-1"><DollarSign size={14} /> {item.price}</span>}
+                    <span className="inline-flex items-center gap-1"><Clock size={14} /> {new Date(item.createdAt).toLocaleDateString("es-AR")}</span>
+                  </div>
+                  {item.note && <p className="mt-3 text-sm text-muted-foreground">{item.note}</p>}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {(["nuevo", "contactado", "seguimiento"] as const).map((status) => (
+                    <button
+                      key={status}
+                      onClick={() => setVehicleInterests((prev) => prev.map((entry) => entry.id === item.id ? { ...entry, status } : entry))}
+                      className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${item.status === status ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary"}`}
+                    >
+                      {status}
+                    </button>
+                  ))}
+                  <button onClick={() => setVehicleInterests((prev) => prev.filter((entry) => entry.id !== item.id))} className="rounded-full px-3 py-1 text-xs font-semibold text-rose-500 hover:bg-rose-500/10">
+                    Eliminar
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 
   const renderInmueblesInteres = () => (
     <div className="flex-1 flex flex-col gap-6 w-full max-w-5xl">
-      <h1 className="text-[26px] font-semibold text-foreground">Inmuebles de interés</h1>
-      <div className="flex items-center gap-2 mb-4">
-        <button className="flex items-center gap-1 text-muted-foreground text-sm font-semibold hover:bg-muted px-3 py-1.5 rounded-md border border-border"><Filter size={14}/> Filtrar</button>
-      </div>
-      <div className="bg-card rounded-xl shadow-sm border border-border p-24 flex flex-col items-center justify-center text-center">
-        <div className="relative mb-6">
-           <Home size={48} className="text-muted-foreground/40" />
-           <div className="absolute -bottom-2 -right-2 bg-muted p-1 rounded-full border-2 border-card"><Search size={14} className="text-muted-foreground"/></div>
+      <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 shadow-sm lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <h1 className="text-[26px] font-semibold text-foreground">Inmuebles de interes</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Centraliza propiedades seguidas, precio visto y observaciones para no perder contexto.</p>
         </div>
-        <h3 className="text-lg font-semibold text-foreground mb-2">Aquí encontrarás los inmuebles en los que te intereses</h3>
-        <p className="text-sm text-muted-foreground">Aparecerán aquí cuando contactes a un vendedor desde una publicación.</p>
+        <button onClick={() => setShowPropertyForm((prev) => !prev)} className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary-hover transition-colors">
+          <Plus size={16} />
+          Agregar inmueble
+        </button>
       </div>
+
+      {showPropertyForm && (
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <div className="grid gap-3 md:grid-cols-2">
+            <input value={propertyDraft.title} onChange={(e) => setPropertyDraft((prev) => ({ ...prev, title: e.target.value }))} placeholder="Propiedad o publicacion" className="rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-primary" />
+            <input value={propertyDraft.location} onChange={(e) => setPropertyDraft((prev) => ({ ...prev, location: e.target.value }))} placeholder="Zona o barrio" className="rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-primary" />
+            <input value={propertyDraft.price} onChange={(e) => setPropertyDraft((prev) => ({ ...prev, price: e.target.value }))} placeholder="Precio visto" className="rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-primary" />
+            <input value={propertyDraft.note} onChange={(e) => setPropertyDraft((prev) => ({ ...prev, note: e.target.value }))} placeholder="Nota o condicion destacada" className="rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-primary" />
+          </div>
+          <div className="mt-4 flex gap-3">
+            <button
+              onClick={() => {
+                if (!propertyDraft.title.trim()) return;
+                setPropertyInterests((prev) => [
+                  {
+                    id: `prop-${Date.now()}`,
+                    title: propertyDraft.title.trim(),
+                    location: propertyDraft.location.trim(),
+                    price: propertyDraft.price.trim(),
+                    note: propertyDraft.note.trim(),
+                    status: "nuevo",
+                    createdAt: new Date().toISOString(),
+                  },
+                  ...prev,
+                ]);
+                setPropertyDraft({ title: "", location: "", price: "", note: "" });
+                setShowPropertyForm(false);
+              }}
+              className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary-hover transition-colors"
+            >
+              Guardar interes
+            </button>
+            <button onClick={() => setShowPropertyForm(false)} className="rounded-md border border-border px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors">
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {propertyInterests.length === 0 ? (
+        <div className="bg-card rounded-xl shadow-sm border border-border p-24 flex flex-col items-center justify-center text-center">
+          <div className="relative mb-6">
+             <Home size={48} className="text-muted-foreground/40" />
+             <div className="absolute -bottom-2 -right-2 bg-muted p-1 rounded-full border-2 border-card"><Search size={14} className="text-muted-foreground"/></div>
+          </div>
+          <h3 className="text-lg font-semibold text-foreground mb-2">Todavia no guardaste inmuebles</h3>
+          <p className="text-sm text-muted-foreground">Puedes cargar propiedades manualmente mientras conectamos esta vista con contactos reales.</p>
+        </div>
+      ) : (
+        <div className="grid gap-4">
+          {propertyInterests.map((item) => (
+            <div key={item.id} className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">{item.title}</h3>
+                  <div className="mt-2 flex flex-wrap gap-3 text-sm text-muted-foreground">
+                    {item.location && <span className="inline-flex items-center gap-1"><MapPin size={14} /> {item.location}</span>}
+                    {item.price && <span className="inline-flex items-center gap-1"><DollarSign size={14} /> {item.price}</span>}
+                    <span className="inline-flex items-center gap-1"><Clock size={14} /> {new Date(item.createdAt).toLocaleDateString("es-AR")}</span>
+                  </div>
+                  {item.note && <p className="mt-3 text-sm text-muted-foreground">{item.note}</p>}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {(["nuevo", "contactado", "seguimiento"] as const).map((status) => (
+                    <button
+                      key={status}
+                      onClick={() => setPropertyInterests((prev) => prev.map((entry) => entry.id === item.id ? { ...entry, status } : entry))}
+                      className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${item.status === status ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary"}`}
+                    >
+                      {status}
+                    </button>
+                  ))}
+                  <button onClick={() => setPropertyInterests((prev) => prev.filter((entry) => entry.id !== item.id))} className="rounded-full px-3 py-1 text-xs font-semibold text-rose-500 hover:bg-rose-500/10">
+                    Eliminar
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 
   const renderBusquedasGuardadas = () => (
     <div className="flex-1 flex flex-col gap-6 w-full max-w-5xl">
-      <h1 className="text-[26px] font-semibold text-foreground">Búsquedas guardadas</h1>
+      <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 shadow-sm lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <h1 className="text-[26px] font-semibold text-foreground">Busquedas guardadas</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Guarda consultas recurrentes y activa alertas locales para retomarlas rapido.</p>
+        </div>
+        <button onClick={() => setShowSearchForm((prev) => !prev)} className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary-hover transition-colors">
+          <Plus size={16} />
+          Guardar busqueda
+        </button>
+      </div>
+
+      {showSearchForm && (
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <div className="grid gap-3 md:grid-cols-[1fr_220px_auto]">
+            <input value={searchDraft.label} onChange={(e) => setSearchDraft((prev) => ({ ...prev, label: e.target.value }))} placeholder="Ej: depto 3 ambientes rosario" className="rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-primary" />
+            <select value={searchDraft.category} onChange={(e) => setSearchDraft((prev) => ({ ...prev, category: e.target.value as "vehiculos" | "inmuebles" }))} className="rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-primary">
+              <option value="vehiculos">Vehiculos</option>
+              <option value="inmuebles">Inmuebles</option>
+            </select>
+            <button
+              onClick={() => {
+                if (!searchDraft.label.trim()) return;
+                setSavedSearches((prev) => [
+                  {
+                    id: `search-${Date.now()}`,
+                    label: searchDraft.label.trim(),
+                    category: searchDraft.category,
+                    alerts: true,
+                    createdAt: new Date().toISOString(),
+                  },
+                  ...prev,
+                ]);
+                setSearchDraft({ label: "", category: "vehiculos" });
+                setShowSearchForm(false);
+              }}
+              className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary-hover transition-colors"
+            >
+              Guardar
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center gap-2 mb-2">
         <button className="flex items-center gap-1 text-muted-foreground text-sm font-semibold hover:bg-muted px-3 py-1.5 rounded-md border border-border"><LayoutGrid size={14}/> Todas <ChevronDown size={14}/></button>
-        <span className="text-xs text-muted-foreground ml-4 font-medium italic">0 resultados</span>
+        <span className="text-xs text-muted-foreground ml-4 font-medium italic">{savedSearches.length} resultados</span>
       </div>
-      <div className="bg-card rounded-xl shadow-sm border border-border p-24 flex flex-col items-center justify-center text-center">
-        <div className="w-16 h-16 bg-muted rounded-xl flex items-center justify-center mb-6 border border-border">
-           <SearchCode size={32} className="text-muted-foreground/40" />
+
+      {savedSearches.length === 0 ? (
+        <div className="bg-card rounded-xl shadow-sm border border-border p-24 flex flex-col items-center justify-center text-center">
+          <div className="w-16 h-16 bg-muted rounded-xl flex items-center justify-center mb-6 border border-border">
+             <SearchCode size={32} className="text-muted-foreground/40" />
+          </div>
+          <h3 className="text-lg font-semibold text-foreground mb-2">Aun no tenes busquedas guardadas</h3>
+          <p className="text-sm text-muted-foreground max-w-sm">Aqui veras consultas frecuentes y podras administrar alertas para vehiculos e inmuebles.</p>
         </div>
-        <h3 className="text-lg font-semibold text-foreground mb-2">Aún no tenés búsquedas guardadas</h3>
-        <p className="text-sm text-muted-foreground max-w-sm">Encontrarás tus búsquedas y podrás administrar tus notificaciones para las publicaciones de inmuebles y vehículos.</p>
-      </div>
+      ) : (
+        <div className="grid gap-4">
+          {savedSearches.map((searchItem) => (
+            <div key={searchItem.id} className="rounded-2xl border border-border bg-card p-5 shadow-sm flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <h3 className="text-base font-semibold text-foreground">{searchItem.label}</h3>
+                <div className="mt-2 flex flex-wrap gap-3 text-sm text-muted-foreground">
+                  <span className="inline-flex items-center gap-1"><Eye size={14} /> {searchItem.category}</span>
+                  <span className="inline-flex items-center gap-1"><Clock size={14} /> {new Date(searchItem.createdAt).toLocaleDateString("es-AR")}</span>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setSavedSearches((prev) => prev.map((entry) => entry.id === searchItem.id ? { ...entry, alerts: !entry.alerts } : entry))}
+                  className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${searchItem.alerts ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary"}`}
+                >
+                  {searchItem.alerts ? "Alertas activas" : "Activar alertas"}
+                </button>
+                <button onClick={() => setSavedSearches((prev) => prev.filter((entry) => entry.id !== searchItem.id))} className="rounded-full px-3 py-1 text-xs font-semibold text-rose-500 hover:bg-rose-500/10">
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 
@@ -360,22 +790,386 @@ export default function App() {
 
   const renderPosventa = () => (
     <div className="flex-1 flex flex-col gap-6 w-full max-w-5xl">
-      <h1 className="text-[26px] font-semibold text-foreground">Posventa</h1>
-      <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden"><div className="p-16 text-center text-muted-foreground bg-card">No hay actividad de posventa en {activePosventaTab}</div></div>
+      <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 shadow-sm lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <h1 className="text-[26px] font-semibold text-foreground">Posventa</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Registra reclamos, devoluciones y mediaciones para hacer seguimiento sin perder el estado de cada caso.</p>
+        </div>
+        <button onClick={() => setShowPostSaleForm((prev) => !prev)} className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary-hover transition-colors">
+          <Plus size={16} />
+          Crear caso
+        </button>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {(["reclamos", "devoluciones", "mediaciones"] as const).map((tabId) => (
+          <button
+            key={tabId}
+            onClick={() => setActivePosventaTab(tabId)}
+            className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+              activePosventaTab === tabId
+                ? "bg-primary text-primary-foreground"
+                : "bg-card border border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+          >
+            {tabId}
+          </button>
+        ))}
+      </div>
+
+      {showPostSaleForm && (
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <div className="grid gap-3 md:grid-cols-2">
+            <input value={postSaleDraft.title} onChange={(e) => setPostSaleDraft((prev) => ({ ...prev, title: e.target.value }))} placeholder="Titulo del caso" className="rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-primary" />
+            <input value={postSaleDraft.orderRef} onChange={(e) => setPostSaleDraft((prev) => ({ ...prev, orderRef: e.target.value }))} placeholder="Pedido o referencia" className="rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-primary" />
+            <input value={postSaleDraft.buyer} onChange={(e) => setPostSaleDraft((prev) => ({ ...prev, buyer: e.target.value }))} placeholder="Comprador" className="rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-primary" />
+            <select value={postSaleDraft.type} onChange={(e) => setPostSaleDraft((prev) => ({ ...prev, type: e.target.value as "reclamos" | "devoluciones" | "mediaciones" }))} className="rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-primary">
+              <option value="reclamos">Reclamo</option>
+              <option value="devoluciones">Devolucion</option>
+              <option value="mediaciones">Mediacion</option>
+            </select>
+          </div>
+          <textarea value={postSaleDraft.reason} onChange={(e) => setPostSaleDraft((prev) => ({ ...prev, reason: e.target.value }))} placeholder="Describe el motivo y el siguiente paso esperado" className="mt-3 min-h-[90px] w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-primary" />
+          <div className="mt-4 flex gap-3">
+            <button
+              onClick={() => {
+                if (!postSaleDraft.title.trim()) return;
+                setPostSaleCases((prev) => [
+                  {
+                    id: `psc-${Date.now()}`,
+                    title: postSaleDraft.title.trim(),
+                    orderRef: postSaleDraft.orderRef.trim(),
+                    buyer: postSaleDraft.buyer.trim(),
+                    reason: postSaleDraft.reason.trim(),
+                    type: postSaleDraft.type,
+                    status: "abierto",
+                    createdAt: new Date().toISOString(),
+                  },
+                  ...prev,
+                ]);
+                setPostSaleDraft({ title: "", orderRef: "", buyer: "", reason: "", type: "reclamos" });
+                setShowPostSaleForm(false);
+                setActivePosventaTab(postSaleDraft.type);
+              }}
+              className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary-hover transition-colors"
+            >
+              Guardar caso
+            </button>
+            <button onClick={() => setShowPostSaleForm(false)} className="rounded-md border border-border px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors">
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {postSaleCases.filter((item) => item.type === activePosventaTab).length === 0 ? (
+        <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
+          <div className="p-16 text-center text-muted-foreground bg-card">No hay actividad de posventa en {activePosventaTab}</div>
+        </div>
+      ) : (
+        <div className="grid gap-4">
+          {postSaleCases
+            .filter((item) => item.type === activePosventaTab)
+            .map((item) => (
+              <div key={item.id} className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground">{item.title}</h3>
+                    <div className="mt-2 flex flex-wrap gap-3 text-sm text-muted-foreground">
+                      {item.orderRef && <span>Pedido: {item.orderRef}</span>}
+                      {item.buyer && <span>Comprador: {item.buyer}</span>}
+                      <span>{new Date(item.createdAt).toLocaleDateString("es-AR")}</span>
+                    </div>
+                    {item.reason && <p className="mt-3 text-sm text-muted-foreground">{item.reason}</p>}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {(["abierto", "en_revision", "resuelto"] as const).map((status) => (
+                      <button
+                        key={status}
+                        onClick={() => setPostSaleCases((prev) => prev.map((entry) => entry.id === item.id ? { ...entry, status } : entry))}
+                        className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${item.status === status ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary"}`}
+                      >
+                        {status}
+                      </button>
+                    ))}
+                    <button onClick={() => setPostSaleCases((prev) => prev.filter((entry) => entry.id !== item.id))} className="rounded-full px-3 py-1 text-xs font-semibold text-rose-500 hover:bg-rose-500/10">
+                      Eliminar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+        </div>
+      )}
     </div>
   );
 
   const renderPreferenciasVenta = () => (
-    <div className="flex-1 flex flex-col gap-8 w-full max-w-4xl">
+    <div className="flex-1 flex flex-col gap-8 w-full max-w-5xl">
       <h1 className="text-[26px] font-semibold text-foreground mb-2">Preferencias de venta</h1>
-      <section className="bg-card rounded-lg shadow-sm border border-border">
-        <PreferenceItem title="Mis domicilios de envíos" subtitle="Gestioná tus domicilios de envíos." />
-        <PreferenceItem title="Mis horarios de colecta" subtitle="Consultá tus horarios para enviar tus ventas a tiempo." />
-        <PreferenceItem title="Envíos Express" subtitle="Almacenamos tus productos en Madsjeez Hub." hasBorder={false} rightElement={<span></span>}/>
+      <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">Mis domicilios de env?os</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Gestion? direcciones operativas para despachar sin fricci?n.</p>
+          </div>
+          <button onClick={() => setShowAddressForm((prev) => !prev)} className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary-hover transition-colors">
+            <Plus size={16} className="inline mr-1" />
+            Agregar domicilio
+          </button>
+        </div>
+
+        {showAddressForm && (
+          <div className="mt-5 grid gap-3 rounded-xl border border-border bg-background p-4 md:grid-cols-3">
+            <input value={addressDraft.label} onChange={(e) => setAddressDraft((prev) => ({ ...prev, label: e.target.value }))} placeholder="Nombre del domicilio" className="rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground outline-none focus:border-primary" />
+            <input value={addressDraft.address} onChange={(e) => setAddressDraft((prev) => ({ ...prev, address: e.target.value }))} placeholder="Direcci?n" className="rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground outline-none focus:border-primary" />
+            <input value={addressDraft.city} onChange={(e) => setAddressDraft((prev) => ({ ...prev, city: e.target.value }))} placeholder="Ciudad" className="rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground outline-none focus:border-primary" />
+            <div className="md:col-span-3 flex gap-3">
+              <button
+                onClick={() => {
+                  if (!addressDraft.label.trim() || !addressDraft.address.trim()) return;
+                  setShippingAddresses((prev) => [
+                    ...prev.map((item) => ({ ...item, active: false })),
+                    { id: `addr-${Date.now()}`, label: addressDraft.label.trim(), address: addressDraft.address.trim(), city: addressDraft.city.trim(), active: prev.length === 0 },
+                  ]);
+                  setAddressDraft({ label: "", address: "", city: "" });
+                  setShowAddressForm(false);
+                }}
+                className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary-hover transition-colors"
+              >
+                Guardar domicilio
+              </button>
+              <button onClick={() => setShowAddressForm(false)} className="rounded-md border border-border px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors">
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="mt-5 grid gap-3">
+          {shippingAddresses.map((item) => (
+            <div key={item.id} className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:flex-row md:items-center md:justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold text-foreground">{item.label}</h3>
+                  {item.active && <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">Activo</span>}
+                </div>
+                <p className="mt-1 text-sm text-muted-foreground">{item.address}{item.city ? `, ${item.city}` : ""}</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button onClick={() => setShippingAddresses((prev) => prev.map((entry) => ({ ...entry, active: entry.id === item.id })))} className="rounded-md border border-border px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors">
+                  Usar para despachar
+                </button>
+                <button onClick={() => setShippingAddresses((prev) => prev.filter((entry) => entry.id !== item.id))} className="rounded-md px-3 py-2 text-xs font-semibold text-rose-500 hover:bg-rose-500/10 transition-colors">
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-foreground">Mis horarios de colecta</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Defin? qu? franjas usa tu operaci?n para despachar a tiempo.</p>
+          </div>
+          <div className="space-y-3">
+            {pickupSchedules.map((item) => (
+              <div key={item.id} className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <div className="font-semibold text-foreground">{item.day}</div>
+                  <div className="text-sm text-muted-foreground">{item.range}</div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button onClick={() => setPickupSchedules((prev) => prev.map((entry) => entry.id === item.id ? { ...entry, enabled: !entry.enabled } : entry))} className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${item.enabled ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary"}`}>
+                    {item.enabled ? "Activo" : "Pausado"}
+                  </button>
+                  <button onClick={() => setPickupSchedules((prev) => prev.filter((entry) => entry.id !== item.id))} className="text-xs font-semibold text-rose-500 hover:bg-rose-500/10 rounded-md px-2 py-1 transition-colors">
+                    Eliminar
+                  </button>
+                </div>
+              </div>
+            ))}
+            <button
+              onClick={() => setPickupSchedules((prev) => [...prev, { id: `sch-${Date.now()}`, day: "Nuevo bloque", range: "10:00 a 16:00", enabled: true }])}
+              className="rounded-md border border-dashed border-border px-4 py-3 text-sm font-semibold text-primary hover:bg-primary/5 transition-colors"
+            >
+              Agregar horario r?pido
+            </button>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-foreground">Env?os Express</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Activ? log?stica prioritaria para productos listos para rotar r?pido.</p>
+          </div>
+          <div className="rounded-xl border border-border bg-background p-4">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <div className="font-semibold text-foreground">Madsjeez Hub</div>
+                <div className="text-sm text-muted-foreground">Guardamos y despachamos stock desde un nodo central.</div>
+              </div>
+              <button onClick={() => setExpressEnabled((prev) => !prev)} className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${expressEnabled ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary"}`}>
+                {expressEnabled ? "Activo" : "Desactivado"}
+              </button>
+            </div>
+            <div className="mt-4 space-y-2 text-sm text-muted-foreground">
+              <p>? Mejora tiempos de preparaci?n y exposici?n log?stica.</p>
+              <p>? Ideal para productos con stock estable.</p>
+              <p>? Se puede apagar sin tocar publicaciones activas.</p>
+            </div>
+          </div>
+        </div>
       </section>
     </div>
   );
 
+  const renderProductosCatalogo = () => (
+    <div className="flex-1 flex flex-col gap-8 w-full max-w-5xl">
+      <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 shadow-sm lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <h1 className="text-[26px] font-semibold text-foreground">Productos de cat?logo</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Orden? tu base, vincul? fichas y dej? trazabilidad de SKU, marca y estado.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {[
+            { id: "sugerencias", label: "Sugeridos" },
+            { id: "vinculados", label: "Vinculados" },
+            { id: "pausados", label: "Pausados" },
+          ].map((tab) => (
+            <button key={tab.id} onClick={() => setActiveCatalogoTab(tab.id)} className={`rounded-full px-3 py-2 text-xs font-semibold transition-colors ${activeCatalogoTab === tab.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary"}`}>
+              {tab.label}
+            </button>
+          ))}
+          <button onClick={() => setShowCatalogForm((prev) => !prev)} className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary-hover transition-colors">
+            <Plus size={16} className="inline mr-1" />
+            Nuevo producto
+          </button>
+        </div>
+      </div>
+
+      {showCatalogForm && (
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+            <input value={catalogDraft.title} onChange={(e) => setCatalogDraft((prev) => ({ ...prev, title: e.target.value }))} placeholder="T?tulo" className="rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-primary" />
+            <input value={catalogDraft.sku} onChange={(e) => setCatalogDraft((prev) => ({ ...prev, sku: e.target.value }))} placeholder="SKU" className="rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-primary" />
+            <input value={catalogDraft.brand} onChange={(e) => setCatalogDraft((prev) => ({ ...prev, brand: e.target.value }))} placeholder="Marca" className="rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-primary" />
+            <input value={catalogDraft.stock} onChange={(e) => setCatalogDraft((prev) => ({ ...prev, stock: e.target.value }))} placeholder="Stock" className="rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-primary" />
+            <input value={catalogDraft.price} onChange={(e) => setCatalogDraft((prev) => ({ ...prev, price: e.target.value }))} placeholder="Precio" className="rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-primary" />
+          </div>
+          <div className="mt-4 flex gap-3">
+            <button
+              onClick={() => {
+                if (!catalogDraft.title.trim() || !catalogDraft.sku.trim()) return;
+                setCatalogProducts((prev) => [
+                  {
+                    id: `cp-${Date.now()}`,
+                    title: catalogDraft.title.trim(),
+                    sku: catalogDraft.sku.trim(),
+                    brand: catalogDraft.brand.trim(),
+                    stock: catalogDraft.stock.trim(),
+                    price: catalogDraft.price.trim(),
+                    status: "sugerido",
+                    updatedAt: new Date().toISOString(),
+                  },
+                  ...prev,
+                ]);
+                setCatalogDraft({ title: "", sku: "", brand: "", stock: "", price: "" });
+                setShowCatalogForm(false);
+              }}
+              className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary-hover transition-colors"
+            >
+              Guardar producto
+            </button>
+            <button onClick={() => setShowCatalogForm(false)} className="rounded-md border border-border px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors">
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="grid gap-4">
+        {catalogProducts
+          .filter((item) => activeCatalogoTab === "sugerencias" ? item.status === "sugerido" : activeCatalogoTab === "vinculados" ? item.status === "vinculado" : item.status === "pausado")
+          .map((item) => (
+            <div key={item.id} className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-lg font-semibold text-foreground">{item.title}</h3>
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">{item.sku}</span>
+                    {item.brand && <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">{item.brand}</span>}
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-3 text-sm text-muted-foreground">
+                    <span>Stock: {item.stock || "s/d"}</span>
+                    <span>Precio: {item.price || "s/d"}</span>
+                    <span>Actualizado: {new Date(item.updatedAt).toLocaleDateString("es-AR")}</span>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {(["sugerido", "vinculado", "pausado"] as const).map((status) => (
+                    <button
+                      key={status}
+                      onClick={() => setCatalogProducts((prev) => prev.map((entry) => entry.id === item.id ? { ...entry, status, updatedAt: new Date().toISOString() } : entry))}
+                      className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${item.status === status ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary"}`}
+                    >
+                      {status}
+                    </button>
+                  ))}
+                  <button onClick={() => setCatalogProducts((prev) => prev.filter((entry) => entry.id !== item.id))} className="rounded-full px-3 py-1 text-xs font-semibold text-rose-500 hover:bg-rose-500/10 transition-colors">
+                    Eliminar
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+      </div>
+    </div>
+  );
+
+  const renderCentralAprendizaje = () => {
+    const filteredResources = learningResources.filter((item) => {
+      const query = learningQuery.trim().toLowerCase();
+      if (!query) return true;
+      return [item.title, item.summary, item.category, item.level].some((value) => value.toLowerCase().includes(query));
+    });
+
+    return (
+      <div className="flex-1 flex flex-col gap-8 w-full max-w-5xl">
+        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <h1 className="text-[26px] font-semibold text-foreground">Central de aprendizaje</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Recursos cortos y accionables para mejorar operaci?n, cat?logo, log?stica y conversi?n.</p>
+          <div className="mt-4 relative max-w-xl">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input value={learningQuery} onChange={(e) => setLearningQuery(e.target.value)} placeholder="Buscar gu?a, tema o nivel" className="w-full rounded-xl border border-border bg-background py-3 pl-10 pr-4 text-sm text-foreground outline-none focus:border-primary" />
+          </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          {filteredResources.map((item) => (
+            <div key={item.id} className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">{item.category}</span>
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">{item.level}</span>
+                  </div>
+                  <h3 className="mt-3 text-lg font-semibold text-foreground">{item.title}</h3>
+                  <p className="mt-2 text-sm text-muted-foreground">{item.summary}</p>
+                </div>
+                <button onClick={() => setLearningResources((prev) => prev.map((entry) => entry.id === item.id ? { ...entry, completed: !entry.completed } : entry))} className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${item.completed ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary"}`}>
+                  {item.completed ? "Completado" : "Marcar le?do"}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   const renderLiveMonitor = () => {
     const now = new Date();
@@ -600,6 +1394,68 @@ export default function App() {
                 </div>
               ))}
             </nav>
+
+            <div className="mt-6 px-4 pt-5 border-t border-border space-y-1">
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground mb-3">
+                Accesos rápidos (sitio)
+              </p>
+              <Link
+                href="/"
+                className="flex items-center gap-2 rounded-md px-2 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              >
+                <Home size={16} className="shrink-0 opacity-70" />
+                Ir a la tienda
+              </Link>
+              <Link
+                href="/orders"
+                className="flex items-center gap-2 rounded-md px-2 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              >
+                <ClipboardList size={16} className="shrink-0 opacity-70" />
+                Mis pedidos / compras
+              </Link>
+              <Link
+                href="/cart"
+                className="flex items-center gap-2 rounded-md px-2 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              >
+                <ShoppingCart size={16} className="shrink-0 opacity-70" />
+                Carrito público
+              </Link>
+              <Link
+                href="/dashboard/analytics"
+                className="flex items-center gap-2 rounded-md px-2 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              >
+                <BarChart2 size={16} className="shrink-0 opacity-70" />
+                Métricas detalladas (página)
+              </Link>
+              <Link
+                href="/dashboard/live"
+                className="flex items-center gap-2 rounded-md px-2 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              >
+                <Activity size={16} className="shrink-0 opacity-70" />
+                Monitor en vivo
+              </Link>
+              <Link
+                href="/notifications"
+                className="flex items-center gap-2 rounded-md px-2 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              >
+                <Bell size={16} className="shrink-0 opacity-70" />
+                Notificaciones
+              </Link>
+              <Link
+                href="/subscriptions"
+                className="flex items-center gap-2 rounded-md px-2 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              >
+                <Zap size={16} className="shrink-0 opacity-70" />
+                Planes MADS+
+              </Link>
+              <Link
+                href="/seller/register"
+                className="flex items-center gap-2 rounded-md px-2 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              >
+                <Store size={16} className="shrink-0 opacity-70" />
+                Herramientas para vender
+              </Link>
+            </div>
           </div>
         </aside>
 
@@ -611,15 +1467,31 @@ export default function App() {
             {activeMenu === 'metricas' && <MetricasView />}
             {activeMenu === 'ventas-novedades' && renderNovedades()}
             {activeMenu === 'posventa' && renderPosventa()}
+            {activeMenu === 'productos-catalogo' && renderProductosCatalogo()}
             {activeMenu === 'preferencias-venta' && renderPreferenciasVenta()}
+            {activeMenu === 'central-aprendizaje' && renderCentralAprendizaje()}
             {activeMenu === 'preguntas' && <PreguntasView />}
             {activeMenu === 'opiniones' && <OpinionesView />}
             {activeMenu === 'favoritos' && <FavoritosView />}
             {activeMenu === 'compras' && <ComprasView />}
+            {activeMenu === 'tiendas-sigo' && renderTiendasSigo()}
+            {activeMenu === 'vehiculos-interes' && renderVehiculosInteres()}
+            {activeMenu === 'inmuebles-interes' && renderInmueblesInteres()}
+            {activeMenu === 'busquedas-guardadas' && renderBusquedasGuardadas()}
             {activeMenu === 'perfil' && <ProfileView userData={currentUser || undefined} />}
             {activeMenu === 'carrito' && <CartView />}
             {activeMenu === 'ayuda' && <HelpView userData={currentUser || undefined} onNavigate={(section) => setActiveMenu(section)} />}
             {activeMenu === 'publicaciones' && <div className="-mx-4 lg:-mx-8">{renderPublicaciones()}</div>}
+            {activeMenu === 'mi-tienda' && (
+              <div className="max-w-3xl">
+                <h1 className="text-2xl font-bold text-foreground mb-2">Mi tienda pública</h1>
+                <p className="text-sm text-muted-foreground mb-6">
+                  Cada vendedor con productos activos tiene una URL propia en MadsJeez. Compartila en tu web
+                  o redes para generar visitas y backlinks naturales.
+                </p>
+                <StorePublicPanel />
+              </div>
+            )}
             {activeMenu === 'meli-sync' && (
               <Suspense
                 fallback={
@@ -683,7 +1555,17 @@ export default function App() {
 }
 
 // --- SUBCOMPONENTES REUTILIZABLES ---
-function PreferenceItem({ title, subtitle, rightElement, hasBorder = true }) {
+function PreferenceItem({
+  title,
+  subtitle,
+  rightElement,
+  hasBorder = true,
+}: {
+  title: string;
+  subtitle: string;
+  rightElement?: React.ReactNode;
+  hasBorder?: boolean;
+}) {
   return (
     <div className={`p-5 flex items-center justify-between hover:bg-muted transition-colors cursor-pointer ${hasBorder ? 'border-b border-border' : ''}`}>
       <div><h4 className="text-[15px] text-foreground font-medium">{title}</h4>{subtitle && <p className="text-[13px] text-muted-foreground mt-1">{subtitle}</p>}</div>
@@ -692,13 +1574,23 @@ function PreferenceItem({ title, subtitle, rightElement, hasBorder = true }) {
   );
 }
 
-function TabButton({ id, label, current, set }) {
+function TabButton({
+  id,
+  label,
+  current,
+  set,
+}: {
+  id: string;
+  label: string;
+  current: string;
+  set: (id: string) => void;
+}) {
   return (
     <button onClick={() => set(id)} className={`pb-3 px-1 transition-colors ${current === id ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground hover:text-foreground'}`}>{label}</button>
   );
 }
 
-function DropdownItem({ text, onClick }) {
+function DropdownItem({ text, onClick }: { text: string; onClick?: () => void }) {
   return (
     <a href="#" onClick={(e) => { e.preventDefault(); if(onClick) onClick(); }} className="flex justify-between items-center px-4 py-2 hover:bg-primary/10 hover:text-primary text-muted-foreground transition-colors"><span>{text}</span></a>
   );

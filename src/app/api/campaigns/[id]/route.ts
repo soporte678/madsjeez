@@ -22,6 +22,11 @@ export async function GET(
         sellerId: (session.user as any).id,
       },
       include: {
+        internalAd: {
+          include: {
+            events: true,
+          },
+        },
         products: {
           include: {
             product: {
@@ -58,7 +63,7 @@ export async function PATCH(
     }
 
     const body = await req.json();
-    const { status, maxBudget, spentBudget, endDate, name } = body;
+    const { status, maxBudget, spentBudget, endDate, name, internalAd } = body;
 
     const existing = await prisma.campaign.findFirst({
       where: {
@@ -79,8 +84,51 @@ export async function PATCH(
         ...(spentBudget !== undefined && { spentBudget: parseFloat(spentBudget) }),
         ...(endDate && { endDate: new Date(endDate) }),
         ...(name && { name }),
+        ...(internalAd
+          ? {
+              internalAd: existing
+                ? {
+                    upsert: {
+                      update: {
+                        ...(internalAd.placement && { placement: internalAd.placement }),
+                        ...(internalAd.pricingModel && { pricingModel: internalAd.pricingModel }),
+                        ...(internalAd.shareOfVoice !== undefined && {
+                          shareOfVoice: internalAd.shareOfVoice === null ? null : parseInt(String(internalAd.shareOfVoice)),
+                        }),
+                        ...(internalAd.bannerTitle !== undefined && { bannerTitle: internalAd.bannerTitle || null }),
+                        ...(internalAd.bannerSubtitle !== undefined && { bannerSubtitle: internalAd.bannerSubtitle || null }),
+                        ...(internalAd.bannerImageUrl !== undefined && { bannerImageUrl: internalAd.bannerImageUrl || null }),
+                        ...(internalAd.destinationUrl !== undefined && { destinationUrl: internalAd.destinationUrl || null }),
+                        ...(internalAd.rotationIntervalSeconds !== undefined && {
+                          rotationIntervalSeconds: parseInt(String(internalAd.rotationIntervalSeconds)),
+                        }),
+                        ...(internalAd.isActive !== undefined && { isActive: Boolean(internalAd.isActive) }),
+                      },
+                      create: {
+                        placement: internalAd.placement || "HOME_LEADERBOARD",
+                        pricingModel: internalAd.pricingModel || "SOV",
+                        shareOfVoice: internalAd.shareOfVoice ? parseInt(String(internalAd.shareOfVoice)) : null,
+                        bannerTitle: internalAd.bannerTitle || null,
+                        bannerSubtitle: internalAd.bannerSubtitle || null,
+                        bannerImageUrl: internalAd.bannerImageUrl || null,
+                        destinationUrl: internalAd.destinationUrl || null,
+                        rotationIntervalSeconds: internalAd.rotationIntervalSeconds
+                          ? parseInt(String(internalAd.rotationIntervalSeconds))
+                          : 60,
+                        isActive: internalAd.isActive ?? true,
+                      },
+                    },
+                  }
+                : undefined,
+            }
+          : {}),
       },
       include: {
+        internalAd: {
+          include: {
+            events: true,
+          },
+        },
         products: {
           include: {
             product: {

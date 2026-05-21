@@ -6,8 +6,22 @@ import { Search, Edit, Trash2, Pause, Play, Plus, ChevronLeft, ChevronRight } fr
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import PublicarFlow from "@/components/dashboard/PublicarFlow"
+import {
+  PublicationsFilterButton,
+  PublicationsFilterModal,
+  countActivePublicationFilters,
+} from "@/components/dashboard/PublicationsFilterModal"
+import {
+  DEFAULT_SELLER_PUBLICATION_QUERY,
+  SELLER_PUBLICATION_SORT_OPTIONS,
+  sellerPublicationQueryToSearchParams,
+  type SellerPublicationQuery,
+  type SellerPublicationsSort,
+} from "@/lib/dashboard/seller-publications-query"
 
-interface P { id: string; title: string; description: string | null; sku: string | null; price: number; originalPrice: number | null; stock: number; isActive: boolean; views: number; sales: number; condition: string; freeShipping: boolean; shippingCost: number; qualityScore: number; categoryId: string | null; category: { name: string } | null; images: { url: string }[] }
+const PUBL_SORT_GROUPS = [...new Set(SELLER_PUBLICATION_SORT_OPTIONS.map((o) => o.group))]
+
+interface P { id: string; title: string; description: string | null; sku: string | null; price: number; originalPrice: number | null; stock: number; isActive: boolean; views: number; sales: number; condition: string; freeShipping: boolean; shippingCost: number; qualityScore: number; categoryId: string | null; category: { id?: string | null; name: string } | null; images: { url: string }[] }
 interface S { active: number; paused: number; lowStock: number; noSales: number }
 
 const fmt = (v: number) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(v)
@@ -16,14 +30,27 @@ const qc: Record<string, string> = { Excelente: "text-green-600 bg-green-50", Bu
 const el = (sales: number, views: number) => views === 0 ? "Neutral" : sales / views >= 0.1 ? "Muy positiva" : sales / views >= 0.05 ? "Positiva" : sales / views >= 0.02 ? "Mejorar" : "Negativa"
 const rc = (p: P) => !p.isActive ? "PAUSADA" : p.stock <= 0 ? "Sin stock" : p.qualityScore < 40 ? "Mejorar fotos" : p.sales === 0 && p.views > 100 ? "Ajustar precio" : "Bien hecho"
 
+interface ZipnovaSellerStatus {
+  oauthAppConfigured: boolean
+  connected: boolean
+  expiresAt: string | null
+}
+
 export default function Page() {
-  const { status } = useSession()
+  const { status, data: session } = useSession()
   const router = useRouter()
+  const [zipnovaStatus, setZipnovaStatus] = useState<ZipnovaSellerStatus | null>(null)
+  const [zipnovaBanner, setZipnovaBanner] = useState<string | null>(null)
   const [products, setProducts] = useState<P[]>([])
   const [summary, setSummary] = useState<S | null>(null)
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
-  const [filter, setFilter] = useState("all")
+  const [publicationQuery, setPublicationQuery] = useState<SellerPublicationQuery>(() => ({
+    ...DEFAULT_SELLER_PUBLICATION_QUERY,
+    flags: { ...DEFAULT_SELLER_PUBLICATION_QUERY.flags },
+  }))
+  const [totalCount, setTotalCount] = useState(0)
+  const [filterModalOpen, setFilterModalOpen] = useState(false)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [showFlow, setShowFlow] = useState(false)
@@ -32,18 +59,18 @@ export default function Page() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const p = new URLSearchParams()
-      if (filter !== "all") p.set("status", filter)
-      p.set("page", String(page))
-      p.set("limit", "20")
+      const p = sellerPublicationQueryToSearchParams(publicationQuery, page, 20)
       const r = await fetch(`/api/dashboard/products?${p}`)
       const d = await r.json()
       setProducts(d.products || [])
       setSummary(d.summary || null)
       setTotalPages(d.totalPages || 1)
-    } catch (e) { console.error(e) }
+      setTotalCount(typeof d.total === "number" ? d.total : (d.products || []).length)
+    } catch (e) {
+      console.error(e)
+    }
     setLoading(false)
-  }, [filter, page])
+  }, [publicationQuery, page])
 
   useEffect(() => {
     if (status === "authenticated") load()
@@ -53,12 +80,43 @@ export default function Page() {
     if (status === "unauthenticated") router.push("/auth/login?redirect=/dashboard/publicaciones")
   }, [status, router])
 
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const p = new URLSearchParams(window.location.search)
+    if (p.get("zipnova") === "connected") {
+      setZipnovaBanner("Zipnova quedó conectado a tu cuenta de vendedor.")
+      router.replace("/dashboard/publicaciones", { scroll: false })
+    }
+    const ze = p.get("zipnova_error")
+    if (ze) {
+      setZipnovaBanner(`No se pudo conectar Zipnova: ${decodeURIComponent(ze)}`)
+      router.replace("/dashboard/publicaciones", { scroll: false })
+    }
+  }, [router])
+
+  useEffect(() => {
+    if (status !== "authenticated" || !session?.user?.isSeller) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const r = await fetch("/api/seller/zipnova/status")
+        const d = (await r.json()) as ZipnovaSellerStatus
+        if (!cancelled && r.ok) setZipnovaStatus(d)
+      } catch {
+        if (!cancelled) setZipnovaStatus(null)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [status, session?.user?.isSeller])
+
   if (status === "loading" || loading) return <div className="flex items-center justify-center h-96"><div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full" /></div>
   if (status === "unauthenticated") return null
 
   const filtered = products.filter(p => {
     const q = search.toLowerCase()
-    return p.title.toLowerCase().includes(q) || (p.sku || "").toLowerCase().includes(q)
+    return p.title.toLowerCase().includes(q) || (p.sku || "").toLowerCase().includes(q) || p.id.toLowerCase().includes(q)
   })
 
   const openCreate = () => { setEditingProduct(null); setShowFlow(true) }
@@ -94,33 +152,151 @@ export default function Page() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold text-slate-900">Publicaciones</h1>
-        <Button onClick={openCreate} className="bg-primary hover:bg-primary-hover text-primary-foreground font-semibold"><Plus size={18} className="mr-1" />Nueva</Button>
+        <div className="flex flex-wrap items-center gap-2 justify-end">
+          {session?.user?.isSeller && zipnovaStatus?.oauthAppConfigured && !zipnovaStatus.connected && (
+            <Button variant="outline" asChild className="border-slate-300">
+              <a href="/api/seller/zipnova/oauth/start">Conectar Zipnova</a>
+            </Button>
+          )}
+          {session?.user?.isSeller && zipnovaStatus?.connected && (
+            <span className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-1.5">
+              Zipnova conectado
+            </span>
+          )}
+          <Button onClick={openCreate} className="bg-primary hover:bg-primary-hover text-primary-foreground font-semibold"><Plus size={18} className="mr-1" />Nueva</Button>
+        </div>
       </div>
 
-      {summary && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <button onClick={() => { setFilter("active"); setPage(1) }} className={`bg-white p-4 rounded-xl shadow-sm border text-left transition-all ${filter === "active" ? "ring-2 ring-green-500" : "hover:shadow-md"}`}><div className="text-2xl font-bold text-green-600">{summary.active}</div><div className="text-sm text-gray-500">Activas</div></button>
-          <button onClick={() => { setFilter("paused"); setPage(1) }} className={`bg-white p-4 rounded-xl shadow-sm border text-left transition-all ${filter === "paused" ? "ring-2 ring-primary" : "hover:shadow-md"}`}><div className="text-2xl font-bold text-primary">{summary.paused}</div><div className="text-sm text-gray-500">Pausadas</div></button>
-          <button onClick={() => { setFilter("low_stock"); setPage(1) }} className={`bg-white p-4 rounded-xl shadow-sm border text-left transition-all ${filter === "low_stock" ? "ring-2 ring-orange-500" : "hover:shadow-md"}`}><div className="text-2xl font-bold text-orange-600">{summary.lowStock}</div><div className="text-sm text-gray-500">Stock bajo</div></button>
-          <button onClick={() => { setFilter("no_sales"); setPage(1) }} className={`bg-white p-4 rounded-xl shadow-sm border text-left transition-all ${filter === "no_sales" ? "ring-2 ring-blue-500" : "hover:shadow-md"}`}><div className="text-2xl font-bold text-blue-600">{summary.noSales}</div><div className="text-sm text-gray-500">Sin ventas</div></button>
+      {zipnovaBanner && (
+        <div
+          role="status"
+          className={`rounded-lg border px-4 py-3 text-sm ${
+            zipnovaBanner.startsWith("No se pudo")
+              ? "bg-red-50 text-red-800 border-red-200"
+              : "bg-green-50 text-green-800 border-green-200"
+          }`}
+        >
+          {zipnovaBanner}
         </div>
       )}
 
-      <div className="bg-white p-4 rounded-xl shadow-sm border flex flex-col md:flex-row gap-4">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-          <input type="text" placeholder="Buscar por título o SKU" className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" value={search} onChange={e => setSearch(e.target.value)} />
+      {summary && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <button
+            type="button"
+            onClick={() => {
+              setPublicationQuery({
+                ...DEFAULT_SELLER_PUBLICATION_QUERY,
+                flags: { ...DEFAULT_SELLER_PUBLICATION_QUERY.flags, active: true },
+              })
+              setPage(1)
+            }}
+            className="bg-white p-4 rounded-xl shadow-sm border text-left transition-all hover:shadow-md"
+          >
+            <div className="text-2xl font-bold text-green-600">{summary.active}</div>
+            <div className="text-sm text-gray-500">Activas</div>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setPublicationQuery({
+                ...DEFAULT_SELLER_PUBLICATION_QUERY,
+                flags: { ...DEFAULT_SELLER_PUBLICATION_QUERY.flags, paused: true },
+              })
+              setPage(1)
+            }}
+            className="bg-white p-4 rounded-xl shadow-sm border text-left transition-all hover:shadow-md"
+          >
+            <div className="text-2xl font-bold text-primary">{summary.paused}</div>
+            <div className="text-sm text-gray-500">Pausadas</div>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setPublicationQuery({
+                ...DEFAULT_SELLER_PUBLICATION_QUERY,
+                flags: { ...DEFAULT_SELLER_PUBLICATION_QUERY.flags, lowStock: true },
+              })
+              setPage(1)
+            }}
+            className="bg-white p-4 rounded-xl shadow-sm border text-left transition-all hover:shadow-md"
+          >
+            <div className="text-2xl font-bold text-orange-600">{summary.lowStock}</div>
+            <div className="text-sm text-gray-500">Stock bajo</div>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setPublicationQuery({
+                ...DEFAULT_SELLER_PUBLICATION_QUERY,
+                flags: { ...DEFAULT_SELLER_PUBLICATION_QUERY.flags, noSales: true },
+              })
+              setPage(1)
+            }}
+            className="bg-white p-4 rounded-xl shadow-sm border text-left transition-all hover:shadow-md"
+          >
+            <div className="text-2xl font-bold text-blue-600">{summary.noSales}</div>
+            <div className="text-sm text-gray-500">Sin ventas</div>
+          </button>
         </div>
-        <select value={filter} onChange={e => { setFilter(e.target.value); setPage(1) }} className="px-4 py-2 border border-gray-200 rounded-lg outline-none">
-          <option value="all">Todas</option>
-          <option value="active">Activas</option>
-          <option value="paused">Pausadas</option>
-          <option value="low_stock">Stock bajo</option>
-          <option value="no_sales">Sin ventas</option>
-        </select>
+      )}
+
+      <div className="bg-white p-4 rounded-xl shadow-sm border flex flex-col gap-4 lg:flex-row lg:items-center">
+        <div className="flex-1 relative min-w-0">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+          <input
+            type="text"
+            placeholder="Buscar por título, código o SKU"
+            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <div className="flex flex-wrap items-center gap-3 shrink-0">
+          <div className="flex flex-col gap-1 w-full sm:w-56 shrink-0">
+            <label htmlFor="pub-sort-toolbar" className="text-xs font-medium text-gray-600">
+              Ordenar por
+            </label>
+            <select
+              id="pub-sort-toolbar"
+              className="rounded-lg border border-gray-200 px-3 py-2 text-sm bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none"
+              value={publicationQuery.sort}
+              onChange={(e) => {
+                const sort = e.target.value as SellerPublicationsSort
+                setPublicationQuery((q) => ({ ...q, sort }))
+                setPage(1)
+              }}
+            >
+              {PUBL_SORT_GROUPS.map((g) => (
+                <optgroup key={g} label={g}>
+                  {SELLER_PUBLICATION_SORT_OPTIONS.filter((o) => o.group === g).map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </div>
+          <PublicationsFilterButton
+            activeCount={countActivePublicationFilters(publicationQuery)}
+            onClick={() => setFilterModalOpen(true)}
+          />
+          <span className="text-sm text-gray-600 whitespace-nowrap">{totalCount} publicaciones</span>
+        </div>
       </div>
+
+      <PublicationsFilterModal
+        open={filterModalOpen}
+        onOpenChange={setFilterModalOpen}
+        applied={publicationQuery}
+        onApply={(q) => {
+          setPublicationQuery(q)
+          setPage(1)
+        }}
+      />
 
       <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
         <div className="overflow-x-auto">

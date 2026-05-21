@@ -39,6 +39,25 @@ model Session {
   @@map("sessions")
 }
 
+model AdminSession {
+  id               String    @id @default(cuid())
+  adminUserId      String    @map("admin_user_id")
+  userId           String    @map("user_id")
+  email            String
+  sessionTokenHash String    @unique @map("session_token_hash")
+  userAgent        String?   @map("user_agent") @db.Text
+  ipAddress        String?   @map("ip_address")
+  lastSeenAt       DateTime  @default(now()) @map("last_seen_at")
+  expiresAt        DateTime  @map("expires_at")
+  revokedAt        DateTime? @map("revoked_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  @@index([adminUserId, revokedAt, expiresAt])
+  @@index([userId, revokedAt, expiresAt])
+  @@map("admin_sessions")
+}
+
 enum UserRole {
   USER
   SELLER
@@ -67,9 +86,9 @@ enum MeliAdsChangeOutcome {
   NEUTRAL
 }
 
-enum MarketingAccessLevel {
-  FULL
-  READ_ONLY
+enum SellerCollaboratorInviteStatus {
+  PENDING
+  REVOKED
 }
 
 model User {
@@ -86,6 +105,8 @@ model User {
   sellerName        String?
   sellerDescription String?   @db.Text
   sellerSince       DateTime? @map("seller_since")
+  /// URL pública /tienda/[storeSlug]
+  storeSlug         String?   @unique @map("store_slug")
   
   // Sistema de reputación
   reputationColor   ReputationColor @default(VERDE) @map("reputation_color")
@@ -152,10 +173,17 @@ model User {
   campaigns         Campaign[]
   coupons           Coupon[]
   cart              Cart?
-  sellerMeliOAuth   SellerMeliOAuth?
+  // Flash
+  flashDriver       FlashDriver?
+  sellerMeliOAuthAccounts SellerMeliOAuth[]
+  sellerZipnovaOAuth SellerZipnovaOAuth?
   meliAdsSnapshots  MeliAdsSnapshot[]
   meliAdsChanges    MeliAdsChange[]
-  marketingCollaborators MarketingCollaboratorAccess[] @relation("MarketingOwner")
+  collaboratorInvitesSent SellerCollaboratorInvite[] @relation("CollaboratorInvitesSent")
+  collaboratorAccountsOwned SellerCollaborator[]      @relation("CollaboratorAccountsOwned")
+  collaboratorMemberships SellerCollaborator[]      @relation("CollaboratorMemberships")
+  sellerInvitesOwned SellerInvite[]
+  sellerLeadProfile  SellerLead?
 
   // Reputación
   reputationHistory ReputationHistory[] @relation("ReputationHistory")
@@ -177,9 +205,10 @@ model Category {
   parent      Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
   children    Category[] @relation("CategoryHierarchy")
   products    Product[]
-  
+  meliCategoryId String? @unique @map("meli_category_id")
+
   createdAt DateTime @default(now()) @map("created_at")
-  
+
   @@map("categories")
 }
 
@@ -232,45 +261,64 @@ model Product {
 
   /// ID publicación MLA/MLM/etc. en Mercado Libre (importación)
   meliItemId  String? @unique @map("meli_item_id")
-  
+  meliOAuthAccountId String? @map("meli_oauth_account_id")
+  meliOAuthAccount   SellerMeliOAuth? @relation(fields: [meliOAuthAccountId], references: [id], onDelete: SetNull)
+  meliCategoryId     String? @map("meli_category_id")
+  meliListingTypeId  String? @map("meli_listing_type_id")
+  meliStatus         String? @map("meli_status")
+  meliPermalink      String? @map("meli_permalink")
+  meliCurrencyId     String? @default("ARS") @map("meli_currency_id")
+  meliPayload        Json?   @map("meli_payload")
+  meliLastSyncedAt   DateTime? @map("meli_last_synced_at")
+  meliStockSyncEnabled Boolean @default(true) @map("meli_stock_sync_enabled")
+
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
-  
+
   @@index([sellerId])
   @@index([categoryId])
   @@index([isActive])
   @@index([isBoosted])
+  @@index([meliOAuthAccountId])
   @@map("products")
 }
 
-/// OAuth Mercado Libre por usuario (importar publicaciones y leer promociones)
+/// OAuth Mercado Libre — varias cuentas ML por vendedor Madsjeez
 model SellerMeliOAuth {
   id           String   @id @default(cuid())
-  userId       String   @unique @map("user_id")
+  userId       String   @map("user_id")
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   meliUserId   String   @map("meli_user_id")
+  nickname     String?  @map("nickname")
+  label        String?  @map("label")
+  isPrimary    Boolean  @default(false) @map("is_primary")
   accessToken  String   @db.Text @map("access_token")
   refreshToken String?  @db.Text @map("refresh_token")
   expiresAt    DateTime @map("expires_at")
+  lastCatalogImportAt DateTime? @map("last_catalog_import_at")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
+  products     Product[]
 
+  @@unique([userId, meliUserId])
+  @@index([userId])
   @@map("seller_meli_oauth")
 }
 
-model MarketingCollaboratorAccess {
-  id                String              @id @default(cuid())
-  ownerId           String              @map("owner_id")
-  owner             User                @relation("MarketingOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  collaboratorEmail String              @map("collaborator_email")
-  accessLevel       MarketingAccessLevel @default(READ_ONLY) @map("access_level")
-  isActive          Boolean             @default(true) @map("is_active")
-  createdAt         DateTime            @default(now()) @map("created_at")
-  updatedAt         DateTime            @updatedAt @map("updated_at")
+/// OAuth Zipnova Envíos por vendedor (integración marketplace multi-cuenta).
+model SellerZipnovaOAuth {
+  id               String   @id @default(cuid())
+  userId           String   @unique @map("user_id")
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken      String   @db.Text @map("access_token")
+  refreshToken     String?  @db.Text @map("refresh_token")
+  expiresAt        DateTime @map("expires_at")
+  scope            String?  @db.Text
+  zipnovaAccountId Int?     @map("zipnova_account_id")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
 
-  @@unique([ownerId, collaboratorEmail])
-  @@index([collaboratorEmail, isActive])
-  @@map("marketing_collaborator_accesses")
+  @@map("seller_zipnova_oauth")
 }
 
 model ProductImage {
@@ -335,6 +383,7 @@ model Order {
   claims        Claim[]
   messages      OrderMessage[]
   shipment        Shipment?
+  flashShipment   FlashShipment?
   supportTickets  SupportTicket[]
   
   createdAt     DateTime    @default(now()) @map("created_at")
@@ -766,7 +815,8 @@ model ProductVariation {
   
   // Images specific to this variation
   images      String[] // Array of image URLs
-  
+  meliVariationId String? @unique @map("meli_variation_id")
+
   isActive    Boolean  @default(true) @map("is_active")
   
   createdAt   DateTime @default(now()) @map("created_at")
@@ -793,6 +843,25 @@ enum CampaignStatus {
   PAUSED
   ENDED
   CANCELLED
+}
+
+enum InternalAdPlacement {
+  HOME_LEADERBOARD
+  HOME_RECTANGLE
+  HOME_TILE
+  CATEGORY_LEADERBOARD
+  SEARCH_INLINE
+}
+
+enum InternalAdPricingModel {
+  SOV
+  CPM
+  CPC
+}
+
+enum InternalAdEventType {
+  IMPRESSION
+  CLICK
 }
 
 model Campaign {
@@ -824,6 +893,7 @@ model Campaign {
   
   // Products in campaign
   products    CampaignProduct[]
+  internalAd  InternalAdCampaign?
 
   /// Promoción origen Mercado Libre (si se sincronizó desde ML)
   meliPromotionId String? @map("meli_promotion_id")
@@ -856,6 +926,42 @@ model CampaignProduct {
   @@unique([campaignId, productId])
   @@index([productId])
   @@map("campaign_products")
+}
+
+model InternalAdCampaign {
+  id                      String                 @id @default(cuid())
+  campaignId              String                 @unique @map("campaign_id")
+  campaign                Campaign               @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  placement               InternalAdPlacement
+  pricingModel            InternalAdPricingModel @default(SOV) @map("pricing_model")
+  shareOfVoice            Int?                   @map("share_of_voice")
+  bannerTitle             String?                @map("banner_title")
+  bannerSubtitle          String?                @map("banner_subtitle")
+  bannerImageUrl          String?                @map("banner_image_url")
+  destinationUrl          String?                @map("destination_url")
+  rotationIntervalSeconds Int                    @default(60) @map("rotation_interval_seconds")
+  isActive                Boolean                @default(true) @map("is_active")
+  events                  InternalAdEvent[]
+  createdAt               DateTime               @default(now()) @map("created_at")
+  updatedAt               DateTime               @updatedAt @map("updated_at")
+
+  @@index([placement, isActive])
+  @@map("internal_ad_campaigns")
+}
+
+model InternalAdEvent {
+  id                  String              @id @default(cuid())
+  internalAdCampaignId String             @map("internal_ad_campaign_id")
+  internalAdCampaign  InternalAdCampaign  @relation(fields: [internalAdCampaignId], references: [id], onDelete: Cascade)
+  eventType           InternalAdEventType @map("event_type")
+  slotKey             String?             @map("slot_key")
+  pagePath            String?             @map("page_path")
+  visitorHash         String?             @map("visitor_hash")
+  createdAt           DateTime            @default(now()) @map("created_at")
+
+  @@index([internalAdCampaignId, eventType])
+  @@index([pagePath, createdAt])
+  @@map("internal_ad_events")
 }
 
 // Cupones
@@ -977,12 +1083,17 @@ model MeliAdsSnapshot {
   diagnostics         Json?
   errors              Json?
   source              String   @default("sync")
+  /// Día civil AR (YYYY-MM-DD) para corte guardado una vez por día (`daily_cutoff`).
+  bucketDateKey       String?  @map("bucket_date_key")
   createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
 
   campaignRows        MeliAdsCampaignSnapshot[]
   evaluatedChanges    MeliAdsChange[] @relation("MeliAdsChangeEvaluatedSnapshot")
 
+  @@unique([userId, bucketDateKey], map: "meli_ads_snapshots_user_bucket_key")
   @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, bucketDateKey(sort: Desc)])
   @@map("meli_ads_snapshots")
 }
 
@@ -1033,6 +1144,37 @@ model MeliAdsChange {
   @@index([campaignId, siteId, appliedAt(sort: Desc)])
   @@index([outcome, appliedAt(sort: Desc)])
   @@map("meli_ads_changes")
+}
+
+model SellerCollaboratorInvite {
+  id          String                         @id @default(cuid())
+  ownerUserId String                         @map("owner_user_id")
+  owner       User                           @relation("CollaboratorInvitesSent", fields: [ownerUserId], references: [id], onDelete: Cascade)
+  email       String
+  permissions Json
+  token       String                         @unique
+  status      SellerCollaboratorInviteStatus @default(PENDING)
+  expiresAt   DateTime                       @map("expires_at")
+  createdAt   DateTime                       @default(now()) @map("created_at")
+
+  @@index([ownerUserId])
+  @@index([ownerUserId, email])
+  @@map("seller_collaborator_invites")
+}
+
+model SellerCollaborator {
+  id           String   @id @default(cuid())
+  ownerUserId  String   @map("owner_user_id")
+  owner        User     @relation("CollaboratorAccountsOwned", fields: [ownerUserId], references: [id], onDelete: Cascade)
+  memberUserId String   @map("member_user_id")
+  member       User     @relation("CollaboratorMemberships", fields: [memberUserId], references: [id], onDelete: Cascade)
+  permissions  Json
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@unique([ownerUserId, memberUserId])
+  @@index([memberUserId])
+  @@map("seller_collaborators")
 }
 
 // =====================
@@ -1113,4 +1255,367 @@ model FAQ {
   updatedAt   DateTime @updatedAt @map("updated_at")
   
   @@map("faqs")
+}
+
+// ============================================
+// SISTEMA FLASH — LOGÍSTICA PROPIA
+// ============================================
+
+enum FlashShipmentStatus {
+  CREATED
+  PAYMENT_CONFIRMED
+  LABEL_GENERATED
+  PACKAGE_READY
+  ASSIGNED_TO_DRIVER
+  IN_TRANSIT
+  ARRIVED_AT_ADDRESS
+  DELIVERED
+  FAILED_ATTEMPT_1
+  PENDING_VISIT_2
+  FAILED_ATTEMPT_2
+  PENDING_VISIT_3
+  FAILED_ATTEMPT_3
+  RETURNED_TO_SENDER
+  CANCELLED
+}
+
+enum FlashReceiverType {
+  TITULAR
+  AUTHORIZED
+  FAMILY
+  NEIGHBOR
+}
+
+enum FlashAttemptStatus {
+  IN_PROGRESS
+  DELIVERED
+  CLIENT_NOT_FOUND
+}
+
+model FlashShipment {
+  id               String               @id @default(cuid())
+  orderId          String               @unique @map("order_id")
+  order            Order                @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  // Datos del destinatario
+  recipientName    String               @map("recipient_name")
+  recipientDni     String               @map("recipient_dni")
+  recipientPhone   String               @map("recipient_phone")
+
+  // Dirección completa
+  street           String
+  streetNumber     String               @map("street_number")
+  floor            String?
+  apartment        String?
+  betweenStreet1   String               @map("between_street1")
+  betweenStreet2   String               @map("between_street2")
+  city             String
+  province         String
+  postalCode       String               @map("postal_code")
+
+  // Control operativo
+  status           FlashShipmentStatus  @default(CREATED)
+  driverId         String?              @map("driver_id")
+  driver           FlashDriver?         @relation(fields: [driverId], references: [id], onDelete: SetNull)
+  labelUrl         String?              @map("label_url")
+  qrToken          String               @unique @map("qr_token")
+  labelPrintCount  Int                  @default(0) @map("label_print_count")
+
+  // Estimado de entrega
+  estimatedDelivery DateTime?           @map("estimated_delivery")
+
+  attempts         FlashDeliveryAttempt[]
+  authorizedPeople FlashAuthorizedRecipient[]
+  deliveryProof    FlashDeliveryProof?
+  auditLogs        FlashAuditLog[]
+
+  createdAt        DateTime             @default(now()) @map("created_at")
+  updatedAt        DateTime             @updatedAt @map("updated_at")
+
+  @@index([orderId])
+  @@index([driverId])
+  @@index([status])
+  @@map("flash_shipments")
+}
+
+enum FlashDriverDutyStatus {
+  OFFLINE
+  ONLINE
+  ON_TRIP
+  ON_BREAK
+}
+
+enum FlashDriverTier {
+  BRONZE
+  SILVER
+  GOLD
+  DIAMOND
+}
+
+enum FlashEarningStatus {
+  PENDING
+  PROCESSING
+  PAID
+}
+
+enum FlashSupportTicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+
+enum FlashBlockStatus {
+  AVAILABLE
+  RESERVED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+model FlashDriver {
+  id            String                @id @default(cuid())
+  userId        String                @unique @map("user_id")
+  user          User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicleType   String                @default("moto") @map("vehicle_type")
+  licenseNumber String?               @map("license_number")
+  phone         String
+  isActive      Boolean               @default(true) @map("is_active")
+
+  dutyStatus    FlashDriverDutyStatus @default(OFFLINE) @map("duty_status")
+  workMode      String                @default("hybrid") @map("work_mode") // hybrid | blocks | on_demand
+  rating        Float                 @default(5)
+  tier          FlashDriverTier       @default(BRONZE)
+  acceptanceRate Float                @default(100) @map("acceptance_rate")
+  payoutCbu     String?               @map("payout_cbu")
+  connectedAt   DateTime?             @map("connected_at")
+  totalKm       Float                 @default(0) @map("total_km")
+
+  shipments     FlashShipment[]
+  attempts      FlashDeliveryAttempt[]
+  earnings      FlashDriverEarning[]
+  supportTickets FlashSupportTicket[]
+  blocks        FlashDriverBlock[]
+
+  createdAt     DateTime              @default(now()) @map("created_at")
+  updatedAt     DateTime              @updatedAt @map("updated_at")
+
+  @@index([isActive])
+  @@index([dutyStatus])
+  @@map("flash_drivers")
+}
+
+model FlashRateConfig {
+  id        String   @id @default("default")
+  label     String   @default("Tarifas Flash Argentina")
+  currency  String   @default("ARS")
+  settings  Json
+  updatedAt DateTime @updatedAt @map("updated_at")
+  updatedBy String?  @map("updated_by")
+
+  @@map("flash_rate_config")
+}
+
+model FlashDriverEarning {
+  id           String             @id @default(cuid())
+  driverId     String             @map("driver_id")
+  driver       FlashDriver        @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  shipmentId   String?            @unique @map("shipment_id")
+  type         String             @default("DELIVERY")
+  description  String
+  grossAmount  Float              @map("gross_amount")
+  platformFee  Float              @default(0) @map("platform_fee")
+  netAmount    Float              @map("net_amount")
+  tipAmount    Float              @default(0) @map("tip_amount")
+  extras       Json?
+  status       FlashEarningStatus @default(PENDING)
+  paidAt       DateTime?          @map("paid_at")
+  createdAt    DateTime           @default(now()) @map("created_at")
+
+  @@index([driverId, createdAt])
+  @@index([status])
+  @@map("flash_driver_earnings")
+}
+
+model FlashSupportTicket {
+  id        String                   @id @default(cuid())
+  driverId  String                   @map("driver_id")
+  driver    FlashDriver              @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  category  String
+  message   String?                  @db.Text
+  shipmentId String?                 @map("shipment_id")
+  status    FlashSupportTicketStatus @default(OPEN)
+  priority  String                   @default("normal")
+  createdAt DateTime                 @default(now()) @map("created_at")
+  updatedAt DateTime                 @updatedAt @map("updated_at")
+
+  @@index([driverId, status])
+  @@map("flash_support_tickets")
+}
+
+model FlashDriverBlock {
+  id                String           @id @default(cuid())
+  zone              String
+  startsAt          DateTime         @map("starts_at")
+  endsAt            DateTime         @map("ends_at")
+  guaranteedPay     Float            @map("guaranteed_pay")
+  estimatedPackages Int              @map("estimated_packages")
+  pickupPoint       String           @map("pickup_point")
+  status            FlashBlockStatus @default(AVAILABLE)
+  driverId          String?          @map("driver_id")
+  driver            FlashDriver?     @relation(fields: [driverId], references: [id], onDelete: SetNull)
+  createdAt         DateTime         @default(now()) @map("created_at")
+
+  @@index([status, startsAt])
+  @@index([driverId])
+  @@map("flash_driver_blocks")
+}
+
+model FlashDeliveryAttempt {
+  id            String              @id @default(cuid())
+  shipmentId    String              @map("shipment_id")
+  shipment      FlashShipment       @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  driverId      String              @map("driver_id")
+  driver        FlashDriver         @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  attemptNumber Int                 @map("attempt_number")
+
+  arrivedAt     DateTime?           @map("arrived_at")
+  completedAt   DateTime?           @map("completed_at")
+
+  latitude      Float?
+  longitude     Float?
+
+  status        FlashAttemptStatus  @default(IN_PROGRESS)
+  notes         String?             @db.Text
+
+  photos        FlashAttemptPhoto[]
+
+  createdAt     DateTime            @default(now()) @map("created_at")
+
+  @@index([shipmentId])
+  @@index([driverId])
+  @@map("flash_delivery_attempts")
+}
+
+model FlashAttemptPhoto {
+  id         String               @id @default(cuid())
+  attemptId  String               @map("attempt_id")
+  attempt    FlashDeliveryAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  url        String
+  uploadedAt DateTime             @default(now()) @map("uploaded_at")
+
+  @@index([attemptId])
+  @@map("flash_attempt_photos")
+}
+
+model FlashDeliveryProof {
+  id            String            @id @default(cuid())
+  shipmentId    String            @unique @map("shipment_id")
+  shipment      FlashShipment     @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+
+  receiverType  FlashReceiverType @map("receiver_type")
+  receiverName  String            @map("receiver_name")
+  receiverDni   String            @map("receiver_dni")
+
+  photos        String[]
+  signedAt      DateTime          @default(now()) @map("signed_at")
+
+  @@map("flash_delivery_proofs")
+}
+
+model FlashAuthorizedRecipient {
+  id         String        @id @default(cuid())
+  shipmentId String        @map("shipment_id")
+  shipment   FlashShipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  name       String
+  dni        String
+
+  @@index([shipmentId])
+  @@map("flash_authorized_recipients")
+}
+
+model FlashAuditLog {
+  id             String               @id @default(cuid())
+  shipmentId     String               @map("shipment_id")
+  shipment       FlashShipment        @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  actorId        String               @map("actor_id")
+  actorRole      String               @map("actor_role")
+  action         String
+  previousStatus FlashShipmentStatus? @map("previous_status")
+  newStatus      FlashShipmentStatus? @map("new_status")
+  metadata       Json?
+
+  createdAt      DateTime             @default(now()) @map("created_at")
+
+  @@index([shipmentId])
+  @@index([createdAt])
+  @@map("flash_audit_logs")
+}
+
+model WebVisit {
+  id          String   @id @default(cuid())
+  path        String
+  source      String
+  medium      String
+  campaign    String?
+  referrer    String?
+  userAgent   String?  @map("user_agent")
+  visitorHash String?  @map("visitor_hash")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@index([source, medium])
+  @@map("web_visits")
+}
+
+enum SellerLeadStatus {
+  NEW
+  CONTACTED
+  ACTIVATED
+  SELLING
+}
+
+model SellerInvite {
+  id            String   @id @default(cuid())
+  code          String   @unique
+  ownerUserId   String?  @map("owner_user_id")
+  ownerUser     User?    @relation(fields: [ownerUserId], references: [id], onDelete: SetNull)
+  source        String   @default("direct")
+  campaignName  String?  @map("campaign_name")
+  clicks        Int      @default(0)
+  signups       Int      @default(0)
+  activations   Int      @default(0)
+  firstSales    Int      @default(0)
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  leads SellerLead[]
+
+  @@index([ownerUserId])
+  @@index([isActive])
+  @@map("seller_invites")
+}
+
+model SellerLead {
+  id             String           @id @default(cuid())
+  inviteCode     String?          @map("invite_code")
+  invite         SellerInvite?    @relation(fields: [inviteCode], references: [code], onDelete: SetNull)
+  email          String
+  fullName       String           @map("full_name")
+  phone          String?
+  businessName   String?          @map("business_name")
+  businessType   String?          @map("business_type")
+  monthlyCatalog Int?             @map("monthly_catalog")
+  message        String?          @db.Text
+  status         SellerLeadStatus @default(NEW)
+  userId         String?          @unique @map("user_id")
+  user           User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+
+  @@index([email])
+  @@index([status])
+  @@index([inviteCode])
+  @@map("seller_leads")
 }

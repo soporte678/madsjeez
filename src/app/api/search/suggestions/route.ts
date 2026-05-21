@@ -98,9 +98,12 @@ export async function GET(request: NextRequest) {
     // 2. BUSCAR CATEGORÍAS
     const categories = await prisma.category.findMany({
       where: {
-        name: { contains: normalizedQuery, mode: "insensitive" },
+        OR: [
+          { name: { contains: normalizedQuery, mode: "insensitive" } },
+          { slug: { contains: normalizedQuery, mode: "insensitive" } },
+        ],
       },
-      take: 5,
+      take: 8,
       select: {
         id: true,
         name: true,

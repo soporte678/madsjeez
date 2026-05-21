@@ -1,6 +1,7 @@
 "use client"
 
 import { MessageCircle } from "lucide-react"
+import { trackEvent } from "@/lib/analytics"
 
 interface WhatsAppButtonProps {
   productName: string
@@ -31,6 +32,12 @@ export function WhatsAppButton({
     
     // Abrir WhatsApp Web/App
     const whatsappUrl = `https://wa.me/${sellerPhone}?text=${message}`
+    trackEvent("contact_whatsapp", {
+      seller_name: sellerName,
+      product_name: productName,
+      product_url: productUrl,
+      value: Number(price || 0),
+    })
     window.open(whatsappUrl, "_blank")
   }
 

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { signOut } from "next-auth/react";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { 
   User, ChevronDown, ChevronRight, ShoppingBag, Tag, 
   Megaphone, FileText, CreditCard, Settings, Star, 
@@ -37,6 +38,25 @@ interface DropdownItemProps {
  */
 export const UserMenu: React.FC<UserMenuProps> = ({ isOpen, onClose, userData, onNavigate }) => {
   if (!isOpen) return null;
+
+  const handleSignOut = async () => {
+    onClose();
+    try {
+      await signOut({ callbackUrl: "/", redirect: false });
+    } catch (e) {
+      console.error("next-auth signOut error:", e);
+    }
+
+    // Fallback: algunos flujos del sitio aún usan sesión Supabase en cliente.
+    try {
+      const supabase = getSupabaseBrowserClient();
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.error("supabase signOut error:", e);
+    }
+
+    window.location.replace("/");
+  };
 
   return (
     <>
@@ -135,7 +155,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ isOpen, onClose, userData, o
 
         {/* SECCIÓN 4: Salida */}
         <div className="py-1">
-          <DropdownItem text="Salir" onClick={() => signOut({ callbackUrl: '/' })} />
+          <DropdownItem text="Salir" onClick={handleSignOut} />
         </div>
       </div>
     </>

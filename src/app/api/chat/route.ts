@@ -328,7 +328,7 @@ export async function POST(req: NextRequest) {
       return text
     }
 
-    const modelChain = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
+    const modelChain = ["gemini-2.5-flash", "gemini-1.5-flash"]
     let response: string | undefined
     let lastModelError: unknown
 

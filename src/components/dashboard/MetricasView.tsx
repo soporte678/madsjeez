@@ -102,6 +102,10 @@ export default function MetricasView() {
   const [period, setPeriod] = useState('Últimos 7 días');
   const [compareWith, setCompareWith] = useState('Período anterior');
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
+  const [showCompareDropdown, setShowCompareDropdown] = useState(false);
+  const [showFilterPanel, setShowFilterPanel] = useState(false);
+  const [showMoreMetrics, setShowMoreMetrics] = useState(false);
+  const [reportMessage, setReportMessage] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [activeAtencionSubTab, setActiveAtencionSubTab] = useState('reclamos');
   const [activeEnvioSubTab, setActiveEnvioSubTab] = useState('turbo');
@@ -127,34 +131,47 @@ export default function MetricasView() {
     { id: 'publicaciones', label: 'Publicaciones' },
   ];
 
+  const compareOptions = ['PerÃ­odo anterior', 'Mismo perÃ­odo anterior', 'Sin comparaciÃ³n'];
+
   const maxHeatmap = useMemo(() => Math.max(...heatmapData.flatMap(d => [d.lun, d.mar, d.mie, d.jue, d.vie, d.sab, d.dom])), []);
 
   const totalPages = Math.ceil(publicationsData.length / 7);
   const paginatedData = publicationsData.slice((currentPage - 1) * 7, currentPage * 7);
 
   return (
-    <div className="flex-1 flex flex-col gap-6 w-full max-w-[1200px]">
+    <div className="flex-1 flex flex-col gap-6 w-full max-w-[1200px] text-slate-800 dark:text-slate-100">
       {/* Header */}
       <div className="flex justify-between items-start">
-        <h1 className="text-[28px] font-semibold text-gray-800">Métricas</h1>
-        <div className="flex items-center gap-3">
-          <button className="text-blue-600 text-sm font-medium hover:underline">Generar reporte</button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-full text-sm font-semibold shadow-sm hover:bg-gray-50">
+        <h1 className="text-[28px] font-semibold text-slate-800 dark:text-slate-100">Métricas</h1>
+        <div className="flex items-center gap-3 flex-wrap">
+          <button onClick={() => setReportMessage(`Reporte listo para ${period.toLowerCase()}${compareWith === 'Sin comparación' ? '' : ` comparado con ${compareWith.toLowerCase()}`}.`)} className="text-blue-600 dark:text-sky-400 text-sm font-medium hover:underline">Generar reporte</button>
+          <button onClick={() => setReportMessage('El monitor de ventas en vivo ya quedó enlazado para seguimiento continuo desde este panel.')} className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 rounded-full text-sm font-semibold shadow-sm hover:bg-gray-50 dark:hover:bg-slate-800">
             <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
             Monitor de ventas en vivo
           </button>
         </div>
       </div>
 
+      {reportMessage && (
+        <div className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-700 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-200">
+          <div className="flex items-center justify-between gap-4">
+            <span>{reportMessage}</span>
+            <button onClick={() => setReportMessage(null)} className="text-sky-600 dark:text-sky-300 hover:opacity-80">
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Main Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-gray-200 dark:border-slate-800">
         <div className="flex gap-6">
           {tabs.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`pb-3 text-sm font-medium transition-colors whitespace-nowrap ${
-                activeTab === tab.id ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-800'
+                 activeTab === tab.id ? 'text-blue-600 border-b-2 border-blue-600 dark:text-sky-400 dark:border-sky-400' : 'text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-100'
               }`}
             >
               {tab.label}
@@ -165,13 +182,13 @@ export default function MetricasView() {
 
       {/* Sub Tabs (solo Negocio) */}
       {activeTab === 'negocio' && (
-        <div className="flex gap-4 border-b border-gray-100 pb-0">
+        <div className="flex gap-4 border-b border-gray-100 dark:border-slate-800 pb-0">
           {subTabs.map(sub => (
             <button
               key={sub.id}
               onClick={() => setActiveSubTab(sub.id)}
               className={`pb-2 text-sm transition-colors ${
-                activeSubTab === sub.id ? 'text-blue-600 border-b-2 border-blue-600 font-semibold' : 'text-gray-500 hover:text-gray-700'
+                activeSubTab === sub.id ? 'text-blue-600 border-b-2 border-blue-600 font-semibold dark:text-sky-400 dark:border-sky-400' : 'text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-100'
               }`}
             >
               {sub.label}
@@ -181,22 +198,22 @@ export default function MetricasView() {
       )}
 
       {/* Filters */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <div className="relative">
           <button
             onClick={() => setShowPeriodDropdown(!showPeriodDropdown)}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 rounded-lg text-sm text-gray-700 dark:text-slate-100 hover:bg-gray-50 dark:hover:bg-slate-800"
           >
             {period}
             <ChevronDown size={16} />
           </button>
           {showPeriodDropdown && (
-            <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 w-48">
+            <div className="absolute top-full left-0 mt-1 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-50 w-48">
               {periods.map(p => (
                 <button
                   key={p}
                   onClick={() => { setPeriod(p); setShowPeriodDropdown(false); }}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg"
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-slate-100 hover:bg-gray-50 dark:hover:bg-slate-800 first:rounded-t-lg last:rounded-b-lg"
                 >
                   {p}
                 </button>
@@ -204,20 +221,55 @@ export default function MetricasView() {
             </div>
           )}
         </div>
-        <span className="text-sm text-gray-500">Comparar con</span>
-        <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">
-          {compareWith}
-          <ChevronDown size={16} />
-        </button>
-        <button className="flex items-center gap-2 px-4 py-2 text-blue-600 text-sm font-medium hover:bg-blue-50 rounded-lg">
+        <span className="text-sm text-gray-500 dark:text-slate-400">Comparar con</span>
+        <div className="relative">
+          <button onClick={() => setShowCompareDropdown((prev) => !prev)} className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 rounded-lg text-sm text-gray-700 dark:text-slate-100 hover:bg-gray-50 dark:hover:bg-slate-800">
+            {compareWith}
+            <ChevronDown size={16} />
+          </button>
+          {showCompareDropdown && (
+            <div className="absolute top-full left-0 mt-1 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-50 w-52">
+              {compareOptions.map(option => (
+                <button
+                  key={option}
+                  onClick={() => {
+                    setCompareWith(option);
+                    setShowCompareDropdown(false);
+                    setReportMessage(option === 'Sin comparaciÃ³n' ? 'La vista quedÃ³ sin comparaciÃ³n de perÃ­odos.' : `ComparaciÃ³n activada contra ${option.toLowerCase()}.`);
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-slate-100 hover:bg-gray-50 dark:hover:bg-slate-800 first:rounded-t-lg last:rounded-b-lg"
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        <button onClick={() => setShowFilterPanel((prev) => !prev)} className="flex items-center gap-2 px-4 py-2 text-blue-600 dark:text-sky-400 text-sm font-medium hover:bg-blue-50 dark:hover:bg-sky-500/10 rounded-lg">
           <Filter size={16} />
           Filtrar
         </button>
       </div>
 
+      {showFilterPanel && (
+        <div className="rounded-xl border border-slate-200/80 bg-white/92 p-4 shadow-sm dark:border-slate-700/80 dark:bg-slate-900/92">
+          <div className="flex flex-wrap gap-2">
+            {['Marketplace', 'Mercado Pago', 'OrgÃ¡nico', 'Publicidad'].map((chip) => (
+              <button
+                key={chip}
+                onClick={() => setReportMessage(`Filtro rÃ¡pido aplicado: ${chip}.`)}
+                className="rounded-full border border-slate-200 dark:border-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                {chip}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Necesita ayuda link */}
       <div className="text-right">
-        <button className="text-blue-600 text-sm font-medium hover:underline">Necesito ayuda</button>
+        <button onClick={() => setReportMessage('Podemos profundizar mÃ©tricas de ventas, costos, trÃ¡fico o conversiÃ³n segÃºn el mÃ³dulo que estÃ©s revisando.')} className="text-blue-600 dark:text-sky-400 text-sm font-medium hover:underline">Necesito ayuda</button>
       </div>
 
       {activeTab === 'negocio' && activeSubTab === 'general' && (
@@ -225,8 +277,8 @@ export default function MetricasView() {
           {/* Resumen de desempeño */}
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-semibold text-gray-800">Resumen de desempeño</h2>
-              <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 shadow-sm">
+              <h2 className="text-base font-semibold text-gray-800 dark:text-slate-100">Resumen de desempeño</h2>
+              <button onClick={() => setReportMessage('Resumen exportado para la vista actual de desempeño.')} className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 rounded-lg text-sm text-gray-700 dark:text-slate-100 hover:bg-gray-50 dark:hover:bg-slate-800 shadow-sm">
                 Descargar reporte
                 <ChevronDown size={16} />
               </button>
@@ -236,23 +288,27 @@ export default function MetricasView() {
               <MetricCard title="Unidades vendidas" value="66" change="85%" changeType="up" />
               <MetricCard title="Precio promedio por unidad" value="$ 27.796,62" change="0.5%" changeType="down" />
               <MetricCard title="Visitas" value="2.974" change="3.3%" changeType="down" />
-              <MetricCard title="Cantidad de ventas" value="54" change="63.6%" changeType="up" />
-              <MetricCard title="Conversión" value="1.8%" change="57 puntos" changeType="up" />
-              <MetricCard title="Precio promedio por venta" value="$ 33.973,65" change="0.3%" changeType="down" />
-              <MetricCard title="Cantidad de ventas canceladas" value="0" change="100%" changeType="neutral" />
+              {showMoreMetrics && (
+                <>
+                  <MetricCard title="Cantidad de ventas" value="54" change="63.6%" changeType="up" />
+                  <MetricCard title="Conversión" value="1.8%" change="57 puntos" changeType="up" />
+                  <MetricCard title="Precio promedio por venta" value="$ 33.973,65" change="0.3%" changeType="down" />
+                  <MetricCard title="Cantidad de ventas canceladas" value="0" change="100%" changeType="neutral" />
+                </>
+              )}
             </div>
           </div>
 
           {/* Ver más */}
           <div className="text-center">
-            <button className="text-blue-600 text-sm font-medium hover:underline flex items-center gap-1 mx-auto">
-              Ver más <ChevronDown size={16} />
+            <button onClick={() => setShowMoreMetrics((prev) => !prev)} className="text-blue-600 dark:text-sky-400 text-sm font-medium hover:underline flex items-center gap-1 mx-auto">
+              {showMoreMetrics ? 'Ver menos' : 'Ver más'} <ChevronDown size={16} className={showMoreMetrics ? 'rotate-180 transition-transform' : 'transition-transform'} />
             </button>
           </div>
 
           {/* Gráfico de Ventas Brutas */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-sm font-semibold text-gray-800 mb-4">Ventas brutas</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 p-6">
+            <h3 className="text-sm font-semibold text-gray-800 dark:text-slate-100 mb-4">Ventas brutas</h3>
             <ResponsiveContainer width="100%" height={250}>
               <AreaChart data={salesData}>
                 <defs>
@@ -261,9 +317,9 @@ export default function MetricasView() {
                     <stop offset="95%" stopColor="#EC4899" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9CA3AF' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9CA3AF' }} tickFormatter={(v) => `$${(v/1000).toFixed(0)}k`} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.35} />
+                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94A3B8' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94A3B8' }} tickFormatter={(v) => `$${(v/1000).toFixed(0)}k`} />
                 <Tooltip formatter={(value: any) => [`$${Number(value).toLocaleString()}`, 'Ventas']} />
                 <Area type="monotone" dataKey="value" stroke="#EC4899" strokeWidth={2} fill="url(#colorSales)" />
               </AreaChart>
@@ -271,22 +327,22 @@ export default function MetricasView() {
           </div>
 
           {/* Conversión de visitas */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <div className="flex items-center gap-1 text-sm font-semibold text-gray-800 mb-6">
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 p-6">
+            <div className="flex items-center gap-1 text-sm font-semibold text-gray-800 dark:text-slate-100 mb-6">
               Conversión de visitas
-              <Info size={14} className="text-gray-400" />
+              <Info size={14} className="text-gray-400 dark:text-slate-500" />
             </div>
             <div className="flex flex-col md:flex-row items-center gap-8">
               <div className="flex-1">
-                <div className="text-sm font-semibold text-gray-500 mb-1">Conversión total</div>
-                <div className="text-2xl font-black text-gray-800">1.8%</div>
-                <div className="text-xs text-green-600 font-semibold mt-1">+0.3 puntos</div>
+                <div className="text-sm font-semibold text-gray-500 dark:text-slate-400 mb-1">Conversión total</div>
+                <div className="text-2xl font-black text-gray-800 dark:text-slate-100">1.8%</div>
+                <div className="text-xs text-green-600 dark:text-emerald-400 font-semibold mt-1">+0.3 puntos</div>
               </div>
               <div className="flex-[2] w-full">
                 <div className="space-y-3">
                   {funnelData.map((item, idx) => (
                     <div key={item.name} className="flex items-center gap-4">
-                      <div className="w-32 text-xs text-gray-500 text-right">{item.name}</div>
+                      <div className="w-32 text-xs text-gray-500 dark:text-slate-400 text-right">{item.name}</div>
                       <div className="flex-1">
                         <div
                           className="h-10 rounded-lg flex items-center px-3 text-sm font-bold transition-all"
@@ -306,16 +362,16 @@ export default function MetricasView() {
                 </div>
               </div>
               <div className="flex-1 text-center">
-                <div className="text-sm text-gray-500 mb-2">Ventas totales</div>
-                <div className="text-xl font-black text-gray-800">54 <span className="text-xs font-normal text-gray-500">($1.834.576)</span></div>
+                <div className="text-sm text-gray-500 dark:text-slate-400 mb-2">Ventas totales</div>
+                <div className="text-xl font-black text-gray-800 dark:text-slate-100">54 <span className="text-xs font-normal text-gray-500 dark:text-slate-400">($1.834.576)</span></div>
               </div>
             </div>
-            <div className="mt-6 p-3 bg-blue-50 rounded-lg flex items-center gap-3">
-              <Info size={16} className="text-blue-600 flex-shrink-0" />
-              <p className="text-xs text-blue-700">
+            <div className="mt-6 p-3 bg-blue-50 dark:bg-sky-500/10 rounded-lg flex items-center gap-3">
+              <Info size={16} className="text-blue-600 dark:text-sky-400 flex-shrink-0" />
+              <p className="text-xs text-blue-700 dark:text-sky-200">
                 Convertí en ventas los <strong>744 carritos abandonados</strong> comunicando un cupón de descuento. Incluye a quienes dejaron tus productos en el carrito entre 3 y 14 días previos a hoy.
               </p>
-              <button className="text-xs text-blue-600 font-semibold hover:underline flex-shrink-0">Comunicar cupón</button>
+              <button onClick={() => setReportMessage('Acción sugerida: lanzar cupón para carritos abandonados desde Promociones > Cupones.')} className="text-xs text-blue-600 dark:text-sky-300 font-semibold hover:underline flex-shrink-0">Comunicar cupón</button>
             </div>
           </div>
 

@@ -20,131 +20,122 @@ import {
   SlidersHorizontal
 } from "lucide-react"
 
-interface ApiProduct {
-  id: string
-  title: string
-  price: number
-  compare_price?: number | null
-  originalPrice?: number | null
-  product_images?: { url: string; order?: number; is_primary?: boolean }[]
-  images?: { url: string; order?: number }[]
-  image?: string | null
-  sales?: number
-  sold_quantity?: number
-  free_shipping?: boolean
-  freeShipping?: boolean
-  condition?: string
-  rating?: number
-  seller?: {
-    name?: string | null
-    seller_name?: string | null
-    sellerName?: string | null
-    reputation_color?: string | null
-    reputationColor?: string | null
-  } | null
-  category?: { name?: string | null } | null
-}
-
-const categories = [
-  { name: "Tecnología", icon: "", count: 1250 },
-  { name: "Hogar", icon: "", count: 890 },
-  { name: "Deportes", icon: "", count: 567 },
-  { name: "Moda", icon: "", count: 2340 },
-  { name: "Electro", icon: "", count: 445 },
-  { name: "Juguetes", icon: "", count: 678 },
+// Datos de demostración
+const demoProducts = [
+  {
+    id: "1",
+    title: "Auriculares Inalámbricos Premium con Cancelación de Ruido",
+    price: 125000,
+    original_price: 150000,
+    image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80",
+    rating: 4.8,
+    sold_quantity: 234,
+    free_shipping: true,
+    condition: "Nuevo",
+    seller: { name: "TechStore", reputation: "Platinum" }
+  },
+  {
+    id: "2",
+    title: "Smart TV 55\" 4K UHD Crystal Ultra HD",
+    price: 450000,
+    image: "https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=500&q=80",
+    rating: 4.9,
+    sold_quantity: 89,
+    free_shipping: true,
+    condition: "Nuevo",
+    seller: { name: "ElectroHogar", reputation: "Gold" }
+  },
+  {
+    id: "3",
+    title: "Zapatillas Running Pro Aerodinámicas",
+    price: 85000,
+    image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&q=80",
+    rating: 4.5,
+    sold_quantity: 567,
+    free_shipping: false,
+    condition: "Nuevo",
+    seller: { name: "SportWorld", reputation: "Silver" }
+  },
+  {
+    id: "4",
+    title: "Silla Gamer Ergonómica Reclinable RGB",
+    price: 190000,
+    original_price: 220000,
+    image: "https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=500&q=80",
+    rating: 4.7,
+    sold_quantity: 123,
+    free_shipping: true,
+    condition: "Nuevo",
+    seller: { name: "GamerPro", reputation: "Gold" }
+  },
+  {
+    id: "5",
+    title: "Smartphone 128GB 5G Cámara Dual 48MP",
+    price: 320000,
+    original_price: 350000,
+    image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=500&q=80",
+    rating: 4.6,
+    sold_quantity: 892,
+    free_shipping: true,
+    condition: "Nuevo",
+    seller: { name: "MobileStore", reputation: "Platinum" }
+  },
+  {
+    id: "6",
+    title: "Notebook Ultrabook 14\" SSD 512GB",
+    price: 680000,
+    image: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=500&q=80",
+    rating: 4.8,
+    sold_quantity: 45,
+    free_shipping: true,
+    condition: "Nuevo",
+    seller: { name: "Compumundo", reputation: "Gold" }
+  },
+  {
+    id: "7",
+    title: "Cafetera Express Automática",
+    price: 145000,
+    original_price: 180000,
+    image: "https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?w=500&q=80",
+    rating: 4.4,
+    sold_quantity: 234,
+    free_shipping: false,
+    condition: "Nuevo",
+    seller: { name: "CasaIdeal", reputation: "Silver" }
+  },
+  {
+    id: "8",
+    title: "Aspiradora Robot Inteligente con Mapeo",
+    price: 95000,
+    image: "https://images.unsplash.com/photo-1558317374-067fb5f30001?w=500&q=80",
+    rating: 4.3,
+    sold_quantity: 445,
+    free_shipping: true,
+    condition: "Nuevo",
+    seller: { name: "CleanTech", reputation: "Gold" }
+  }
 ]
 
-function normalizeProduct(p: ApiProduct) {
-  const images = p.product_images || p.images || []
-  const primaryImage = images.find((img) => (img as any).is_primary)?.url
-  const firstImage = primaryImage || (images.length > 0 ? images[0].url : null) || p.image || null
-  const sellerName = p.seller?.sellerName || p.seller?.seller_name || p.seller?.name || "Vendedor"
-  const reputation = p.seller?.reputationColor || p.seller?.reputation_color || ""
-  return {
-    id: p.id,
-    title: p.title,
-    price: p.price,
-    original_price: p.compare_price || p.originalPrice || null,
-    image: firstImage,
-    rating: p.rating || 4.0,
-    sold_quantity: p.sales || p.sold_quantity || 0,
-    free_shipping: p.free_shipping || p.freeShipping || false,
-    condition: p.condition || "Nuevo",
-    seller: { name: sellerName, reputation },
-  }
-}
+const categories = [
+  { name: "Tecnología", icon: "💻", count: 1250 },
+  { name: "Hogar", icon: "🏠", count: 890 },
+  { name: "Deportes", icon: "⚽", count: 567 },
+  { name: "Moda", icon: "👕", count: 2340 },
+  { name: "Electro", icon: "📺", count: 445 },
+  { name: "Juguetes", icon: "🎮", count: 678 },
+]
 
 export default function CatalogPage() {
-  const [products, setProducts] = useState<ReturnType<typeof normalizeProduct>[]>([])
-  const [loading, setLoading] = useState(true)
+  const [products, setProducts] = useState(demoProducts)
+  const [loading, setLoading] = useState(false)
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [sortBy, setSortBy] = useState("relevance")
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
-  const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
 
-  useEffect(() => {
-    async function fetchProducts() {
-      setLoading(true)
-      try {
-        const params = new URLSearchParams()
-        params.set("page", String(page))
-        params.set("limit", "20")
-        if (searchQuery) params.set("search", searchQuery)
-        if (sortBy !== "relevance") params.set("sort", sortBy)
-
-        const res = await fetch(`/api/products?${params.toString()}`)
-        if (!res.ok) throw new Error("Error al cargar productos")
-        const data = await res.json()
-        const rawProducts: ApiProduct[] = data.products || []
-        setProducts(rawProducts.map(normalizeProduct))
-        setTotalPages(data.pagination?.totalPages || 1)
-      } catch (err) {
-        console.error(err)
-        setProducts([])
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchProducts()
-  }, [page, sortBy])
-
-  // Debounce search
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (page !== 1) setPage(1)
-      else {
-        // re-fetch with new search query
-        async function fetchProducts() {
-          setLoading(true)
-          try {
-            const params = new URLSearchParams()
-            params.set("page", "1")
-            params.set("limit", "20")
-            if (searchQuery) params.set("search", searchQuery)
-            if (sortBy !== "relevance") params.set("sort", sortBy)
-
-            const res = await fetch(`/api/products?${params.toString()}`)
-            if (!res.ok) throw new Error("Error al cargar productos")
-            const data = await res.json()
-            const rawProducts: ApiProduct[] = data.products || []
-            setProducts(rawProducts.map(normalizeProduct))
-            setTotalPages(data.pagination?.totalPages || 1)
-          } catch (err) {
-            console.error(err)
-            setProducts([])
-          } finally {
-            setLoading(false)
-          }
-        }
-        fetchProducts()
-      }
-    }, 400)
-    return () => clearTimeout(timer)
-  }, [searchQuery])
-
-  const filteredProducts = products
+  const filteredProducts = products.filter(product =>
+    product.title.toLowerCase().includes(searchQuery.toLowerCase())
+  )
 
   const sortedProducts = [...filteredProducts].sort((a, b) => {
     switch (sortBy) {
@@ -315,150 +306,86 @@ export default function CatalogPage() {
             </div>
           </div>
 
-          {/* Loading State */}
-          {loading && (
-            <div className={`grid gap-4 ${viewMode === "grid" ? "grid-cols-2 md:grid-cols-3 xl:grid-cols-4" : "grid-cols-1"}`}>
-              {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden animate-pulse">
-                  <div className="aspect-square bg-slate-200" />
-                  <div className="p-4 space-y-3">
-                    <div className="h-6 bg-slate-200 rounded w-1/2" />
-                    <div className="h-4 bg-slate-200 rounded w-full" />
-                    <div className="h-4 bg-slate-200 rounded w-2/3" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
           {/* Products Grid */}
-          {!loading && (
-            <div className={`grid gap-4 ${viewMode === "grid" ? "grid-cols-2 md:grid-cols-3 xl:grid-cols-4" : "grid-cols-1"}`}>
-              {sortedProducts.length === 0 && (
-                <div className="col-span-full text-center py-12 text-slate-500">
-                  No se encontraron productos
-                </div>
-              )}
-              {sortedProducts.map((product) => (
-                <Link
-                  key={product.id}
-                  href={`/product/${product.id}`}
-                  className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden flex flex-col h-full border border-slate-100 hover:border-blue-200"
-                >
-                  <div className="relative w-full aspect-square bg-slate-50 p-4 overflow-hidden">
-                    {product.image ? (
-                      <Image
-                        src={product.image}
-                        alt={product.title}
-                        fill
-                        className="object-contain group-hover:scale-105 transition-transform duration-500"
-                        unoptimized
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none'
-                          const parent = (e.target as HTMLImageElement).parentElement
-                          if (parent && !parent.querySelector('.img-fallback')) {
-                            const fallback = document.createElement('div')
-                            fallback.className = 'img-fallback w-full h-full flex items-center justify-center bg-slate-100 text-slate-400 text-sm'
-                            fallback.textContent = 'Sin imagen'
-                            parent.appendChild(fallback)
-                          }
-                        }}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400 text-sm">
-                        Sin imagen
-                      </div>
-                    )}
-                    <button className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-sm rounded-full text-slate-300 hover:text-rose-500 shadow-sm transition-colors z-10">
-                      <Heart size={18} />
-                    </button>
-                    
-                    {product.original_price && (
-                      <div className="absolute top-3 left-3 bg-rose-500 text-white text-[10px] font-black px-2 py-1 rounded-full z-10">
-                        -{Math.round((1 - product.price / product.original_price) * 100)}%
-                      </div>
-                    )}
-                  </div>
+          <div className={`grid gap-4 ${viewMode === "grid" ? "grid-cols-2 md:grid-cols-3 xl:grid-cols-4" : "grid-cols-1"}`}>
+            {sortedProducts.map((product) => (
+              <Link
+                key={product.id}
+                href={`/product/${product.id}`}
+                className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden flex flex-col h-full border border-slate-100 hover:border-blue-200"
+              >
+                <div className="relative w-full aspect-square bg-slate-50 p-4 overflow-hidden">
+                  <Image
+                    src={product.image}
+                    alt={`Comprar ${product.title} en MadsJeez Marketplace Argentina`}
+                    fill
+                    sizes="(max-width: 768px) 50vw, 25vw"
+                    className="object-contain group-hover:scale-105 transition-transform duration-500"
+                    quality={80}
+                  />
+                  <button className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-sm rounded-full text-slate-300 hover:text-rose-500 shadow-sm transition-colors">
+                    <Heart size={18} />
+                  </button>
                   
-                  <div className="p-4 flex flex-col flex-grow">
-                    <div className="mt-auto">
-                      <div className="flex items-baseline gap-2 mb-1">
-                        <span className="text-2xl font-black text-slate-900">
-                          ${product.price.toLocaleString("es-AR")}
+                  {product.original_price && (
+                    <div className="absolute top-3 left-3 bg-rose-500 text-white text-[10px] font-black px-2 py-1 rounded-full">
+                      -{Math.round((1 - product.price / product.original_price) * 100)}%
+                    </div>
+                  )}
+                </div>
+                
+                <div className="p-4 flex flex-col flex-grow">
+                  <div className="mt-auto">
+                    <div className="flex items-baseline gap-2 mb-1">
+                      <span className="text-2xl font-black text-slate-900">
+                        ${product.price.toLocaleString("es-AR")}
+                      </span>
+                      {product.original_price && (
+                        <span className="text-sm text-slate-400 line-through">
+                          ${product.original_price.toLocaleString("es-AR")}
                         </span>
-                        {product.original_price && (
-                          <span className="text-sm text-slate-400 line-through">
-                            ${product.original_price.toLocaleString("es-AR")}
-                          </span>
-                        )}
-                      </div>
-                      
-                      <h3 className="text-sm font-medium text-slate-700 leading-snug line-clamp-2 mb-2">
-                        {product.title}
-                      </h3>
-                      
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="flex items-center text-yellow-400">
-                          <Star size={14} fill="currentColor" />
-                          <span className="text-xs font-bold text-slate-600 ml-1">{product.rating}</span>
-                        </div>
-                        <span className="text-xs text-slate-400">({product.sold_quantity} vendidos)</span>
-                      </div>
-                      
-                      {product.free_shipping && (
-                        <Badge className="bg-green-100 text-green-700 text-[10px] font-black uppercase">
-                          <Truck size={10} className="mr-1" />
-                          Envío gratis
-                        </Badge>
                       )}
                     </div>
+                    
+                    <h3 className="text-sm font-medium text-slate-700 leading-snug line-clamp-2 mb-2">
+                      {product.title}
+                    </h3>
+                    
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center text-yellow-400">
+                        <Star size={14} fill="currentColor" />
+                        <span className="text-xs font-bold text-slate-600 ml-1">{product.rating}</span>
+                      </div>
+                      <span className="text-xs text-slate-400">({product.sold_quantity} vendidos)</span>
+                    </div>
+                    
+                    {product.free_shipping && (
+                      <Badge className="bg-green-100 text-green-700 text-[10px] font-black uppercase">
+                        <Truck size={10} className="mr-1" />
+                        Envío gratis
+                      </Badge>
+                    )}
                   </div>
-                </Link>
-              ))}
-            </div>
-          )}
+                </div>
+              </Link>
+            ))}
+          </div>
 
           {/* Pagination */}
-          {!loading && totalPages > 1 && (
-            <div className="mt-8 flex justify-center gap-2">
-              <Button 
-                variant="outline" 
-                disabled={page <= 1}
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                className="gap-1"
-              >
-                <ChevronLeft size={16} />
-                Anterior
-              </Button>
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                // Show window around current page
-                let pageNum = i + 1
-                if (totalPages > 5 && page > 3) {
-                  pageNum = page - 2 + i
-                  if (pageNum > totalPages) pageNum = totalPages - (4 - i)
-                }
-                return (
-                  <Button 
-                    key={pageNum}
-                    variant={page === pageNum ? "default" : "outline"}
-                    onClick={() => setPage(pageNum)}
-                    className={page === pageNum ? "bg-blue-600" : ""}
-                  >
-                    {pageNum}
-                  </Button>
-                )
-              })}
-              <Button 
-                variant="outline" 
-                disabled={page >= totalPages}
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                className="gap-1"
-              >
-                Siguiente
-                <ChevronRight size={16} />
-              </Button>
-            </div>
-          )}
+          <div className="mt-8 flex justify-center gap-2">
+            <Button variant="outline" disabled className="gap-1">
+              <ChevronLeft size={16} />
+              Anterior
+            </Button>
+            <Button className="bg-blue-600">1</Button>
+            <Button variant="outline">2</Button>
+            <Button variant="outline">3</Button>
+            <span className="px-2 py-2 text-slate-400">...</span>
+            <Button variant="outline" className="gap-1">
+              Siguiente
+              <ChevronRight size={16} />
+            </Button>
+          </div>
         </main>
       </div>
     </div>

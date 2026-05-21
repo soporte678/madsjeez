@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { requireAdminRequest } from '@/lib/admin-api';
 
 // TABLA DE VALORES MADSLIDER - Basada en estándares de marketplaces latinoamericanos
 const madsliderLevels = [
@@ -87,12 +86,8 @@ const madsliderLevels = [
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    
-    // Solo admins pueden ejecutar este endpoint
-    if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const admin = await requireAdminRequest(request);
+    if (admin instanceof NextResponse) return admin;
 
     console.log('🌟 Seeding Madslider levels...');
     
@@ -127,11 +122,8 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const admin = await requireAdminRequest(request);
+    if (admin instanceof NextResponse) return admin;
 
     // Obtener niveles actuales
     const levels = await prisma.madsliderLevel.findMany({

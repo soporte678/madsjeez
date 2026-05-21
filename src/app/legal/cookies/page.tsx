@@ -1,10 +1,12 @@
 import { Metadata } from "next";
 import { Header } from "@/components/Header";
 import { Card, CardContent } from "@/components/ui/card";
+import { canonicalMeta } from "@/lib/seo/canonical";
 
 export const metadata: Metadata = {
   title: "Política de Cookies | MADSJEEZ",
   description: "Política de cookies y tecnologías de seguimiento de MADSJEEZ Marketplace",
+  ...canonicalMeta("/legal/cookies"),
 };
 
 export default function CookiesPage() {

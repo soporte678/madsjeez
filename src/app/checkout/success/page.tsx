@@ -1,19 +1,67 @@
 "use client"
 
-import { useEffect, useState, Suspense } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { CheckCircle, Package, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { PurchaseTracker } from "@/components/analytics/PurchaseTracker"
+
+type OrderPayload = {
+  id: string;
+  orderNumber: string;
+  total: number;
+  items: Array<{
+    id: string;
+    quantity: number;
+    price: number;
+    product: {
+      id: string | null;
+      title: string;
+      seller: { name: string | null } | null;
+    };
+  }>;
+};
 
 function SuccessContent() {
   const searchParams = useSearchParams()
   const orderId = searchParams.get("order_id")
   const paymentId = searchParams.get("payment_id")
+  const [order, setOrder] = useState<OrderPayload | null>(null)
+
+  useEffect(() => {
+    if (!orderId) return
+    let cancelled = false
+
+    void (async () => {
+      try {
+        const res = await fetch(`/api/orders/${encodeURIComponent(orderId)}`, {
+          credentials: "include",
+        })
+        const data = (await res.json().catch(() => ({}))) as { order?: OrderPayload }
+        if (!res.ok || !data.order || cancelled) return
+        setOrder(data.order)
+      } catch {
+        // keep success UX even if analytics detail fetch fails
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [orderId])
 
   return (
     <div className="min-h-screen bg-[#EBEBEB] flex items-center justify-center p-4">
+      {orderId && order ? (
+        <PurchaseTracker
+          orderId={orderId}
+          orderNumber={order.orderNumber}
+          total={order.total}
+          items={order.items}
+        />
+      ) : null}
       <Card className="max-w-md w-full">
         <CardContent className="p-8 text-center">
           <div className="flex justify-center mb-6">
@@ -41,10 +89,10 @@ function SuccessContent() {
           )}
 
           <div className="flex flex-col gap-3">
-            <Link href="/orders">
+            <Link href="/dashboard#compras">
               <Button className="w-full bg-[#3483FA] hover:bg-[#2968c8]">
                 <Package className="w-4 h-4 mr-2" />
-                Ver mis pedidos
+                Ver mi compra en el dashboard
               </Button>
             </Link>
             <Link href="/search">

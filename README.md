@@ -116,6 +116,13 @@ src/
 
 ---
 
+## 📚 **Documentación API (desarrolladores)**
+
+- **Sitio en la app:** [https://tu-dominio/docs/api](https://www.madsjeez.com.ar/docs/api) (o `http://localhost:3000/docs/api` en local) — navegación lateral, tablas y búsqueda visual.
+- **Markdown en repo:** [docs/api/README.md](docs/api/README.md) (mismo contenido; útil para PRs y revisiones).
+
+---
+
 ## 🎯 **Funcionalidades de Mercado Libre**
 
 ### ✅ **Implementadas**

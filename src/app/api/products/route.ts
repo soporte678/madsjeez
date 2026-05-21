@@ -2,11 +2,66 @@ import { NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { hasValidProductImageUrl, primaryImageUrlFromRows } from "@/lib/productVisibility"
 
 // GET /api/products - Listar productos
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url)
+
+    if (searchParams.get("deals") === "true") {
+      const limit = Math.min(parseInt(searchParams.get("limit") || "48", 10), 100)
+      const { data: products, error } = await supabase
+        .from("products")
+        .select(`
+          id,
+          title,
+          price,
+          original_price,
+          compare_price,
+          product_images(url, order, is_primary),
+          seller:users(id, full_name, seller_name)
+        `)
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .limit(limit)
+
+      if (error) throw error
+
+      const dealsList = (products || []).filter((p: Record<string, unknown>) => {
+        const listPrice = (p.compare_price ?? p.original_price) as number | null | undefined
+        const price = p.price as number
+        return typeof listPrice === "number" && listPrice > 0 && price < listPrice
+      })
+
+      const normalized = dealsList
+        .filter((p: any) => hasValidProductImageUrl(primaryImageUrlFromRows(p.product_images)))
+        .map((p: any) => {
+          const rows = (p.product_images || []).filter((im: { url?: string }) =>
+            hasValidProductImageUrl(im.url)
+          )
+          const sorted = [...rows].sort((a: any, b: any) => {
+            if (a.is_primary && !b.is_primary) return -1
+            if (!a.is_primary && b.is_primary) return 1
+            return (a.order ?? 0) - (b.order ?? 0)
+          })
+          const listPrice = p.compare_price ?? p.original_price
+          return {
+            id: p.id,
+            title: p.title,
+            price: p.price,
+            original_price: listPrice,
+            images: sorted.map((im: { url: string }) => ({ url: String(im.url).trim() })),
+            seller: {
+              id: p.seller?.id,
+              full_name: p.seller?.seller_name || p.seller?.full_name || "Vendedor",
+            },
+          }
+        })
+
+      return NextResponse.json({ products: normalized })
+    }
+
     const category = searchParams.get("category")
     const search = searchParams.get("search")
     const seller = searchParams.get("seller")

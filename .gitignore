@@ -25,6 +25,9 @@ out/
 build/
 dist/
 
+# script caches (PDF extracts, etc.)
+scripts/.cache/
+
 # misc
 .DS_Store
 *.pem

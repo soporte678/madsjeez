@@ -325,9 +325,30 @@ railway up
 
 ## Prisma y base de datos (Producción)
 
-- **`docker-entrypoint.sh`** ejecuta `npx prisma migrate deploy` al iniciar el contenedor si `DATABASE_URL` está definida. Si falla, **el arranque se corta** (evita servir la app con un cliente Prisma más nuevo que el esquema de la BD).
-- **`prisma.config.ts`** define `datasource.url` (Prisma 7). Sin migraciones aplicadas verás errores tipo columna/tabla inexistente (`meli_item_id`, `seller_meli_oauth`, `billing_cycle`, etc.).
-- Si necesitás aplicar migraciones **sin redeploy**: conectá a la misma base que Railway y ejecutá `npx prisma migrate deploy` usando ese `DATABASE_URL`.
+- **`docker-entrypoint.sh`** ejecuta `node migrate.mjs` en background al boot si `DATABASE_URL` está definida. En logs debe verse `All migrations have been successfully applied` y `migrate deploy completó OK`.
+- **`prisma.config.ts`** define `datasource.url` (Prisma 7). Sin migraciones aplicadas verás errores tipo columna/tabla inexistente (`meli_item_id`, `web_visits`, etc.).
+- Si necesitás aplicar migraciones **sin redeploy**: conectá con la URI **Session pooler** `:5432` de Supabase y ejecutá `npm run migrate:deploy`.
+
+### Post-deploy (Fase A SEO / tiendas públicas)
+
+Tras un deploy exitoso, ejecutá **una vez** el backfill de slugs de tienda (desde tu PC con pooler en `.env.local`, o vía API en producción):
+
+```bash
+# Opción A — local (DATABASE_URL = pooler Supabase :6543 o session :5432)
+npm run backfill:store-slugs
+
+# Opción B — producción (reemplazá el secret)
+curl -X POST "https://www.madsjeez.com.ar/api/internal/backfill-store-slugs" \
+  -H "Authorization: Bearer TU_ADMIN_SETUP_SECRET"
+```
+
+Verificaciones rápidas:
+
+- `GET https://www.madsjeez.com.ar/api/health` → `{"status":"ok",...}`
+- `GET https://www.madsjeez.com.ar/feeds/google-shopping.xml` → XML con `<item>` si hay productos activos con imagen
+- `GET https://www.madsjeez.com.ar/sitemap.xml` → incluye `/tienda/*` y `/comprar/*`
+
+Logs que **no** son errores: `prisma:warn` OpenSSL en migrate; avisos antiguos de `getSession` (corregidos en middleware/admin).
 
 ---
 

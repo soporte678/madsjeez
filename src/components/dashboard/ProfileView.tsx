@@ -17,6 +17,7 @@ import ProfileAddressesView from './profile/ProfileAddressesView';
 import ProfilePrivacyView from './profile/ProfilePrivacyView';
 import ProfileCommunicationsView from './profile/ProfileCommunicationsView';
 import MeliIntegrationView from '@/components/dashboard/MeliIntegrationView';
+import { StorePublicPanel } from '@/components/dashboard/StorePublicPanel';
 
 interface ProfileViewProps {
   userData?: {
@@ -503,7 +504,7 @@ export default function ProfileView({ userData }: ProfileViewProps) {
 
   if (activeSubSection === 'meli-marketplace') {
     return (
-      <div className="w-full max-w-5xl mx-auto pb-20">
+      <div className="w-full max-w-7xl mx-auto pb-20 px-1 sm:px-2">
         <div className="mb-6 flex items-center gap-3">
           <button
             type="button"
@@ -519,7 +520,9 @@ export default function ProfileView({ userData }: ProfileViewProps) {
         </div>
         <Suspense
           fallback={
-            <div className="flex justify-center py-16 text-gray-500 text-sm">Cargando Mercado Libre…</div>
+            <div className="flex justify-center py-16 text-muted-foreground text-sm">
+              Cargando sincronización Mercado Libre…
+            </div>
           }
         >
           <MeliIntegrationView />
@@ -556,6 +559,8 @@ export default function ProfileView({ userData }: ProfileViewProps) {
           Negocio
         </span>
       </div>
+
+      <StorePublicPanel />
 
       {/* --- BANNER DE ALERTA: LLAVE DE ACCESO --- */}
       {!accessKeyState.loading && accessKeyState.showBanner && (

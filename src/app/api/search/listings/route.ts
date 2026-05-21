@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { supabaseService } from "@/lib/supabase/service";
+import { hasValidProductImageUrl } from "@/lib/productVisibility";
+import { resolveCategoryIds } from "@/lib/categoryCatalog";
 
 export const dynamic = "force-dynamic";
 
@@ -43,11 +45,11 @@ function mapSupabaseRow(p: Record<string, unknown>): UnifiedProduct {
     sales: Number(p.sales ?? p.sold_count ?? 0),
     sold_count: Number(p.sold_count ?? p.sales ?? 0),
     meli_item_id: (p.meli_item_id as string) ?? null,
-    primary_image: primary,
+    primary_image: typeof primary === "string" ? primary.trim() : null,
     seller_name: profiles?.full_name ?? null,
     seller_id: (p.seller_id as string) ?? null,
     category_name: cats?.name ?? null,
-    is_promoted: Boolean(p.is_promoted),
+    is_promoted: typeof p.is_promoted === "boolean" ? p.is_promoted : false,
     created_at: (p.created_at as string) ?? null,
   };
 }
@@ -77,7 +79,7 @@ function mapPrismaProduct(p: {
     sales: p.sales,
     sold_count: p.sales,
     meli_item_id: p.meliItemId,
-    primary_image: p.images[0]?.url ?? null,
+    primary_image: p.images[0]?.url?.trim() ?? null,
     seller_name: p.seller.sellerName || p.seller.name || null,
     seller_id: p.seller.id,
     category_name: p.category.name,
@@ -103,9 +105,81 @@ function sortUnified(products: UnifiedProduct[], sort: string): UnifiedProduct[]
       });
       break;
     default:
-      arr.sort((a, b) => Number(b.is_promoted) - Number(a.is_promoted));
+      arr.sort((a, b) => Number(b.is_promoted) - Number(a.is_promoted) || b.sales - a.sales);
   }
   return arr;
+}
+
+function normalizeSearch(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function getSearchTokens(query: string | null): string[] {
+  if (!query) return [];
+  return Array.from(
+    new Set(
+      query
+        .toLowerCase()
+        .trim()
+        .split(/\s+/)
+        .map((token) => token.replace(/[^\p{L}\p{N}-]/gu, ""))
+        .filter((token) => token.length >= 2)
+    )
+  ).slice(0, 6);
+}
+
+function sanitizePostgrestTerm(term: string) {
+  return term.replace(/[,%()]/g, " ").trim();
+}
+
+function buildSupabaseSearchOr(query: string, tokens: string[]) {
+  const terms = Array.from(new Set([query, ...tokens]))
+    .map(sanitizePostgrestTerm)
+    .filter(Boolean)
+    .slice(0, 8);
+
+  return terms
+    .flatMap((term) => [
+      `title.ilike.%${term}%`,
+      `description.ilike.%${term}%`,
+      `meli_item_id.ilike.%${term}%`,
+    ])
+    .join(",");
+}
+
+function relevanceScore(product: UnifiedProduct, query: string | null, tokens: string[]) {
+  let score = 0;
+  const title = normalizeSearch(product.title);
+  const category = normalizeSearch(product.category_name || "");
+  const fullQuery = normalizeSearch(query || "");
+
+  if (product.is_promoted) score += 40;
+  if (fullQuery && title.startsWith(fullQuery)) score += 35;
+  if (fullQuery && title.includes(fullQuery)) score += 25;
+  if (tokens.length > 0 && tokens.every((token) => title.includes(normalizeSearch(token)))) score += 20;
+
+  for (const token of tokens) {
+    const normalizedToken = normalizeSearch(token);
+    if (title.includes(normalizedToken)) score += 8;
+    if (category.includes(normalizedToken)) score += 5;
+  }
+
+  score += Math.min(product.sales || product.sold_count || 0, 100) / 10;
+  return score;
+}
+
+function sortUnifiedWithRelevance(products: UnifiedProduct[], sort: string, query: string | null, tokens: string[]) {
+  if (sort !== "relevance") return sortUnified(products, sort);
+
+  return [...products].sort((a, b) => {
+    const diff = relevanceScore(b, query, tokens) - relevanceScore(a, query, tokens);
+    if (diff !== 0) return diff;
+    return Number(b.is_promoted) - Number(a.is_promoted) || b.sales - a.sales;
+  });
 }
 
 export async function GET(req: Request) {
@@ -119,11 +193,12 @@ export async function GET(req: Request) {
     const maxPrice = searchParams.get("max_price");
     const freeShip = searchParams.get("free_shipping");
     const limit = Math.min(parseInt(searchParams.get("limit") || "48", 10) || 48, 96);
+    const tokens = getSearchTokens(q);
+    const categoryIds = await resolveCategoryIds(cat);
 
     const baseSelect = `
         *,
         product_images(url),
-        profiles:seller_id(full_name),
         categories:category_id(name)
       `;
 
@@ -132,8 +207,12 @@ export async function GET(req: Request) {
       .select(baseSelect)
       .eq("is_active", true);
 
-    if (q) sbQuery = sbQuery.ilike("title", `%${q}%`);
-    if (cat) sbQuery = sbQuery.eq("category_id", cat);
+    if (q?.trim()) {
+      const searchOr = buildSupabaseSearchOr(q.trim(), tokens);
+      if (searchOr) sbQuery = sbQuery.or(searchOr);
+    }
+    if (categoryIds.length === 1) sbQuery = sbQuery.eq("category_id", categoryIds[0]);
+    if (categoryIds.length > 1) sbQuery = sbQuery.in("category_id", categoryIds);
     if (cond) sbQuery = sbQuery.eq("condition", cond);
     if (minPrice) sbQuery = sbQuery.gte("price", parseInt(minPrice, 10));
     if (maxPrice) sbQuery = sbQuery.lte("price", parseInt(maxPrice, 10));
@@ -150,7 +229,8 @@ export async function GET(req: Request) {
         sbQuery = sbQuery.order("created_at", { ascending: false });
         break;
       default:
-        sbQuery = sbQuery.order("is_promoted", { ascending: false });
+        // relevance: sin depender de `is_promoted` (columna ausente en algunos proyectos Supabase)
+        sbQuery = sbQuery.order("updated_at", { ascending: false });
     }
 
     const { data: sbData, error: sbErr } = await sbQuery.limit(limit);
@@ -159,8 +239,18 @@ export async function GET(req: Request) {
     }
 
     const prismaWhere: Prisma.ProductWhereInput = { isActive: true };
-    if (q) prismaWhere.title = { contains: q, mode: "insensitive" };
-    if (cat) prismaWhere.categoryId = cat;
+    if (tokens.length > 0) {
+      prismaWhere.AND = tokens.map((token) => ({
+        OR: [
+          { title: { contains: token, mode: "insensitive" } },
+          { description: { contains: token, mode: "insensitive" } },
+          { sku: { contains: token, mode: "insensitive" } },
+          { meliItemId: { contains: token, mode: "insensitive" } },
+        ],
+      }));
+    }
+    if (categoryIds.length === 1) prismaWhere.categoryId = categoryIds[0];
+    if (categoryIds.length > 1) prismaWhere.categoryId = { in: categoryIds };
     if (cond) prismaWhere.condition = cond;
     const priceRange: Prisma.FloatFilter = {};
     if (minPrice) priceRange.gte = parseFloat(minPrice);
@@ -204,8 +294,10 @@ export async function GET(req: Request) {
     for (const u of prismaUnified) mergedMap.set(`p:${u.id}`, u);
     for (const u of sbFiltered) mergedMap.set(`s:${u.id}`, u);
 
-    let merged = Array.from(mergedMap.values());
-    merged = sortUnified(merged, sort).slice(0, limit);
+    let merged = Array.from(mergedMap.values()).filter((row) =>
+      hasValidProductImageUrl(row.primary_image)
+    );
+    merged = sortUnifiedWithRelevance(merged, sort, q, tokens).slice(0, limit);
 
     return NextResponse.json({ products: merged });
   } catch (e) {

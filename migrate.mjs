@@ -1,13 +1,22 @@
 /**
- * Ejecuta `prisma migrate deploy` usando DATABASE_URL desde el entorno.
- * No incluir contraseñas en este archivo.
+ * Ejecuta `prisma migrate deploy`. Si `DATABASE_URL` es el pooler Supabase en **transaction** (:6543),
+ * por defecto deriva la URI de **Supavisor session** (mismo host `*.pooler.supabase.com`, puerto **5432**,
+ * usuario `postgres.<ref>`) — compatible con **IPv4** (Railway, etc.). El host `db.*.supabase.co:5432`
+ * suele ser solo IPv6 y puede dar P1001 desde esos entornos.
+ * `DIRECT_DATABASE_URL` / `PRISMA_DIRECT_URL`: si es host `db.*.supabase.co` y la app usa pooler :6543, se ignora
+ * (IPv6-only) y se deriva session. Una URI **Session mode** (`*.pooler.supabase.com:5432`) sí se respeta.
+ * @see https://supabase.com/docs/guides/database/connecting-to-postgres
  *
- * Uso local: DATABASE_URL en .env.local o exportada en la shell.
- * CI/Railway: variable DATABASE_URL configurada en el servicio.
+ * P3009 / deriva DDL: migraciones conocidas (`add_access_key`, `add_seller_meli_oauth`, `add_meli_ads_history`,
+ * `add_last_catalog_import_at`, `meli_multi_account_sync`) pueden quedar desalineadas; por defecto `migrate resolve` según probe y se reintenta deploy.
+ * P3018 "already exists" (tabla, enum, columna): `resolve --applied` automático para esos nombres de migración.
+ * Desactivar: `PRISMA_MIGRATE_AUTO_RESOLVE_P3009_DRIFT=0` o `PRISMA_MIGRATE_AUTO_RESOLVE_ACCESS_KEY=0` (alias).
  */
-import { execSync } from "child_process";
+import { spawnSync } from "child_process";
 import path from "path";
 import { existsSync } from "fs";
+
+const MIGRATE_SCRIPT_TAG = "migrate.mjs 20260521a (flash P3009 auto-resolve)";
 
 try {
   const dotenv = await import("dotenv");
@@ -20,23 +29,966 @@ try {
   /* dotenv opcional en CI */
 }
 
-const DATABASE_URL = process.env.DATABASE_URL || process.env.SUPABASE_DATABASE_URL;
+function looksLikePgPooler(url) {
+  if (!url || typeof url !== "string") return false;
+  return url.includes(":6543") || url.includes(".pooler.supabase.com");
+}
 
-if (!DATABASE_URL) {
+/** Pooler Supabase en modo transaction (no usar para `migrate deploy`). */
+function looksLikeSupabaseTransactionPooler6543(url) {
+  if (!url || typeof url !== "string") return false;
+  return url.includes(":6543") && url.includes("pooler.supabase.com");
+}
+
+function hostPortHint(url) {
+  if (!url || typeof url !== "string") return "(sin url)";
+  const m = url.match(/@([^/?]+)/);
+  return m ? m[1] : "(host no detectado)";
+}
+
+function looksLikeSupabaseDirectDbIpv6Host(url) {
+  if (!url || typeof url !== "string") return false;
+  return /db\.[a-z0-9]+\.supabase\.co/i.test(url);
+}
+
+/**
+ * Recomendado para `migrate deploy` desde PaaS **solo IPv4** (p. ej. Railway); el host `db.*.supabase.co` es IPv6 por defecto.
+ * @see https://supabase.com/docs/guides/database/connecting-to-postgres#pooler-session-mode
+ */
+function deriveSupabaseSessionPoolerFromTransactionPooler(poolerUrl) {
+  if (!poolerUrl || typeof poolerUrl !== "string" || !looksLikePgPooler(poolerUrl)) return null;
+  try {
+    const normalized = poolerUrl.trim().replace(/^postgres:/i, "postgresql:");
+    const parsed = new URL(normalized.replace(/^postgresql:/i, "http:"));
+    if (!parsed.hostname.includes("pooler.supabase.com")) return null;
+
+    const userDecoded = decodeURIComponent((parsed.username || "").replace(/\+/g, " "));
+    if (!userDecoded.startsWith("postgres.")) return null;
+
+    const password = parsed.password ? decodeURIComponent(parsed.password.replace(/\+/g, " ")) : "";
+    if (!password) return null;
+
+    const path = (parsed.pathname || "/postgres").replace(/\/+/g, "/") || "/postgres";
+    const qp = new URLSearchParams(parsed.search);
+    qp.delete("pgbouncer");
+    const qs = qp.toString();
+
+    const host = parsed.hostname;
+    const u = encodeURIComponent(userDecoded);
+    const p = encodeURIComponent(password);
+    return `postgresql://${u}:${p}@${host}:5432${path}${qs ? `?${qs}` : ""}`;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Pooler "Transaction" de Supabase: usuario `postgres.<project_ref>` y host `*.pooler.supabase.com`.
+ * Conexión **directa** al Postgres del proyecto: `db.<project_ref>.supabase.co:5432` con usuario `postgres`.
+ * Útil con IPv6 o add-on IPv4; muchos contenedores en IPv4-only no alcanzan este host (P1001).
+ * @see https://supabase.com/docs/guides/database/connecting-to-postgres
+ */
+function deriveSupabaseDirectFromPooler(poolerUrl) {
+  if (!poolerUrl || typeof poolerUrl !== "string" || !looksLikePgPooler(poolerUrl)) return null;
+  try {
+    const normalized = poolerUrl.trim().replace(/^postgres:/i, "postgresql:");
+    const parsed = new URL(normalized.replace(/^postgresql:/i, "http:"));
+    if (!parsed.hostname.includes("pooler.supabase.com")) return null;
+
+    const userDecoded = decodeURIComponent((parsed.username || "").replace(/\+/g, " "));
+    let projectRef = "";
+    if (userDecoded.startsWith("postgres.")) {
+      projectRef = userDecoded.slice("postgres.".length).trim();
+    }
+    if (!projectRef || projectRef.length < 10) return null;
+
+    const password = parsed.password ? decodeURIComponent(parsed.password.replace(/\+/g, " ")) : "";
+    if (!password) return null;
+
+    const path = (parsed.pathname || "/postgres").replace(/\/+/g, "/") || "/postgres";
+    const qp = new URLSearchParams(parsed.search);
+    qp.delete("pgbouncer");
+    const qs = qp.toString();
+
+    const directHost = `db.${projectRef}.supabase.co`;
+    const u = encodeURIComponent("postgres");
+    const p = encodeURIComponent(password);
+    return `postgresql://${u}:${p}@${directHost}:5432${path}${qs ? `?${qs}` : ""}`;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Prisma `migrate deploy`: con Supabase + pooler transaction (:6543), priorizar **session pooler :5432**
+ * (IPv4-friendly). Opcional: `PRISMA_MIGRATE_SUPABASE_USE_DB_HOST=1` para forzar derivación a `db.*:5432`.
+ */
+function pickMigrateDatabaseUrl() {
+  const appPrimary = (process.env.DATABASE_URL || process.env.SUPABASE_DATABASE_URL || "").trim();
+  const explicitDirect = [
+    process.env.DIRECT_DATABASE_URL,
+    process.env.PRISMA_DIRECT_URL,
+    process.env.DATABASE_URL_DIRECT,
+  ]
+    .filter((u) => typeof u === "string" && u.trim())
+    .map((u) => u.trim());
+
+  for (const u of explicitDirect) {
+    if (looksLikeSupabaseTransactionPooler6543(u)) {
+      console.warn(
+        "[migrate] Ignorando DIRECT_* con pooler transaction :6543; no es válido para migrate deploy. Usá session :5432 o dejá vacío."
+      );
+      continue;
+    }
+    if (looksLikeSupabaseDirectDbIpv6Host(u) && looksLikePgPooler(appPrimary)) {
+      console.warn(
+        "[migrate] Ignorando DIRECT_DATABASE_URL / PRISMA_DIRECT_URL con host db.*.supabase.co: en Railway suele ser IPv6-only. " +
+          "Con DATABASE_URL pooler :6543 se usará Supavisor session :5432. Quitá esa variable o usá la URI **Session mode** del panel Supabase (Connect → Session)."
+      );
+      continue;
+    }
+    return { migrateUrl: u, appUrl: appPrimary || u, source: "DIRECT_DATABASE_URL|PRISMA_DIRECT_URL|DATABASE_URL_DIRECT" };
+  }
+
+  const supa = (process.env.SUPABASE_DATABASE_URL || "").trim();
+  if (
+    appPrimary &&
+    looksLikePgPooler(appPrimary) &&
+    supa &&
+    !looksLikePgPooler(supa) &&
+    !looksLikeSupabaseDirectDbIpv6Host(supa)
+  ) {
+    return { migrateUrl: supa, appUrl: appPrimary, source: "SUPABASE_DATABASE_URL" };
+  }
+
+  if (appPrimary && looksLikePgPooler(appPrimary)) {
+    const useDbHost =
+      String(process.env.PRISMA_MIGRATE_SUPABASE_USE_DB_HOST || "").trim() === "1" ||
+      String(process.env.PRISMA_MIGRATE_SUPABASE_USE_DB_HOST || "").toLowerCase() === "true";
+
+    if (useDbHost) {
+      const derivedDirect = deriveSupabaseDirectFromPooler(appPrimary);
+      if (derivedDirect) {
+        return {
+          migrateUrl: derivedDirect,
+          appUrl: appPrimary,
+          source: "derived_Supabase_pooler→db.*.supabase.co:5432(PRISMA_MIGRATE_SUPABASE_USE_DB_HOST)",
+        };
+      }
+    }
+
+    const session = deriveSupabaseSessionPoolerFromTransactionPooler(appPrimary);
+    if (session) {
+      return {
+        migrateUrl: session,
+        appUrl: appPrimary,
+        source: "derived_Supavisor_session_pooler:5432(IPv4-friendly)",
+      };
+    }
+
+    const derivedDirect = deriveSupabaseDirectFromPooler(appPrimary);
+    if (derivedDirect) {
+      return { migrateUrl: derivedDirect, appUrl: appPrimary, source: "derived_Supabase_pooler→db.*.supabase.co:5432" };
+    }
+  }
+
+  if (appPrimary) {
+    return { migrateUrl: appPrimary, appUrl: appPrimary, source: "DATABASE_URL|SUPABASE_DATABASE_URL" };
+  }
+
+  return { migrateUrl: "", appUrl: "", source: "" };
+}
+
+/** Host Supabase (pooler o db) en la cadena de conexión — para TLS/URL tuning sin afectar otros Postgres. */
+function looksLikeSupabasePostgresUrl(url) {
+  if (!url || typeof url !== "string") return false;
+  return /supabase\.co|pooler\.supabase\.com/i.test(url);
+}
+
+/**
+ * Quita `sslmode` / `ssl` del query string para usar solo `ssl` en opciones de `pg` Client (evita warning y duplicado).
+ */
+function postgresConnectionStringWithoutSslQueryParams(url) {
+  if (!url || typeof url !== "string") return url;
+  try {
+    const trimmed = url.trim();
+    const preferPostgresScheme = /^postgres:\/\//i.test(trimmed);
+    const normalized = trimmed.replace(/^postgres:/i, "postgresql:");
+    const parsed = new URL(normalized.replace(/^postgresql:/i, "http:"));
+    const qp = new URLSearchParams(parsed.search);
+    qp.delete("sslmode");
+    qp.delete("ssl");
+    const qs = qp.toString();
+    const path = (parsed.pathname || "/").replace(/\/+/g, "/") || "/";
+    const port = parsed.port ? `:${parsed.port}` : "";
+    const userDecoded = decodeURIComponent((parsed.username || "").replace(/\+/g, " "));
+    const passDecoded = parsed.password ? decodeURIComponent(parsed.password.replace(/\+/g, " ")) : "";
+    const auth =
+      userDecoded !== "" || passDecoded !== ""
+        ? `${encodeURIComponent(userDecoded)}${passDecoded !== "" ? `:${encodeURIComponent(passDecoded)}` : ""}@`
+        : "";
+    const scheme = preferPostgresScheme ? "postgres" : "postgresql";
+    return `${scheme}://${auth}${parsed.hostname}${port}${path}${qs ? `?${qs}` : ""}`;
+  } catch {
+    return url;
+  }
+}
+
+/**
+ * Afinar URL de migrate hacia Supabase: timeouts más largos y SSL explícito.
+ * Ayuda con P1001 intermitentes desde hosting (cold start / ruta a :5432).
+ */
+function tuneMigrateDatabaseUrl(url) {
+  if (!url || typeof url !== "string") return url;
+  if (!looksLikeSupabasePostgresUrl(url)) return url;
+  let out = url.trim();
+  const add = [];
+  if (!/([?&])connect_timeout=/.test(out)) add.push("connect_timeout=60");
+  if (!/([?&])sslmode=/.test(out)) add.push("sslmode=require");
+  if (!add.length) return out;
+  const sep = out.includes("?") ? "&" : "?";
+  return `${out}${sep}${add.join("&")}`;
+}
+
+function extractFailedMigrationNameFromPrismaOutput(combined) {
+  const m = combined.match(/The `([^`]+)` migration/);
+  return m?.[1] ?? null;
+}
+
+function extractMigrationNameFromP3018(combined) {
+  const m = combined.match(/Migration name:\s*(\S+)/);
+  return m?.[1] ?? null;
+}
+
+// #region agent log
+function agentDebugLog(payload) {
+  fetch("http://127.0.0.1:7607/ingest/af0ba961-993a-4927-ba69-95e1c7aba345", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "ff838a" },
+    body: JSON.stringify({
+      sessionId: "ff838a",
+      timestamp: Date.now(),
+      runId: process.env.AGENT_DEBUG_RUN_ID || "pre-fix",
+      ...payload,
+    }),
+  }).catch(() => {});
+}
+// #endregion
+
+/** Desactiva auto `migrate resolve` por deriva P3009/P3018 conocida (`PRISMA_MIGRATE_AUTO_RESOLVE_P3009_DRIFT` o alias `PRISMA_MIGRATE_AUTO_RESOLVE_ACCESS_KEY`). */
+function isPrismaMigrateAutoResolveP3009DriftDisabled() {
+  for (const k of ["PRISMA_MIGRATE_AUTO_RESOLVE_P3009_DRIFT", "PRISMA_MIGRATE_AUTO_RESOLVE_ACCESS_KEY"]) {
+    const v = String(process.env[k] || "").trim().toLowerCase();
+    if (v === "0" || v === "false") return true;
+  }
+  return false;
+}
+
+/**
+ * Consulta liviana vía pg (misma URL que migrate deploy) para desambiguar P3009 en `add_access_key`.
+ * No loguea credenciales ni PII.
+ */
+async function probeUsersAccessKeyColumn(dbUrl) {
+  if (!dbUrl || typeof dbUrl !== "string") return { ok: false, reason: "no-url" };
+  try {
+    const { Client } = await import("pg");
+    const supabaseTls = looksLikeSupabasePostgresUrl(dbUrl);
+    const connectionString = supabaseTls ? postgresConnectionStringWithoutSslQueryParams(dbUrl) : dbUrl;
+    const client = new Client({
+      connectionString,
+      connectionTimeoutMillis: 25_000,
+      ...(supabaseTls ? { ssl: { rejectUnauthorized: false } } : {}),
+    });
+    await client.connect();
+    const r = await client.query(
+      `select exists (
+         select 1 from information_schema.columns
+         where table_schema = 'public' and table_name = 'users' and column_name = 'access_key'
+       ) as "accessKeyExists"`
+    );
+    await client.end();
+    return { ok: true, exists: Boolean(r.rows[0]?.accessKeyExists) };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { ok: false, error: msg.slice(0, 320) };
+  }
+}
+
+/** `tableName`: solo identificadores seguros (public.<name>). */
+async function probePublicTableExists(dbUrl, tableName) {
+  if (!dbUrl || typeof dbUrl !== "string") return { ok: false, reason: "no-url" };
+  if (!/^[a-z_][a-z0-9_]*$/i.test(tableName)) return { ok: false, reason: "invalid-table-name" };
+  const t = tableName.toLowerCase();
+  try {
+    const { Client } = await import("pg");
+    const supabaseTls = looksLikeSupabasePostgresUrl(dbUrl);
+    const connectionString = supabaseTls ? postgresConnectionStringWithoutSslQueryParams(dbUrl) : dbUrl;
+    const client = new Client({
+      connectionString,
+      connectionTimeoutMillis: 25_000,
+      ...(supabaseTls ? { ssl: { rejectUnauthorized: false } } : {}),
+    });
+    await client.connect();
+    const r = await client.query(
+      `select exists (
+         select 1 from information_schema.tables
+         where table_schema = 'public' and table_name = $1
+       ) as "texists"`,
+      [t]
+    );
+    await client.end();
+    return { ok: true, exists: Boolean(r.rows[0]?.texists) };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { ok: false, error: msg.slice(0, 320) };
+  }
+}
+
+/** `tableName` / `columnName`: identificadores seguros (`public` only). */
+async function probePublicColumnExists(dbUrl, tableName, columnName) {
+  if (!dbUrl || typeof dbUrl !== "string") return { ok: false, reason: "no-url" };
+  if (!/^[a-z_][a-z0-9_]*$/i.test(tableName) || !/^[a-z_][a-z0-9_]*$/i.test(columnName)) {
+    return { ok: false, reason: "invalid-ident" };
+  }
+  const t = tableName.toLowerCase();
+  const c = columnName.toLowerCase();
+  try {
+    const { Client } = await import("pg");
+    const supabaseTls = looksLikeSupabasePostgresUrl(dbUrl);
+    const connectionString = supabaseTls ? postgresConnectionStringWithoutSslQueryParams(dbUrl) : dbUrl;
+    const client = new Client({
+      connectionString,
+      connectionTimeoutMillis: 25_000,
+      ...(supabaseTls ? { ssl: { rejectUnauthorized: false } } : {}),
+    });
+    await client.connect();
+    const r = await client.query(
+      `select exists (
+         select 1 from information_schema.columns
+         where table_schema = 'public' and table_name = $1 and column_name = $2
+       ) as "colExists"`,
+      [t, c]
+    );
+    await client.end();
+    return { ok: true, exists: Boolean(r.rows[0]?.colExists) };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { ok: false, error: msg.slice(0, 320) };
+  }
+}
+
+/**
+ * Estado de `20260518200000_meli_multi_account_sync`: columnas clave en products y seller_meli_oauth.
+ * `safeApplied`: true solo si el DDL principal está completo (no marcar --applied a medias).
+ */
+async function probeMeliMultiAccountSyncMigrationState(dbUrl) {
+  if (!dbUrl || typeof dbUrl !== "string") return { ok: false, reason: "no-url" };
+  try {
+    const productsCol = await probePublicColumnExists(dbUrl, "products", "meli_oauth_account_id");
+    const sellerCol = await probePublicColumnExists(dbUrl, "seller_meli_oauth", "is_primary");
+    const categoriesCol = await probePublicColumnExists(dbUrl, "categories", "meli_category_id");
+    if (!productsCol.ok || !sellerCol.ok || !categoriesCol.ok) {
+      return {
+        ok: false,
+        error: [productsCol.error, sellerCol.error, categoriesCol.error]
+          .filter(Boolean)
+          .join("; ")
+          .slice(0, 320),
+      };
+    }
+    const safeApplied =
+      productsCol.exists === true && sellerCol.exists === true && categoriesCol.exists === true;
+    return {
+      ok: true,
+      productsMeliOAuthAccountId: productsCol.exists,
+      sellerIsPrimary: sellerCol.exists,
+      categoriesMeliCategoryId: categoriesCol.exists,
+      safeApplied,
+    };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { ok: false, error: msg.slice(0, 320) };
+  }
+}
+
+/**
+ * Estado de `20260506141500_add_meli_ads_history`: enum `MeliAdsChangeOutcome` + tabla `meli_ads_snapshots`.
+ * `safeApplied`: solo true si conviene `migrate resolve --applied` sin dejar la base a medias.
+ */
+async function probeMeliAdsHistoryMigrationState(dbUrl) {
+  if (!dbUrl || typeof dbUrl !== "string") return { ok: false, reason: "no-url" };
+  try {
+    const { Client } = await import("pg");
+    const supabaseTls = looksLikeSupabasePostgresUrl(dbUrl);
+    const connectionString = supabaseTls ? postgresConnectionStringWithoutSslQueryParams(dbUrl) : dbUrl;
+    const client = new Client({
+      connectionString,
+      connectionTimeoutMillis: 25_000,
+      ...(supabaseTls ? { ssl: { rejectUnauthorized: false } } : {}),
+    });
+    await client.connect();
+    const r = await client.query(`
+      select
+        exists (
+          select 1
+          from pg_catalog.pg_type t
+          inner join pg_catalog.pg_namespace n on n.oid = t.typnamespace
+          where n.nspname = 'public'
+            and t.typname = 'MeliAdsChangeOutcome'
+            and t.typtype = 'e'
+        ) as "enumExists",
+        exists (
+          select 1 from information_schema.tables
+          where table_schema = 'public' and table_name = 'meli_ads_snapshots'
+        ) as "snapshotsExist"
+    `);
+    await client.end();
+    const enumExists = Boolean(r.rows[0]?.enumExists);
+    const snapshotsExist = Boolean(r.rows[0]?.snapshotsExist);
+    return {
+      ok: true,
+      enumExists,
+      snapshotsExist,
+      safeApplied: enumExists && snapshotsExist,
+    };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { ok: false, error: msg.slice(0, 320) };
+  }
+}
+
+function sleepSyncSeconds(seconds) {
+  const s = Math.max(1, Math.min(120, Math.floor(Number(seconds) || 10)));
+  const until = Date.now() + s * 1000;
+  while (Date.now() < until) {
+    /* espera activa solo en migrate.mjs (boot en background) */
+  }
+}
+
+/**
+ * Ejecuta `prisma migrate deploy` y devuelve salida combinada (para detectar P3009 en logs).
+ */
+function runPrismaMigrateDeploy(dbUrl) {
+  const r = spawnSync("npx", ["prisma", "migrate", "deploy"], {
+    env: { ...process.env, DATABASE_URL: dbUrl },
+    cwd: process.cwd(),
+    encoding: "utf8",
+    maxBuffer: 50 * 1024 * 1024,
+    stdio: ["inherit", "pipe", "pipe"],
+  });
+  const stdout = r.stdout ?? "";
+  const stderr = r.stderr ?? "";
+  if (stdout) process.stdout.write(stdout);
+  if (stderr) process.stderr.write(stderr);
+  const combined = `${stdout}\n${stderr}`;
+  return { status: r.status === 0 ? 0 : r.status ?? 1, combined };
+}
+
+/**
+ * `prisma migrate resolve --applied|--rolled-back <name>` (misma DATABASE_URL que migrate deploy).
+ */
+function runPrismaMigrateResolve(dbUrl, migrationName, applied) {
+  const flag = applied ? "--applied" : "--rolled-back";
+  const r = spawnSync("npx", ["prisma", "migrate", "resolve", flag, migrationName], {
+    env: { ...process.env, DATABASE_URL: dbUrl },
+    cwd: process.cwd(),
+    encoding: "utf8",
+    maxBuffer: 50 * 1024 * 1024,
+    stdio: ["inherit", "pipe", "pipe"],
+  });
+  const stdout = r.stdout ?? "";
+  const stderr = r.stderr ?? "";
+  if (stdout) process.stdout.write(stdout);
+  if (stderr) process.stderr.write(stderr);
+  const combined = `${stdout}\n${stderr}`;
+  return { status: r.status === 0 ? 0 : r.status ?? 1, combined };
+}
+
+function printP3009Hints(combined) {
+  const name = extractFailedMigrationNameFromPrismaOutput(combined) ?? "(nombre en el log arriba)";
+  console.error(
+    `[migrate] P3009 — Prisma registró una migración fallida: \`${name}\`. Reintentar el deploy **no** lo soluciona.\n` +
+      "Opciones (misma URL que usa migrate, p. ej. session pooler :5432):\n" +
+      "  1) Revisá en Supabase → SQL Editor: SELECT migration_name, finished_at, logs FROM \"_prisma_migrations\" ORDER BY started_at DESC LIMIT 15;\n" +
+      "  2) Si el SQL de esa migración **ya está** en la base (ej. la columna/tablas existen): ejecutá una vez:\n" +
+      `       DATABASE_URL='…' npx prisma migrate resolve --applied "${name}"\n` +
+      "  3) Si **no** se aplicó y querés que Prisma vuelva a intentarla:\n" +
+      `       DATABASE_URL='…' npx prisma migrate resolve --rolled-back "${name}"\n` +
+      "     y luego redeploy / volvé a correr migrate deploy.\n" +
+      "Doc: https://pris.ly/d/migrate-resolve"
+  );
+}
+
+const { migrateUrl, appUrl, source } = pickMigrateDatabaseUrl();
+const tunedMigrateUrl = tuneMigrateDatabaseUrl(migrateUrl);
+
+console.log(`[migrate] ${MIGRATE_SCRIPT_TAG}`);
+
+if (appUrl && migrateUrl && migrateUrl !== appUrl) {
+  const note = source.includes("session")
+    ? " IPv4-friendly (Supavisor session; ver https://supabase.com/docs/guides/database/connecting-to-postgres )."
+    : source.includes("db.*")
+      ? " Host db.* (a menudo IPv6-only desde el PaaS; si falla, no fuerces PRISMA_MIGRATE_SUPABASE_USE_DB_HOST)."
+      : "";
+  console.log(
+    `[migrate] Runtime DB ≈ ${hostPortHint(appUrl)} · migrate deploy → ${hostPortHint(tunedMigrateUrl)} · ${source}.${note}`
+  );
+} else if (
+  looksLikePgPooler(tunedMigrateUrl) &&
+  tunedMigrateUrl.includes(":6543") &&
+  !process.env.PRISMA_MIGRATE_POOLER_OK
+) {
+  console.warn(
+    "[migrate] migrate deploy usa el pooler en puerto 6543 (transaction). Suele fallar con Prisma; preferí session :5432 o DIRECT_DATABASE_URL. Podés exportar PRISMA_MIGRATE_POOLER_OK=1 para silenciar."
+  );
+}
+
+if (!migrateUrl) {
   console.error(
     "Falta DATABASE_URL (o SUPABASE_DATABASE_URL). Configúrala en .env.local o en variables del CI/hosting."
   );
   process.exit(1);
 }
 
-try {
-  console.log("Ejecutando migraciones...");
-  execSync("npx prisma migrate deploy", {
-    env: { ...process.env, DATABASE_URL },
-    stdio: "inherit",
-    cwd: process.cwd(),
-  });
-} catch (error) {
-  console.error("Error:", error);
+await (async function runMigrate() {
+  try {
+    // #region agent log
+    agentDebugLog({
+      hypothesisId: "H4",
+      location: "migrate.mjs:runMigrate:boot",
+      message: "migrate-target",
+      data: { hostHint: hostPortHint(tunedMigrateUrl), source },
+    });
+    // #endregion
+
+    const maxAttempts = Math.max(1, Math.min(12, Number(process.env.PRISMA_MIGRATE_ATTEMPTS || "5") || 5));
+    const delaySec = Math.max(2, Math.min(90, Number(process.env.PRISMA_MIGRATE_RETRY_SLEEP_SEC || "10") || 10));
+    let lastErr = null;
+    attemptLoop: for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      console.log(`Ejecutando migraciones (intento ${attempt}/${maxAttempts})...`);
+      const { status, combined } = runPrismaMigrateDeploy(tunedMigrateUrl);
+      if (status === 0) {
+        lastErr = null;
+        break;
+      }
+      lastErr = new Error(combined.trim() || `prisma migrate deploy exit ${status}`);
+      console.error(`[migrate] Intento ${attempt}/${maxAttempts} falló.`, combined.slice(0, 800));
+
+      if (
+        combined.includes("P3018") &&
+        !isPrismaMigrateAutoResolveP3009DriftDisabled() &&
+        (/already exists/i.test(combined) ||
+          (/42701/i.test(combined) && /last_catalog_import_at/i.test(combined)) ||
+          (/2BP01/i.test(combined) && /seller_meli_oauth_user_id_key/i.test(combined)))
+      ) {
+        const p3018Name = extractMigrationNameFromP3018(combined);
+        let p3018Resolved = false;
+        if (
+          p3018Name === "20260518200000_meli_multi_account_sync" &&
+          /seller_meli_oauth_user_id_key/i.test(combined)
+        ) {
+          console.warn(
+            `[migrate] P3018 meli_multi_account_sync: error al dropear índice/constraint user_id; ` +
+              `migrate resolve --rolled-back automático (reintenta con SQL corregido). ` +
+              "Desactivar: PRISMA_MIGRATE_AUTO_RESOLVE_P3009_DRIFT=0"
+          );
+          const { status: rs, combined: rc } = runPrismaMigrateResolve(tunedMigrateUrl, p3018Name, false);
+          if (rs === 0) {
+            console.warn("[migrate] migrate resolve OK; reintentando migrate deploy (mismo bucle).");
+            p3018Resolved = true;
+          } else {
+            console.error("[migrate] migrate resolve falló:", rc.slice(0, 900));
+          }
+        } else if (p3018Name === "20260506120000_add_seller_meli_oauth" && /seller_meli_oauth/i.test(combined)) {
+          console.warn(
+            `[migrate] P3018: objeto ya existente; migrate resolve --applied "${p3018Name}" automático. ` +
+              "Desactivar: PRISMA_MIGRATE_AUTO_RESOLVE_P3009_DRIFT=0"
+          );
+          const { status: rs, combined: rc } = runPrismaMigrateResolve(tunedMigrateUrl, p3018Name, true);
+          if (rs === 0) {
+            console.warn("[migrate] migrate resolve OK; reintentando migrate deploy (mismo bucle).");
+            p3018Resolved = true;
+          } else {
+            console.error("[migrate] migrate resolve falló:", rc.slice(0, 900));
+          }
+        } else if (p3018Name === "20260506141500_add_meli_ads_history" && /MeliAdsChangeOutcome/i.test(combined)) {
+          console.warn(
+            `[migrate] P3018: tipo/enum ya existente; migrate resolve --applied "${p3018Name}" automático. ` +
+              "Desactivar: PRISMA_MIGRATE_AUTO_RESOLVE_P3009_DRIFT=0"
+          );
+          const { status: rs, combined: rc } = runPrismaMigrateResolve(tunedMigrateUrl, p3018Name, true);
+          if (rs === 0) {
+            console.warn("[migrate] migrate resolve OK; reintentando migrate deploy (mismo bucle).");
+            p3018Resolved = true;
+          } else {
+            console.error("[migrate] migrate resolve falló:", rc.slice(0, 900));
+          }
+        } else if (
+          p3018Name === "20260506203000_add_last_catalog_import_at" &&
+          /last_catalog_import_at/i.test(combined)
+        ) {
+          console.warn(
+            `[migrate] P3018: columna/objeto ya existente; migrate resolve --applied "${p3018Name}" automático. ` +
+              "Desactivar: PRISMA_MIGRATE_AUTO_RESOLVE_P3009_DRIFT=0"
+          );
+          const { status: rs, combined: rc } = runPrismaMigrateResolve(tunedMigrateUrl, p3018Name, true);
+          if (rs === 0) {
+            console.warn("[migrate] migrate resolve OK; reintentando migrate deploy (mismo bucle).");
+            p3018Resolved = true;
+          } else {
+            console.error("[migrate] migrate resolve falló:", rc.slice(0, 900));
+          }
+        }
+        if (p3018Resolved) {
+          attempt -= 1;
+          continue attemptLoop;
+        }
+      }
+
+      if (combined.includes("P3009")) {
+        const failedName = extractFailedMigrationNameFromPrismaOutput(combined);
+        printP3009Hints(combined);
+        // #region agent log
+        agentDebugLog({
+          hypothesisId: "H1",
+          location: "migrate.mjs:p3009",
+          message: "prisma-blocks-new-migrations",
+          data: { failedMigration: failedName, hasP3009: true },
+        });
+        // #endregion
+
+        if (failedName === "20260504174800_add_access_key") {
+          const probe = await probeUsersAccessKeyColumn(tunedMigrateUrl);
+          const recommend =
+            probe.ok && probe.exists === true
+              ? "applied"
+              : probe.ok && probe.exists === false
+                ? "rolled-back"
+                : null;
+          // #region agent log
+          agentDebugLog({
+            hypothesisId: recommend === "applied" ? "H2" : recommend === "rolled-back" ? "H3" : "H5",
+            location: "migrate.mjs:p3009-probe",
+            message: "users-access-key-column",
+            data: {
+              failedMigration: failedName,
+              probeOk: probe.ok,
+              accessKeyExists: probe.ok ? probe.exists : null,
+              probeError: probe.ok ? undefined : probe.error ?? probe.reason,
+              recommend,
+            },
+          });
+          // #endregion
+
+          if (probe.ok) {
+            const autoOff = isPrismaMigrateAutoResolveP3009DriftDisabled();
+            if (!autoOff) {
+              const useApplied = probe.exists === true;
+              console.warn(
+                `[migrate] P3009 add_access_key: public.users.access_key existe=${probe.exists}; ` +
+                  `ejecutando migrate resolve --${useApplied ? "applied" : "rolled-back"} automático. ` +
+                  "Desactivar: PRISMA_MIGRATE_AUTO_RESOLVE_P3009_DRIFT=0"
+              );
+              const { status: rs, combined: rc } = runPrismaMigrateResolve(
+                tunedMigrateUrl,
+                failedName,
+                useApplied
+              );
+              if (rs === 0) {
+                console.warn("[migrate] migrate resolve OK; reintentando migrate deploy (mismo bucle).");
+                attempt -= 1;
+                continue attemptLoop;
+              }
+              console.error("[migrate] migrate resolve falló:", rc.slice(0, 900));
+            }
+            console.error(
+              `[migrate] P3009 diagnóstico (runtime): public.users.access_key existe=${probe.exists}. ` +
+                (autoOff ? "Auto-resolve desactivado. " : "") +
+                (probe.exists
+                  ? `Manual: DATABASE_URL=…session:5432… npx prisma migrate resolve --applied "${failedName}"`
+                  : `Manual: DATABASE_URL=…session:5432… npx prisma migrate resolve --rolled-back "${failedName}" y redeploy.`)
+            );
+          } else {
+            console.error(
+              "[migrate] P3009 add_access_key: no se pudo comprobar information_schema (sin credenciales en log):",
+              probe.error || probe.reason || "(sin detalle)"
+            );
+          }
+        } else if (failedName === "20260506120000_add_seller_meli_oauth") {
+          const probe = await probePublicTableExists(tunedMigrateUrl, "seller_meli_oauth");
+          agentDebugLog({
+            hypothesisId: probe.ok && probe.exists ? "H2" : probe.ok ? "H3" : "H5",
+            location: "migrate.mjs:p3009-probe-meli",
+            message: "seller-meli-oauth-table",
+            data: {
+              failedMigration: failedName,
+              probeOk: probe.ok,
+              tableExists: probe.ok ? probe.exists : null,
+              probeError: probe.ok ? undefined : probe.error ?? probe.reason,
+            },
+          });
+
+          if (probe.ok) {
+            const autoOff = isPrismaMigrateAutoResolveP3009DriftDisabled();
+            if (!autoOff) {
+              const useApplied = probe.exists === true;
+              console.warn(
+                `[migrate] P3009 add_seller_meli_oauth: tabla public.seller_meli_oauth existe=${probe.exists}; ` +
+                  `ejecutando migrate resolve --${useApplied ? "applied" : "rolled-back"} automático. ` +
+                  "Desactivar: PRISMA_MIGRATE_AUTO_RESOLVE_P3009_DRIFT=0"
+              );
+              const { status: rs, combined: rc } = runPrismaMigrateResolve(
+                tunedMigrateUrl,
+                failedName,
+                useApplied
+              );
+              if (rs === 0) {
+                console.warn("[migrate] migrate resolve OK; reintentando migrate deploy (mismo bucle).");
+                attempt -= 1;
+                continue attemptLoop;
+              }
+              console.error("[migrate] migrate resolve falló:", rc.slice(0, 900));
+            }
+            console.error(
+              `[migrate] P3009 diagnóstico meli_oauth: public.seller_meli_oauth existe=${probe.exists}. ` +
+                (autoOff ? "Auto-resolve desactivado. " : "") +
+                (probe.exists
+                  ? `Manual: DATABASE_URL=…session:5432… npm run migrate:resolve:meli-oauth-applied`
+                  : `Manual: DATABASE_URL=…session:5432… npm run migrate:resolve:meli-oauth-rolled-back y redeploy.`)
+            );
+          } else {
+            console.error(
+              "[migrate] P3009 add_seller_meli_oauth: no se pudo comprobar information_schema:",
+              probe.error || probe.reason || "(sin detalle)"
+            );
+          }
+        } else if (failedName === "20260506141500_add_meli_ads_history") {
+          const probe = await probeMeliAdsHistoryMigrationState(tunedMigrateUrl);
+          agentDebugLog({
+            hypothesisId: probe.ok && probe.safeApplied ? "H2" : probe.ok ? "H3" : "H5",
+            location: "migrate.mjs:p3009-probe-meli-ads",
+            message: "meli-ads-history-state",
+            data: {
+              failedMigration: failedName,
+              probeOk: probe.ok,
+              enumExists: probe.ok ? probe.enumExists : null,
+              snapshotsExist: probe.ok ? probe.snapshotsExist : null,
+              safeApplied: probe.ok ? probe.safeApplied : null,
+              probeError: probe.ok ? undefined : probe.error ?? probe.reason,
+            },
+          });
+
+          if (probe.ok) {
+            const autoOff = isPrismaMigrateAutoResolveP3009DriftDisabled();
+            if (!autoOff && probe.safeApplied) {
+              console.warn(
+                "[migrate] P3009 add_meli_ads_history: enum MeliAdsChangeOutcome + tabla meli_ads_snapshots presentes; " +
+                  "migrate resolve --applied automático. Desactivar: PRISMA_MIGRATE_AUTO_RESOLVE_P3009_DRIFT=0"
+              );
+              const { status: rs, combined: rc } = runPrismaMigrateResolve(tunedMigrateUrl, failedName, true);
+              if (rs === 0) {
+                console.warn("[migrate] migrate resolve OK; reintentando migrate deploy (mismo bucle).");
+                attempt -= 1;
+                continue attemptLoop;
+              }
+              console.error("[migrate] migrate resolve falló:", rc.slice(0, 900));
+            } else if (!autoOff && !probe.enumExists && !probe.snapshotsExist) {
+              console.warn(
+                "[migrate] P3009 add_meli_ads_history: sin enum ni tabla meli_ads_snapshots; migrate resolve --rolled-back automático."
+              );
+              const { status: rs, combined: rc } = runPrismaMigrateResolve(tunedMigrateUrl, failedName, false);
+              if (rs === 0) {
+                console.warn("[migrate] migrate resolve OK; reintentando migrate deploy (mismo bucle).");
+                attempt -= 1;
+                continue attemptLoop;
+              }
+              console.error("[migrate] migrate resolve falló:", rc.slice(0, 900));
+            } else {
+              console.error(
+                `[migrate] P3009 meli_ads_history: enumExists=${probe.enumExists} snapshotsExist=${probe.snapshotsExist}. ` +
+                  (autoOff ? "Auto-resolve desactivado. " : "") +
+                  "Si el SQL de la migración ya está completo en la base: `npm run migrate:resolve:meli-ads-history-applied`. " +
+                  "Si enum existe pero faltan tablas, corregí el esquema en Supabase antes de marcar --applied."
+              );
+            }
+          } else {
+            console.error(
+              "[migrate] P3009 add_meli_ads_history: probe falló:",
+              probe.error || probe.reason || "(sin detalle)"
+            );
+          }
+        } else if (failedName === "20260506203000_add_last_catalog_import_at") {
+          const probe = await probePublicColumnExists(
+            tunedMigrateUrl,
+            "seller_meli_oauth",
+            "last_catalog_import_at"
+          );
+          agentDebugLog({
+            hypothesisId: probe.ok && probe.exists ? "H2" : probe.ok ? "H3" : "H5",
+            location: "migrate.mjs:p3009-probe-last-catalog",
+            message: "seller-meli-oauth-last-catalog-column",
+            data: {
+              failedMigration: failedName,
+              probeOk: probe.ok,
+              columnExists: probe.ok ? probe.exists : null,
+              probeError: probe.ok ? undefined : probe.error ?? probe.reason,
+            },
+          });
+
+          if (probe.ok) {
+            const autoOff = isPrismaMigrateAutoResolveP3009DriftDisabled();
+            if (!autoOff) {
+              const useApplied = probe.exists === true;
+              console.warn(
+                `[migrate] P3009 add_last_catalog_import_at: seller_meli_oauth.last_catalog_import_at existe=${probe.exists}; ` +
+                  `migrate resolve --${useApplied ? "applied" : "rolled-back"} automático. ` +
+                  "Desactivar: PRISMA_MIGRATE_AUTO_RESOLVE_P3009_DRIFT=0"
+              );
+              const { status: rs, combined: rc } = runPrismaMigrateResolve(
+                tunedMigrateUrl,
+                failedName,
+                useApplied
+              );
+              if (rs === 0) {
+                console.warn("[migrate] migrate resolve OK; reintentando migrate deploy (mismo bucle).");
+                attempt -= 1;
+                continue attemptLoop;
+              }
+              console.error("[migrate] migrate resolve falló:", rc.slice(0, 900));
+            }
+            console.error(
+              `[migrate] P3009 last_catalog_import_at: columna existe=${probe.exists}. ` +
+                (autoOff ? "Auto-resolve desactivado. " : "") +
+                (probe.exists
+                  ? "Manual: `npm run migrate:resolve:last-catalog-import-applied`"
+                  : "Manual: `npm run migrate:resolve:last-catalog-import-rolled-back` y redeploy.")
+            );
+          } else {
+            console.error(
+              "[migrate] P3009 add_last_catalog_import_at: probe falló:",
+              probe.error || probe.reason || "(sin detalle)"
+            );
+          }
+        } else if (failedName === "20260520200000_add_flash_system") {
+          const probe = await probePublicTableExists(tunedMigrateUrl, "flash_shipments");
+          if (probe.ok) {
+            const autoOff = isPrismaMigrateAutoResolveP3009DriftDisabled();
+            if (!autoOff) {
+              const useApplied = probe.exists === true;
+              console.warn(
+                `[migrate] P3009 add_flash_system: public.flash_shipments existe=${probe.exists}; ` +
+                  `migrate resolve --${useApplied ? "applied" : "rolled-back"} automático. ` +
+                  "Desactivar: PRISMA_MIGRATE_AUTO_RESOLVE_P3009_DRIFT=0"
+              );
+              const { status: rs, combined: rc } = runPrismaMigrateResolve(
+                tunedMigrateUrl,
+                failedName,
+                useApplied
+              );
+              if (rs === 0) {
+                console.warn("[migrate] migrate resolve OK; reintentando migrate deploy (mismo bucle).");
+                attempt -= 1;
+                continue attemptLoop;
+              }
+              console.error("[migrate] migrate resolve falló:", rc.slice(0, 900));
+            } else {
+              console.error(
+                `[migrate] P3009 add_flash_system: flash_shipments existe=${probe.exists}. ` +
+                  (probe.exists
+                    ? `Manual: npx prisma migrate resolve --applied "${failedName}"`
+                    : `Manual: npx prisma migrate resolve --rolled-back "${failedName}" y redeploy.`)
+              );
+            }
+          } else {
+            console.error(
+              "[migrate] P3009 add_flash_system: no se pudo comprobar flash_shipments:",
+              probe.error || probe.reason || "(sin detalle)"
+            );
+          }
+        } else if (failedName === "20260518200000_meli_multi_account_sync") {
+          const probe = await probeMeliMultiAccountSyncMigrationState(tunedMigrateUrl);
+          agentDebugLog({
+            hypothesisId: probe.ok && probe.safeApplied ? "H2" : probe.ok ? "H3" : "H5",
+            location: "migrate.mjs:p3009-probe-meli-multi-account",
+            message: "meli-multi-account-sync-state",
+            data: {
+              failedMigration: failedName,
+              probeOk: probe.ok,
+              safeApplied: probe.ok ? probe.safeApplied : null,
+              productsMeliOAuthAccountId: probe.ok ? probe.productsMeliOAuthAccountId : null,
+              sellerIsPrimary: probe.ok ? probe.sellerIsPrimary : null,
+              probeError: probe.ok ? undefined : probe.error ?? probe.reason,
+            },
+          });
+
+          if (probe.ok) {
+            const autoOff = isPrismaMigrateAutoResolveP3009DriftDisabled();
+            if (!autoOff && probe.safeApplied) {
+              console.warn(
+                "[migrate] P3009 meli_multi_account_sync: columnas ML presentes; migrate resolve --applied automático. " +
+                  "Desactivar: PRISMA_MIGRATE_AUTO_RESOLVE_P3009_DRIFT=0"
+              );
+              const { status: rs, combined: rc } = runPrismaMigrateResolve(tunedMigrateUrl, failedName, true);
+              if (rs === 0) {
+                console.warn("[migrate] migrate resolve OK; reintentando migrate deploy (mismo bucle).");
+                attempt -= 1;
+                continue attemptLoop;
+              }
+              console.error("[migrate] migrate resolve falló:", rc.slice(0, 900));
+            } else if (!autoOff && !probe.safeApplied) {
+              console.warn(
+                "[migrate] P3009 meli_multi_account_sync: columnas ML ausentes; migrate resolve --rolled-back automático."
+              );
+              const { status: rs, combined: rc } = runPrismaMigrateResolve(tunedMigrateUrl, failedName, false);
+              if (rs === 0) {
+                console.warn("[migrate] migrate resolve OK; reintentando migrate deploy (mismo bucle).");
+                attempt -= 1;
+                continue attemptLoop;
+              }
+              console.error("[migrate] migrate resolve falló:", rc.slice(0, 900));
+            } else {
+              console.error(
+                `[migrate] P3009 meli_multi_account_sync: products.meli_oauth_account_id=${probe.productsMeliOAuthAccountId} ` +
+                  `seller.is_primary=${probe.sellerIsPrimary}. ` +
+                  (autoOff ? "Auto-resolve desactivado. " : "") +
+                  "Manual: `npm run migrate:resolve:meli-multi-account-applied` o `migrate:resolve:meli-multi-account-rolled-back` y redeploy."
+              );
+            }
+          } else {
+            console.error(
+              "[migrate] P3009 meli_multi_account_sync: probe falló:",
+              probe.error || probe.reason || "(sin detalle)"
+            );
+          }
+        } else {
+          // #region agent log
+          agentDebugLog({
+            hypothesisId: "H1",
+            location: "migrate.mjs:p3009-skip-probe",
+            message: "no-auto-probe-for-migration",
+            data: { failedMigration: failedName },
+          });
+          // #endregion
+        }
+        break;
+      }
+
+      if (attempt < maxAttempts) {
+        console.warn(
+          `[migrate] Reintento en ${delaySec}s. (P1001/db.*: revisá DIRECT; P3009: no se reintenta — ver mensaje arriba.)`
+        );
+        sleepSyncSeconds(delaySec);
+      }
+    }
+    if (lastErr) {
+      console.error("Error:", lastErr);
+      process.exit(1);
+    }
+  } catch (error) {
+    console.error("Error:", error);
+    process.exit(1);
+  }
+})().catch((err) => {
+  console.error("Error:", err);
   process.exit(1);
-}
+});

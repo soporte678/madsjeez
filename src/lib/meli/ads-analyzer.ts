@@ -22,6 +22,10 @@ export type AdsRecommendation = {
   siteId: string;
   campaignId: number;
   campaignName: string;
+  /** Presupuesto diario actual reportado por PADS (antes de aplicar sugerencias). */
+  campaignBudget: number;
+  /** Cantidad de publicaciones/items en la campaña (proxy desde métricas ML). */
+  campaignItemsCount: number;
   applyPayload: AdsApplyPayload;
 };
 
@@ -49,6 +53,26 @@ function buildBasePayload(row: MeliPadsCampaignRow, channel = "marketplace"): Ad
     strategy: strategyToApi(row.strategy),
     channel,
     roas_target: normalizeRoas(row),
+  };
+}
+
+/** Cantidad de publicaciones/productos (métricas PADS; si ML no envía, 0). */
+function estimateCampaignItemsCount(row: MeliPadsCampaignRow): number {
+  const m = row.metrics as Record<string, unknown> | undefined;
+  if (!m) return 0;
+  const advertising = Number(m.advertising_items_quantity);
+  if (Number.isFinite(advertising) && advertising > 0) return Math.round(advertising);
+  const sum =
+    (Number.isFinite(Number(m.direct_items_quantity)) ? Number(m.direct_items_quantity) : 0) +
+    (Number.isFinite(Number(m.indirect_items_quantity)) ? Number(m.indirect_items_quantity) : 0) +
+    (Number.isFinite(Number(m.organic_items_quantity)) ? Number(m.organic_items_quantity) : 0);
+  return sum > 0 ? Math.round(sum) : 0;
+}
+
+function campaignCardStats(row: MeliPadsCampaignRow): Pick<AdsRecommendation, "campaignBudget" | "campaignItemsCount"> {
+  return {
+    campaignBudget: Math.round(Number(row.budget ?? 0) * 100) / 100,
+    campaignItemsCount: estimateCampaignItemsCount(row),
   };
 }
 
@@ -117,6 +141,7 @@ export function analyzePadsCampaigns(input: {
         siteId,
         campaignId: row.id,
         campaignName: row.name || String(row.id),
+        ...campaignCardStats(row),
         applyPayload: {
           ...base,
           strategy: "profitability",
@@ -143,6 +168,7 @@ export function analyzePadsCampaigns(input: {
         siteId,
         campaignId: row.id,
         campaignName: row.name || String(row.id),
+        ...campaignCardStats(row),
         applyPayload: {
           ...base,
           strategy: "profitability",
@@ -170,6 +196,7 @@ export function analyzePadsCampaigns(input: {
         siteId,
         campaignId: row.id,
         campaignName: row.name || String(row.id),
+        ...campaignCardStats(row),
         applyPayload: {
           ...base,
           budget: newBudget,
@@ -194,6 +221,7 @@ export function analyzePadsCampaigns(input: {
         siteId,
         campaignId: row.id,
         campaignName: row.name || String(row.id),
+        ...campaignCardStats(row),
         applyPayload: {
           ...base,
           strategy: "visibility",
@@ -226,6 +254,7 @@ export function analyzePadsCampaigns(input: {
         siteId,
         campaignId: row.id,
         campaignName: row.name || String(row.id),
+        ...campaignCardStats(row),
         applyPayload: {
           ...base,
           budget: newBudget,
@@ -251,6 +280,7 @@ export function analyzePadsCampaigns(input: {
         siteId,
         campaignId: row.id,
         campaignName: row.name || String(row.id),
+        ...campaignCardStats(row),
         applyPayload: {
           ...base,
           strategy: "profitability",
@@ -276,6 +306,7 @@ export function analyzePadsCampaigns(input: {
         siteId,
         campaignId: row.id,
         campaignName: row.name || String(row.id),
+        ...campaignCardStats(row),
         applyPayload: {
           ...base,
         },
@@ -301,6 +332,7 @@ export function analyzePadsCampaigns(input: {
         siteId,
         campaignId: row.id,
         campaignName: row.name || String(row.id),
+        ...campaignCardStats(row),
         applyPayload: {
           ...base,
           strategy: "profitability",
@@ -327,6 +359,7 @@ export function analyzePadsCampaigns(input: {
         siteId,
         campaignId: row.id,
         campaignName: row.name || String(row.id),
+        ...campaignCardStats(row),
         applyPayload: {
           ...base,
           budget: newBudget > 0 ? newBudget : Number(row.budget ?? 0),

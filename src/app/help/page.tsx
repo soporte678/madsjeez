@@ -183,7 +183,7 @@ export default function HelpPage() {
           </div>
 
           {/* Contact */}
-          <Card className="bg-gray-900 text-white">
+          <Card id="contacto" className="bg-gray-900 text-white scroll-mt-24">
             <CardContent className="p-8">
               <div className="grid md:grid-cols-2 gap-8 items-center">
                 <div>
@@ -203,13 +203,13 @@ export default function HelpPage() {
                   </div>
                 </div>
                 <div className="flex flex-col gap-3">
-                  <Link href="/contact">
+                  <Link href="/help#contacto">
                     <Button className="w-full bg-[#3483FA] hover:bg-[#2968C8] h-12">
                       <MessageCircle className="h-5 w-5 mr-2" />
                       Chat en vivo
                     </Button>
                   </Link>
-                  <Link href="/contact">
+                  <Link href="mailto:soporte@madsjeez.com">
                     <Button variant="outline" className="w-full h-12 border-white text-white hover:bg-white/10">
                       Enviar mensaje
                     </Button>

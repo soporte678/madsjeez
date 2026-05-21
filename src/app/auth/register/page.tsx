@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
+import { trackEvent } from "@/lib/analytics"
 
 export default function RegisterPage() {
   return (
@@ -47,6 +48,9 @@ function RegisterForm() {
         throw new Error(data.error || "Error al registrarse")
       }
 
+      trackEvent("sign_up", {
+        method: "email",
+      })
       router.push("/auth/login?registered=true")
     } catch (err: any) {
       setError(err.message)

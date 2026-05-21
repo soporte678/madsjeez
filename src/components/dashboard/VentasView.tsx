@@ -1,462 +1,502 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
-  Search,
-  Info,
-  ChevronDown,
-  Filter,
-  MoreVertical,
-  MessageSquare,
   Package,
+  Search,
   Truck,
   CheckCircle2,
   Clock,
-  X,
-  Zap,
-  FileText,
+  XCircle,
+  AlertCircle,
+  Loader2,
 } from "lucide-react";
 
-type Tab = "hoy" | "proximos" | "transito" | "finalizadas";
+type ApiOrder = {
+  id: string;
+  orderNumber: string;
+  status: string;
+  total: number;
+  createdAt: string;
+  shippingName: string;
+  shippingCity: string;
+  shippingState: string;
+  buyer: { id: string | null; name: string | null; email: string | null };
+  fulfillmentStage?: string | null;
+  fulfillmentStageLabel?: string | null;
+  delayLabel?: string | null;
+  delayDays?: number;
+  items: Array<{
+    id: string;
+    quantity: number;
+    price: number;
+    product: {
+      id?: string | null;
+      title: string;
+      price: number;
+      images: { url: string }[];
+    };
+  }>;
+};
 
-const VentasView: React.FC = () => {
-  const [tab, setTab] = useState<Tab>("hoy");
-  const [search, setSearch] = useState("");
-  const [selected, setSelected] = useState<string[]>([]);
+type TabDef = { key: string; label: string; filter: (o: ApiOrder) => boolean };
 
-  const toggleSelect = (id: string) => {
-    setSelected((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+const STATUS_TABS: TabDef[] = [
+  { key: "all", label: "Todas", filter: () => true },
+  { key: "PENDING", label: "Pendiente de pago", filter: (o) => o.status === "PENDING" },
+  { key: "PAID", label: "Pago confirmado", filter: (o) => o.status === "PAID" },
+  { key: "PROCESSING", label: "Preparando", filter: (o) => o.status === "PROCESSING" },
+  { key: "SHIPPED", label: "En camino", filter: (o) => o.status === "SHIPPED" },
+  { key: "DELIVERED", label: "Entregadas", filter: (o) => o.status === "DELIVERED" },
+  {
+    key: "cancel",
+    label: "Canceladas / reembolso",
+    filter: (o) => o.status === "CANCELLED" || o.status === "REFUNDED",
+  },
+  {
+    key: "delayed",
+    label: "Demoradas (24 h)",
+    filter: (o) => (o.delayDays ?? 0) > 0,
+  },
+];
+
+const FULFILLMENT_OPTIONS: { value: string; label: string }[] = [
+  { value: "pending_pickup", label: "Pendiente de despacho" },
+  { value: "preparing", label: "En proceso de preparación" },
+  { value: "awaiting_stock", label: "Por ingresar stock" },
+  { value: "dispatched", label: "Despachado" },
+  { value: "sent", label: "Enviado" },
+  { value: "completed", label: "Entrega finalizada" },
+];
+
+function formatPrice(n: number) {
+  return `$ ${n.toLocaleString("es-AR")}`;
+}
+
+function statusLabel(status: string): string {
+  const m: Record<string, string> = {
+    PENDING: "Pendiente de pago",
+    PAID: "Pago confirmado",
+    PROCESSING: "Preparando envío",
+    SHIPPED: "En camino",
+    DELIVERED: "Entregado",
+    CANCELLED: "Cancelada",
+    REFUNDED: "Reembolsado",
+  };
+  return m[status] ?? status;
+}
+
+function canManageFulfillment(status: string): boolean {
+  return ["PAID", "PROCESSING", "SHIPPED", "DELIVERED"].includes(status);
+}
+
+function formatWhen(iso: string) {
+  try {
+    return new Date(iso).toLocaleString("es-AR", {
+      day: "numeric",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return iso;
+  }
+}
+
+function StatusIcon({ status }: { status: string }) {
+  switch (status) {
+    case "DELIVERED":
+      return <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />;
+    case "SHIPPED":
+      return <Truck className="w-4 h-4 text-blue-600 shrink-0" />;
+    case "PENDING":
+      return <Clock className="w-4 h-4 text-red-500 shrink-0" />;
+    case "CANCELLED":
+    case "REFUNDED":
+      return <XCircle className="w-4 h-4 text-muted-foreground shrink-0" />;
+    default:
+      return <Package className="w-4 h-4 text-blue-600 shrink-0" />;
+  }
+}
+
+export default function VentasView() {
+  const [tab, setTab] = useState("all");
+  const [query, setQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [orders, setOrders] = useState<ApiOrder[]>([]);
+  const [totalServer, setTotalServer] = useState(0);
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [reviewOrder, setReviewOrder] = useState<ApiOrder | null>(null);
+  const [reviewReason, setReviewReason] = useState("");
+  const [reviewUrls, setReviewUrls] = useState("");
+  const [reviewBusy, setReviewBusy] = useState(false);
+
+  const loadOrders = useCallback(async () => {
+    setLoading(true);
+    try {
+      await fetch("/api/dashboard/ventas/process-sla", { method: "POST" }).catch(() => {});
+      const r = await fetch("/api/dashboard/orders?role=seller&limit=200&page=1");
+      if (!r.ok) throw new Error("Error al cargar ventas");
+      const d = (await r.json()) as {
+        orders?: ApiOrder[];
+        total?: number;
+      };
+      setOrders(d.orders ?? []);
+      setTotalServer(typeof d.total === "number" ? d.total : (d.orders ?? []).length);
+      setError(null);
+    } catch {
+      setError("No se pudieron cargar las ventas");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      void loadOrders();
+    });
+  }, [loadOrders]);
+
+  const filtered = useMemo(() => {
+    const cfg = STATUS_TABS.find((t) => t.key === tab);
+    const base = cfg ? orders.filter((o) => cfg.filter(o)) : orders;
+    const normalized = query.trim().toLowerCase();
+    if (!normalized) return base;
+    return base.filter((order) => {
+      const first = order.items[0];
+      const title = first?.product?.title?.toLowerCase() ?? "";
+      const buyerName = order.buyer?.name?.toLowerCase() ?? "";
+      const buyerEmail = order.buyer?.email?.toLowerCase() ?? "";
+      const orderNumber = order.orderNumber.toLowerCase();
+      const shippingName = order.shippingName.toLowerCase();
+      return [title, buyerName, buyerEmail, orderNumber, shippingName].some((value) =>
+        value.includes(normalized)
+      );
+    });
+  }, [orders, query, tab]);
+
+  const tabCount = (key: string) => {
+    if (key === "all") return totalServer;
+    const cfg = STATUS_TABS.find((t) => t.key === key);
+    if (!cfg) return 0;
+    return orders.filter(cfg.filter).length;
+  };
+
+  async function saveFulfillment(order: ApiOrder, stage: string) {
+    if (!order.id.startsWith("sb-")) return;
+    setSavingId(order.id);
+    try {
+      const r = await fetch(
+        `/api/dashboard/marketplace-orders/${encodeURIComponent(order.id)}/fulfillment`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ stage }),
+        }
+      );
+      if (!r.ok) {
+        const j = await r.json().catch(() => ({}));
+        alert((j as { error?: string }).error || "No se pudo guardar");
+        return;
+      }
+      await loadOrders();
+    } finally {
+      setSavingId(null);
+    }
+  }
+
+  async function submitDelayReview() {
+    if (!reviewOrder?.id.startsWith("sb-")) return;
+    const reason = reviewReason.trim();
+    if (reason.length < 10) {
+      alert("El motivo debe tener al menos 10 caracteres.");
+      return;
+    }
+    setReviewBusy(true);
+    try {
+      const proof_urls = reviewUrls
+        .split(/[\n,]+/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const r = await fetch(
+        `/api/dashboard/marketplace-orders/${encodeURIComponent(reviewOrder.id)}/delay-review`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reason, proof_urls }),
+        }
+      );
+      if (!r.ok) {
+        const j = await r.json().catch(() => ({}));
+        alert((j as { error?: string }).error || "No se pudo enviar");
+        return;
+      }
+      setReviewOrder(null);
+      setReviewReason("");
+      setReviewUrls("");
+      await loadOrders();
+    } finally {
+      setReviewBusy(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20 text-muted-foreground text-sm">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mr-3" />
+        Cargando ventas…
+      </div>
     );
-  };
+  }
 
-  const selectAll = () => {
-    if (selected.length === orders[tab].length) setSelected([]);
-    else setSelected(orders[tab].map((o) => o.id));
-  };
-
-  const tabsConfig: { id: Tab; label: string; count?: number }[] = [
-    { id: "hoy", label: "Envíos de hoy", count: 9 },
-    { id: "proximos", label: "Próximos días", count: 9 },
-    { id: "transito", label: "En tránsito", count: 22 },
-    { id: "finalizadas", label: "Finalizadas" },
-  ];
-
-  const summaryCards: Record<
-    Tab,
-    { title: string; subtitle: string; status: string; count: number; type: "flex" | "full" | "mixed" }[]
-  > = {
-    hoy: [
-      { title: "PRÓXIMO A DESPACHAR", subtitle: "Flex", status: "Reprogramadas", count: 1, type: "flex" },
-      { title: "EN SEGUIMIENTO", subtitle: "Full", status: "En centro de almacenamiento", count: 8, type: "full" },
-    ],
-    proximos: [
-      { title: "Flex | Mañana", subtitle: "Etiquetas por imprimir", status: "", count: 4, type: "flex" },
-      { title: "Correo | Mañana", subtitle: "Etiquetas por imprimir", status: "", count: 4, type: "full" },
-      { title: "Devoluciones", subtitle: "En camino", status: "", count: 1, type: "mixed" },
-    ],
-    transito: [
-      { title: "Por retirar", subtitle: "Esperando retiro del comprador", status: "", count: 4, type: "mixed" },
-      { title: "En camino", subtitle: "Flex: 1, Correo: 14, Full: 3", status: "", count: 18, type: "mixed" },
-    ],
-    finalizadas: [
-      { title: "Cerradas", subtitle: "Entregadas: 258, No entregadas: 38, Canceladas: 8, Devoluciones completadas: 32, Devoluciones no concretadas: 10", status: "", count: 346, type: "mixed" },
-    ],
-  };
-
-  const orders: Record<
-    Tab,
-    {
-      id: string;
-      orderId: string;
-      date: string;
-      reputation: string;
-      shipping: string;
-      buyer: string;
-      username: string;
-      status: string;
-      statusDetail: string;
-      product: string;
-      price: string;
-      qty: string;
-      sku: string;
-      tag?: string;
-      actionLabel: string;
-      actionType: "blue" | "outline";
-      messages?: number;
-    }[]
-  > = {
-    hoy: [
-      {
-        id: "1",
-        orderId: "2000012814745185",
-        date: "4 may, 22:02 hs",
-        reputation: "No afecta tu reputación",
-        shipping: "FULL",
-        buyer: "carina suazo",
-        username: "SUAZOCARINA",
-        status: "Procesando en la bodega",
-        statusDetail: "Llega el miércoles 6 de mayo",
-        product: "Soporte De Tanque Plástico Para Motoguadañas 43 Y 52cc",
-        price: "$ 3.899",
-        qty: "1 unidad",
-        sku: "MAQJEEZ-00034",
-        actionLabel: "Seguir envío",
-        actionType: "blue",
-        messages: 0,
-      },
-      {
-        id: "2",
-        orderId: "2000012620232962",
-        date: "4 may, 11:41 hs",
-        reputation: "No afecta tu reputación",
-        shipping: "FULL",
-        buyer: "Ferrer Marianela",
-        username: "MIRKOPIE252",
-        status: "Procesando en la bodega",
-        statusDetail: "Llega mañana",
-        product: "Tapa Arranque Cilambre + Cazoleta Desmalezadoras Chinas",
-        price: "$ 39.999",
-        qty: "1 unidad",
-        sku: "MAQJEEZ-00031",
-        actionLabel: "Seguir envío",
-        actionType: "blue",
-        messages: 0,
-      },
-    ],
-    proximos: [
-      {
-        id: "3",
-        orderId: "2000012815083797",
-        date: "4 may, 22:19 hs",
-        reputation: "No afecta tu reputación",
-        shipping: "",
-        buyer: "Alfredo Javier",
-        username: "JALPARO243",
-        status: "Etiqueta lista para imprimir",
-        statusDetail: "Tenés que despachar el paquete hoy o mañana en Correo Argentino",
-        product: "Bomba Sin Fin Aceite Mangueiras Filtro Motosierra 45cc 52cc",
-        price: "$ 33.999",
-        qty: "1 unidad",
-        sku: "MAQJEEZ-00014",
-        tag: "Etiqueta lista para imprimir",
-        actionLabel: "Imprimir etiqueta",
-        actionType: "blue",
-        messages: 0,
-      },
-      {
-        id: "4",
-        orderId: "2000012814713503",
-        date: "4 may, 21:59 hs",
-        reputation: "No afecta tu reputación",
-        shipping: "FLEX",
-        buyer: "claudio lopez",
-        username: "LOPEZ23CLAUD...",
-        status: "Etiqueta lista para imprimir",
-        statusDetail: "Tenés que cortar el paquete a tu conductor mañana.",
-        product: "Paquete de 2 productos",
-        price: "$ 42.800",
-        qty: "2 unidades",
-        sku: "",
-        tag: "Etiqueta lista para imprimir",
-        actionLabel: "Imprimir etiqueta",
-        actionType: "blue",
-        messages: 0,
-      },
-    ],
-    transito: [
-      {
-        id: "5",
-        orderId: "2000012803531107",
-        date: "4 may, 11:51 hs",
-        reputation: "No afecta tu reputación",
-        shipping: "FULL",
-        buyer: "Pablo Diego Di Martino",
-        username: "PADLODIGOO...",
-        status: "En camino",
-        statusDetail: "Llega mañana al centro de envío",
-        product: "Kunini Cm-0020 Cadena Repuesto Motosierra 20 Peso 325 - ...",
-        price: "$ 35.999",
-        qty: "1 unidad",
-        sku: "MAQJEEZ-00022",
-        actionLabel: "Seguir envío",
-        actionType: "blue",
-        messages: 0,
-      },
-      {
-        id: "6",
-        orderId: "2000012622405946",
-        date: "4 may, 11:15 hs",
-        reputation: "No afecta tu reputación",
-        shipping: "",
-        buyer: "Beatriz Santa Ledesma",
-        username: "LEDESMABEAT...",
-        status: "En camino",
-        statusDetail: "Llega entre el 8 y 13 de mayo",
-        product: "Caja Engranajes Desmalezadora 9 Estrias 28mm + Cuchilla 3p...",
-        price: "$ 48.699",
-        qty: "1 unidad",
-        sku: "",
-        actionLabel: "Seguir envío",
-        actionType: "blue",
-        messages: 0,
-      },
-    ],
-    finalizadas: [
-      {
-        id: "7",
-        orderId: "2000012778140023",
-        date: "2 may, 16:32 hs",
-        reputation: "No afecta tu reputación",
-        shipping: "FLEX",
-        buyer: "Angel Clemente Putr",
-        username: "PA2024070031...",
-        status: "Entregado",
-        statusDetail: "Llegó el 4 de mayo",
-        product: "Bomba Sin Fin Aceite Mangueiras Filtro Motosierra 45cc 52cc",
-        price: "$ 34.799",
-        qty: "1 unidad",
-        sku: "MAQJEEZ-00054",
-        actionLabel: "Ver detalle",
-        actionType: "outline",
-        messages: 0,
-      },
-      {
-        id: "8",
-        orderId: "2000012777035541",
-        date: "2 may, 15:12 hs",
-        reputation: "No afecta tu reputación",
-        shipping: "FLEX",
-        buyer: "EDGARDO AMSTOR MARTIN",
-        username: "MAHANGO000...",
-        status: "Entregado",
-        statusDetail: "Llegó el 4 de mayo",
-        product: "Tapa Arranque Roci + Cazoleta Desmalezadoras Chinas 43-52cc",
-        price: "$ 39.999",
-        qty: "1 unidad",
-        sku: "MAQJEEZ-00070",
-        actionLabel: "Ver detalle",
-        actionType: "outline",
-        messages: 0,
-      },
-    ],
-  };
+  if (error) {
+    return (
+      <div className="max-w-3xl rounded-xl border border-border bg-card p-10 text-center">
+        <AlertCircle className="w-10 h-10 text-destructive mx-auto mb-3" />
+        <p className="text-foreground font-medium">{error}</p>
+        <button
+          type="button"
+          onClick={() => void loadOrders()}
+          className="mt-4 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+        >
+          Reintentar
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6 w-full">
-      <h1 className="text-[26px] font-semibold text-gray-800">Ventas</h1>
+    <div className="space-y-6 w-full max-w-5xl">
+      <div>
+        <h1 className="text-[26px] font-semibold text-foreground">Ventas</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Gestioná pedidos marketplace (Mercado Pago / Supabase): estado de pago de MP y tu estado de preparación /
+          despacho. Si pasan 24 h desde el pago sin despacho, el pedido se marca demorado y afecta tu métrica de
+          demoras.
+        </p>
+        <p className="text-xs text-muted-foreground mt-1">
+          {totalServer > orders.length
+            ? `Mostrando las ${orders.length} más recientes de ${totalServer}.`
+            : `${totalServer} pedidos en total (vista actual).`}
+        </p>
+      </div>
 
-      {/* Tabs */}
-      <div className="flex items-center gap-2 flex-wrap">
-        {tabsConfig.map((t) => (
+      <div className="flex flex-wrap gap-2">
+        {STATUS_TABS.map((t) => (
           <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-              tab === t.id
-                ? "bg-blue-600 text-white border-blue-600"
-                : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+            key={t.key}
+            type="button"
+            onClick={() => setTab(t.key)}
+            className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+              tab === t.key
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-card text-foreground hover:bg-muted"
             }`}
           >
             {t.label}
-            {typeof t.count === "number" && (
-              <span
-                className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ${
-                  tab === t.id ? "bg-white text-blue-600" : "bg-blue-600 text-white"
-                }`}
-              >
-                {t.count}
-              </span>
-            )}
+            <span
+              className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+                tab === t.key ? "bg-primary-foreground/20" : "bg-muted"
+              }`}
+            >
+              {tabCount(t.key)}
+            </span>
           </button>
         ))}
-        <div className="ml-auto">
-          <button className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 rounded-full text-xs font-medium text-gray-700 hover:bg-gray-50">
-            Gestionar Posventa <ChevronDown size={14} />
-          </button>
-        </div>
       </div>
 
-      {/* Summary cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-        {summaryCards[tab].map((card, idx) => (
-          <div
-            key={idx}
-            className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-sm transition-shadow"
-          >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">
-                {card.title}
-              </span>
-              <div className="flex items-center gap-1">
-                {card.type === "flex" && <Zap size={14} className="text-blue-500" />}
-                {card.type === "full" && <Package size={14} className="text-blue-500" />}
-                {card.count > 0 && (
-                  <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 text-[10px] font-bold flex items-center justify-center">
-                    {card.count}
-                  </span>
-                )}
-                <Info size={14} className="text-gray-400" />
-              </div>
+      <div className="relative max-w-md">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Buscar por pedido, comprador o producto..."
+          className="w-full rounded-xl border border-slate-200/80 bg-white/92 py-2.5 pl-10 pr-4 text-sm text-slate-800 shadow-sm outline-none transition focus:border-[#3483fa] dark:border-slate-700/80 dark:bg-slate-900/92 dark:text-slate-100 dark:placeholder:text-slate-500"
+        />
+      </div>
+
+      {orders.length === 0 ? (
+        <div className="rounded-xl border border-border bg-card p-16 text-center">
+          <Package className="w-14 h-14 text-muted-foreground/40 mx-auto mb-4" />
+          <h2 className="text-lg font-semibold text-foreground mb-1">Todavía no tenés ventas</h2>
+          <p className="text-sm text-muted-foreground max-w-md mx-auto">
+            Cuando un comprador pague, el pedido aparece acá. Si compró como invitado con mail/tel/DNI en el checkout,
+            al iniciar sesión con esos datos también verá su pedido en Compras.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filtered.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+              No hay ventas en esta categoría (en las cargadas recientemente).
             </div>
-            <div className="text-sm font-semibold text-gray-800">{card.subtitle}</div>
-            {card.status && (
-              <div className="text-xs text-gray-500 mt-0.5">{card.status}</div>
-            )}
-          </div>
-        ))}
-        {/* Placeholder empty cards to fill grid */}
-        {Array.from({ length: Math.max(0, 4 - summaryCards[tab].length) }).map((_, i) => (
-          <div key={`empty-${i}`} className="bg-gray-100 rounded-xl border border-gray-200 p-4 min-h-[80px]" />
-        ))}
-      </div>
+          ) : (
+            filtered.map((order) => {
+              const first = order.items[0];
+              const extra = order.items.length - 1;
+              const title =
+                extra > 0
+                  ? `${first?.product?.title ?? "Producto"} (+${extra} ítem${extra > 1 ? "s" : ""})`
+                  : first?.product?.title ?? "Producto";
+              const img = first?.product?.images?.[0]?.url;
+              const buyer =
+                order.buyer?.name ||
+                order.buyer?.email?.split("@")[0] ||
+                order.shippingName ||
+                "Comprador";
+              const canOps = order.id.startsWith("sb-") && canManageFulfillment(order.status);
+              const stageVal = order.fulfillmentStage ?? "pending_pickup";
 
-      {/* Search & filters */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="relative flex-1 max-w-xs">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Buscar"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
-        </div>
-        <button className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-lg text-xs text-gray-700 hover:bg-gray-50">
-          Últimos 2 meses <ChevronDown size={14} />
-        </button>
-        <button className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-lg text-xs text-gray-700 hover:bg-gray-50">
-          <Filter size={14} /> Filtrar y ordenar
-        </button>
-        <div className="ml-auto flex items-center gap-2">
-          <span className="text-xs text-gray-500">{orders[tab].length} ventas</span>
-        </div>
-      </div>
-
-      {/* Bulk actions */}
-      <div className="flex items-center gap-3 bg-white rounded-lg border border-gray-200 px-3 py-2">
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            checked={selected.length === orders[tab].length && orders[tab].length > 0}
-            onChange={selectAll}
-          />
-          <span className="text-xs text-gray-700">Seleccioná ventas para accionar masivamente</span>
-        </label>
-        <div className="ml-auto flex items-center gap-2">
-          <button className="text-xs text-gray-500 hover:text-gray-700">Enviar facturas</button>
-          <button className="text-xs text-gray-500 hover:text-gray-700">Imprimir facturas</button>
-          <button className="text-xs text-gray-500 hover:text-gray-700">Imprimir etiquetas</button>
-          <button className="flex items-center gap-1 text-xs text-blue-600 font-medium hover:underline">
-            <FileText size={14} /> Descargar Excel de ventas <Info size={12} className="text-gray-400" />
-          </button>
-        </div>
-      </div>
-
-      {/* Orders list */}
-      <div className="space-y-3">
-        {orders[tab].map((order) => (
-          <div
-            key={order.id}
-            className="bg-white rounded-xl border border-gray-200 overflow-hidden"
-          >
-            {/* Order header */}
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100">
-              <input
-                type="checkbox"
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                checked={selected.includes(order.id)}
-                onChange={() => toggleSelect(order.id)}
-              />
-              {order.shipping && (
-                <span
-                  className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                    order.shipping === "FULL"
-                      ? "bg-yellow-400 text-gray-800"
-                      : order.shipping === "FLEX"
-                      ? "bg-green-500 text-white"
-                      : "bg-gray-200 text-gray-700"
-                  }`}
+              return (
+                <div
+                  key={order.id}
+                  className="rounded-xl border border-border bg-card overflow-hidden shadow-sm"
                 >
-                  {order.shipping}
-                </span>
-              )}
-              <span className="text-xs text-gray-500">#{order.orderId}</span>
-              <span className="text-xs text-gray-400">{order.date}</span>
-              <span className="text-xs text-gray-500">{order.reputation}</span>
-              <div className="ml-auto flex items-center gap-2">
-                <span className="text-xs text-gray-500">{order.buyer}</span>
-                <span className="text-xs text-blue-600 font-medium">{order.username}</span>
-                {order.messages !== undefined && (
-                  <button className="flex items-center gap-1 text-xs text-blue-600 hover:underline">
-                    <MessageSquare size={14} /> {order.messages > 0 ? `Mensajes (${order.messages})` : "Mensajes"}
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Order body */}
-            <div className="p-4">
-              {order.tag && (
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-xs font-semibold text-orange-600 bg-orange-50 px-2 py-1 rounded">
-                    {order.tag}
-                  </span>
-                </div>
-              )}
-              <div className="flex items-start gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    {tab === "finalizadas" ? (
-                      <CheckCircle2 size={16} className="text-green-500" />
-                    ) : (
-                      <Truck size={16} className="text-blue-500" />
-                    )}
-                    <span className="text-sm font-semibold text-gray-800">{order.status}</span>
+                  <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3 bg-muted/30 text-xs text-slate-500 dark:text-slate-300">
+                    <span className="font-mono text-foreground font-medium">#{order.orderNumber}</span>
+                    <span>·</span>
+                    <span>{formatWhen(order.createdAt)}</span>
+                    <span className="ml-auto flex items-center gap-1.5 text-foreground font-medium">
+                      <StatusIcon status={order.status} />
+                      {statusLabel(order.status)}
+                    </span>
                   </div>
-                  <p className="text-xs text-gray-500 mb-3">{order.statusDetail}</p>
 
-                  <div className="flex items-center gap-3 bg-gray-50 rounded-lg p-3">
-                    <div className="w-12 h-12 bg-white rounded-lg border border-gray-200 flex items-center justify-center">
-                      <Package size={20} className="text-gray-400" />
+                  <div className="p-4 flex flex-col sm:flex-row gap-4">
+                    <div className="w-16 h-16 shrink-0 rounded-lg border border-border bg-background flex items-center justify-center overflow-hidden">
+                      {img ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={img} alt="" className="max-w-full max-h-full object-contain" />
+                      ) : (
+                        <Package className="w-7 h-7 text-muted-foreground" />
+                      )}
                     </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-700">{order.product}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground leading-snug">{title}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">Comprador: {buyer}</p>
+                      {(order.shippingCity || order.shippingState) && (
+                        <p className="text-xs text-slate-500 dark:text-slate-300 mt-0.5">
+                          Envío: {order.shippingCity}
+                          {order.shippingCity && order.shippingState ? ", " : ""}
+                          {order.shippingState}
+                        </p>
+                      )}
+                      {order.fulfillmentStageLabel && (
+                        <p className="text-xs text-primary dark:text-[#60a5fa] font-medium mt-1">
+                          Tu gestión: {order.fulfillmentStageLabel}
+                        </p>
+                      )}
+                      {order.delayLabel && (
+                        <p className="text-xs font-semibold text-amber-700 dark:text-amber-300 mt-1">{order.delayLabel}</p>
+                      )}
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-semibold text-gray-800">{order.price}</p>
-                      <p className="text-xs text-gray-500">{order.qty}</p>
-                      {order.sku && <p className="text-[10px] text-gray-400">SKU: {order.sku}</p>}
+                    <div className="flex flex-col items-end gap-2 shrink-0">
+                      <span className="text-lg font-semibold text-foreground">{formatPrice(order.total)}</span>
+                      <Link
+                        href={`/dashboard/pedido/${encodeURIComponent(order.id)}`}
+                        className="text-sm font-semibold text-primary dark:text-[#60a5fa] hover:underline"
+                      >
+                        Ver seguimiento
+                      </Link>
                     </div>
                   </div>
-                </div>
 
-                <div className="flex flex-col items-end gap-2">
-                  <button
-                    className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                      order.actionType === "blue"
-                        ? "bg-blue-600 text-white hover:bg-blue-700"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
-                  >
-                    {order.actionLabel}
-                  </button>
-                  <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
-                    <Info size={16} />
-                  </button>
-                  <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
-                    <MoreVertical size={16} />
-                  </button>
+                  {order.id.startsWith("sb-") && !canOps && (
+                    <div className="border-t border-border px-4 py-3 bg-muted/20">
+                      <p className="text-[11px] text-slate-500 dark:text-slate-300">
+                        {order.status === "PENDING"
+                          ? "Las opciones de preparacion se activan cuando Mercado Pago confirme el pago."
+                          : "Este pedido no admite cambios operativos por su estado actual."}
+                      </p>
+                    </div>
+                  )}
+
+                  {canOps && (
+                    <div className="border-t border-border px-4 py-3 bg-muted/20 space-y-2">
+                      <p className="text-[11px] text-slate-500 dark:text-slate-300">
+                        Actualizá el estado operativo (no reemplaza el estado de pago de Mercado Pago). Si no despachás
+                        en 24 h desde el pago, el pedido entra en demora.
+                      </p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <select
+                          className="text-xs border border-slate-200/80 dark:border-slate-700/80 rounded-md px-2 py-1.5 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100 max-w-[220px]"
+                          value={stageVal}
+                          disabled={savingId === order.id}
+                          onChange={(e) => void saveFulfillment(order, e.target.value)}
+                        >
+                          {FULFILLMENT_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                        {savingId === order.id && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+                        {order.delayLabel && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setReviewOrder(order);
+                              setReviewReason("");
+                              setReviewUrls("");
+                            }}
+                            className="text-xs font-semibold text-amber-800 dark:text-amber-300 underline"
+                          >
+                            Solicitar revisión por demora
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
+              );
+            })
+          )}
+        </div>
+      )}
+
+      {reviewOrder && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/55 p-4">
+          <div className="bg-card rounded-xl border border-slate-200/80 dark:border-slate-700/80 max-w-md w-full p-5 shadow-lg">
+            <h3 className="text-sm font-semibold text-foreground mb-2">Revisión por demora</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-300 mb-3">
+              Pedido #{reviewOrder.orderNumber}. Contanos el motivo y adjuntá URLs de prueba (tracking, capturas,
+              etc.).
+            </p>
+            <textarea
+              className="w-full text-sm border border-slate-200/80 dark:border-slate-700/80 rounded-md p-2 min-h-[100px] bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100"
+              placeholder="Motivo (mín. 10 caracteres)…"
+              value={reviewReason}
+              onChange={(e) => setReviewReason(e.target.value)}
+            />
+            <textarea
+              className="w-full text-sm border border-slate-200/80 dark:border-slate-700/80 rounded-md p-2 mt-2 min-h-[60px] bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100"
+              placeholder="URLs de prueba, una por línea o separadas por coma"
+              value={reviewUrls}
+              onChange={(e) => setReviewUrls(e.target.value)}
+            />
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                type="button"
+                className="text-sm px-3 py-1.5 rounded-md border border-slate-200/80 dark:border-slate-700/80"
+                onClick={() => setReviewOrder(null)}
+                disabled={reviewBusy}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="text-sm px-3 py-1.5 rounded-md bg-primary text-primary-foreground font-semibold disabled:opacity-50"
+                onClick={() => void submitDelayReview()}
+                disabled={reviewBusy}
+              >
+                {reviewBusy ? "Enviando…" : "Enviar solicitud"}
+              </button>
             </div>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
     </div>
   );
-};
-
-export default VentasView;
+}

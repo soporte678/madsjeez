@@ -18,7 +18,7 @@ import {
   ImageIcon,
 } from "lucide-react";
 import { toast } from "sonner";
-import { createClient } from "@/lib/supabase/client";
+import { hasValidProductImageUrl } from "@/lib/productVisibility";
 
 interface Product {
   id: string;
@@ -57,6 +57,10 @@ function buildCategoryPath(categories: Category[], categoryId: string): Category
   return path;
 }
 
+function findCategoryByParam(categories: Category[], value: string): Category | undefined {
+  return categories.find((category) => category.id === value || category.slug === value);
+}
+
 function FilterSwitch({
   title,
   subtitle,
@@ -93,12 +97,14 @@ function FilterList({
   title,
   items,
   showMore,
+  onShowMore,
   onItemClick,
   activeItem,
 }: {
   title: string;
   items: { label: string; value: string }[];
   showMore?: boolean;
+  onShowMore?: () => void;
   onItemClick?: (value: string) => void;
   activeItem?: string;
 }) {
@@ -119,7 +125,11 @@ function FilterList({
         ))}
         {showMore && (
           <li>
-            <button type="button" className="text-[#3483fa] font-semibold text-[12px] mt-1 hover:text-blue-700">
+            <button
+              type="button"
+              onClick={onShowMore}
+              className="text-[#3483fa] font-semibold text-[12px] mt-1 hover:text-blue-700"
+            >
               Mostrar más
             </button>
           </li>
@@ -154,7 +164,6 @@ function StarRating({ soldCount }: { soldCount: number }) {
 function SearchContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const supabase = createClient();
 
   const [query, setQuery] = useState(searchParams.get("q") || "");
   const [products, setProducts] = useState<Product[]>([]);
@@ -166,6 +175,7 @@ function SearchContent() {
   const [sortBy, setSortBy] = useState(searchParams.get("sort") || "relevance");
   const [freeShipping, setFreeShipping] = useState(searchParams.get("free_shipping") === "true");
   const [arrivesTomorrow, setArrivesTomorrow] = useState(searchParams.get("arrives_tomorrow") === "true");
+  const [showAllCategories, setShowAllCategories] = useState(false);
   const [wholesale, setWholesale] = useState(false);
   const [invoiceA, setInvoiceA] = useState(false);
   const [intlShipping, setIntlShipping] = useState(false);
@@ -192,13 +202,39 @@ function SearchContent() {
   }, [searchParams]);
 
   const fetchCategories = useCallback(async () => {
-    const { data } = await supabase
-      .from("categories")
-      .select("id, name, slug, parent_id")
-      .eq("is_active", true)
-      .order("name");
-    if (data) setCategories(data as Category[]);
-  }, [supabase]);
+    try {
+      const response = await fetch("/api/categories");
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Error al cargar categorias");
+
+      const flatCategories = (data || []).flatMap(
+        (category: {
+          id: string;
+          name: string;
+          slug: string;
+          children?: Array<{ id: string; name: string; slug: string }>;
+        }) => [
+          {
+            id: category.id,
+            name: category.name,
+            slug: category.slug,
+            parent_id: null,
+          },
+          ...(category.children || []).map((child) => ({
+            id: child.id,
+            name: child.name,
+            slug: child.slug,
+            parent_id: category.id,
+          })),
+        ]
+      );
+
+      setCategories(flatCategories);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      setCategories([]);
+    }
+  }, []);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -215,7 +251,7 @@ function SearchContent() {
         return;
       }
       const list = (data.products || []) as Product[];
-      setProducts(list);
+      setProducts(list.filter((p) => hasValidProductImageUrl(p.primary_image)));
     } catch {
       toast.error("Error al cargar resultados");
       setProducts([]);
@@ -337,8 +373,19 @@ function SearchContent() {
 
   const categoryPath = useMemo(() => {
     if (!selectedCategory || !categories.length) return [];
-    return buildCategoryPath(categories, selectedCategory);
+    const selected = findCategoryByParam(categories, selectedCategory);
+    return buildCategoryPath(categories, selected?.id || selectedCategory);
   }, [selectedCategory, categories]);
+
+  const selectedCategoryId = useMemo(() => {
+    if (!selectedCategory) return "";
+    return findCategoryByParam(categories, selectedCategory)?.id || selectedCategory;
+  }, [selectedCategory, categories]);
+
+  const visibleCategories = useMemo(
+    () => (showAllCategories ? categories : categories.slice(0, 12)),
+    [categories, showAllCategories]
+  );
 
   const filteredProducts = useMemo(() => {
     let list = [...products];
@@ -446,8 +493,16 @@ function SearchContent() {
                   </span>
                 }
                 subtitle="Beneficios de envío"
-                isActive={false}
-                onToggle={() => {}}
+                isActive={freeShipping && arrivesTomorrow}
+                onToggle={() => {
+                  const next = !(freeShipping && arrivesTomorrow);
+                  setFreeShipping(next);
+                  setArrivesTomorrow(next);
+                  updateSearchParams({
+                    free_shipping: next ? "true" : null,
+                    arrives_tomorrow: next ? "true" : null,
+                  });
+                }}
               />
               <FilterSwitch title="Internacional" isActive={intlShipping} onToggle={() => setIntlShipping(!intlShipping)} />
               <FilterSwitch title="Envío local" isActive={localShipping} onToggle={() => setLocalShipping(!localShipping)} />
@@ -470,11 +525,12 @@ function SearchContent() {
               <div className="mt-4 space-y-4">
                 <FilterList
                   title="Categoría"
-                  items={categories.slice(0, 12).map((c) => ({ label: c.name, value: c.id }))}
-                  showMore={categories.length > 12}
-                  activeItem={selectedCategory}
+                  items={visibleCategories.map((c) => ({ label: c.name, value: c.id }))}
+                  showMore={!showAllCategories && categories.length > visibleCategories.length}
+                  onShowMore={() => setShowAllCategories(true)}
+                  activeItem={selectedCategoryId}
                   onItemClick={(id) => {
-                    const next = selectedCategory === id ? "" : id;
+                    const next = selectedCategoryId === id ? "" : id;
                     setSelectedCategory(next);
                     updateSearchParams({ category: next || null });
                   }}
@@ -682,7 +738,13 @@ function SearchContent() {
                         >
                           <div className="aspect-square bg-gray-50 p-2 flex items-center justify-center">
                             {product.primary_image ? (
-                              <img src={product.primary_image} alt="" className="max-w-full max-h-full object-contain" />
+                              <img
+                                src={product.primary_image}
+                                alt={`${product.title} — MadsJeez Marketplace`}
+                                className="max-w-full max-h-full object-contain"
+                                loading="lazy"
+                                decoding="async"
+                              />
                             ) : (
                               <Package className="w-10 h-10 text-gray-300" />
                             )}
@@ -749,8 +811,10 @@ function ProductCard({
         {product.primary_image ? (
           <img
             src={product.primary_image}
-            alt={product.title}
+            alt={`Comprar ${product.title} online — marketplace MadsJeez Argentina`}
             className="w-full h-full object-contain group-hover:scale-[1.03] transition-transform duration-300"
+            loading="lazy"
+            decoding="async"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">

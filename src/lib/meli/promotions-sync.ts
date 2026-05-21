@@ -48,9 +48,7 @@ export async function syncMeliPromotionsForUser(
       ? (root.promotions as MeliPromotionRow[])
       : Array.isArray(root.data)
         ? (root.data as MeliPromotionRow[])
-        : Array.isArray(res.data as unknown[])
-          ? (res.data as unknown as MeliPromotionRow[])
-          : [];
+        : [];
 
   let created = 0;
   let updated = 0;

@@ -1,10 +1,22 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { isMarketplaceAdminEmail } from "@/lib/admin-api"
 
 // API para conectar número de WhatsApp Business
 export async function POST(request: Request) {
   try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+    }
+
     const { phoneNumber, businessName, sellerId } = await request.json()
+    const isAdmin = await isMarketplaceAdminEmail(session.user.email)
+    if (!isAdmin && sellerId !== session.user.id) {
+      return NextResponse.json({ error: "No tienes permiso para modificar este vendedor" }, { status: 403 })
+    }
 
     const supabase = await createClient()
 
@@ -47,7 +59,8 @@ export async function POST(request: Request) {
       phoneNumber
     })
 
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Error interno"
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

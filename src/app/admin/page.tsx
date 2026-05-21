@@ -2,23 +2,23 @@
 
 export const dynamic = "force-dynamic"
 
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import {
-  TrendingUp,
-  Truck,
+  AlertTriangle,
+  ArrowDownRight,
+  ArrowUpRight,
+  DollarSign,
+  Download,
+  Package,
   Scale,
   ShieldCheck,
-  Download,
+  TrendingUp,
+  Truck,
   Users,
-  Package,
-  DollarSign,
-  AlertTriangle,
-  ArrowUpRight,
-  ArrowDownRight,
 } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
+import { createClient } from "@/lib/supabase/client"
 
 interface DashboardStats {
   ventasDia: number
@@ -29,6 +29,14 @@ interface DashboardStats {
   totalProductos: number
   totalOrdenes: number
   ingresosMes: number
+  visitas30d: number
+  organico30d: number
+  pago30d: number
+  sesiones30d: number
+  pageViews30d: number
+  eventos30d: number
+  gaSource: string
+  internalEvents: Record<string, number>
 }
 
 export default function AdminDashboardPage() {
@@ -41,14 +49,21 @@ export default function AdminDashboardPage() {
     totalProductos: 0,
     totalOrdenes: 0,
     ingresosMes: 0,
+    visitas30d: 0,
+    organico30d: 0,
+    pago30d: 0,
+    sesiones30d: 0,
+    pageViews30d: 0,
+    eventos30d: 0,
+    gaSource: "web_visits",
+    internalEvents: {},
   })
   const [loading, setLoading] = useState(true)
   const [lastUpdated, setLastUpdated] = useState<string>("")
 
   useEffect(() => {
-    fetchDashboardData()
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchDashboardData, 30000)
+    void fetchDashboardData()
+    const interval = setInterval(() => void fetchDashboardData(), 30000)
     return () => clearInterval(interval)
   }, [])
 
@@ -57,7 +72,6 @@ export default function AdminDashboardPage() {
     setLoading(true)
 
     try {
-      // Get today's sales
       const today = new Date().toISOString().split("T")[0]
       const { data: ventasHoy } = await supabase
         .from("orders")
@@ -65,54 +79,66 @@ export default function AdminDashboardPage() {
         .gte("created_at", today)
         .eq("status", "completed")
 
-      const ventasDia = ventasHoy?.reduce((acc, order) => acc + (order.total_amount || 0), 0) || 0
+      const ventasDia =
+        ventasHoy?.reduce((acc, order) => acc + (order.total_amount || 0), 0) || 0
 
-      // Get delayed shipments
       const { count: enviosDemora } = await supabase
         .from("shipments")
         .select("*", { count: "exact", head: true })
         .eq("status", "delayed")
 
-      // Get open disputes
       const { count: mediacionesAbiertas } = await supabase
         .from("disputes")
         .select("*", { count: "exact", head: true })
         .eq("status", "open")
 
-      // Get blocked fraud attempts
       const { count: fraudesBloqueados } = await supabase
         .from("fraud_logs")
         .select("*", { count: "exact", head: true })
         .eq("action_taken", "blocked")
-        .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+        .gte(
+          "created_at",
+          new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+        )
 
-      // Get total users
       const { count: totalUsuarios } = await supabase
         .from("profiles")
         .select("*", { count: "exact", head: true })
 
-      // Get total products
       const { count: totalProductos } = await supabase
         .from("products")
         .select("*", { count: "exact", head: true })
 
-      // Get total orders
       const { count: totalOrdenes } = await supabase
         .from("orders")
         .select("*", { count: "exact", head: true })
 
-      // Get monthly revenue
       const firstDayOfMonth = new Date()
       firstDayOfMonth.setDate(1)
       firstDayOfMonth.setHours(0, 0, 0, 0)
-      
+
       const { data: revenueData } = await supabase
         .from("orders")
         .select("total_amount")
         .gte("created_at", firstDayOfMonth.toISOString())
         .eq("status", "completed")
 
-      const ingresosMes = revenueData?.reduce((acc, order) => acc + (order.total_amount || 0), 0) || 0
+      const ingresosMes =
+        revenueData?.reduce((acc, order) => acc + (order.total_amount || 0), 0) || 0
+
+      const trafficRes = await fetch("/api/admin/traffic/summary")
+      const traffic = trafficRes.ok
+        ? await trafficRes.json()
+        : {
+            total: 0,
+            organic: 0,
+            paid: 0,
+            sessions: 0,
+            pageViews: 0,
+            eventCount: 0,
+            source: "web_visits",
+            internalEvents: {},
+          }
 
       setStats({
         ventasDia,
@@ -123,28 +149,35 @@ export default function AdminDashboardPage() {
         totalProductos: totalProductos || 0,
         totalOrdenes: totalOrdenes || 0,
         ingresosMes,
+        visitas30d: traffic.total || 0,
+        organico30d: traffic.organic || 0,
+        pago30d: traffic.paid || 0,
+        sesiones30d: traffic.sessions || 0,
+        pageViews30d: traffic.pageViews || 0,
+        eventos30d: traffic.eventCount || 0,
+        gaSource: traffic.source || "web_visits",
+        internalEvents: traffic.internalEvents || {},
       })
       setLastUpdated(new Date().toLocaleTimeString("es-AR"))
     } catch (error) {
       console.error("Error fetching dashboard data:", error)
-      toast.error("Error al cargar estadísticas")
+      toast.error("Error al cargar estadisticas")
     } finally {
       setLoading(false)
     }
   }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("es-AR", {
+  const formatCurrency = (amount: number) =>
+    new Intl.NumberFormat("es-AR", {
       style: "currency",
       currency: "ARS",
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount)
-  }
 
   const statCards = [
     {
-      title: "Ventas del Día",
+      title: "Ventas del dia",
       value: formatCurrency(stats.ventasDia),
       trend: "+15%",
       icon: TrendingUp,
@@ -153,7 +186,7 @@ export default function AdminDashboardPage() {
       href: "/admin/ordenes",
     },
     {
-      title: "Envíos con Demora",
+      title: "Envios con demora",
       value: stats.enviosDemora.toString(),
       trend: "-2%",
       icon: Truck,
@@ -163,7 +196,7 @@ export default function AdminDashboardPage() {
       href: "/admin/envios",
     },
     {
-      title: "Mediaciones Abiertas",
+      title: "Mediaciones abiertas",
       value: stats.mediacionesAbiertas.toString(),
       trend: "+12%",
       icon: Scale,
@@ -173,9 +206,9 @@ export default function AdminDashboardPage() {
       href: "/admin/mediaciones",
     },
     {
-      title: "Intentos de Fraude Bloq.",
+      title: "Fraude bloqueado",
       value: stats.fraudesBloqueados.toLocaleString(),
-      trend: "Automático",
+      trend: "Automatico",
       icon: ShieldCheck,
       color: "text-green-600",
       bgColor: "bg-green-50",
@@ -184,60 +217,80 @@ export default function AdminDashboardPage() {
   ]
 
   const secondaryStats = [
-    { label: "Usuarios Totales", value: stats.totalUsuarios.toLocaleString(), icon: Users },
-    { label: "Productos Activos", value: stats.totalProductos.toLocaleString(), icon: Package },
-    { label: "Órdenes del Mes", value: stats.totalOrdenes.toLocaleString(), icon: DollarSign },
-    { label: "Ingresos del Mes", value: formatCurrency(stats.ingresosMes), icon: TrendingUp },
+    { label: "Usuarios totales", value: stats.totalUsuarios.toLocaleString(), icon: Users },
+    { label: "Productos activos", value: stats.totalProductos.toLocaleString(), icon: Package },
+    { label: "Ordenes del mes", value: stats.totalOrdenes.toLocaleString(), icon: DollarSign },
+    { label: "Ingresos del mes", value: formatCurrency(stats.ingresosMes), icon: TrendingUp },
+    { label: "Visitas 30 dias", value: stats.visitas30d.toLocaleString(), icon: Users },
+    { label: "Sesiones 30 dias", value: stats.sesiones30d.toLocaleString(), icon: TrendingUp },
+    { label: "Pageviews 30 dias", value: stats.pageViews30d.toLocaleString(), icon: Package },
+    { label: "Eventos 30 dias", value: stats.eventos30d.toLocaleString(), icon: ShieldCheck },
+    { label: "Organico 30 dias", value: stats.organico30d.toLocaleString(), icon: ArrowUpRight },
+    { label: "Pago 30 dias", value: stats.pago30d.toLocaleString(), icon: DollarSign },
+  ]
+
+  const eventHighlights = [
+    { label: "view_item", value: stats.internalEvents.view_item || 0 },
+    { label: "add_to_cart", value: stats.internalEvents.add_to_cart || 0 },
+    { label: "begin_checkout", value: stats.internalEvents.begin_checkout || 0 },
+    { label: "purchase", value: stats.internalEvents.purchase || 0 },
+    { label: "generate_lead", value: stats.internalEvents.generate_lead || 0 },
   ]
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">Centro de Comando Global</h2>
-          <p className="text-sm text-gray-500">Métricas en tiempo real de MadsJeez</p>
-          <p className="text-xs text-gray-400 mt-1">
+          <h2 className="text-2xl font-bold text-gray-800">Centro de comando global</h2>
+          <p className="text-sm text-gray-500">
+            Metricas en tiempo real del marketplace y Google Analytics
+          </p>
+          <p className="mt-1 text-xs text-blue-600">
+            Fuente de trafico:{" "}
+            {stats.gaSource === "ga4" ? "Google Analytics 4" : "Tracking interno"}
+          </p>
+          <p className="mt-1 text-xs text-gray-400">
             Actualizado: {lastUpdated || "..."}
           </p>
         </div>
+
         <div className="flex gap-2">
           <button
             onClick={fetchDashboardData}
             disabled={loading}
-            className="flex items-center gap-2 text-sm text-gray-600 font-medium hover:bg-gray-100 px-3 py-2 rounded-md transition-colors border border-gray-200 bg-white disabled:opacity-50"
+            className="flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 disabled:opacity-50"
           >
             {loading ? (
-              <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-400 border-t-transparent" />
             ) : (
               <TrendingUp size={16} />
             )}
             Actualizar
           </button>
-          <button className="flex items-center gap-2 text-sm text-blue-600 font-medium hover:bg-blue-50 px-3 py-2 rounded-md transition-colors border border-blue-200 bg-white">
-            <Download size={16} /> Descargar Reporte DGT
+          <button className="flex items-center gap-2 rounded-md border border-blue-200 bg-white px-3 py-2 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50">
+            <Download size={16} />
+            Descargar reporte DGT
           </button>
         </div>
       </div>
 
-      {/* Main Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map((stat, i) => (
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {statCards.map((stat) => (
           <Link
-            key={i}
+            key={stat.title}
             href={stat.href}
-            className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow group"
+            className="group rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
           >
-            <div className="flex justify-between items-start mb-2">
+            <div className="mb-2 flex items-start justify-between">
               <p className="text-sm font-medium text-gray-500">{stat.title}</p>
-              <div className={`p-2 rounded-lg ${stat.bgColor}`}>
+              <div className={`rounded-lg p-2 ${stat.bgColor}`}>
                 <stat.icon size={20} className={stat.color} />
               </div>
             </div>
             <div className="flex items-end justify-between">
               <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
               <span
-                className={`text-xs font-bold flex items-center gap-1 ${
+                className={`flex items-center gap-1 text-xs font-bold ${
                   stat.alert ? "text-red-600" : stat.color
                 }`}
               >
@@ -252,19 +305,18 @@ export default function AdminDashboardPage() {
             {stat.alert && (
               <div className="mt-3 flex items-center gap-1.5 text-xs text-red-600">
                 <AlertTriangle size={12} />
-                <span>Requiere atención</span>
+                <span>Requiere atencion</span>
               </div>
             )}
           </Link>
         ))}
       </div>
 
-      {/* Secondary Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {secondaryStats.map((stat, i) => (
-          <div key={i} className="bg-white p-4 rounded-lg border border-gray-100">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+        {secondaryStats.map((stat) => (
+          <div key={stat.label} className="rounded-lg border border-gray-100 bg-white p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-gray-100 rounded-lg">
+              <div className="rounded-lg bg-gray-100 p-2">
                 <stat.icon size={18} className="text-gray-600" />
               </div>
               <div>
@@ -276,15 +328,36 @@ export default function AdminDashboardPage() {
         ))}
       </div>
 
-      {/* Quick Actions */}
-      <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <h3 className="text-lg font-bold text-gray-800 mb-4">Acciones Rápidas</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="rounded-lg border border-gray-200 bg-white p-6">
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-gray-800">Embudo medido del marketplace</h3>
+            <p className="text-sm text-gray-500">
+              Espejo interno de eventos ecommerce y leads para validar lo que dispara el sitio.
+            </p>
+          </div>
+          <span className="inline-flex w-fit rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-600">
+            Tracking interno espejo
+          </span>
+        </div>
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+          {eventHighlights.map((event) => (
+            <div key={event.label} className="rounded-lg border border-gray-100 bg-gray-50 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{event.label}</p>
+              <p className="mt-2 text-2xl font-bold text-gray-900">{event.value.toLocaleString()}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-gray-200 bg-white p-6">
+        <h3 className="mb-4 text-lg font-bold text-gray-800">Acciones rapidas</h3>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Link
             href="/admin/mediaciones"
-            className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors"
+            className="flex items-center gap-3 rounded-lg border border-gray-200 p-3 transition-colors hover:border-blue-300 hover:bg-blue-50"
           >
-            <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100">
               <Scale size={20} className="text-orange-600" />
             </div>
             <div>
@@ -292,77 +365,68 @@ export default function AdminDashboardPage() {
               <p className="text-xs text-gray-500">Gestionar disputas</p>
             </div>
           </Link>
-          
+
           <Link
             href="/admin/envios"
-            className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors"
+            className="flex items-center gap-3 rounded-lg border border-gray-200 p-3 transition-colors hover:border-blue-300 hover:bg-blue-50"
           >
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
               <Truck size={20} className="text-blue-600" />
             </div>
             <div>
-              <p className="font-medium text-gray-800">Envíos</p>
+              <p className="font-medium text-gray-800">Envios</p>
               <p className="text-xs text-gray-500">Radar de demoras</p>
             </div>
           </Link>
-          
+
           <Link
             href="/admin/mensajes"
-            className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors"
+            className="flex items-center gap-3 rounded-lg border border-gray-200 p-3 transition-colors hover:border-blue-300 hover:bg-blue-50"
           >
-            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100">
               <AlertTriangle size={20} className="text-purple-600" />
             </div>
             <div>
-              <p className="font-medium text-gray-800">Moderación</p>
+              <p className="font-medium text-gray-800">Moderacion</p>
               <p className="text-xs text-gray-500">Preguntas y mensajes</p>
             </div>
           </Link>
-          
+
           <Link
             href="/admin/vendedores"
-            className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors"
+            className="flex items-center gap-3 rounded-lg border border-gray-200 p-3 transition-colors hover:border-blue-300 hover:bg-blue-50"
           >
-            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100">
               <Users size={20} className="text-green-600" />
             </div>
             <div>
               <p className="font-medium text-gray-800">Vendedores</p>
-              <p className="text-xs text-gray-500">Gestión de reputación</p>
+              <p className="text-xs text-gray-500">Gestion y reputacion</p>
             </div>
           </Link>
         </div>
       </div>
 
-      {/* System Status */}
-      <div className="bg-gradient-to-r from-slate-800 to-slate-900 p-6 rounded-lg text-white">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="rounded-lg bg-gradient-to-r from-slate-800 to-slate-900 p-6 text-white">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h3 className="text-lg font-bold">Estado del Sistema</h3>
-            <p className="text-slate-400 text-sm">Todos los servicios operativos</p>
+            <h3 className="text-lg font-bold">Estado del sistema</h3>
+            <p className="text-sm text-slate-400">
+              Seguimiento del marketplace, base de datos y servicios
+            </p>
           </div>
-          <div className="flex items-center gap-2 bg-green-500/20 text-green-400 px-4 py-2 rounded-full">
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+          <div className="flex items-center gap-2 rounded-full bg-green-500/20 px-4 py-2 text-green-400">
+            <div className="h-2 w-2 animate-pulse rounded-full bg-green-400" />
             <span className="text-sm font-medium">Operativo</span>
           </div>
         </div>
-        <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-green-400 rounded-full" />
-            <span className="text-slate-300">Base de datos</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-green-400 rounded-full" />
-            <span className="text-slate-300">API REST</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-green-400 rounded-full" />
-            <span className="text-slate-300">Storage</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-green-400 rounded-full" />
-            <span className="text-slate-300">Auth Service</span>
-          </div>
+        <div className="mt-4 grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
+          {["Base de datos", "API REST", "Storage", "Auth Service"].map((item) => (
+            <div key={item} className="flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-green-400" />
+              <span className="text-slate-300">{item}</span>
+            </div>
+          ))}
         </div>
       </div>
     </div>

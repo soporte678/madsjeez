@@ -1,85 +1,127 @@
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react";
+import { fetchSharedHomeCarouselPool } from "@/lib/home-carousel-pool-client";
 
-interface Product {
-  id: string
-  title: string
-  price: number
-  originalPrice?: number | null
-  freeShipping?: boolean
-  sales?: number
-  image?: string | null
-  category?: string
-  sellerName?: string
-  reputation?: string
+export type CatalogCarouselProduct = {
+  id: string;
+  title: string;
+  price: number;
+  originalPrice?: number | null;
+  freeShipping?: boolean;
+  sales?: number;
+  image?: string | null;
+  category?: string;
+  categorySlug?: string;
+  sellerName?: string;
+  reputation?: string;
+};
+
+const CAROUSEL_SIZE = 12;
+const ROTATION_INTERVAL_MS = 18_000;
+const POOL_REFETCH_MS = 5 * 60_000;
+const CATEGORY_POOL_CAP = 200;
+
+function sliceRotated<T>(arr: T[], start: number, size: number): T[] {
+  if (arr.length === 0) return [];
+  const s = start % arr.length;
+  const out: T[] = [];
+  for (let i = 0; i < Math.min(size, arr.length); i++) {
+    out.push(arr[(s + i) % arr.length]);
+  }
+  return out;
 }
 
-const CAROUSEL_SIZE = 12 // Show 12 products at a time
-const ROTATION_INTERVAL = 60 * 1000 // 60 seconds
-const FETCH_INTERVAL = 5 * 60 * 1000 // Refetch every 5 minutes
+type UseRotatingProductsOptions = {
+  offset?: number;
+  categorySlug?: string | null;
+  visibleCount?: number;
+};
 
-export function useRotatingProducts(offset: number = 0) {
-  const [allProducts, setAllProducts] = useState<Product[]>([])
-  const [visibleProducts, setVisibleProducts] = useState<Product[]>([])
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [loading, setLoading] = useState(true)
-  const [totalCount, setTotalCount] = useState(0)
+export function useRotatingProducts(options: UseRotatingProductsOptions = {}) {
+  const offset = options.offset ?? 0;
+  const categorySlug = options.categorySlug?.trim() || null;
+  const visibleCount = options.visibleCount ?? CAROUSEL_SIZE;
 
-  const effectiveOffset = offset % (allProducts.length || 1)
+  const [pool, setPool] = useState<CatalogCarouselProduct[]>([]);
+  const [visibleProducts, setVisibleProducts] = useState<CatalogCarouselProduct[]>([]);
+  const [rotationStep, setRotationStep] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
+  const poolRef = useRef<CatalogCarouselProduct[]>([]);
+  const rotationStepRef = useRef(0);
 
-  const fetchProducts = useCallback(async () => {
-    try {
-      setLoading(true)
-      const res = await fetch("/api/products/carousel")
-      const data = await res.json()
-      if (data.products) {
-        setAllProducts(data.products)
-        setTotalCount(data.total || 0)
-        // Initial slice with offset applied
-        const start = offset % data.products.length
-        const rotated = [...data.products.slice(start), ...data.products.slice(0, start)]
-        setVisibleProducts(rotated.slice(0, CAROUSEL_SIZE))
-        setCurrentIndex(0)
+  const applyVisible = useCallback(
+    (source: CatalogCarouselProduct[], step: number) => {
+      if (source.length === 0) {
+        setVisibleProducts([]);
+        return;
       }
-    } catch (e) {
-      console.error("Failed to fetch carousel products:", e)
+      const start = (offset + step * visibleCount) % source.length;
+      setVisibleProducts(sliceRotated(source, start, visibleCount));
+    },
+    [offset, visibleCount]
+  );
+
+  const loadPool = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      if (!categorySlug) {
+        const { products, total } = await fetchSharedHomeCarouselPool();
+        poolRef.current = products;
+        setPool(products);
+        setTotalCount(total);
+        applyVisible(products, rotationStepRef.current);
+        return;
+      }
+
+      const res = await fetch(
+        `/api/products/carousel?mode=pool&poolCap=${CATEGORY_POOL_CAP}&categorySlug=${encodeURIComponent(categorySlug)}`
+      );
+      const data = await res.json();
+      const list = (data.products || []) as CatalogCarouselProduct[];
+      poolRef.current = list;
+      setPool(list);
+      setTotalCount(data.total || list.length);
+      applyVisible(list, 0);
+      rotationStepRef.current = 0;
+      setRotationStep(0);
+    } catch {
+      poolRef.current = [];
+      setPool([]);
+      setVisibleProducts([]);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [offset])
+  }, [applyVisible, categorySlug]);
 
-  // Initial fetch
   useEffect(() => {
-    fetchProducts()
-  }, [fetchProducts])
+    void loadPool();
+  }, [categorySlug, offset]);
 
-  // Periodic refetch
   useEffect(() => {
-    const interval = setInterval(fetchProducts, FETCH_INTERVAL)
-    return () => clearInterval(interval)
-  }, [fetchProducts])
+    const id = setInterval(() => void loadPool(), POOL_REFETCH_MS);
+    return () => clearInterval(id);
+  }, [loadPool]);
 
-  // Rotation every 60 seconds — each carousel rotates independently
   useEffect(() => {
-    if (allProducts.length <= CAROUSEL_SIZE) return
+    const source = poolRef.current;
+    if (source.length <= visibleCount) return;
 
     const interval = setInterval(() => {
-      setCurrentIndex(prev => {
-        const next = prev + CAROUSEL_SIZE
-        const maxStart = Math.max(0, allProducts.length - CAROUSEL_SIZE)
-        const newIndex = next > maxStart ? 0 : next
-        // Apply offset so each carousel shows different products
-        const effectiveStart = (newIndex + effectiveOffset) % allProducts.length
-        const rotated = [
-          ...allProducts.slice(effectiveStart),
-          ...allProducts.slice(0, effectiveStart)
-        ]
-        setVisibleProducts(rotated.slice(0, CAROUSEL_SIZE))
-        return newIndex
-      })
-    }, ROTATION_INTERVAL)
+      const next = rotationStepRef.current + 1;
+      rotationStepRef.current = next;
+      setRotationStep(next);
+      applyVisible(source, next);
+    }, ROTATION_INTERVAL_MS);
 
-    return () => clearInterval(interval)
-  }, [allProducts, effectiveOffset])
+    return () => clearInterval(interval);
+  }, [pool.length, applyVisible, visibleCount]);
 
-  return { products: visibleProducts, allProducts, loading, totalCount }
+  return {
+    products: visibleProducts,
+    allProducts: pool,
+    loading,
+    totalCount,
+    rotationStep,
+  };
 }

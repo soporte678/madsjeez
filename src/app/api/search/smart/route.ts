@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { NextRequest, NextResponse } from "next/server"
 import { getSupabaseService } from "@/lib/supabase/service"
+import { hasValidProductImageUrl, primaryImageUrlFromRows } from "@/lib/productVisibility"
 
 export async function POST(req: NextRequest) {
   try {
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
 
     // Ask Gemini to interpret the natural language query
     const genAI = new GoogleGenerativeAI(apiKey)
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
 
     const prompt = `Sos un asistente de búsqueda para un marketplace de maquinaria, herramientas y ferretería en Argentina.
 
@@ -71,9 +72,7 @@ Responde SOLO con el JSON válido, sin markdown ni explicación.`
       .from("products")
       .select(`
         id, title, price, original_price, condition, shipping_free, stock,
-        product_images(url, is_primary),
-        profiles:seller_id(full_name),
-        categories:category_id(name)
+        product_images(url, is_primary)
       `)
       .eq("is_active", true)
 
@@ -90,19 +89,21 @@ Responde SOLO con el JSON válido, sin markdown ni explicación.`
 
     const { data: products } = await dbQuery.limit(24)
 
-    const formattedProducts = (products || []).map((p: any) => ({
-      id: p.id,
-      title: p.title,
-      price: p.price,
-      original_price: p.original_price,
-      condition: p.condition,
-      shipping_free: p.shipping_free,
-      stock: p.stock,
-      primary_image: p.product_images?.find((img: any) => img.is_primary)?.url || p.product_images?.[0]?.url || null,
-      seller_name: p.profiles?.full_name || null,
-      category_name: p.categories?.name || null,
-      sales: 0,
-    }))
+    const formattedProducts = (products || [])
+      .map((p: any) => ({
+        id: p.id,
+        title: p.title,
+        price: p.price,
+        original_price: p.original_price,
+        condition: p.condition,
+        shipping_free: p.shipping_free,
+        stock: p.stock,
+        primary_image: primaryImageUrlFromRows(p.product_images),
+        seller_name: null,
+        category_name: null,
+        sales: 0,
+      }))
+      .filter((p: any) => hasValidProductImageUrl(p.primary_image))
 
     return NextResponse.json({
       products: formattedProducts,

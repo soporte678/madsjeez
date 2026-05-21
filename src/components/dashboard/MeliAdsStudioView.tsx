@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import {
   Loader2,
@@ -8,12 +8,20 @@ import {
   AlertTriangle,
   CheckCircle2,
   Pencil,
-  Info,
   Zap,
   ArrowDown,
   ArrowUp,
+  BarChart2,
+  Search,
+  Filter,
+  Eye,
+  Calendar,
+  LayoutGrid,
+  Table2,
 } from "lucide-react";
 import { toast } from "sonner";
+
+import { MeliAdsEcosystemChart } from "@/components/dashboard/MeliAdsEcosystemChart";
 
 type SnapshotCampaign = {
   id: number;
@@ -40,21 +48,91 @@ type Recommendation = {
   advertiserId?: number;
   campaignId: number;
   campaignName: string;
+  /** Presupuesto diario actual (PADS); opcional en snapshots cacheados viejos. */
+  campaignBudget?: number;
+  /** Cantidad de publicaciones/items; opcional en cache viejo. */
+  campaignItemsCount?: number;
   siteId: string;
   applyPayload: Record<string, unknown>;
 };
 
+/** Payload de GET `/api/meli/ads/snapshot` (estado de pantalla + cache localStorage). */
+type MeliAdsStudioSnapshot = {
+  fetchedAt?: string;
+  metricsDays?: number;
+  advertisers?: { advertiser_id: number; site_id: string; account_name?: string }[];
+  campaigns?: SnapshotCampaign[];
+  totals?: Record<string, number>;
+  previousTotals?: Record<string, number>;
+  deltas?: Record<string, number>;
+  finance?: Record<string, number>;
+  currentWindow?: { start: string; end: string };
+  previousWindow?: { start: string; end: string };
+  recommendations?: Recommendation[];
+  dailyCutoff?: {
+    timezone: string;
+    bucketDateKey: string;
+    source: string;
+    snapshotUpdatedAt: string | null;
+  } | null;
+  /** Suma de cortes diarios guardados en cada ventana (solo días con dato). */
+  rolledTotals?: Array<{ windowDays: number; daysIncluded: number; totals: Record<string, number> }>;
+  /** Historial de cortes diarios (más recientes al final del array). */
+  dailyHistory?: Array<{ bucketDateKey: string; updatedAt: string; totals: Record<string, number> }>;
+  dailyStats?: Array<{ day: string; snapshots: number; avgCost: number; avgRevenue: number; avgProfit: number }>;
+  changeSummary?: { positive: number; negative: number; neutral: number; pending: number };
+  comparisons?: Array<{
+    daysAgo: number;
+    snapshotAt: string | null;
+    metrics: Record<string, number>;
+    deltasVsNow: Record<string, number>;
+  }>;
+  errors?: string[];
+};
+
 const SNAPSHOT_CACHE_KEY = "meli_ads_snapshot_v1";
+const COMPARE_DAYS_STORAGE_KEY = "meli_ads_compare_days_v1";
+const ALLOWED_COMPARE_DAYS = [1, 2, 3, 5, 7, 15, 20, 30] as const;
+const ADS_SECTOR_STORAGE_KEY = "meli_ads_sector_v1";
+const ADS_SECTORS = ["resumen", "historial", "tendencia", "acciones", "campañas"] as const;
+type AdsSector = (typeof ADS_SECTORS)[number];
 const AUTO_REFRESH_MS = 10 * 60 * 1000;
+
+function readStoredCompareDays(): number {
+  if (typeof window === "undefined") return 1;
+  try {
+    const raw = localStorage.getItem(COMPARE_DAYS_STORAGE_KEY);
+    const n = raw ? Number.parseInt(raw, 10) : NaN;
+    if (Number.isFinite(n) && (ALLOWED_COMPARE_DAYS as readonly number[]).includes(n)) return n;
+  } catch {
+    /* ignore */
+  }
+  return 1;
+}
+
+function readStoredAdsSector(): AdsSector {
+  if (typeof window === "undefined") return "resumen";
+  try {
+    const raw = localStorage.getItem(ADS_SECTOR_STORAGE_KEY);
+    if (raw && (ADS_SECTORS as readonly string[]).includes(raw)) return raw as AdsSector;
+  } catch {
+    /* ignore */
+  }
+  return "resumen";
+}
 
 function renderDelta(
   value: number,
   kind: "number" | "money" | "pct",
   direction: "up_good" | "down_good",
   money: (v: unknown) => string,
-  count: (v: unknown) => string
+  count: (v: unknown) => string,
+  opts?: { theme?: "light" | "dark"; suffix?: string }
 ) {
-  if (!Number.isFinite(value) || value === 0) return <span className="text-xs text-gray-400">= 0</span>;
+  const theme = opts?.theme ?? "light";
+  const suffix = opts?.suffix ?? "";
+  const zeroCls = theme === "dark" ? "text-slate-500" : "text-gray-400";
+  if (!Number.isFinite(value) || value === 0) return <span className={`text-xs ${zeroCls}`}>= 0</span>;
   const up = value > 0;
   const isGood = direction === "up_good" ? up : !up;
   const text =
@@ -63,10 +141,13 @@ function renderDelta(
       : kind === "pct"
         ? `${Math.abs(value).toFixed(2)} pts. porcentuales`
         : count(Math.abs(value));
+  const goodCls = theme === "dark" ? "text-emerald-400" : "text-emerald-600";
+  const badCls = theme === "dark" ? "text-rose-400" : "text-red-600";
   return (
-    <span className={`inline-flex items-center gap-1 text-xs font-semibold ${isGood ? "text-emerald-600" : "text-red-600"}`}>
+    <span className={`inline-flex items-center gap-1 text-xs font-semibold ${isGood ? goodCls : badCls}`}>
       {up ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
       {text}
+      {suffix}
     </span>
   );
 }
@@ -75,57 +156,13 @@ export default function MeliAdsStudioView() {
   const { status: sess } = useSession();
   const [loading, setLoading] = useState(false);
   const [applying, setApplying] = useState(false);
-  const [snapshot, setSnapshot] = useState<{
-    fetchedAt?: string;
-    metricsDays?: number;
-    advertisers?: { advertiser_id: number; site_id: string; account_name?: string }[];
-    campaigns?: SnapshotCampaign[];
-    totals?: Record<string, number>;
-    previousTotals?: Record<string, number>;
-    deltas?: Record<string, number>;
-    finance?: Record<string, number>;
-    currentWindow?: { start: string; end: string };
-    previousWindow?: { start: string; end: string };
-    recommendations?: Recommendation[];
-    dailyStats?: Array<{ day: string; snapshots: number; avgCost: number; avgRevenue: number; avgProfit: number }>;
-    changeSummary?: { positive: number; negative: number; neutral: number; pending: number };
-    comparisons?: Array<{
-      daysAgo: number;
-      snapshotAt: string | null;
-      metrics: Record<string, number>;
-      deltasVsNow: Record<string, number>;
-    }>;
-    accessLevel?: "FULL" | "READ_ONLY";
-    errors?: string[];
-  } | null>(() => {
+  const [snapshot, setSnapshot] = useState<MeliAdsStudioSnapshot | null>(() => {
     if (typeof window === "undefined") return null;
     try {
       const raw = localStorage.getItem(SNAPSHOT_CACHE_KEY);
       if (!raw) return null;
       const parsed = JSON.parse(raw) as { data?: unknown };
-      return (parsed?.data as {
-        fetchedAt?: string;
-        metricsDays?: number;
-        advertisers?: { advertiser_id: number; site_id: string; account_name?: string }[];
-        campaigns?: SnapshotCampaign[];
-        totals?: Record<string, number>;
-        previousTotals?: Record<string, number>;
-        deltas?: Record<string, number>;
-        finance?: Record<string, number>;
-        currentWindow?: { start: string; end: string };
-        previousWindow?: { start: string; end: string };
-        recommendations?: Recommendation[];
-        dailyStats?: Array<{ day: string; snapshots: number; avgCost: number; avgRevenue: number; avgProfit: number }>;
-        changeSummary?: { positive: number; negative: number; neutral: number; pending: number };
-        comparisons?: Array<{
-          daysAgo: number;
-          snapshotAt: string | null;
-          metrics: Record<string, number>;
-          deltasVsNow: Record<string, number>;
-        }>;
-        accessLevel?: "FULL" | "READ_ONLY";
-        errors?: string[];
-      }) ?? null;
+      return (parsed?.data as MeliAdsStudioSnapshot) ?? null;
     } catch {
       return null;
     }
@@ -139,24 +176,58 @@ export default function MeliAdsStudioView() {
   const [expandedCampaignRows, setExpandedCampaignRows] = useState<Record<string, boolean>>({});
   const [campaignItems, setCampaignItems] = useState<Record<string, Array<{ item_id?: string; title?: string; status?: string; metrics?: Record<string, unknown> }>>>({});
   const [loadingItems, setLoadingItems] = useState<Record<string, boolean>>({});
-  const [editingBudgetRoasRow, setEditingBudgetRoasRow] = useState<string | null>(null);
-  const [editingBudgetRoasValues, setEditingBudgetRoasValues] = useState<Record<string, { budget: string; roas: string }>>({});
-  const [compareDays, setCompareDays] = useState(7);
+  const [compareDays, setCompareDays] = useState(() => readStoredCompareDays());
+  const [recFilter, setRecFilter] = useState<"all" | "critical" | "warning" | "virtue">("all");
+  /** Detalle largo del análisis por id de recomendación (solo tras “Leer más…”). */
+  const [expandedRecAnalysis, setExpandedRecAnalysis] = useState<Record<string, boolean>>({});
+  const [adsSector, setAdsSector] = useState<AdsSector>(() => readStoredAdsSector());
+  const [campaignSearch, setCampaignSearch] = useState("");
+
+  const goAdsSector = (s: AdsSector) => {
+    setAdsSector(s);
+    try {
+      localStorage.setItem(ADS_SECTOR_STORAGE_KEY, s);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const loadGenRef = useRef(0);
 
   const load = useCallback(async (opts?: { silent?: boolean }) => {
     const silent = Boolean(opts?.silent);
+    const gen = ++loadGenRef.current;
     setLoading(true);
     try {
       const res = await fetch(`/api/meli/ads/snapshot?analyze=1&days=14&compare_days=${compareDays}&t=${Date.now()}`, {
         cache: "no-store",
+        credentials: "include",
       });
-      const data = await res.json();
-      if (!res.ok) {
-        if (!silent) toast.error(data.error || "No se pudo cargar Product Ads");
-        setSnapshot(null);
+      let data: Record<string, unknown>;
+      try {
+        data = (await res.json()) as Record<string, unknown>;
+      } catch {
+        if (gen !== loadGenRef.current) return;
+        if (!silent) toast.error("Respuesta inválida del servidor");
         return;
       }
-      setSnapshot(data);
+      if (gen !== loadGenRef.current) return;
+      if (!res.ok) {
+        const msg = typeof data.error === "string" ? data.error : "No se pudo cargar Product Ads";
+        if (!silent) toast.error(msg);
+        // Sesión cerrada: limpiar cache. Cualquier otro fallo (502, timeout ML, etc.) no debe vaciar
+        // la UI en refrescos silenciosos — antes borrábamos todo y parecía “sin datos”.
+        if (res.status === 401) {
+          setSnapshot(null);
+          try {
+            localStorage.removeItem(SNAPSHOT_CACHE_KEY);
+          } catch {
+            /* ignore */
+          }
+        }
+        return;
+      }
+      setSnapshot(data as MeliAdsStudioSnapshot);
       localStorage.setItem(
         SNAPSHOT_CACHE_KEY,
         JSON.stringify({
@@ -171,6 +242,7 @@ export default function MeliAdsStudioView() {
         });
       }
     } catch {
+      if (gen !== loadGenRef.current) return;
       if (!silent) toast.error("Error de red");
     } finally {
       setLoading(false);
@@ -194,10 +266,6 @@ export default function MeliAdsStudioView() {
   };
 
   const applySelected = async () => {
-    if (snapshot?.accessLevel === "READ_ONLY") {
-      toast.error("Tu acceso es solo lectura. No podés aplicar cambios.");
-      return;
-    }
     const recs = snapshot?.recommendations ?? [];
     const actions = recs
       .filter((r) => selected[r.id])
@@ -238,20 +306,17 @@ export default function MeliAdsStudioView() {
 
   if (sess === "loading") {
     return (
-      <div className="flex justify-center py-20">
-        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      <div className="flex justify-center rounded-xl border border-gray-800 bg-[#0A0F1C] py-20 shadow-lg">
+        <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
       </div>
     );
   }
 
   if (sess === "unauthenticated") {
-    return <p className="text-gray-600 text-sm">Iniciá sesión para usar esta herramienta.</p>;
+    return <p className="text-sm text-gray-400">Iniciá sesión para usar esta herramienta.</p>;
   }
 
   const recs = snapshot?.recommendations ?? [];
-  const canApply = snapshot?.accessLevel !== "READ_ONLY";
-  const positiveRecs = recs.filter((r) => r.expectedImpact === "positive");
-  const negativeRecs = recs.filter((r) => r.severity === "critical" || r.category === "negative" || r.expectedImpact === "negative");
   const camps = snapshot?.campaigns ?? [];
   const totals = snapshot?.totals ?? {};
   const deltas = snapshot?.deltas ?? {};
@@ -259,6 +324,43 @@ export default function MeliAdsStudioView() {
   const dailyStats = snapshot?.dailyStats ?? [];
   const changeSummary = snapshot?.changeSummary ?? { positive: 0, negative: 0, neutral: 0, pending: 0 };
   const comparisons = snapshot?.comparisons ?? [];
+
+  const countCritical = recs.filter((r) => r.severity === "critical").length;
+  const countWarning = recs.filter((r) => r.severity === "warning").length;
+  // "Virtudes" representa el grupo no crítico/no advertencia (severidad informativa).
+  // Esto mantiene el total particionado: all = critical + warning + virtue(info).
+  const countVirtue = recs.filter((r) => r.severity === "info").length;
+
+  const filteredRecs =
+    recFilter === "all"
+      ? recs
+      : recFilter === "critical"
+        ? recs.filter((r) => r.severity === "critical")
+        : recFilter === "warning"
+          ? recs.filter((r) => r.severity === "warning")
+          : recs.filter((r) => r.severity === "info");
+
+  const chartWindowDays = Math.min(Math.max(compareDays, 1), 30);
+  const chartSlice = dailyStats.slice(-chartWindowDays);
+  const chartLabelsArr = (() => {
+    const n = chartSlice.length;
+    if (n <= 0) return [];
+    const labels: string[] = [];
+    for (let k = n; k >= 2; k--) labels.push(`D-${k}`);
+    labels.push("Ayer");
+    return labels;
+  })();
+  const revenueK = chartSlice.map((d) => d.avgRevenue / 1000);
+  const costK = chartSlice.map((d) => d.avgCost / 1000);
+
+  const avgDailyBlock = (() => {
+    const slice = dailyStats.slice(-chartWindowDays);
+    if (!slice.length) return null;
+    const avgCost = slice.reduce((s, d) => s + d.avgCost, 0) / slice.length;
+    const avgProfit = slice.reduce((s, d) => s + d.avgProfit, 0) / slice.length;
+    const lastDay = slice[slice.length - 1]?.day ?? "—";
+    return { avgCost, avgProfit, lastDay };
+  })();
 
   const num = (v: unknown) => {
     const n = Number(v);
@@ -286,11 +388,12 @@ export default function MeliAdsStudioView() {
     return arr;
   })();
 
+  const campaignQuery = campaignSearch.trim().toLowerCase();
+  const filteredSortedCamps = campaignQuery
+    ? sortedCamps.filter((c) => (c.name || String(c.id)).toLowerCase().includes(campaignQuery))
+    : sortedCamps;
+
   const renameCampaign = async (c: SnapshotCampaign) => {
-    if (!canApply) {
-      toast.error("Tu acceso es solo lectura. No podés editar campañas.");
-      return;
-    }
     const rowKey = `${c.site_id}-${c.id}`;
     const newName = (editingNames[rowKey] ?? "").trim();
     if (!newName) {
@@ -335,105 +438,6 @@ export default function MeliAdsStudioView() {
     }
   };
 
-  const saveBudgetRoas = async (c: SnapshotCampaign) => {
-    if (!canApply) {
-      toast.error("Tu acceso es solo lectura. No podés editar campañas.");
-      return;
-    }
-    const rowKey = `${c.site_id}-${c.id}`;
-    const values = editingBudgetRoasValues[rowKey] ?? { budget: String(num(c.budget) || 0), roas: String(num(c.roas_target) || 0) };
-    const budget = Number(values.budget);
-    const roas = Number(values.roas);
-    if (!Number.isFinite(budget) || budget < 1) {
-      toast.error("Presupuesto inválido");
-      return;
-    }
-    if (!Number.isFinite(roas) || roas < 1) {
-      toast.error("ROAS inválido");
-      return;
-    }
-    setRenamingId(`br-${rowKey}`);
-    try {
-      const res = await fetch("/api/meli/ads/apply", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          actions: [
-            {
-              siteId: c.site_id,
-              advertiserId: c.advertiser_id,
-              campaignId: c.id,
-              recommendationTitle: "Actualizar presupuesto/ROAS",
-              applyPayload: {
-                name: c.name || `Campaña ${c.id}`,
-                status: (c.status || "active").toLowerCase(),
-                budget,
-                strategy: (c.strategy || "profitability").toLowerCase(),
-                channel: "marketplace",
-                roas_target: roas,
-              },
-            },
-          ],
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "No se pudo actualizar presupuesto/ROAS");
-      } else {
-        toast.success("Presupuesto y ROAS actualizados");
-        setEditingBudgetRoasRow(null);
-        await load({ silent: true });
-      }
-    } catch {
-      toast.error("Error de red al actualizar campaña");
-    } finally {
-      setRenamingId(null);
-    }
-  };
-
-  const updateCampaignItemStatus = async (
-    c: SnapshotCampaign,
-    item: { item_id?: string; status?: string }
-  ) => {
-    if (!canApply) {
-      toast.error("Tu acceso es solo lectura. No podés modificar productos.");
-      return;
-    }
-    if (!item.item_id) {
-      toast.error("Ítem inválido");
-      return;
-    }
-    const nextStatus = (item.status || "").toLowerCase() === "active" ? "paused" : "active";
-    try {
-      const res = await fetch("/api/meli/ads/item-status", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          siteId: c.site_id,
-          advertiserId: c.advertiser_id,
-          campaignId: c.id,
-          itemId: item.item_id,
-          status: nextStatus,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "No se pudo actualizar el producto");
-        return;
-      }
-      const rowKey = `${c.site_id}-${c.id}`;
-      setCampaignItems((prev) => ({
-        ...prev,
-        [rowKey]: (prev[rowKey] || []).map((it) =>
-          it.item_id === item.item_id ? { ...it, status: nextStatus } : it
-        ),
-      }));
-      toast.success(`Producto ${nextStatus === "active" ? "activado" : "pausado"}`);
-    } catch {
-      toast.error("Error de red al actualizar el producto");
-    }
-  };
-
   const toggleCampaignItems = async (c: SnapshotCampaign) => {
     const rowKey = `${c.site_id}-${c.id}`;
     const currentlyOpen = Boolean(expandedCampaignRows[rowKey]);
@@ -462,10 +466,13 @@ export default function MeliAdsStudioView() {
   };
   const onChangeCompareDays = (days: number) => {
     setCompareDays(days);
+    try {
+      localStorage.setItem(COMPARE_DAYS_STORAGE_KEY, String(days));
+    } catch {
+      /* ignore */
+    }
     setTimeout(() => load({ silent: true }), 0);
   };
-  const severityLabel = (s: Recommendation["severity"]) =>
-    s === "critical" ? "Crítico" : s === "warning" ? "Advertencia" : "Informativo";
   const categoryLabel = (c: Recommendation["category"]) =>
     c === "positive" ? "Positivo" : c === "negative" ? "Riesgo" : c === "efficiency" ? "Eficiencia" : "Crecimiento";
   const statusLabel = (s?: string) => {
@@ -485,323 +492,833 @@ export default function MeliAdsStudioView() {
   };
 
   return (
-    <div className="space-y-8 max-w-6xl">
-      <div>
-        <h2 className="text-xl font-bold text-gray-900">Mercado Libre Ads — estudio automático</h2>
-        <p className="text-sm text-gray-600 mt-1 max-w-3xl">
-          Traemos tus campañas de <strong>Product Ads (PADS)</strong>, métricas recientes de Mercado Libre y un{" "}
-          <strong>análisis automático</strong> con reglas de performance (CTR, ACOS vs valor de referencia, pérdida por
-          presupuesto, ROAS). Podés aplicar los cambios sugeridos vía API (presupuesto, estrategia, ROAS objetivo,
-          estado).
-        </p>
-        <p className="text-xs text-primary bg-primary/10 border border-primary/20 rounded-lg px-3 py-2 mt-3">
-          Requiere tener Product Ads habilitado en Mercado Libre y scopes OAuth adecuados. Si ves 404 en anunciantes,
-          activá las campañas desde ML → Gestión de publicaciones → Publicidad.
-        </p>
-      </div>
+    <div className="min-h-[40vh] bg-[#0A0F1C] text-gray-300">
+      <div className="mx-auto max-w-[1200px] space-y-3 p-3 sm:p-4">
+        <header className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-2xl flex-1 space-y-2">
+            <h2 className="flex items-center gap-2 text-lg font-bold tracking-tight text-white sm:text-xl">
+              <Zap className="h-6 w-6 shrink-0 fill-blue-500/20 text-blue-500" aria-hidden />
+              Mercado Libre Ads <span className="text-blue-500">—</span> Estudio automático
+            </h2>
+            <p className="text-xs leading-snug text-gray-400 sm:text-[13px]">
+              PADS, métricas ML y análisis automático. Navegá por pestañas para ver cada bloque con más orden.
+            </p>
+            <p className="rounded-md border border-amber-500/30 bg-amber-950/40 px-2.5 py-1.5 text-[11px] text-amber-100/90">
+              Requiere Product Ads + OAuth. Si ves 404 en anunciantes: ML → Gestión de publicaciones → Publicidad.
+            </p>
+            {snapshot?.dailyCutoff && (
+              <p className="text-[10px] text-gray-500">
+                <strong className="text-gray-300">Corte diario:</strong>{" "}
+                <span className="font-mono text-gray-400">{snapshot.dailyCutoff.bucketDateKey}</span> (
+                {snapshot.dailyCutoff.timezone})
+                {snapshot.dailyCutoff.snapshotUpdatedAt
+                  ? ` · ${new Date(snapshot.dailyCutoff.snapshotUpdatedAt).toLocaleString("es-AR")}`
+                  : ""}
+              </p>
+            )}
+            <details className="group rounded-lg border border-gray-800 bg-[#131A2A] text-xs shadow-md transition-all">
+              <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-1.5 font-medium text-gray-300 hover:text-white [&::-webkit-details-marker]:hidden">
+                <span className="flex items-center gap-1.5">
+                  <span aria-hidden>📖</span> Glosario (acrónimos)
+                </span>
+                <span className="transition-transform duration-300 group-open:-rotate-180">▼</span>
+              </summary>
+              <div className="grid grid-cols-1 gap-1.5 border-t border-gray-800 px-3 pb-3 pt-2 text-[11px] text-gray-400 md:grid-cols-2 md:gap-x-6">
+                <p>
+                  <strong className="text-gray-200">PADS:</strong> Product Ads de Mercado Libre; campañas de publicidad
+                  sobre publicaciones.
+                </p>
+                <p>
+                  <strong className="text-gray-200">CTR:</strong> porcentaje de clics sobre impresiones (clicks /
+                  impresiones).
+                </p>
+                <p>
+                  <strong className="text-gray-200">ACOS:</strong> costo publicitario sobre ventas atribuidas (costo /
+                  ingresos Ads).
+                </p>
+                <p>
+                  <strong className="text-gray-200">ROAS:</strong> ingresos Ads / costo (multiplicador).
+                </p>
+                <p>
+                  <strong className="text-gray-200">API:</strong> conexión automática entre sistemas para leer datos y
+                  aplicar cambios.
+                </p>
+                <p>
+                  <strong className="text-gray-200">ML:</strong> abreviatura de Mercado Libre.
+                </p>
+                <p>
+                  <strong className="text-gray-200">OAuth:</strong> autorización segura para dar permisos sin compartir
+                  contraseña.
+                </p>
+                <p>
+                  <strong className="text-gray-200">Pts. porcentuales:</strong> diferencia entre dos porcentajes (ej.: 2.0%
+                  a 2.5% = +0.5 pts. porcentuales).
+                </p>
+              </div>
+            </details>
+          </div>
 
-      <div className="flex flex-wrap gap-3 items-center">
-        <button
-          type="button"
-          disabled={loading}
-          onClick={() => load()}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary hover:bg-primary-hover disabled:opacity-50 text-primary-foreground font-medium px-4 py-2 text-sm shadow-sm"
+          <div className="flex w-full flex-col gap-2 lg:w-auto lg:items-end">
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              {snapshot?.fetchedAt && (
+                <span className="flex items-center gap-1.5 font-mono text-[10px] text-gray-500">
+                  Última lectura: {new Date(snapshot.fetchedAt).toLocaleString("es-AR")}
+                  <RefreshCw className="h-3 w-3 shrink-0 cursor-pointer hover:text-white" aria-hidden />
+                </span>
+              )}
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => load()}
+                className="inline-flex items-center gap-1.5 rounded-md bg-white px-3 py-1.5 text-xs font-semibold text-black shadow-sm transition-colors hover:bg-gray-200 disabled:opacity-50"
+              >
+                {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                Actualizar
+              </button>
+            </div>
+            <div className="flex w-full max-w-full flex-wrap items-center gap-0.5 overflow-x-auto rounded-md border border-gray-800 bg-[#131A2A] p-0.5 lg:w-auto">
+              <span className="whitespace-nowrap px-1.5 py-1 text-[10px] font-medium text-gray-500">Comparar:</span>
+              {[1, 2, 3, 5, 7, 15, 20, 30].map((days) => {
+                const active = compareDays === days;
+                return (
+                  <button
+                    key={days}
+                    type="button"
+                    onClick={() => onChangeCompareDays(days)}
+                    className={`rounded px-2 py-1 text-[10px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 ${
+                      active ? "bg-blue-600 text-white shadow-sm" : "text-gray-400 hover:bg-gray-800/80 hover:text-white"
+                    }`}
+                    aria-pressed={active}
+                  >
+                    {days === 1 ? "24h" : `${days}d`}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-right text-[10px] text-gray-500">
+              Ventana ML: {snapshot?.metricsDays ?? 14}d · vs ant.:{" "}
+              <span className="font-medium text-gray-400">{compareDays === 1 ? "24h" : `${compareDays}d`}</span>
+            </p>
+          </div>
+        </header>
+
+        <nav
+          className="-mx-0.5 flex overflow-x-auto border-b border-gray-800 pb-px"
+          aria-label="Secciones del estudio"
         >
-          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-          Actualizar datos y análisis
-        </button>
-        {snapshot?.fetchedAt && (
-          <span className="text-xs text-gray-500">
-            Última lectura: {new Date(snapshot.fetchedAt).toLocaleString("es-AR")} · ventana{" "}
-            {snapshot.metricsDays ?? 14} días
-          </span>
-        )}
-      </div>
-      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
-        <span className="text-xs font-medium text-muted-foreground">Comparar contra:</span>
-        {[1, 2, 3, 5, 7, 15, 20, 30].map((days) => {
-          const active = compareDays === days;
-          return (
-            <button
-              key={days}
-              type="button"
-              onClick={() => onChangeCompareDays(days)}
-              className={`h-8 rounded-md border px-3 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 ${
-                active
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border bg-card text-foreground hover:bg-muted"
-              }`}
-              aria-pressed={active}
-            >
-              {days === 1 ? "24h" : `${days}d`}
-            </button>
-          );
-        })}
-      </div>
-      <section className="rounded-xl border border-border bg-card p-4">
-        <h3 className="text-sm font-semibold text-foreground mb-2">Glosario rápido (acrónimos)</h3>
-        <ul className="list-disc pl-5 space-y-1 text-xs text-muted-foreground">
-          <li>
-            <span className="font-semibold text-foreground">PADS:</span> Product Ads de Mercado Libre; campañas de
-            publicidad sobre publicaciones.
-          </li>
-          <li>
-            <span className="font-semibold text-foreground">CTR:</span> porcentaje de clics sobre impresiones. Fórmula:
-            clicks / impresiones.
-          </li>
-          <li>
-            <span className="font-semibold text-foreground">ACOS:</span> porcentaje del costo publicitario sobre ventas
-            atribuidas. Fórmula: costo / ingresos Ads.
-          </li>
-          <li>
-            <span className="font-semibold text-foreground">ROAS:</span> retorno de la inversión publicitaria. Fórmula:
-            ingresos Ads / costo.
-          </li>
-          <li>
-            <span className="font-semibold text-foreground">API:</span> conexión automática entre sistemas para leer
-            datos y aplicar cambios.
-          </li>
-          <li>
-            <span className="font-semibold text-foreground">ML:</span> abreviatura de Mercado Libre.
-          </li>
-          <li>
-            <span className="font-semibold text-foreground">OAuth:</span> autorización segura para dar permisos sin
-            compartir contraseña.
-          </li>
-          <li>
-            <span className="font-semibold text-foreground">Pts. porcentuales:</span> diferencia entre dos porcentajes
-            (ejemplo: 2.0% a 2.5% = +0.5 pts. porcentuales).
-          </li>
-        </ul>
-      </section>
+          {(
+            [
+              { id: "resumen" as const, label: "Resumen", Icon: LayoutGrid },
+              { id: "historial" as const, label: "Histórico", Icon: Calendar },
+              { id: "tendencia" as const, label: "Tendencia", Icon: BarChart2 },
+              { id: "acciones" as const, label: "Acciones", Icon: Zap },
+              { id: "campañas" as const, label: "Campañas", Icon: Table2 },
+            ] as const
+          ).map(({ id, label, Icon }) => {
+            const active = adsSector === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => goAdsSector(id)}
+                className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-2 text-xs font-medium transition-colors sm:px-4 sm:text-sm ${
+                  active
+                    ? "border-b-2 border-blue-500 text-blue-400"
+                    : "border-b-2 border-transparent text-gray-400 hover:text-white"
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden />
+                {label}
+              </button>
+            );
+          })}
+        </nav>
 
-      {snapshot?.advertisers?.length === 0 && !loading && snapshot && (
-        <div className="rounded-xl border border-primary/20 bg-primary/10 p-4 text-sm text-primary flex gap-2">
-          <AlertTriangle className="w-5 h-5 shrink-0" />
-          No hay anunciante PADS para esta cuenta. Verificá permisos u operativamente Product Ads en Mercado Libre.
-        </div>
-      )}
-
-      {camps.length > 0 && (
-        <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3">
-          <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <p className="text-xs text-gray-500">Presupuesto diario total</p>
-            <p className="text-xl font-bold text-emerald-700">{money(totals.budget)}</p>
-            {renderDelta(num(deltas.budget), "money", "up_good", money, count)}
-          </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <p className="text-xs text-gray-500">Gasto (ventana actual)</p>
-            <p className="text-xl font-bold text-emerald-700">{money(totals.cost)}</p>
-            {renderDelta(num(deltas.cost), "money", "down_good", money, count)}
-          </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <p className="text-xs text-gray-500">Ingresos estimados Ads</p>
-            <p className="text-xl font-bold text-emerald-700">{money(totals.revenue)}</p>
-            {renderDelta(num(deltas.revenue), "money", "up_good", money, count)}
-          </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <p className="text-xs text-gray-500">Ganancia estimada</p>
-            <p className={`text-xl font-bold ${num(totals.profit) >= 0 ? "text-emerald-700" : "text-red-600"}`}>
-              {money(totals.profit)}
-            </p>
-            {renderDelta(num(deltas.profit), "money", "up_good", money, count)}
-          </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <p className="text-xs text-gray-500">Próxima factura (proyección)</p>
-            <p className="text-xl font-bold text-emerald-700">{money(finance.nextInvoiceProjection)}</p>
-            <p className="text-xs text-gray-500 mt-1">Diario: {money(finance.avgDailySpent)}</p>
-          </div>
-        </section>
-      )}
-
-      {(dailyStats.length > 0 || recs.length > 0) && (
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="rounded-xl border border-border bg-card p-4">
-            <h3 className="text-sm font-semibold text-foreground mb-2">Semáforo de impacto (cambios aplicados)</h3>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="rounded-md border border-emerald-300 bg-emerald-50 px-2 py-1 text-slate-900">
-                <span className="font-semibold text-emerald-700">Positivos:</span> {changeSummary.positive}
-              </div>
-              <div className="rounded-md border border-red-300 bg-red-50 px-2 py-1 text-slate-900">
-                <span className="font-semibold text-red-700">Negativos:</span> {changeSummary.negative}
-              </div>
-              <div className="rounded-md border border-slate-300 bg-slate-50 px-2 py-1 text-slate-900">
-                <span className="font-semibold text-slate-700">Neutrales:</span> {changeSummary.neutral}
-              </div>
-              <div className="rounded-md border border-amber-300 bg-amber-50 px-2 py-1 text-slate-900">
-                <span className="font-semibold text-amber-700">Pendientes:</span> {changeSummary.pending}
-              </div>
-            </div>
-            <p className="text-[11px] text-muted-foreground mt-2">
-              La evaluación se recalcula al sincronizar cada 10 min comparando CTR/ACOS/ROAS contra el período previo.
+        {adsSector === "historial" && (
+          <div className="space-y-4">
+      {(snapshot?.rolledTotals?.length ?? 0) > 0 && (
+        <section className="space-y-4">
+          <div>
+            <h3 className="text-sm font-semibold text-white">Totales acumulados (cortes diarios guardados)</h3>
+            <p className="mt-1 text-xs text-gray-400">
+              Cada día guardamos métricas PADS de Mercado Libre para <strong className="text-gray-200">ese día civil</strong>{" "}
+              (Argentina). Acá se <strong className="text-gray-200">suman</strong> costo, ingresos y profit entre esos
+              cortes; CTR, ACOS y ROAS salen de los agregados. Si falta un día en la ventana, “días con dato” será menor al
+              largo de la ventana.
             </p>
           </div>
-          <div className="rounded-xl border border-cyan-400/30 bg-cyan-500/10 p-4">
-            <h3 className="text-sm font-semibold text-cyan-800 mb-2">Estadística diaria (promedio por sync)</h3>
-            <div className="space-y-1 max-h-40 overflow-auto text-xs">
-              {dailyStats.slice(-7).map((d) => (
-                <div key={d.day} className="flex items-center justify-between border-b border-cyan-700/10 pb-1">
-                  <span>{d.day}</span>
-                  <span className="text-cyan-900">Costo {money(d.avgCost)}</span>
-                  <span className={d.avgProfit >= 0 ? "text-emerald-700" : "text-red-700"}>Ganancia {money(d.avgProfit)}</span>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            {(snapshot?.rolledTotals ?? []).map((roll) => {
+              const t = roll.totals;
+              return (
+                <div
+                  key={roll.windowDays}
+                  className="rounded-xl border border-gray-800 bg-[#131A2A] p-4 shadow-lg transition-colors hover:border-gray-700"
+                >
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Últimos {roll.windowDays} días</p>
+                  <p className="mb-2 text-[11px] text-gray-500">
+                    {roll.daysIncluded}/{roll.windowDays} días con corte guardado
+                  </p>
+                  <dl className="space-y-1 text-xs">
+                    <div className="flex justify-between gap-2">
+                      <dt className="text-gray-400">Costo</dt>
+                      <dd className="font-semibold text-white">{money(t.cost)}</dd>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <dt className="text-gray-400">Ingresos Ads</dt>
+                      <dd className="font-semibold text-white">{money(t.revenue)}</dd>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <dt className="text-gray-400">Profit</dt>
+                      <dd className={`font-semibold ${num(t.profit) >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                        {money(t.profit)}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <dt className="text-gray-400">CTR</dt>
+                      <dd className="font-medium text-gray-200">{pct(t.ctr)}</dd>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <dt className="text-gray-400">ACOS</dt>
+                      <dd className="font-medium text-gray-200">{pct(t.acos)}</dd>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <dt className="text-gray-400">ROAS</dt>
+                      <dd className="font-medium text-blue-400">{ratio(t.roas)}x</dd>
+                    </div>
+                  </dl>
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
         </section>
       )}
 
-      {comparisons.length > 0 && (
-        <section className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-100 bg-slate-50">
-            <h3 className="font-semibold text-gray-900">Informe comparativo del ecosistema de marketing</h3>
-            <p className="text-xs text-gray-600 mt-1">Estado actual vs el rango seleccionado.</p>
+      {(snapshot?.dailyHistory?.length ?? 0) > 0 && (
+        <section className="overflow-hidden rounded-xl border border-gray-800 bg-[#131A2A] shadow-lg">
+          <div className="border-b border-gray-800 bg-[#1A2235] px-4 py-3">
+            <h3 className="text-sm font-semibold text-white">Historial de cortes diarios</h3>
+            <p className="mt-0.5 text-xs text-gray-400">Una fila por día civil (Argentina). Orden: más reciente arriba.</p>
           </div>
-          <div className="overflow-x-auto">
+          <div className="max-h-72 overflow-x-auto overflow-y-auto">
             <table className="min-w-full text-xs">
-              <thead className="bg-gray-50 text-gray-600">
+              <thead className="sticky top-0 z-10 bg-[#1A2235] text-gray-400 backdrop-blur-sm">
                 <tr>
-                  <th className="text-left px-3 py-2">Métrica</th>
-                  <th className="text-right px-3 py-2">Ahora</th>
-                  {comparisons.map((c) => (
-                    <th key={c.daysAgo} className="text-right px-3 py-2">
-                      Hace {c.daysAgo}d
-                    </th>
-                  ))}
+                  <th className="px-3 py-2 text-left font-medium">Día (AR)</th>
+                  <th className="px-3 py-2 text-left font-medium">Actualizado</th>
+                  <th className="px-3 py-2 text-right font-medium">Costo</th>
+                  <th className="px-3 py-2 text-right font-medium">Ingresos</th>
+                  <th className="px-3 py-2 text-right font-medium">Profit</th>
+                  <th className="px-3 py-2 text-right font-medium">ROAS</th>
                 </tr>
               </thead>
-              <tbody>
-                {[
-                  { key: "cost", label: "Costo", fmt: "money" as const },
-                  { key: "revenue", label: "Ingresos", fmt: "money" as const },
-                  { key: "profit", label: "Ganancia", fmt: "money" as const },
-                  { key: "roas", label: "ROAS", fmt: "ratio" as const },
-                  { key: "acos", label: "ACOS", fmt: "pct" as const },
-                  { key: "ctr", label: "CTR", fmt: "pct" as const },
-                  { key: "clicks", label: "Clics", fmt: "count" as const },
-                  { key: "prints", label: "Impresiones", fmt: "count" as const },
-                ].map((row) => {
-                  const nowVal = num(totals[row.key as keyof typeof totals]);
-                  const format = (v: number) =>
-                    row.fmt === "money"
-                      ? money(v)
-                      : row.fmt === "pct"
-                        ? `${v.toFixed(2)}%`
-                        : row.fmt === "ratio"
-                          ? `${v.toFixed(2)}x`
-                          : count(v);
-                  return (
-                    <tr key={row.key} className="border-t border-gray-100">
-                      <td className="px-3 py-2 font-medium text-gray-800">{row.label}</td>
-                      <td className="px-3 py-2 text-right font-semibold">{format(nowVal)}</td>
-                      {comparisons.map((c) => {
-                        const old = num(c.metrics[row.key] ?? 0);
-                        const delta = num(c.deltasVsNow[row.key] ?? 0);
-                        const direction: "up_good" | "down_good" =
-                          row.key === "cost" || row.key === "acos" ? "down_good" : "up_good";
-                        return (
-                          <td key={`${row.key}-${c.daysAgo}`} className="px-3 py-2 text-right">
-                            <div>{format(old)}</div>
-                            {renderDelta(
-                              delta,
-                              row.fmt === "money" ? "money" : row.fmt === "pct" ? "pct" : "number",
-                              direction,
-                              money,
-                              count
-                            )}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  );
-                })}
+              <tbody className="divide-y divide-gray-800/80">
+                {[...(snapshot?.dailyHistory ?? [])].reverse().map((row) => (
+                  <tr key={row.bucketDateKey} className="hover:bg-[#1C2538]">
+                    <td className="px-3 py-2 font-mono text-gray-200">{row.bucketDateKey}</td>
+                    <td className="px-3 py-2 text-gray-400">{new Date(row.updatedAt).toLocaleString("es-AR")}</td>
+                    <td className="px-3 py-2 text-right font-medium text-white">{money(row.totals.cost)}</td>
+                    <td className="px-3 py-2 text-right font-medium text-white">{money(row.totals.revenue)}</td>
+                    <td
+                      className={`px-3 py-2 text-right font-medium ${num(row.totals.profit) >= 0 ? "text-emerald-400" : "text-rose-400"}`}
+                    >
+                      {money(row.totals.profit)}
+                    </td>
+                    <td className="px-3 py-2 text-right text-blue-400">{ratio(row.totals.roas)}x</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
         </section>
       )}
 
-      {camps.length > 0 && (
-        <section className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
-            <Zap className="w-5 h-5 text-primary" />
-            <h3 className="font-semibold text-gray-900">Campañas y métricas (ML)</h3>
+      {comparisons.length > 0 && (
+        <details className="group overflow-hidden rounded-lg border border-gray-800 bg-[#131A2A] shadow-md">
+          <summary className="cursor-pointer list-none bg-[#1A2235] px-3 py-2 text-xs font-semibold text-white hover:bg-[#232D42] [&::-webkit-details-marker]:hidden">
+            <span className="flex items-center justify-between gap-2">
+              <span className="flex items-center gap-2">
+                <BarChart2 className="h-3.5 w-3.5 text-blue-400" aria-hidden />
+                Comparativo del ecosistema (tabla)
+              </span>
+              <span className="text-[10px] font-normal text-gray-400 transition-transform group-open:-rotate-180">▼</span>
+            </span>
+          </summary>
+          <div className="border-t border-gray-800 px-3 pb-3 pt-2">
+            <p className="mb-2 text-[11px] text-gray-400">Ventana actual vs snapshots históricos.</p>
+            <div className="overflow-x-auto rounded-md border border-gray-800">
+              <table className="min-w-full text-[11px]">
+                <thead className="bg-[#1A2235] text-gray-400">
+                  <tr>
+                    <th className="px-2 py-1.5 text-left font-medium">Métrica</th>
+                    <th className="px-2 py-1.5 text-right font-medium">Ahora</th>
+                    {comparisons.map((c) => (
+                      <th key={c.daysAgo} className="px-2 py-1.5 text-right font-medium">
+                        Hace {c.daysAgo}d
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-800/80">
+                  {[
+                    { key: "cost", label: "Costo", fmt: "money" as const },
+                    { key: "revenue", label: "Revenue", fmt: "money" as const },
+                    { key: "profit", label: "Profit", fmt: "money" as const },
+                    { key: "roas", label: "ROAS", fmt: "ratio" as const },
+                    { key: "acos", label: "ACOS", fmt: "pct" as const },
+                    { key: "ctr", label: "CTR", fmt: "pct" as const },
+                    { key: "clicks", label: "Clicks", fmt: "count" as const },
+                    { key: "prints", label: "Impresiones", fmt: "count" as const },
+                  ].map((row) => {
+                    const nowVal = num(totals[row.key as keyof typeof totals]);
+                    const format = (v: number) =>
+                      row.fmt === "money"
+                        ? money(v)
+                        : row.fmt === "pct"
+                          ? `${v.toFixed(2)}%`
+                          : row.fmt === "ratio"
+                            ? `${v.toFixed(2)}x`
+                            : count(v);
+                    return (
+                      <tr key={row.key} className="hover:bg-[#1C2538]">
+                        <td className="px-2 py-1.5 font-medium text-gray-200">{row.label}</td>
+                        <td className="px-2 py-1.5 text-right font-semibold text-white">{format(nowVal)}</td>
+                        {comparisons.map((c) => {
+                          const old = num(c.metrics[row.key] ?? 0);
+                          const delta = num(c.deltasVsNow[row.key] ?? 0);
+                          const direction: "up_good" | "down_good" =
+                            row.key === "cost" || row.key === "acos" ? "down_good" : "up_good";
+                          return (
+                            <td key={`${row.key}-${c.daysAgo}`} className="px-2 py-1.5 text-right text-gray-300">
+                              <div>{format(old)}</div>
+                              {renderDelta(
+                                delta,
+                                row.fmt === "money" ? "money" : row.fmt === "pct" ? "pct" : "number",
+                                direction,
+                                money,
+                                count,
+                                { theme: "dark" }
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
-          <div className="px-4 py-2 border-b border-gray-100 bg-slate-50 flex flex-wrap items-center gap-2 text-xs">
-            <span className="text-gray-600 font-medium">Ordenar por:</span>
-            {[
-              { id: "name", label: "Nombre" },
-              { id: "clicks", label: "Clics" },
-              { id: "prints", label: "Impresiones" },
-              { id: "ctr", label: "CTR" },
-              { id: "cost", label: "Costo" },
-              { id: "acos", label: "ACOS" },
-              { id: "roas", label: "ROAS" },
-              { id: "budget", label: "Presupuesto" },
-            ].map((opt) => {
-              const active = sortBy === opt.id;
+        </details>
+      )}
+          </div>
+        )}
+
+        {adsSector === "resumen" && (
+          <div className="space-y-4">
+      {snapshot?.advertisers?.length === 0 && !loading && snapshot && (
+        <div className="flex gap-2 rounded-xl border border-amber-500/30 bg-amber-950/30 p-4 text-sm text-amber-100">
+          <AlertTriangle className="h-5 w-5 shrink-0 text-amber-400" />
+          No hay anunciante PADS para esta cuenta. Verificá permisos u operativamente Product Ads en Mercado Libre.
+        </div>
+      )}
+
+      {camps.length > 0 && (
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="flex flex-col justify-between rounded-xl border border-gray-800 bg-[#131A2A] p-4 shadow-lg transition-colors hover:border-gray-700">
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Presupuesto diario</h3>
+            <div>
+              <p className="text-xl font-bold text-white">{money(totals.budget)}</p>
+              <div className="mt-2">
+                {num(deltas.budget) === 0 ? (
+                  <span className="text-xs text-gray-500">= 0 cambios recientes</span>
+                ) : (
+                  renderDelta(num(deltas.budget), "money", "up_good", money, count, { theme: "dark", suffix: " vs ant." })
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-col justify-between rounded-xl border border-gray-800 bg-[#131A2A] p-4 shadow-lg transition-colors hover:border-gray-700">
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Gasto (ventana)</h3>
+            <div>
+              <p className="text-xl font-bold text-white">{money(totals.cost)}</p>
+              <div className="mt-2">
+                {renderDelta(num(deltas.cost), "money", "down_good", money, count, { theme: "dark", suffix: " vs ant." })}
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-col justify-between rounded-xl border border-gray-800 bg-[#131A2A] p-4 shadow-lg transition-colors hover:border-gray-700">
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Ingresos estimados</h3>
+            <div>
+              <p className="text-xl font-bold text-white">{money(totals.revenue)}</p>
+              <div className="mt-2">
+                {renderDelta(num(deltas.revenue), "money", "up_good", money, count, { theme: "dark", suffix: " vs ant." })}
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-col justify-between rounded-xl border border-gray-800 bg-[#131A2A] p-4 shadow-lg transition-colors hover:border-gray-700">
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Ganancia / profit</h3>
+            <div>
+              <p className={`text-xl font-bold ${num(totals.profit) >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                {money(totals.profit)}
+              </p>
+              <div className="mt-2">
+                {renderDelta(num(deltas.profit), "money", "up_good", money, count, { theme: "dark", suffix: " vs ant." })}
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-col justify-between rounded-xl border border-gray-800 bg-[#131A2A] p-4 shadow-lg transition-colors hover:border-gray-700 sm:col-span-2 lg:col-span-1">
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Proyección factura</h3>
+            <div>
+              <p className="text-xl font-bold text-white">{money(finance.nextInvoiceProjection)}</p>
+              <p className="mt-2 text-xs text-gray-500">
+                Prom. diario: <span className="font-medium text-gray-300">{money(finance.avgDailySpent)}</span>
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {!loading && snapshot && camps.length === 0 && (snapshot.advertisers?.length ?? 0) > 0 && (
+        <div className="space-y-3 rounded-lg border border-gray-800 bg-[#131A2A] p-3 shadow-md">
+          <p className="text-xs text-gray-400 sm:text-sm">
+            No hay campañas PADS listadas para estos anunciantes. Si antes veías datos, suele deberse a un rechazo del
+            endpoint de búsqueda de ML o a que la respuesta vino en otro formato; revisá los avisos abajo o en el toast.
+          </p>
+          {Array.isArray(snapshot.errors) && snapshot.errors.length > 0 && (
+            <div className="rounded-md border border-amber-500/30 bg-amber-950/40 px-3 py-2 text-xs text-amber-50">
+              <p className="mb-1 font-semibold text-amber-200">Respuesta / rutas ML</p>
+              <ul className="list-disc space-y-0.5 pl-4 opacity-90">
+                {snapshot.errors.slice(0, 8).map((e, i) => (
+                  <li key={i}>{e}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+          </div>
+        )}
+
+        {adsSector === "tendencia" && (
+          <div className="space-y-4">
+      {camps.length > 0 ? (
+        <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div className="rounded-lg border border-gray-800 bg-[#131A2A] p-4 shadow-md lg:col-span-2">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-white">
+                <BarChart2 className="h-4 w-4 text-blue-400" aria-hidden />
+                Tendencia: ecosistema de marketing
+              </h3>
+              <span className="rounded bg-[#1A2235] px-2 py-0.5 text-[10px] text-gray-400 sm:text-xs">
+                {compareDays === 1
+                  ? "Ventana gráfico: 24h (1 día con corte)"
+                  : `Últimos ${chartWindowDays} días (cortes guardados)`}
+              </span>
+            </div>
+            {chartSlice.length > 0 ? (
+              <MeliAdsEcosystemChart labels={chartLabelsArr} revenueK={revenueK} costK={costK} />
+            ) : (
+              <div className="flex h-[280px] items-center justify-center rounded-lg border border-dashed border-gray-700 text-sm text-gray-500 lg:h-[340px]">
+                Sin serie diaria todavía: sincronizá para acumular cortes y ver costo vs ingresos en miles ($).
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-4">
+            <div className="rounded-lg border border-gray-800 bg-[#131A2A] p-4 shadow-md">
+              <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold text-emerald-400">
+                <Zap className="h-3.5 w-3.5" aria-hidden /> Promedio diario (por sync)
+              </h3>
+              {avgDailyBlock ? (
+                <div className="space-y-3">
+                  <div className="flex items-end justify-between border-b border-gray-800 pb-1.5">
+                    <span className="text-[11px] text-gray-400">Fecha actual</span>
+                    <span className="text-xs font-medium text-white">{avgDailyBlock.lastDay}</span>
+                  </div>
+                  <div className="flex items-end justify-between border-b border-gray-800 pb-1.5">
+                    <span className="text-[11px] text-gray-400">Costo promedio</span>
+                    <span className="text-xs font-medium text-rose-400">{money(avgDailyBlock.avgCost)}</span>
+                  </div>
+                  <div className="flex items-end justify-between">
+                    <span className="text-[11px] text-gray-400">Profit promedio</span>
+                    <span className="text-sm font-bold text-emerald-400">{money(avgDailyBlock.avgProfit)}</span>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-[11px] text-gray-500">Todavía no hay cortes diarios guardados para promediar.</p>
+              )}
+            </div>
+
+            <div className="flex flex-1 flex-col rounded-lg border border-gray-800 bg-[#131A2A] p-4 shadow-md">
+              <h3 className="mb-3 text-xs font-semibold text-white">Resumen de impacto</h3>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex flex-col items-center justify-center rounded-md border border-emerald-500/30 bg-[#0A0F1C] p-2 text-emerald-400">
+                  <span className="text-lg font-bold text-white">{changeSummary.positive}</span>
+                  <span className="text-[10px] uppercase tracking-wider opacity-80">Positivo</span>
+                </div>
+                <div className="flex flex-col items-center justify-center rounded-md border border-rose-500/30 bg-[#0A0F1C] p-2 text-rose-400">
+                  <span className="text-lg font-bold text-white">{changeSummary.negative}</span>
+                  <span className="text-[10px] uppercase tracking-wider opacity-80">Negativo</span>
+                </div>
+                <div className="flex flex-col items-center justify-center rounded-md border border-gray-600/50 bg-[#0A0F1C] p-2 text-gray-400">
+                  <span className="text-lg font-bold text-white">{changeSummary.neutral}</span>
+                  <span className="text-[10px] uppercase tracking-wider opacity-80">Neutral</span>
+                </div>
+                <div className="flex flex-col items-center justify-center rounded-md border border-amber-500/30 bg-[#0A0F1C] p-2 text-amber-400">
+                  <span className="text-lg font-bold text-white">{changeSummary.pending}</span>
+                  <span className="text-[10px] uppercase tracking-wider opacity-80">Pendiente</span>
+                </div>
+              </div>
+              <p className="mt-2 text-center text-[10px] leading-tight text-gray-500">
+                La evaluación se recalcula al sincronizar comparando CTR / ACOS / ROAS vs el período anterior (
+                {compareDays === 1 ? "24h" : `${compareDays}d`}).
+              </p>
+            </div>
+          </div>
+        </section>
+      ) : (
+        <p className="rounded-lg border border-gray-800 bg-[#131A2A] px-4 py-6 text-center text-sm text-gray-400">
+          Sin campañas en esta lectura: no podemos armar el gráfico de tendencia. Revisá la pestaña Campañas o actualizá datos.
+        </p>
+      )}
+          </div>
+        )}
+
+        {adsSector === "acciones" && (
+          <div className="space-y-4">
+      {recs.length > 0 ? (
+        <section id="actions-section" className="scroll-mt-24">
+          <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h3 className="flex items-center gap-2 text-xl font-bold text-white">
+                <Zap className="h-6 w-6 fill-amber-400/15 text-amber-400" aria-hidden />
+                Análisis automático — acciones sugeridas
+              </h3>
+              <p className="mt-1 text-sm text-gray-400">
+                Revisá las alertas detectadas por el algoritmo y aplicá los cambios con un clic.
+              </p>
+            </div>
+            <button
+              type="button"
+              disabled={applying || loading}
+              onClick={applySelected}
+              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-emerald-500 disabled:opacity-50"
+            >
+              {applying ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+              Aplicar seleccionadas en ML
+            </button>
+          </div>
+
+          <div className="mb-3 flex flex-wrap gap-2 overflow-x-auto pb-1">
+            {(
+              [
+                { id: "all" as const, label: `Todas (${recs.length})`, classes: "bg-blue-600 text-white" },
+                { id: "critical" as const, label: `Crítico (${countCritical})`, accent: "border-gray-700 text-rose-400 hover:border-rose-500/40" },
+                { id: "warning" as const, label: `Advertencia (${countWarning})`, accent: "border-gray-700 text-amber-400 hover:border-amber-500/40" },
+                { id: "virtue" as const, label: `Virtudes (${countVirtue})`, accent: "border-gray-700 text-emerald-400 hover:border-emerald-500/40" },
+              ] as const
+            ).map((btn) => {
+              const active = recFilter === btn.id;
               return (
                 <button
-                  key={opt.id}
+                  key={btn.id}
                   type="button"
-                  onClick={() => setSortBy(opt.id as typeof sortBy)}
-                  className={`h-8 rounded-md border px-2.5 font-medium transition-colors ${
+                  onClick={() => setRecFilter(btn.id)}
+                  className={`whitespace-nowrap rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
                     active
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-card text-foreground hover:bg-muted"
+                      ? btn.id === "all"
+                        ? `${btn.classes} border-transparent`
+                        : `border-gray-600 bg-[#232D42] text-white`
+                      : `border bg-[#131A2A] ${"accent" in btn ? btn.accent : ""} hover:bg-[#1C2538]`
                   }`}
                 >
-                  {opt.label}
+                  {btn.label}
                 </button>
               );
             })}
-            <button
-              type="button"
-              onClick={() => setSortDir("asc")}
-              className={`h-8 rounded-md border px-2.5 font-medium transition-colors ${
-                sortDir === "asc"
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border bg-card text-foreground hover:bg-muted"
-              }`}
-            >
-              Ascendente
-            </button>
-            <button
-              type="button"
-              onClick={() => setSortDir("desc")}
-              className={`h-8 rounded-md border px-2.5 font-medium transition-colors ${
-                sortDir === "desc"
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border bg-card text-foreground hover:bg-muted"
-              }`}
-            >
-              Descendente
-            </button>
-            <button type="button" onClick={() => { setSortBy("clicks"); setSortDir("desc"); }} className="h-8 rounded bg-blue-600 text-white px-2.5">
-              Más clicks
-            </button>
-            <button type="button" onClick={() => { setSortBy("clicks"); setSortDir("asc"); }} className="h-8 rounded bg-slate-700 text-white px-2.5">
-              Menos clicks
-            </button>
           </div>
+
+          {filteredRecs.length === 0 ? (
+            <p className="rounded-xl border border-gray-800 bg-[#131A2A] px-4 py-6 text-center text-sm text-gray-400 shadow-lg">
+              No hay acciones en esta categoría con los filtros actuales.
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              {filteredRecs.map((r) => {
+                const tone =
+                  r.severity === "critical"
+                    ? {
+                        chip: "text-rose-400",
+                        label: "Acción urgente",
+                        icon: "alert" as const,
+                      }
+                    : r.severity === "warning"
+                      ? {
+                          chip: "text-amber-400",
+                          label: "Acción recomendada",
+                          icon: "alert" as const,
+                        }
+                      : r.expectedImpact === "positive"
+                        ? {
+                            chip: "text-emerald-400",
+                            label: "Virtud detectada",
+                            icon: "ok" as const,
+                          }
+                        : {
+                            chip: "text-sky-300",
+                            label: "Informativo",
+                            icon: "ok" as const,
+                          };
+                const confPct = r.confidence <= 1 ? (r.confidence * 100).toFixed(0) : Number(r.confidence).toFixed(0);
+                return (
+                  <div
+                    key={r.id}
+                    className="group flex gap-4 rounded-xl border border-gray-800 bg-[#131A2A] p-4 shadow-lg transition-all hover:border-blue-500/50"
+                  >
+                    <div className="pt-1">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-gray-600 bg-[#0A0F1C] accent-emerald-500 focus:ring-emerald-500 focus:ring-offset-[#131A2A]"
+                        checked={Boolean(selected[r.id])}
+                        onChange={() => toggleRec(r.id)}
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-2 flex items-center gap-2">
+                        {tone.icon === "alert" ? (
+                          <AlertTriangle className={`h-4 w-4 shrink-0 ${tone.chip}`} aria-hidden />
+                        ) : (
+                          <CheckCircle2 className={`h-4 w-4 shrink-0 ${tone.chip}`} aria-hidden />
+                        )}
+                        <span className="text-xs font-bold uppercase tracking-wide text-gray-400">Motivo detectado</span>
+                      </div>
+                      <div className={`mb-1 text-[10px] font-semibold uppercase tracking-wider ${tone.chip}`}>{tone.label}</div>
+                      <h4 className="mb-3 text-base font-medium text-white">{r.title}</h4>
+                      <div className="mb-3 flex flex-wrap gap-2">
+                        <span className="rounded border border-blue-500/20 bg-blue-500/10 px-2 py-1 text-[10px] text-blue-400">
+                          {categoryLabel(r.category)}
+                        </span>
+                        <span className="rounded border border-purple-500/20 bg-purple-500/10 px-2 py-1 text-[10px] text-purple-400">
+                          Confianza {confPct}%
+                        </span>
+                        {typeof r.priorityScore === "number" && (
+                          <span className="rounded border border-pink-500/20 bg-pink-500/10 px-2 py-1 text-[10px] text-pink-400">
+                            Prioridad {Math.round(r.priorityScore)}
+                          </span>
+                        )}
+                      </div>
+                      <div className="mb-2 flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-[11px] leading-snug text-gray-500">
+                        <span className="max-w-full truncate font-medium text-gray-200" title={r.campaignName}>
+                          {r.campaignName || `Campaña ${r.campaignId}`}
+                        </span>
+                        <span className="text-gray-600" aria-hidden>
+                          ·
+                        </span>
+                        <span>
+                          {(r.campaignItemsCount ?? 0) > 0 ? (
+                            <>
+                              <span className="tabular-nums text-gray-400">{r.campaignItemsCount}</span>{" "}
+                              producto{(r.campaignItemsCount ?? 0) === 1 ? "" : "s"}
+                            </>
+                          ) : (
+                            <span className="text-gray-500">Publicaciones: sin dato</span>
+                          )}
+                        </span>
+                        <span className="text-gray-600" aria-hidden>
+                          ·
+                        </span>
+                        <span className="tabular-nums text-gray-400">
+                          Presup.{" "}
+                          {money(
+                            typeof r.campaignBudget === "number"
+                              ? r.campaignBudget
+                              : num((r.applyPayload as { budget?: unknown })?.budget)
+                          )}
+                          <span className="text-gray-500"> / día</span>
+                          {(() => {
+                            const proposed = num((r.applyPayload as { budget?: unknown })?.budget);
+                            const cur =
+                              typeof r.campaignBudget === "number"
+                                ? r.campaignBudget
+                                : proposed;
+                            if (
+                              proposed > 0 &&
+                              cur > 0 &&
+                              Math.round(proposed * 100) !== Math.round(cur * 100)
+                            ) {
+                              return (
+                                <span className="text-emerald-400">
+                                  {" "}
+                                  (sug. ~{money(proposed)})
+                                </span>
+                              );
+                            }
+                            return null;
+                          })()}
+                        </span>
+                        <span className="w-full font-mono text-[10px] text-gray-600 sm:w-auto sm:pl-1">
+                          #{r.campaignId}
+                        </span>
+                      </div>
+                      <div className="mb-3">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExpandedRecAnalysis((prev) => ({
+                              ...prev,
+                              [r.id]: !prev[r.id],
+                            }))
+                          }
+                          className="text-left text-xs font-medium text-blue-400 underline-offset-2 hover:text-blue-300 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 rounded"
+                          aria-expanded={Boolean(expandedRecAnalysis[r.id])}
+                        >
+                          {expandedRecAnalysis[r.id]
+                            ? "Ocultar detalles del análisis"
+                            : "Leer más detalles del análisis"}
+                        </button>
+                        {expandedRecAnalysis[r.id] && (
+                          <p className="mt-2 text-sm leading-relaxed text-gray-300">{r.rationale}</p>
+                        )}
+                      </div>
+                      <div className="mt-4 flex items-center justify-between border-t border-gray-800 pt-3 text-xs text-gray-500">
+                        <span className="text-[10px] text-gray-600">Mercado Libre Ads</span>
+                        <span className="flex items-center gap-1 font-medium text-emerald-400">
+                          <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
+                          Listo para aplicar
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      ) : (
+        <div className="rounded-lg border border-gray-800 bg-[#131A2A] px-4 py-6 text-center text-sm text-gray-400">
+          No hay recomendaciones automáticas por ahora. Sincronizá o revisá cuando haya campañas con señal en la ventana.
+        </div>
+      )}
+          </div>
+        )}
+
+        {adsSector === "campañas" && camps.length > 0 && (
+        <section
+          id="meli-ads-campaigns-table"
+          className="flex flex-col overflow-hidden rounded-xl border border-gray-800 bg-[#131A2A] shadow-lg"
+        >
+          <div className="flex flex-col gap-4 border-b border-gray-800 bg-[#1A2235] p-4 sm:flex-row sm:items-center sm:justify-between">
+            <h3 className="flex items-center gap-2 text-lg font-semibold text-white">
+              <BarChart2 className="h-5 w-5 text-blue-400" aria-hidden />
+              Rendimiento detallado
+            </h3>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-500" aria-hidden />
+                <input
+                  type="search"
+                  value={campaignSearch}
+                  onChange={(e) => setCampaignSearch(e.target.value)}
+                  placeholder="Buscar campaña…"
+                  className="w-full min-w-[200px] rounded-lg border border-gray-700 bg-[#0A0F1C] py-1.5 pl-8 pr-3 text-sm text-white placeholder:text-gray-600 focus:border-blue-500/50 focus:outline-none sm:w-64"
+                  aria-label="Buscar campaña por nombre"
+                />
+              </div>
+              <span className="hidden items-center gap-2 rounded-lg border border-gray-700 bg-[#232D42] px-3 py-1.5 text-sm text-gray-300 sm:inline-flex" title="Filtros avanzados próximamente">
+                <Filter className="h-3.5 w-3.5" aria-hidden />
+                Filtros
+              </span>
+            </div>
+          </div>
+          <div className="flex flex-col gap-4 border-b border-gray-800 bg-[#1A2235]/80 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-gray-500">Ordenar columnas y dirección (misma lógica que antes).</p>
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <span className="py-1.5 text-gray-400">Ordenar por:</span>
+              {[
+                { id: "name", label: "Nombre" },
+                { id: "clicks", label: "Clics" },
+                { id: "acos", label: "ACOS" },
+                { id: "roas", label: "ROAS" },
+                { id: "prints", label: "Impresiones" },
+                { id: "ctr", label: "CTR" },
+                { id: "cost", label: "Costo" },
+                { id: "budget", label: "Presupuesto" },
+              ].map((opt) => {
+                const active = sortBy === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => setSortBy(opt.id as typeof sortBy)}
+                    className={`rounded px-3 py-1.5 font-medium transition-colors ${
+                      active ? "bg-blue-600 text-white shadow-sm" : "bg-[#232D42] text-gray-200 hover:bg-gray-700"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+              <span className="mx-1 hidden h-6 w-px bg-slate-600 sm:inline" aria-hidden />
+              <button
+                type="button"
+                onClick={() => setSortDir("desc")}
+                className={`rounded px-3 py-1.5 font-medium transition-colors ${
+                  sortDir === "desc"
+                    ? "border border-blue-500/40 bg-blue-600/25 text-blue-300"
+                    : "border border-gray-700 bg-[#232D42] text-gray-300 hover:bg-gray-700"
+                }`}
+              >
+                Descendente
+              </button>
+              <button
+                type="button"
+                onClick={() => setSortDir("asc")}
+                className={`rounded px-3 py-1.5 font-medium transition-colors ${
+                  sortDir === "asc"
+                    ? "border border-blue-500/40 bg-blue-600/25 text-blue-300"
+                    : "border border-gray-700 bg-[#232D42] text-gray-300 hover:bg-gray-700"
+                }`}
+              >
+                Ascendente
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSortBy("clicks");
+                  setSortDir("desc");
+                }}
+                className="rounded bg-blue-600 px-2.5 py-1.5 text-white hover:bg-blue-500"
+              >
+                Más clics
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSortBy("clicks");
+                  setSortDir("asc");
+                }}
+                className="rounded bg-slate-700 px-2.5 py-1.5 text-white hover:bg-gray-600"
+              >
+                Menos clics
+              </button>
+            </div>
+          </div>
+
           <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 text-gray-600">
-                <tr>
-                  <th className="text-left px-3 py-2 font-medium">Campaña</th>
-                  <th className="text-left px-3 py-2 font-medium">Estado</th>
-                  <th className="text-left px-3 py-2 font-medium">Estrategia</th>
-                  <th className="text-right px-3 py-2 font-medium">Presupuesto</th>
-                  <th className="text-right px-3 py-2 font-medium">Impresiones</th>
-                  <th className="text-right px-3 py-2 font-medium">Clics</th>
-                  <th className="text-right px-3 py-2 font-medium">CTR</th>
-                  <th className="text-right px-3 py-2 font-medium">Costo</th>
-                  <th className="text-right px-3 py-2 font-medium">ACOS</th>
-                  <th className="text-right px-3 py-2 font-medium">ROAS</th>
+            <table className="w-full min-w-[920px] text-left text-sm whitespace-nowrap text-gray-300">
+              <thead className="sticky top-0 z-10 bg-[#1A2235] text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+                <tr className="border-b border-gray-800">
+                  <th className="px-4 py-3">Campaña</th>
+                  <th className="px-4 py-3">Estado / estrategia</th>
+                  <th className="px-4 py-3 text-right">Presupuesto</th>
+                  <th className="px-4 py-3 text-right">Impresiones / clics</th>
+                  <th className="px-4 py-3 text-right">CTR / costo</th>
+                  <th className="px-4 py-3 text-right">ACOS / ROAS</th>
                 </tr>
               </thead>
-              <tbody>
-                {sortedCamps.map((c) => {
+              <tbody className="divide-y divide-gray-800/50">
+                {filteredSortedCamps.map((c) => {
                   const m = c.metrics || {};
                   const p = c.metrics_prev || {};
                   const prints = m.prints ?? 0;
@@ -819,30 +1336,30 @@ export default function MeliAdsStudioView() {
                   const roas = num(m.roas);
                   const rowKey = `${c.site_id}-${c.id}`;
                   const isExpanded = Boolean(expandedCampaignRows[rowKey]);
+                  const acosTone = acos > 50 ? "text-rose-400" : acos > 30 ? "text-amber-400" : "text-emerald-400";
                   return (
                     <Fragment key={rowKey}>
-                    <tr className="border-t border-gray-100 hover:bg-gray-50/80">
-                      <td className="px-3 py-2 text-gray-900 font-medium max-w-[300px]">
-                        <div className="space-y-1">
-                          <div className="truncate">{c.name || c.id}</div>
-                          <div className="flex items-center gap-2">
+                      <tr className="transition-colors hover:bg-[#1C2538]">
+                        <td className="max-w-[280px] px-4 py-4 align-top">
+                          <div className="mb-2 font-bold text-white">{c.name || c.id}</div>
+                          <div className="mt-2 flex flex-wrap items-center gap-2">
                             {editingCampaignNameRow === rowKey ? (
                               <>
                                 <input
                                   autoFocus
                                   value={editingNames[rowKey] ?? c.name ?? ""}
                                   onChange={(e) => setEditingNames((s) => ({ ...s, [rowKey]: e.target.value }))}
-                                  className="h-7 w-44 rounded border border-border bg-card px-2 text-xs text-foreground"
+                                  className="h-8 w-44 rounded border border-slate-600 bg-slate-900 px-2 text-xs text-white"
                                   placeholder="Nuevo nombre"
                                 />
                                 <button
                                   type="button"
-                                  disabled={!canApply || renamingId === rowKey}
+                                  disabled={renamingId === rowKey}
                                   onClick={async () => {
                                     await renameCampaign(c);
                                     setEditingCampaignNameRow(null);
                                   }}
-                                  className="h-7 rounded bg-primary text-primary-foreground px-2 text-xs disabled:opacity-50"
+                                  className="h-8 rounded bg-blue-600 px-2 text-xs text-white disabled:opacity-50"
                                 >
                                   {renamingId === rowKey ? "..." : "Guardar"}
                                 </button>
@@ -852,7 +1369,7 @@ export default function MeliAdsStudioView() {
                                     setEditingCampaignNameRow(null);
                                     setEditingNames((s) => ({ ...s, [rowKey]: c.name ?? "" }));
                                   }}
-                                  className="h-7 rounded bg-muted text-foreground px-2 text-xs"
+                                  className="h-8 rounded border border-slate-600 bg-slate-800 px-2 text-xs text-slate-200"
                                 >
                                   Cancelar
                                 </button>
@@ -862,324 +1379,149 @@ export default function MeliAdsStudioView() {
                                 <button
                                   type="button"
                                   title="Editar nombre de campaña"
-                                  disabled={!canApply}
                                   onClick={() => {
                                     setEditingCampaignNameRow(rowKey);
                                     setEditingNames((s) => ({ ...s, [rowKey]: c.name ?? "" }));
                                   }}
-                                  className="h-7 w-7 rounded border border-border bg-card text-primary inline-flex items-center justify-center hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
+                                  className="inline-flex h-8 items-center justify-center rounded border border-gray-700 bg-gray-800/80 p-1.5 text-gray-400 transition-colors hover:bg-blue-600 hover:text-white"
                                 >
-                                  <Pencil size={13} />
+                                  <Pencil size={12} />
                                 </button>
-                                {editingBudgetRoasRow === rowKey ? (
-                                  <>
-                                    <input
-                                      value={editingBudgetRoasValues[rowKey]?.budget ?? String(num(c.budget) || 0)}
-                                      onChange={(e) =>
-                                        setEditingBudgetRoasValues((s) => ({
-                                          ...s,
-                                          [rowKey]: { ...(s[rowKey] || { budget: "", roas: "" }), budget: e.target.value },
-                                        }))
-                                      }
-                                      className="h-7 w-24 rounded border border-border bg-card px-2 text-xs text-foreground"
-                                      placeholder="Presupuesto"
-                                    />
-                                    <input
-                                      value={editingBudgetRoasValues[rowKey]?.roas ?? String(num(c.roas_target) || 0)}
-                                      onChange={(e) =>
-                                        setEditingBudgetRoasValues((s) => ({
-                                          ...s,
-                                          [rowKey]: { ...(s[rowKey] || { budget: "", roas: "" }), roas: e.target.value },
-                                        }))
-                                      }
-                                      className="h-7 w-20 rounded border border-border bg-card px-2 text-xs text-foreground"
-                                      placeholder="ROAS"
-                                    />
-                                    <button
-                                      type="button"
-                                      disabled={renamingId === `br-${rowKey}`}
-                                      onClick={() => saveBudgetRoas(c)}
-                                      className="h-7 rounded bg-primary text-primary-foreground px-2 text-xs disabled:opacity-50"
-                                    >
-                                      {renamingId === `br-${rowKey}` ? "..." : "Guardar"}
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => setEditingBudgetRoasRow(null)}
-                                      className="h-7 rounded bg-muted text-foreground px-2 text-xs"
-                                    >
-                                      Cancelar
-                                    </button>
-                                  </>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    disabled={!canApply}
-                                    onClick={() => {
-                                      setEditingBudgetRoasRow(rowKey);
-                                      setEditingBudgetRoasValues((s) => ({
-                                        ...s,
-                                        [rowKey]: {
-                                          budget: String(num(c.budget) || 0),
-                                          roas: String(num(c.roas_target) || 0),
-                                        },
-                                      }));
-                                    }}
-                                    className="h-7 rounded border border-border bg-card text-primary px-2 text-xs hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
-                                  >
-                                    Editar presupuesto/ROAS
-                                  </button>
-                                )}
                                 <button
                                   type="button"
                                   onClick={() => toggleCampaignItems(c)}
-                                  className="h-7 rounded bg-muted text-foreground px-2 text-xs hover:bg-muted/80"
+                                  className="inline-flex h-8 items-center gap-1 rounded border border-gray-700 bg-gray-800/80 px-2 py-1.5 text-[10px] font-medium uppercase tracking-wider text-amber-400 transition-colors hover:bg-gray-700 hover:text-amber-300"
                                 >
-                                  {isExpanded ? "Ocultar artículos" : "Ver artículos"}
+                                  <Eye size={12} aria-hidden />
+                                  Ver artículos
                                 </button>
                               </>
                             )}
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-3 py-2 text-gray-700">{statusLabel(c.status)}</td>
-                      <td className="px-3 py-2 text-gray-700">{strategyLabel(c.strategy)}</td>
-                      <td className="px-3 py-2 text-right text-emerald-700 font-semibold">
-                        <div>{money(c.budget)}</div>
-                        <span className="text-xs text-gray-400">diario</span>
-                      </td>
-                      <td className="px-3 py-2 text-right">
-                        <div>{count(prints)}</div>
-                        {renderDelta(num(prints) - num(p.prints), "number", "up_good", money, count)}
-                      </td>
-                      <td className="px-3 py-2 text-right">
-                        <div>{count(clicks)}</div>
-                        {renderDelta(num(clicks) - num(p.clicks), "number", "up_good", money, count)}
-                      </td>
-                      <td className="px-3 py-2 text-right">
-                        <div>{Number.isFinite(ctr) ? pct(ctr) : "—"}</div>
-                        {renderDelta(Number.isFinite(ctr) ? ctr - prevCtr : 0, "pct", "up_good", money, count)}
-                      </td>
-                      <td className="px-3 py-2 text-right text-emerald-700 font-semibold">
-                        <div>{money(cost)}</div>
-                        {renderDelta(cost - num(p.cost), "money", "down_good", money, count)}
-                      </td>
-                      <td className="px-3 py-2 text-right">
-                        <div>{pct(acos)}</div>
-                        {renderDelta(acos - num(p.acos), "pct", "down_good", money, count)}
-                      </td>
-                      <td className="px-3 py-2 text-right">
-                        <div>{ratio(roas)}x</div>
-                        {renderDelta(roas - num(p.roas), "number", "up_good", money, count)}
-                      </td>
-                    </tr>
-                    {isExpanded && (
-                      <tr className="bg-slate-50">
-                        <td colSpan={10} className="px-3 py-3">
-                          {loadingItems[rowKey] ? (
-                            <p className="text-xs text-gray-600">Cargando artículos...</p>
-                          ) : (campaignItems[rowKey] ?? []).length === 0 ? (
-                            <p className="text-xs text-gray-600">Sin artículos reportados para esta campaña.</p>
-                          ) : (
-                            <div className="space-y-2">
-                              {(campaignItems[rowKey] ?? []).slice(0, 30).map((it, idx) => {
-                                const mm = (it.metrics || {}) as Record<string, unknown>;
-                                return (
-                                  <div key={`${it.item_id ?? idx}`} className="text-xs border border-gray-200 rounded px-2 py-1.5 bg-white flex flex-wrap gap-3">
-                                    <span className="font-medium text-gray-900">{it.title || it.item_id || "Ítem"}</span>
-                                    <span className="text-gray-600">ID: {it.item_id || "-"}</span>
-                                    <span className="text-gray-600">Estado: {statusLabel(it.status)}</span>
-                                    <span className="text-gray-700">Clics: {count(mm.clicks ?? 0)}</span>
-                                    <span className="text-gray-700">Impresiones: {count(mm.prints ?? 0)}</span>
-                                    <span className="text-gray-700">Costo: {money(mm.cost ?? 0)}</span>
-                                    <span className="text-gray-700">ROAS: {ratio(mm.roas ?? 0)}x</span>
-                                    {canApply && it.item_id && (
-                                      <button
-                                        type="button"
-                                        onClick={() => updateCampaignItemStatus(c, it)}
-                                        className="ml-auto h-6 rounded border border-border bg-card px-2 text-[11px] text-primary hover:bg-muted"
-                                      >
-                                        {(it.status || "").toLowerCase() === "active" ? "Pausar producto" : "Activar producto"}
-                                      </button>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
+                        </td>
+                        <td className="px-4 py-4 align-top">
+                          <span className="inline-flex items-center gap-1.5 rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold text-emerald-400">
+                            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+                            {statusLabel(c.status)}
+                          </span>
+                          <div className="mt-2 text-xs text-gray-400">{strategyLabel(c.strategy)}</div>
+                        </td>
+                        <td className="px-4 py-4 text-right align-top">
+                          <div className="font-bold text-emerald-400">{money(c.budget)}</div>
+                          <div className="text-[10px] font-medium uppercase tracking-wide text-gray-500">Diario</div>
+                        </td>
+                        <td className="px-4 py-4 text-right align-top">
+                          <div className="font-medium text-white">
+                            {count(prints)} <span className="text-[10px] font-normal text-gray-500">vistas</span>
+                          </div>
+                          <div className="mt-1 font-medium text-white">
+                            {count(clicks)} <span className="text-[10px] font-normal text-gray-500">clics</span>
+                          </div>
+                          <div className="mt-1 flex justify-end">
+                            {renderDelta(num(prints) - num(p.prints), "number", "up_good", money, count, {
+                              theme: "dark",
+                            })}
+                          </div>
+                          <div className="flex justify-end">
+                            {renderDelta(num(clicks) - num(p.clicks), "number", "up_good", money, count, {
+                              theme: "dark",
+                            })}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 text-right align-top font-mono">
+                          <div className="font-medium text-white">{Number.isFinite(ctr) ? pct(ctr) : "—"}</div>
+                          <div className="mt-1 font-sans font-medium text-rose-400">{money(cost)}</div>
+                          <div className="mt-1 flex justify-end">
+                            {renderDelta(Number.isFinite(ctr) ? ctr - prevCtr : 0, "pct", "up_good", money, count, {
+                              theme: "dark",
+                            })}
+                          </div>
+                          <div className="flex justify-end">
+                            {renderDelta(cost - num(p.cost), "money", "down_good", money, count, { theme: "dark" })}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 text-right align-top font-mono">
+                          <div className={`font-bold ${acosTone}`}>{pct(acos)}</div>
+                          <div className="mt-1 text-blue-400">{ratio(roas)}x</div>
+                          <div className="mt-1 flex justify-end">
+                            {renderDelta(acos - num(p.acos), "pct", "down_good", money, count, { theme: "dark" })}
+                          </div>
+                          <div className="flex justify-end">
+                            {renderDelta(roas - num(p.roas), "number", "up_good", money, count, { theme: "dark" })}
+                          </div>
                         </td>
                       </tr>
-                    )}
+                      {isExpanded && (
+                        <tr className="bg-[#0A0F1C]/80">
+                          <td colSpan={6} className="px-4 py-4">
+                            {loadingItems[rowKey] ? (
+                              <p className="text-xs text-gray-400">Cargando artículos...</p>
+                            ) : (campaignItems[rowKey] ?? []).length === 0 ? (
+                              <p className="text-xs text-gray-400">Sin artículos reportados para esta campaña.</p>
+                            ) : (
+                              <div className="space-y-2">
+                                {(campaignItems[rowKey] ?? []).slice(0, 30).map((it, idx) => {
+                                  const mm = (it.metrics || {}) as Record<string, unknown>;
+                                  return (
+                                    <div
+                                      key={`${it.item_id ?? idx}`}
+                                      className="flex flex-wrap gap-3 rounded-lg border border-gray-700 bg-[#131A2A] px-3 py-2 text-xs text-gray-300"
+                                    >
+                                      <span className="font-medium text-white">{it.title || it.item_id || "Ítem"}</span>
+                                      <span className="text-gray-400">ID: {it.item_id || "-"}</span>
+                                      <span className="text-gray-400">Estado: {statusLabel(it.status)}</span>
+                                      <span>Clicks: {count(mm.clicks ?? 0)}</span>
+                                      <span>Impresiones: {count(mm.prints ?? 0)}</span>
+                                      <span className="text-rose-300">Costo: {money(mm.cost ?? 0)}</span>
+                                      <span className="text-blue-400">ROAS: {ratio(mm.roas ?? 0)}x</span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      )}
                     </Fragment>
                   );
                 })}
               </tbody>
-              <tfoot className="bg-gray-50 border-t border-gray-200">
-                <tr className="font-semibold text-gray-800">
-                  <td className="px-3 py-2">Totales</td>
-                  <td className="px-3 py-2">—</td>
-                  <td className="px-3 py-2">—</td>
-                  <td className="px-3 py-2 text-right text-emerald-700">{money(totals.budget)}</td>
-                  <td className="px-3 py-2 text-right">{count(totals.prints)}</td>
-                  <td className="px-3 py-2 text-right">{count(totals.clicks)}</td>
-                  <td className="px-3 py-2 text-right">{pct(totals.ctr)}</td>
-                  <td className="px-3 py-2 text-right text-emerald-700">{money(totals.cost)}</td>
-                  <td className="px-3 py-2 text-right">{pct(totals.acos)}</td>
-                  <td className="px-3 py-2 text-right">{ratio(totals.roas)}x</td>
+              <tfoot className="border-t border-gray-800 bg-[#1A2235] font-bold text-white">
+                <tr>
+                  <td className="px-4 py-4">TOTALES</td>
+                  <td className="px-4 py-4 text-gray-500">—</td>
+                  <td className="px-4 py-4 text-right text-emerald-400">{money(totals.budget)}</td>
+                  <td className="px-4 py-4 text-right">
+                    <div>
+                      {count(totals.prints)} <span className="text-xs font-normal text-gray-500">vistas</span>
+                    </div>
+                    <div className="mt-1 font-normal text-gray-300">
+                      {count(totals.clicks)} <span className="text-xs text-gray-500">clics</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-4 text-right font-mono">
+                    <div className="font-bold">{pct(totals.ctr)}</div>
+                    <div className="mt-1 font-sans font-medium text-rose-400">{money(totals.cost)}</div>
+                  </td>
+                  <td className="px-4 py-4 text-right font-mono">
+                    <div className={num(totals.acos) > 50 ? "text-rose-400" : num(totals.acos) > 30 ? "text-amber-400" : "text-emerald-400"}>
+                      {pct(totals.acos)}
+                    </div>
+                    <div className="mt-1 text-blue-400">{ratio(totals.roas)}x</div>
+                  </td>
                 </tr>
               </tfoot>
             </table>
           </div>
         </section>
-      )}
+        )}
 
-      {recs.length > 0 && (
-        <section className="rounded-xl border border-border bg-card text-card-foreground shadow-sm overflow-hidden">
-          <div className="px-4 py-3 border-b border-border flex flex-wrap items-center justify-between gap-3 bg-muted/60">
-            <div className="flex items-center gap-2">
-              <Info className="w-5 h-5 text-primary" />
-              <h3 className="font-semibold text-foreground">Análisis automático — acciones sugeridas</h3>
-            </div>
-            <button
-              type="button"
-              disabled={!canApply || applying || loading}
-              onClick={applySelected}
-              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-medium px-4 py-2 text-sm"
-            >
-              {applying ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-              Aplicar seleccionadas en ML
-            </button>
+        {adsSector === "campañas" && camps.length === 0 && (
+          <div className="rounded-lg border border-gray-800 bg-[#131A2A] p-6 text-center text-sm text-gray-400 shadow-md">
+            No hay campañas para mostrar en la tabla. Actualizá datos desde Mercado Libre o revisá otras pestañas.
           </div>
-          {!canApply && (
-            <div className="px-4 py-2 border-t border-border bg-amber-500/10 text-amber-900 text-xs font-medium">
-              Modo solo lectura: podés ver análisis y campañas, pero no modificar nada.
-            </div>
-          )}
-          <div className="px-4 py-3 text-xs bg-muted/70 border-b border-border grid grid-cols-1 md:grid-cols-4 gap-2">
-            <div className="rounded-lg border border-emerald-300 bg-emerald-50 px-2 py-1.5">
-              <p className="text-[10px] uppercase tracking-wide text-emerald-700 font-semibold">Virtudes</p>
-              <p className="text-emerald-900 font-bold text-sm">{positiveRecs.length}</p>
-            </div>
-            <div className="rounded-lg border border-red-300 bg-red-50 px-2 py-1.5">
-              <p className="text-[10px] uppercase tracking-wide text-red-700 font-semibold">Riesgos</p>
-              <p className="text-red-900 font-bold text-sm">{negativeRecs.length}</p>
-            </div>
-            <div className="rounded-lg border border-amber-300 bg-amber-50 px-2 py-1.5">
-              <p className="text-[10px] uppercase tracking-wide text-amber-700 font-semibold">Advertencias</p>
-              <p className="text-amber-900 font-bold text-sm">{recs.filter((r) => r.severity === "warning").length}</p>
-            </div>
-            <div className="rounded-lg border border-indigo-300 bg-indigo-50 px-2 py-1.5">
-              <p className="text-[10px] uppercase tracking-wide text-indigo-700 font-semibold">Total acciones</p>
-              <p className="text-indigo-900 font-bold text-sm">{recs.length}</p>
-            </div>
-          </div>
-          <div className="px-4 py-2 border-b border-border text-[11px] text-muted-foreground flex flex-wrap gap-2">
-            <span className="px-2 py-0.5 rounded bg-red-100 text-red-700">Crítico = actuar primero</span>
-            <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-700">Advertencia = optimización recomendada</span>
-            <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-700">Positivo = escalar/continuar</span>
-          </div>
-          <ul className="p-4 grid grid-cols-1 gap-3 bg-muted/40">
-            {recs.map((r) => {
-              const Icon =
-                r.severity === "critical"
-                  ? AlertTriangle
-                  : r.severity === "warning"
-                    ? AlertTriangle
-                    : Info;
-              const color =
-                r.severity === "critical"
-                  ? "text-red-700 bg-red-100 border-red-300"
-                  : r.severity === "warning"
-                    ? "text-amber-800 bg-amber-100 border-amber-300"
-                    : r.expectedImpact === "positive"
-                      ? "text-emerald-700 bg-emerald-100 border-emerald-300"
-                      : "text-blue-700 bg-blue-50 border-blue-100";
-              const rowTint =
-                r.severity === "critical"
-                  ? "bg-gradient-to-r from-red-500/20 to-red-500/5 border-red-400/50 shadow-[0_0_0_1px_rgba(248,113,113,0.35),0_8px_20px_rgba(127,29,29,0.25)]"
-                  : r.severity === "warning"
-                    ? "bg-gradient-to-r from-amber-500/15 to-amber-500/5 border-amber-400/45 shadow-[0_0_0_1px_rgba(251,191,36,0.25)]"
-                    : r.expectedImpact === "positive"
-                      ? "bg-gradient-to-r from-emerald-500/15 to-emerald-500/5 border-emerald-400/45 shadow-[0_0_0_1px_rgba(52,211,153,0.25)]"
-                      : "bg-card border-border";
-              const actionLabel =
-                r.severity === "critical"
-                  ? "Acción urgente: revisar y aplicar hoy"
-                  : r.severity === "warning"
-                    ? "Acción recomendada: optimizar esta campaña"
-                    : "Virtud detectada: escalar sin perder rentabilidad";
-              return (
-                <li key={r.id} className={`p-4 rounded-xl border shadow-sm ${rowTint}`}>
-                  <div className="flex gap-3 items-start">
-                    <input
-                      type="checkbox"
-                      className="mt-1.5 h-4 w-4 rounded border-2 border-border bg-card accent-primary shadow-sm"
-                      disabled={!canApply}
-                      checked={Boolean(selected[r.id])}
-                      onChange={() => toggleRec(r.id)}
-                    />
-                    <div className={`rounded-lg border p-2 shrink-0 ${color}`}>
-                      <Icon className="w-5 h-5" />
-                    </div>
-                    <div className="flex-1 min-w-0 space-y-2">
-                      <div
-                        className={`rounded-md px-2.5 py-1 text-[11px] font-semibold tracking-wide ${
-                          r.severity === "critical"
-                            ? "bg-red-950/70 text-red-100 border border-red-400/35"
-                            : r.severity === "warning"
-                              ? "bg-amber-950/60 text-amber-100 border border-amber-400/35"
-                              : "bg-emerald-950/50 text-emerald-100 border border-emerald-400/35"
-                        }`}
-                      >
-                        {actionLabel}
-                      </div>
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="font-semibold text-foreground text-sm md:text-base">{r.title}</span>
-                        <span className="text-[10px] uppercase tracking-wide text-foreground/80 bg-card border border-border px-2 py-0.5 rounded">
-                          {severityLabel(r.severity)}
-                        </span>
-                        <span className="text-[10px] uppercase tracking-wide text-foreground/80 bg-card border border-border px-2 py-0.5 rounded">
-                          {categoryLabel(r.category)}
-                        </span>
-                        <span className="text-[10px] tracking-wide text-indigo-700 bg-indigo-100 border border-indigo-200 px-2 py-0.5 rounded">
-                          Confianza {(r.confidence * 100).toFixed(0)}%
-                        </span>
-                        {typeof r.priorityScore === "number" && (
-                          <span className="text-[10px] tracking-wide text-fuchsia-700 bg-fuchsia-100 border border-fuchsia-200 px-2 py-0.5 rounded">
-                            Prioridad {r.priorityScore}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-foreground leading-relaxed font-medium">{r.rationale}</p>
-                      <p className="text-xs text-muted-foreground">Campaña #{r.campaignId}</p>
-                      <p className="text-xs text-muted-foreground">Configuración lista para aplicar en Mercado Libre.</p>
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      )}
-
-      {!loading && snapshot && camps.length === 0 && (snapshot.advertisers?.length ?? 0) > 0 && (
-        <div className="space-y-3 rounded-xl border border-border bg-card p-4">
-          <p className="text-sm text-muted-foreground">
-            No hay campañas PADS listadas para estos anunciantes. Si antes veías datos, suele deberse a un rechazo del
-            endpoint de búsqueda de ML o a que la respuesta vino en otro formato; revisá los avisos abajo o en el toast.
-          </p>
-          {Array.isArray(snapshot.errors) && snapshot.errors.length > 0 && (
-            <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-foreground">
-              <p className="font-semibold text-amber-800 dark:text-amber-200 mb-1">Respuesta / rutas ML</p>
-              <ul className="list-disc pl-4 space-y-0.5 opacity-90">
-                {snapshot.errors.slice(0, 8).map((e, i) => (
-                  <li key={i}>{e}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

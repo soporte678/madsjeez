@@ -1,5 +1,37 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { isMarketplaceAdminEmail } from "@/lib/admin-api"
+
+async function assertCanManageProduct(productId: string) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) {
+    return {
+      error: NextResponse.json({ error: "No autorizado" }, { status: 401 }),
+    }
+  }
+
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+    select: { id: true, sellerId: true },
+  })
+
+  if (!product) {
+    return {
+      error: NextResponse.json({ error: "Producto no encontrado" }, { status: 404 }),
+    }
+  }
+
+  const isAdmin = await isMarketplaceAdminEmail(session.user.email)
+  if (!isAdmin && product.sellerId !== session.user.id) {
+    return {
+      error: NextResponse.json({ error: "No tienes permiso para modificar este producto" }, { status: 403 }),
+    }
+  }
+
+  return { session, product }
+}
 
 export async function GET(
   req: Request,
@@ -71,6 +103,9 @@ export async function PUT(
 ) {
   try {
     const { id } = await params
+    const access = await assertCanManageProduct(id)
+    if (access.error) return access.error
+
     const body = await req.json()
     const { title, description, price, stock, isActive } = body
 
@@ -101,6 +136,9 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
+    const access = await assertCanManageProduct(id)
+    if (access.error) return access.error
+
     await prisma.product.delete({
       where: { id }
     })

@@ -1,3 +1,5 @@
+import type { MeliItemDetail } from "./types";
+
 /** Mercado Libre API helpers (server-only). */
 
 export async function meliApi<T>(
@@ -46,28 +48,29 @@ export async function meliSearchUserItems(
   );
 }
 
-export type MeliItemPicture = { secure_url?: string; url?: string };
-export type MeliItemShipping = { free_shipping?: boolean };
-
-export type MeliItemDetail = {
-  id: string;
-  title: string;
-  price: number;
-  currency_id?: string;
-  status?: string;
-  listing_type_id?: string;
-  available_quantity?: number;
-  sold_quantity?: number;
-  condition?: string;
-  permalink?: string;
-  pictures?: MeliItemPicture[];
-  shipping?: MeliItemShipping;
-  category_id?: string;
-  attributes?: Array<{ id?: string; name?: string; value_name?: string | null }>;
-};
+export type {
+  MeliItemDetail,
+  MeliItemPicture,
+  MeliItemShipping,
+  MeliItemAttribute,
+  MeliItemVariation,
+} from "./types";
 
 export async function meliGetItem(accessToken: string, itemId: string) {
   return meliApi<MeliItemDetail>(accessToken, `/items/${itemId}`);
+}
+
+/** Actualiza campos permitidos de una publicación propia (precio, stock, etc.). */
+export async function meliPutItem(
+  accessToken: string,
+  itemId: string,
+  body: Record<string, unknown>
+) {
+  return meliApi<unknown>(accessToken, `/items/${itemId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
 }
 
 export type MeliDescriptionResponse = { plain_text?: string; text?: string };

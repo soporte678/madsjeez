@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -18,118 +19,109 @@ import {
   Package,
   ArrowRight,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 
 interface FavoriteItem {
   id: string;
   product_id: string;
-  created_at: string;
+  created_at?: string;
   product: {
     id: string;
     title: string;
     price: number;
     original_price: number | null;
-    condition: string;
+    condition?: string;
     shipping_free: boolean;
-    stock: number;
+    stock?: number;
     primary_image: string | null;
-    seller_name: string;
+    seller_name: string | null;
     seller_reputation: string | null;
   };
 }
 
 function FavoritesContent() {
   const router = useRouter();
+  const { status } = useSession();
 
-  const [user, setUser] = useState<any>(null);
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
-    const supabase = createClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    if (status === "unauthenticated") {
       router.push("/auth/login?redirect=/favorites");
-      return;
     }
-    setUser(session.user);
-    fetchFavorites(session.user.id);
-  };
+  }, [status, router]);
 
-  const fetchFavorites = async (userId: string) => {
-    const supabase = createClient();
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    fetchFavorites();
+  }, [status]);
+
+  const fetchFavorites = async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from("favorites")
-      .select(`
-        *,
-        product:products(
-          id, title, price, original_price, condition, shipping_free, stock,
-          product_images(url, is_primary),
-          seller:profiles(full_name),
-          reputation_scores:seller_id(color)
-        )
-      `)
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false });
-
-    if (data) {
-      const mappedItems = data.map((item: any) => ({
-        ...item,
+    try {
+      const res = await fetch("/api/dashboard/favoritos", { cache: "no-store" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "No se pudieron cargar los favoritos");
+      const rows = Array.isArray(data?.favoritos) ? data.favoritos : [];
+      const mappedItems: FavoriteItem[] = rows.map((item: any) => ({
+        id: item.id,
+        product_id: item.productId,
+        created_at: "",
         product: {
-          ...item.product,
-          primary_image: item.product?.product_images?.[0]?.url,
-          seller_name: item.product?.seller?.full_name,
-          seller_reputation: item.product?.reputation_scores?.color,
+          id: item.productId,
+          title: item.productTitle,
+          price: Number(item.price || 0),
+          original_price: item.oldPrice != null ? Number(item.oldPrice) : null,
+          condition: "new",
+          shipping_free: Boolean(item.shipping),
+          stock: 999,
+          primary_image: item.productImage || null,
+          seller_name: item.sellerName || null,
+          seller_reputation: item.verified ? "VERDE" : null,
         },
       }));
       setFavorites(mappedItems);
+    } catch (err) {
+      console.error("favorites fetch error", err);
+      toast.error("No se pudieron cargar los favoritos");
+      setFavorites([]);
     }
     setLoading(false);
   };
 
   const removeFromFavorites = async (favoriteId: string) => {
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("favorites")
-      .delete()
-      .eq("id", favoriteId);
-
-    if (error) {
-      toast.error("Error al eliminar de favoritos");
-    } else {
+    try {
+      const res = await fetch(`/api/dashboard/favoritos?id=${encodeURIComponent(favoriteId)}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error();
       setFavorites((prev) => prev.filter((f) => f.id !== favoriteId));
       toast.success("Eliminado de favoritos");
+    } catch {
+      toast.error("Error al eliminar de favoritos");
     }
   };
 
   const addToCart = async (productId: string) => {
-    if (!user) {
+    if (status !== "authenticated") {
       router.push("/auth/login?redirect=/favorites");
       return;
     }
-
-    const supabase = createClient();
-    const { error } = await supabase.from("cart_items").insert({
-      user_id: user.id,
-      product_id: productId,
-      quantity: 1,
-    });
-
-    if (error) {
-      if (error.code === "23505") {
-        toast.info("Este producto ya está en tu carrito");
-      } else {
-        toast.error("Error al agregar al carrito");
-      }
-    } else {
+    try {
+      const res = await fetch("/api/cart", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId, quantity: 1 }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "Error al agregar al carrito");
       toast.success("Agregado al carrito");
+    } catch (err: any) {
+      const msg = String(err?.message || "");
+      if (msg.toLowerCase().includes("stock")) toast.error("Stock insuficiente");
+      else toast.error("Error al agregar al carrito");
     }
   };
 
@@ -142,7 +134,7 @@ function FavoritesContent() {
     0
   );
 
-  if (!user) {
+  if (status === "loading" || status === "unauthenticated") {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin h-8 w-8 border-2 border-[#3483FA] border-t-transparent rounded-full"></div>
@@ -273,7 +265,7 @@ function FavoritesContent() {
                                   size="sm"
                                   className="bg-[#3483FA]"
                                   onClick={() => addToCart(item.product.id)}
-                                  disabled={item.product.stock === 0}
+                                  disabled={(item.product.stock ?? 1) === 0}
                                 >
                                   <ShoppingCart className="h-4 w-4 mr-2" />
                                   Agregar al carrito

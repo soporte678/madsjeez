@@ -1,6 +1,6 @@
 import { Metadata } from "next";
+import { SITE_URL } from "@/lib/seo/site";
 import { notFound } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import {
@@ -21,9 +21,13 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { ProductQuestions } from "@/components/product/ProductQuestions";
 import { getPrismaProductDetailBundle } from "@/lib/product/prisma-detail-for-page";
 import { ProductDetailClient } from "@/components/product/ProductDetailClient";
 import { BuyBox } from "@/components/product/BuyBox";
+import { ProductViewTracker } from "@/components/analytics/ProductViewTracker";
+import { ProductJsonLd } from "@/components/seo/ProductJsonLd";
+import { BreadcrumbJsonLd } from "@/components/seo/BreadcrumbJsonLd";
 
 function hasValidSupabaseConfig() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -158,40 +162,64 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const { id } = await params;
   const product = await getProduct(id);
 
-  const title = product?.title
-    ?? (await prisma.product.findUnique({ where: { id }, select: { title: true } }))?.title
-    ?? null;
+  if (product) {
+    const desc =
+      product.description?.slice(0, 160) ||
+      `Comprá ${product.title} en el marketplace MadsJeez Argentina.`;
+    const canonical = `/product/${id}`;
+    const imgs = (product.product_images as { url: string }[] | undefined) || [];
+    const ogImage =
+      imgs.find((i) => i.url)?.url ||
+      undefined;
+    return {
+      title: product.title,
+      description: desc,
+      alternates: { canonical },
+      openGraph: {
+        title: product.title,
+        description: desc,
+        url: `${SITE_URL}${canonical}`,
+        type: "website",
+        locale: "es_AR",
+        ...(ogImage ? { images: [{ url: ogImage, alt: product.title }] } : {}),
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: product.title,
+        description: desc,
+        ...(ogImage ? { images: [ogImage] } : {}),
+      },
+    };
+  }
 
-  if (!title) return { title: "Producto no encontrado | MadsJeez" };
+  const prismaProd = await prisma.product.findUnique({
+    where: { id },
+    select: { title: true, description: true },
+  });
 
-  const description = (product?.description ?? "").slice(0, 160) || `Comprá ${title} en MadsJeez con envío rápido y la mejor garantía.`;
-  const primaryImage = product?.product_images?.find((img: any) => img.is_primary)?.url
-    ?? product?.product_images?.[0]?.url
-    ?? "/og-image.jpg";
-  const price: number = product?.price ?? 0;
-  const canonical = `https://www.madsjeez.com.ar/product/${id}`;
+  if (!prismaProd) {
+    return { title: "Producto no encontrado | MADSJEEZ" };
+  }
 
+  const desc =
+    prismaProd.description?.slice(0, 160) ||
+    `Comprá ${prismaProd.title} en el marketplace MadsJeez Argentina.`;
+  const canonical = `/product/${id}`;
   return {
-    title: `${title} | MadsJeez`,
-    description,
+    title: prismaProd.title,
+    description: desc,
     alternates: { canonical },
     openGraph: {
+      title: prismaProd.title,
+      description: desc,
+      url: `${SITE_URL}${canonical}`,
       type: "website",
-      url: canonical,
-      title: `${title} | MadsJeez`,
-      description,
-      siteName: "MadsJeez",
-      images: [{ url: primaryImage, width: 800, height: 800, alt: title }],
+      locale: "es_AR",
     },
     twitter: {
       card: "summary_large_image",
-      title: `${title} | MadsJeez`,
-      description,
-      images: [primaryImage],
-    },
-    other: {
-      "product:price:amount": String(price),
-      "product:price:currency": "ARS",
+      title: prismaProd.title,
+      description: desc,
     },
   };
 }
@@ -251,43 +279,41 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   const categoryName = product.categories?.name || "Productos";
   const categorySlug = product.categories?.slug || "";
 
-  const primaryImage = images[0] ?? "/og-image.jpg";
-  const productJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Product",
-    name: product.title,
-    description: product.description ?? undefined,
-    image: images.length > 0 ? images : [primaryImage],
-    sku: product.id,
-    offers: {
-      "@type": "Offer",
-      url: `https://www.madsjeez.com.ar/product/${product.id}`,
-      priceCurrency: "ARS",
-      price: product.price,
-      itemCondition: product.condition === "used"
-        ? "https://schema.org/UsedCondition"
-        : "https://schema.org/NewCondition",
-      availability: product.stock > 0
-        ? "https://schema.org/InStock"
-        : "https://schema.org/OutOfStock",
-      seller: { "@type": "Organization", name: sellerName },
-    },
-    ...(avgRating > 0 && {
-      aggregateRating: {
-        "@type": "AggregateRating",
-        ratingValue: avgRating.toFixed(1),
-        reviewCount: totalReviews,
-      },
-    }),
-  };
+  const stockQty = Number(product.stock ?? 0);
 
   return (
     <div className="min-h-screen flex flex-col">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+      <ProductJsonLd
+        id={product.id}
+        title={product.title}
+        description={product.description || ""}
+        price={Number(product.price)}
+        images={images}
+        condition={product.condition || "new"}
+        inStock={stockQty > 0}
+        categoryName={categoryName}
+        sellerName={sellerName}
+        sku={product.sku}
+        ratingValue={avgRating}
+        reviewCount={totalReviews}
+      />
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Inicio", path: "/" },
+          ...(categorySlug
+            ? [{ name: categoryName, path: `/category/${categorySlug}` }]
+            : []),
+          { name: product.title, path: `/product/${product.id}` },
+        ]}
       />
       <Navbar />
+      <ProductViewTracker
+        productId={product.id}
+        title={product.title}
+        price={Number(product.price || 0)}
+        categoryName={product.categories?.name || null}
+        sellerName={sellerName}
+      />
 
       <div className="min-h-screen bg-background font-sans text-foreground pb-20">
         {/* Top Banner */}
@@ -397,23 +423,8 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                 </>
               )}
 
-              {/* Questions */}
-              <div className="px-4 lg:px-0 mb-10">
-                <h2 className="text-[24px] font-semibold text-gray-800 mb-6">Preguntas y respuestas</h2>
-                <div className="flex gap-4 mb-8">
-                  <input
-                    type="text"
-                    placeholder="Escribí tu pregunta..."
-                    className="flex-1 py-3 px-4 rounded-lg border border-gray-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-sm"
-                    readOnly
-                  />
-                  <Link href={`/messages?seller=${product.seller_id}&product=${product.id}`} className="bg-blue-600 text-white font-bold px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors">
-                    Preguntar
-                  </Link>
-                </div>
-                <Link href={`/messages?seller=${product.seller_id}&product=${product.id}`} className="text-blue-500 font-semibold text-[14px] hover:underline">
-                  Ver todas las preguntas
-                </Link>
+              <div id="preguntas" className="px-4 lg:px-0 mb-10 scroll-mt-24">
+                <ProductQuestions productId={product.id} sellerId={product.seller_id} />
               </div>
 
               <div className="w-full h-px bg-border my-8 hidden md:block"></div>
@@ -604,7 +615,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                   <Link key={item.id} href={`/product/${item.id}`} className="min-w-[170px] max-w-[170px] px-3 py-2 cursor-pointer flex flex-col hover:opacity-95 transition-opacity border-r border-border last:border-r-0">
                     <div className="h-[140px] mb-3 flex items-center justify-center rounded-lg bg-card border border-border p-2">
                       {item.primary_image ? (
-                        <Image src={item.primary_image} alt={item.title} width={140} height={140} className="max-h-full max-w-full object-contain" />
+                        <img src={item.primary_image} alt={item.title} className="max-h-full max-w-full object-contain" />
                       ) : (
                         <Package className="h-16 w-16 text-gray-300" />
                       )}

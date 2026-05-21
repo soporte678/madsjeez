@@ -3,9 +3,99 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import GoogleProvider from "next-auth/providers/google"
 import bcrypt from "bcryptjs"
 import { prisma } from "./prisma"
+import { getProfileUuidByEmail } from "./supabase-profile-map"
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET
+
+/**
+ * Cookies de NextAuth deben compartirse entre www y apex para evitar:
+ * - OAuth callback: "State cookie was missing"
+ * - Login exitoso pero sesión perdida al volver (loop al login)
+ */
+function useSecureAuthCookies(): boolean {
+  const url = process.env.NEXTAUTH_URL ?? ""
+  if (url.startsWith("https://")) return true
+  if (process.env.VERCEL) return true
+  return process.env.NODE_ENV === "production"
+}
+
+function deriveCookieDomain(): string | null {
+  const explicit = process.env.NEXTAUTH_COOKIE_DOMAIN?.trim()
+  if (explicit) return explicit.startsWith(".") ? explicit : `.${explicit}`
+
+  const raw = process.env.NEXTAUTH_URL?.trim()
+  if (!raw) return null
+  try {
+    const host = new URL(raw).hostname.toLowerCase()
+    if (host === "localhost" || /^\d{1,3}(\.\d{1,3}){3}$/.test(host)) return null
+    const parts = host.split(".")
+    if (parts.length < 2) return null
+    // TLD compuesto frecuente en AR: .com.ar
+    if (host.endsWith(".com.ar") && parts.length >= 3) {
+      return `.${parts.slice(-3).join(".")}`
+    }
+    return `.${parts.slice(-2).join(".")}`
+  } catch {
+    return null
+  }
+}
+
+function buildAuthCookies(): NextAuthOptions["cookies"] | undefined {
+  const domain = deriveCookieDomain()
+  if (!domain) return undefined
+
+  const secure = useSecureAuthCookies()
+  const prefix = secure ? "__Secure-" : ""
+  const csrfName = secure ? "__Secure-next-auth.csrf-token" : "next-auth.csrf-token"
+  const sessionMaxAge = 30 * 24 * 60 * 60
+
+  const common = {
+    httpOnly: true,
+    sameSite: "lax" as const,
+    path: "/",
+    secure,
+    domain,
+  }
+
+  return {
+    sessionToken: {
+      name: `${prefix}next-auth.session-token`,
+      options: {
+        ...common,
+        maxAge: sessionMaxAge,
+      },
+    },
+    callbackUrl: {
+      name: `${prefix}next-auth.callback-url`,
+      options: common,
+    },
+    csrfToken: {
+      name: csrfName,
+      options: common,
+    },
+    state: {
+      name: `${prefix}next-auth.state`,
+      options: {
+        ...common,
+        maxAge: 60 * 15,
+      },
+    },
+    pkceCodeVerifier: {
+      name: `${prefix}next-auth.pkce.code_verifier`,
+      options: {
+        ...common,
+        maxAge: 60 * 15,
+      },
+    },
+    nonce: {
+      name: `${prefix}next-auth.nonce`,
+      options: common,
+    },
+  }
+}
+
+const sharedAuthCookies = buildAuthCookies()
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
@@ -21,8 +111,9 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
+        const email = credentials.email.trim().toLowerCase()
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email }
+          where: { email },
         })
 
         if (!user || !user.password) {
@@ -57,7 +148,8 @@ export const authOptions: NextAuthOptions = {
             clientSecret: googleClientSecret,
             authorization: {
               params: {
-                prompt: "consent",
+                // No usar prompt: "consent" en cada login: Google mostraría la validación
+                // como si fuera siempre el primer acceso. El consentimiento se pide la primera vez.
                 access_type: "offline",
                 response_type: "code",
               },
@@ -66,6 +158,7 @@ export const authOptions: NextAuthOptions = {
         ]
       : []),
   ],
+  ...(sharedAuthCookies ? { cookies: sharedAuthCookies } : {}),
   session: {
     strategy: "jwt"
   },
@@ -111,16 +204,27 @@ export const authOptions: NextAuthOptions = {
           // No bloqueamos el login si hay error en DB
         }
       }
+
+      // Sincroniza SIEMPRE el perfil en Supabase para no bloquear checkout MP.
+      if (user.email) {
+        try {
+          const profileId = await getProfileUuidByEmail(user.email)
+          if (!profileId) {
+            console.warn("[auth.signIn] Supabase profile no disponible para:", user.email)
+          }
+        } catch (e) {
+          console.error("[auth.signIn] error sincronizando perfil Supabase:", e)
+        }
+      }
       return true
     },
     async jwt({ token, user, account, trigger }) {
-      // Si es login inicial, obtener datos de la BD
-      if (trigger === "signIn" || !token.id) {
-        if (token.email) {
-          const dbUser = await prisma.user.findUnique({
-            where: { email: token.email as string }
-          })
-          if (dbUser) {
+      if (token.email) {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: token.email as string },
+        })
+        if (dbUser) {
+          if (trigger === "signIn" || !token.id) {
             token.id = dbUser.id
             token.role = dbUser.role
             token.isSeller = dbUser.isSeller
@@ -130,6 +234,11 @@ export const authOptions: NextAuthOptions = {
             token.image = dbUser.image
             token.hasAccessKey = !!dbUser.accessKey
           }
+          const driver = await prisma.flashDriver.findUnique({
+            where: { userId: dbUser.id },
+            select: { isActive: true },
+          })
+          token.isDriver = !!driver?.isActive
         }
       }
       return token

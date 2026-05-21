@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
     const { action, images, title, description, category } = body
 
     const genAI = new GoogleGenerativeAI(apiKey)
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
 
     // ACTION: Analyze images and generate title + description
     if (action === "generate_listing") {

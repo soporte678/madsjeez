@@ -6,7 +6,12 @@ import { Button } from "@/components/ui/button"
 import ThemeToneSwitcher from "@/components/theme/ThemeToneSwitcher"
 import RainbowLogo from "@/components/brand/RainbowLogo"
 
-export function Header() {
+/** `user` es opcional por compatibilidad con páginas legacy; la cabecera usa `useSession()`. */
+export type HeaderProps = {
+  user?: { id: string; email?: string | null } | null;
+};
+
+export function Header(_props: HeaderProps = {}) {
   const { data: session } = useSession()
 
   return (
