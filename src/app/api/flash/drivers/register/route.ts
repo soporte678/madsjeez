@@ -17,13 +17,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "DNI inválido" }, { status: 400 })
   }
 
-  const existing = await prisma.user.findUnique({ where: { email: email.toLowerCase() } })
+  const normalizedEmail = email.trim().toLowerCase()
+  const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } })
   if (existing) {
     const isDriver = await prisma.flashDriver.findUnique({ where: { userId: existing.id } })
     if (isDriver) {
       return NextResponse.json({ error: "Ya existe una cuenta con ese email" }, { status: 409 })
     }
-    // Usuario existe pero no es chofer — crear FlashDriver pendiente
+    // Usuario marketplace existente: guardar contraseña si no tenía (login chofer usa credentials)
+    if (!existing.password) {
+      await prisma.user.update({
+        where: { id: existing.id },
+        data: { password: await bcrypt.hash(password, 12) },
+      })
+    }
     await prisma.flashDriver.create({
       data: {
         userId: existing.id,

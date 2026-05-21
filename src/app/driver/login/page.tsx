@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect, Suspense } from "react"
-import { signIn, useSession } from "next-auth/react"
+import { signIn, signOut, useSession } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
 import {
   Zap, Mail, Lock, Loader2, AlertCircle, CheckCircle2,
@@ -56,31 +56,74 @@ const HOW_IT_WORKS = [
 function LoginForm({ onSwitch }: { onSwitch: () => void }) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { status } = useSession()
+  const { status, update } = useSession()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(
     searchParams.get("error") === "not_driver"
-      ? "Esta cuenta no tiene acceso al portal. Contactá al administrador."
+      ? "Sesión anterior sin permisos de chofer. Cerrá sesión abajo e ingresá de nuevo con email y contraseña."
       : ""
   )
 
   useEffect(() => {
-    if (status === "authenticated") router.replace("/driver")
-  }, [status, router])
+    if (status !== "authenticated") return
+    fetch("/api/flash/drivers/me", { credentials: "include", cache: "no-store" })
+      .then(async (res) => {
+        if (res.ok) {
+          await update()
+          router.replace("/driver")
+          router.refresh()
+          return
+        }
+        setError(
+          res.status === 403
+            ? "Tu cuenta aún no está activa como transportista. Si el admin ya te aprobó, cerrá sesión abajo e ingresá de nuevo."
+            : "No podés acceder al portal de choferes con esta sesión. Cerrá sesión e ingresá con email y contraseña."
+        )
+      })
+      .catch(() => {})
+  }, [status, router, update])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError("")
     try {
-      const result = await signIn("credentials", { email, password, redirect: false })
-      if (result?.error) { setError("Email o contraseña incorrectos."); return }
+      const result = await signIn("credentials", {
+        email: email.trim().toLowerCase(),
+        password,
+        redirect: false,
+      })
+      if (result?.error) {
+        setError("Email o contraseña incorrectos. Si te registraste recién, usá la misma contraseña del registro.")
+        return
+      }
+      const meRes = await fetch("/api/flash/drivers/me", { credentials: "include", cache: "no-store" })
+      if (!meRes.ok) {
+        await signOut({ redirect: false })
+        if (meRes.status === 403) {
+          setError(
+            "Tu cuenta aún no está activa como transportista. Si el admin ya te aprobó, esperá 1 minuto y volvé a ingresar."
+          )
+        } else {
+          setError("No podés acceder al portal de choferes con esta cuenta.")
+        }
+        return
+      }
+      await update()
       router.replace("/driver")
+      router.refresh()
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleClearSession = async () => {
+    await signOut({ redirect: false })
+    setError("")
+    router.replace("/driver/login")
+    router.refresh()
   }
 
   return (
@@ -105,8 +148,20 @@ function LoginForm({ onSwitch }: { onSwitch: () => void }) {
           </div>
         </div>
         {error && (
-          <div className="flex items-center gap-2 text-red-400 text-sm bg-red-950/40 border border-red-900 rounded-lg px-3 py-2">
-            <AlertCircle className="h-4 w-4 shrink-0" />{error}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-red-400 text-sm bg-red-950/40 border border-red-900 rounded-lg px-3 py-2">
+              <AlertCircle className="h-4 w-4 shrink-0" />{error}
+            </div>
+            {(searchParams.get("error") === "not_driver" || status === "authenticated") && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleClearSession}
+                className="w-full border-zinc-600 text-zinc-200 hover:bg-zinc-800"
+              >
+                Cerrar sesión e intentar de nuevo
+              </Button>
+            )}
           </div>
         )}
         <Button type="submit" disabled={loading || !email || !password}

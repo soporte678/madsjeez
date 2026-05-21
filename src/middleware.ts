@@ -23,15 +23,36 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  // Protect driver routes — require active FlashDriver account
+  // Protect driver routes — chofer activo en DB (JWT isDriver puede quedar viejo tras aprobación admin)
   if (pathname.startsWith("/driver") && !pathname.startsWith("/driver/login")) {
     const token = await getToken({
       req: request,
       secret: process.env.NEXTAUTH_SECRET,
     })
-    if (!token || !token.isDriver) {
+    if (!token?.id) {
+      return NextResponse.redirect(new URL("/driver/login", request.url))
+    }
+
+    let isDriver = Boolean(token.isDriver)
+    if (!isDriver) {
+      try {
+        const verifyUrl = new URL("/api/flash/drivers/session-verify", request.url)
+        const res = await fetch(verifyUrl, {
+          headers: { cookie: request.headers.get("cookie") ?? "" },
+          cache: "no-store",
+        })
+        if (res.ok) {
+          const data = (await res.json()) as { isDriver?: boolean }
+          isDriver = Boolean(data.isDriver)
+        }
+      } catch {
+        isDriver = false
+      }
+    }
+
+    if (!isDriver) {
       const url = new URL("/driver/login", request.url)
-      if (token && !token.isDriver) url.searchParams.set("error", "not_driver")
+      url.searchParams.set("error", "not_driver")
       return NextResponse.redirect(url)
     }
   }
