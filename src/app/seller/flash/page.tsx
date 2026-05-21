@@ -20,6 +20,7 @@ export default function SellerFlashPage() {
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState<string | null>(null)
   const [printing, setPrinting] = useState<string | null>(null)
+  const [markingReady, setMarkingReady] = useState<string | null>(null)
 
   const load = async () => {
     setLoading(true)
@@ -35,6 +36,18 @@ export default function SellerFlashPage() {
   useEffect(() => {
     if (status === "authenticated") load()
   }, [status])
+
+  const handleMarkReady = async (id: string) => {
+    setMarkingReady(id)
+    try {
+      const r = await fetch(`/api/flash/shipments/${id}/ready`, { method: "POST" })
+      const d = await r.json()
+      if (!r.ok) { alert(d.error ?? "Error al marcar como listo"); return }
+      await load()
+    } finally {
+      setMarkingReady(null)
+    }
+  }
 
   const handlePrintLabel = async (id: string) => {
     setPrinting(id)
@@ -57,8 +70,8 @@ export default function SellerFlashPage() {
     )
   }
 
-  const active = shipments.filter((s) => !["DELIVERED", "RETURNED_TO_SENDER", "CANCELLED"].includes(s.status))
-  const done = shipments.filter((s) => ["DELIVERED", "RETURNED_TO_SENDER"].includes(s.status))
+  const active = shipments.filter((s) => !["DELIVERED", "RETURNED_TO_SENDER", "RETURNED_TO_SELLER", "CANCELLED"].includes(s.status))
+  const done = shipments.filter((s) => ["DELIVERED", "RETURNED_TO_SENDER", "RETURNED_TO_SELLER"].includes(s.status))
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -105,7 +118,9 @@ export default function SellerFlashPage() {
                   isExpanded={expanded === s.id}
                   onToggle={() => setExpanded(expanded === s.id ? null : s.id)}
                   onPrint={() => handlePrintLabel(s.id)}
+                  onMarkReady={() => handleMarkReady(s.id)}
                   printing={printing === s.id}
+                  markingReady={markingReady === s.id}
                 />
               ))}
             </div>
@@ -124,7 +139,9 @@ export default function SellerFlashPage() {
                   isExpanded={expanded === s.id}
                   onToggle={() => setExpanded(expanded === s.id ? null : s.id)}
                   onPrint={() => handlePrintLabel(s.id)}
+                  onMarkReady={() => {}}
                   printing={printing === s.id}
+                  markingReady={false}
                 />
               ))}
             </div>
@@ -144,15 +161,18 @@ export default function SellerFlashPage() {
 }
 
 function ShipmentCard({
-  shipment, isExpanded, onToggle, onPrint, printing,
+  shipment, isExpanded, onToggle, onPrint, onMarkReady, printing, markingReady,
 }: {
   shipment: FlashShipmentWithRelations
   isExpanded: boolean
   onToggle: () => void
   onPrint: () => void
+  onMarkReady: () => void
   printing: boolean
+  markingReady: boolean
 }) {
-  const canPrint = !["DELIVERED", "RETURNED_TO_SENDER"].includes(shipment.status)
+  const canPrint = !["DELIVERED", "RETURNED_TO_SENDER", "RETURNED_TO_SELLER", "CANCELLED"].includes(shipment.status)
+  const canMarkReady = ["LABEL_GENERATED", "PACKAGE_READY"].includes(shipment.status)
 
   return (
     <Card className="overflow-hidden">
@@ -232,18 +252,31 @@ function ShipmentCard({
             )}
 
             {/* Actions */}
-            {canPrint && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={onPrint}
-                disabled={printing}
-                className="border-yellow-400 text-yellow-700 hover:bg-yellow-50"
-              >
-                <Printer className="h-4 w-4 mr-2" />
-                {printing ? "Generando..." : "Imprimir etiqueta"}
-              </Button>
-            )}
+            <div className="flex flex-wrap gap-2">
+              {canPrint && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={onPrint}
+                  disabled={printing}
+                  className="border-yellow-400 text-yellow-700 hover:bg-yellow-50"
+                >
+                  <Printer className="h-4 w-4 mr-2" />
+                  {printing ? "Generando..." : "Imprimir etiqueta"}
+                </Button>
+              )}
+              {canMarkReady && (
+                <Button
+                  size="sm"
+                  onClick={onMarkReady}
+                  disabled={markingReady}
+                  className="bg-green-500 hover:bg-green-600 text-white"
+                >
+                  <Package className="h-4 w-4 mr-2" />
+                  {markingReady ? "Publicando..." : "✅ Listo para retirar"}
+                </Button>
+              )}
+            </div>
           </div>
         )}
       </CardContent>
