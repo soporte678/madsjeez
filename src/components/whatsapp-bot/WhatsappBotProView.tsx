@@ -6,6 +6,14 @@ import { toast } from "sonner";
 import WhatsappBotConfigView from "./WhatsappBotConfigView";
 import WhatsappBotInboxView from "./WhatsappBotInboxView";
 import WhatsappBotLayout from "./WhatsappBotLayout";
+import {
+  WhatsappBotAutomationsView,
+  WhatsappBotCampanasView,
+  WhatsappBotCatalogoView,
+  WhatsappBotContactosView,
+  WhatsappBotMetricasView,
+  WhatsappBotResumenView,
+} from "./WhatsappBotSections";
 import type {
   AiHealth,
   BotConfig,
@@ -207,8 +215,15 @@ export default function WhatsappBotProView() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: replyText }),
       });
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast.error("No se pudo enviar");
+        toast.error(
+          typeof data.message === "string"
+            ? data.message.slice(0, 220)
+            : data.error === "whatsapp_not_connected"
+              ? "WhatsApp no conectado. Vinculá Evolution en Configuración."
+              : "No se pudo enviar el mensaje"
+        );
         return;
       }
       setReplyText("");
@@ -219,16 +234,30 @@ export default function WhatsappBotProView() {
     }
   }
 
-  async function updateLeadStatus(leadId: string, status: string) {
+  async function patchLead(leadId: string, body: Record<string, unknown>) {
     const res = await fetch(`/api/seller/whatsapp-bot/leads/${leadId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
+      body: JSON.stringify(body),
     });
     if (res.ok) {
       await loadAll();
-      toast.success("Lead actualizado");
+      toast.success("Contacto actualizado");
     }
+  }
+
+  async function updateLeadStatus(leadId: string, status: string) {
+    await patchLead(leadId, { status });
+  }
+
+  function openConversationByPhone(phone: string) {
+    const digits = phone.replace(/\D/g, "");
+    const conv = conversations.find(
+      (c) => c.phone.replace(/\D/g, "") === digits || c.phone.includes(digits)
+    );
+    setActiveNav("conversaciones");
+    if (conv) setSelectedId(conv.id);
+    else toast.info("Sin conversación activa para este teléfono todavía");
   }
 
   if (loading) {
@@ -241,13 +270,25 @@ export default function WhatsappBotProView() {
   }
 
   return (
-    <div className="whatsapp-bot-pro -mx-2 md:-mx-4 rounded-2xl overflow-hidden min-h-[calc(100vh-8rem)]">
+    <div className="whatsapp-bot-pro w-full max-w-none overflow-x-hidden min-h-screen">
       <WhatsappBotLayout
         activeNav={activeNav}
         conversationCount={conversations.length}
         onNavigate={setActiveNav}
       >
-        {activeNav === "configuracion" ? (
+        {activeNav === "resumen" ? (
+          <WhatsappBotResumenView />
+        ) : activeNav === "contactos" ? (
+          <WhatsappBotContactosView onOpenConversation={openConversationByPhone} />
+        ) : activeNav === "automatizaciones" ? (
+          <WhatsappBotAutomationsView />
+        ) : activeNav === "catalogo" ? (
+          <WhatsappBotCatalogoView />
+        ) : activeNav === "campanas" ? (
+          <WhatsappBotCampanasView />
+        ) : activeNav === "metricas" ? (
+          <WhatsappBotMetricasView />
+        ) : activeNav === "configuracion" ? (
           <WhatsappBotConfigView
             session={session}
             config={config}
@@ -286,6 +327,7 @@ export default function WhatsappBotProView() {
             onHandoff={handoff}
             onReactivate={reactivate}
             onUpdateLeadStatus={updateLeadStatus}
+            onPatchLead={patchLead}
             onRefresh={loadAll}
             messagesEndRef={messagesEndRef}
           />

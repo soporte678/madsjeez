@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, type RefObject } from "react";
+import { useMemo, useState, type RefObject } from "react";
 import {
   Bot,
   CheckCircle2,
@@ -104,6 +104,7 @@ type Props = {
   onHandoff: (id: string) => void;
   onReactivate: (id: string) => void;
   onUpdateLeadStatus: (leadId: string, status: string) => void;
+  onPatchLead: (leadId: string, body: Record<string, unknown>) => void;
   onRefresh: () => void;
   messagesEndRef: RefObject<HTMLDivElement | null>;
 };
@@ -128,9 +129,12 @@ export default function WhatsappBotInboxView({
   onHandoff,
   onReactivate,
   onUpdateLeadStatus,
+  onPatchLead,
   onRefresh,
   messagesEndRef,
 }: Props) {
+  const [notesDraft, setNotesDraft] = useState("");
+  const [tagsDraft, setTagsDraft] = useState("");
   const selected = conversations.find((c) => c.id === selectedId) ?? null;
   const selectedLead = selected?.leadId ? leads.find((l) => l.id === selected.leadId) : null;
 
@@ -148,6 +152,8 @@ export default function WhatsappBotInboxView({
     if (filter === "bot") list = list.filter((c) => c.status === "bot_active");
     if (filter === "human") list = list.filter((c) => c.status === "human_active");
     if (filter === "leads") list = list.filter((c) => ["new", "warm", "hot"].includes(c.leadStatus));
+    if (filter === "unread")
+      list = list.filter((c) => c.lastMessage?.senderType === "customer");
     return list;
   }, [conversations, search, filter]);
 
@@ -206,6 +212,10 @@ export default function WhatsappBotInboxView({
               ["bot", `IA (${botCount})`],
               ["human", `Humanos (${humanCount})`],
               ["leads", "Leads activos"],
+              [
+                "unread",
+                `Sin responder (${conversations.filter((c) => c.lastMessage?.senderType === "customer").length})`,
+              ],
             ] as const
           ).map(([key, label]) => (
             <button
@@ -384,9 +394,44 @@ export default function WhatsappBotInboxView({
                     : "Bot IA respondiendo"}
                 </p>
               </div>
+              {selected.leadId && selectedLead ? (
+                <>
+                  <div className="wa-soft p-3">
+                    <p className="text-xs text-slate-400 mb-2">Etiquetas (coma)</p>
+                    <input
+                      className="wa-field text-sm"
+                      defaultValue={(selectedLead.tags ?? []).join(", ")}
+                      onChange={(e) => setTagsDraft(e.target.value)}
+                      onBlur={() => {
+                        const tags = tagsDraft
+                          .split(",")
+                          .map((t) => t.trim())
+                          .filter(Boolean)
+                          .slice(0, 12);
+                        onPatchLead(selected.leadId!, { tags });
+                      }}
+                      placeholder="ej. mayorista, envío"
+                    />
+                  </div>
+                  <div className="wa-soft p-3">
+                    <p className="text-xs text-slate-400 mb-2">Notas internas</p>
+                    <textarea
+                      className="wa-field text-sm min-h-[88px]"
+                      defaultValue={selectedLead.internalNotes ?? ""}
+                      onChange={(e) => setNotesDraft(e.target.value)}
+                      onBlur={() =>
+                        onPatchLead(selected.leadId!, {
+                          internalNotes: notesDraft || null,
+                        })
+                      }
+                      placeholder="Solo visible para tu equipo…"
+                    />
+                  </div>
+                </>
+              ) : null}
               <p className="text-xs text-slate-500 leading-relaxed">
-                Notas y etiquetas avanzadas: próxima iteración. No hay historial completo de WhatsApp
-                Web por API; solo mensajes desde la conexión Evolution.
+                Solo mensajes nuevos desde la conexión Evolution (no se importa historial de WhatsApp
+                Web).
               </p>
             </>
           ) : (

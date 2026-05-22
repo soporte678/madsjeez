@@ -102,6 +102,16 @@ export async function processInboundWhatsappMessage(input: InboundMessageInput) 
     },
   });
 
+  const { runWhatsappAutomations } = await import("./automation-runner");
+  await runWhatsappAutomations({
+    sellerId,
+    phone,
+    text: input.text,
+    leadId: lead.id,
+    conversationId: conversation.id,
+    leadStatus: lead.status,
+  });
+
   await notifySellerWhatsapp({
     sellerId,
     conversationId: conversation.id,

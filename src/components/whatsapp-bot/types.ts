@@ -38,7 +38,7 @@ export type ConversationRow = {
   leadName?: string | null;
   leadId?: string;
   lastMessageAt: string | null;
-  lastMessage: { content: string; senderType: string } | null;
+  lastMessage: { content: string; senderType: string; createdAt?: string } | null;
 };
 
 export type MessageRow = {
@@ -55,6 +55,8 @@ export type LeadRow = {
   name?: string | null;
   status: string;
   intent: string | null;
+  tags?: string[];
+  internalNotes?: string | null;
   lastMessageAt: string | null;
   createdAt?: string;
 };
@@ -67,7 +69,7 @@ export type AiHealth = {
   providerEnv?: string;
 };
 
-export type FilterTab = "all" | "bot" | "human" | "leads";
+export type FilterTab = "all" | "bot" | "human" | "leads" | "unread";
 
 export const STATUS_LABEL: Record<string, string> = {
   disconnected: "Desconectado",

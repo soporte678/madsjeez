@@ -28,8 +28,6 @@ const NAV: { id: WaNavId; label: string; icon: typeof MessageCircle; badge?: boo
   { id: "configuracion", label: "Configuración", icon: Settings },
 ];
 
-const ACTIVE_NAV: WaNavId[] = ["conversaciones", "configuracion"];
-
 type Props = {
   activeNav: WaNavId;
   conversationCount: number;
@@ -44,12 +42,6 @@ export default function WhatsappBotLayout({
   children,
 }: Props) {
   function handleNav(id: WaNavId) {
-    if (!ACTIVE_NAV.includes(id)) {
-      toast.info("Próximamente en Madsjeez", {
-        description: "Esta sección del CRM de WhatsApp está en desarrollo.",
-      });
-      return;
-    }
     onNavigate(id);
   }
 

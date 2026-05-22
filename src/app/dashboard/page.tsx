@@ -1507,7 +1507,11 @@ export default function App() {
               </Suspense>
             )}
             {activeMenu === 'marketing-ia' && <MarketingIAPage />}
-            {activeMenu === 'whatsapp-bot' && <WhatsappBotView />}
+            {activeMenu === 'whatsapp-bot' && (
+              <div className="-mx-4 lg:-mx-8 w-full max-w-none">
+                <WhatsappBotView />
+              </div>
+            )}
             {activeMenu === 'meli-ads-studio' && (
               <Suspense
                 fallback={

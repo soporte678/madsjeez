@@ -23,7 +23,15 @@ export async function PATCH(
 
   const { id } = await params;
   const body = await req.json().catch(() => ({}));
-  const data: { status?: WhatsappLeadStatus; name?: string; assignedTo?: string | null } = {};
+  const data: {
+    status?: WhatsappLeadStatus;
+    name?: string;
+    assignedTo?: string | null;
+    internalNotes?: string | null;
+    tags?: string[];
+    email?: string | null;
+    company?: string | null;
+  } = {};
 
   if (typeof body.status === "string" && STATUSES.includes(body.status as WhatsappLeadStatus)) {
     data.status = body.status as WhatsappLeadStatus;
@@ -32,6 +40,14 @@ export async function PATCH(
   if (body.assignedTo === null || typeof body.assignedTo === "string") {
     data.assignedTo = body.assignedTo;
   }
+  if (body.internalNotes === null || typeof body.internalNotes === "string") {
+    data.internalNotes = body.internalNotes;
+  }
+  if (Array.isArray(body.tags)) {
+    data.tags = body.tags.map((t: unknown) => String(t).slice(0, 40)).slice(0, 12);
+  }
+  if (body.email === null || typeof body.email === "string") data.email = body.email;
+  if (body.company === null || typeof body.company === "string") data.company = body.company;
 
   const lead = await prisma.whatsappLead.updateMany({
     where: { id, sellerId: auth.ctx.sellerId },
