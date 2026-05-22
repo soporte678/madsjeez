@@ -15,7 +15,8 @@ export async function saveOutboundMessage(
   conversationId: string,
   content: string,
   senderType: WhatsappMessageSenderType,
-  providerMessageId?: string
+  providerMessageId?: string,
+  source: "webhook" | "history_sync" | "manual" | "bot" = "webhook"
 ) {
   return prisma.whatsappMessage.create({
     data: {
@@ -25,6 +26,7 @@ export async function saveOutboundMessage(
       content,
       messageType: "text",
       providerMessageId,
+      source: senderType === "bot" ? "bot" : source,
     },
   });
 }

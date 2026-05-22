@@ -15,15 +15,23 @@ export function scoreLeadFromMessage(message: string, current: WhatsappLeadStatu
   if (rank[current] < 0) return current;
 
   if (
-    /comprar|pago|link|mercado pago|transferencia|pedido|lo llevo|lo quiero/.test(lower)
+    /comprar|pago|link|mercado pago|transferencia|pedido|lo llevo|lo quiero|reserv|confirmo|mandame|pasame el link/.test(
+      lower
+    )
   ) {
     next = "hot";
   } else if (
-    /precio|stock|env[ií]o|cuotas|disponible|talle|medida|garant[ií]a/.test(lower)
+    /precio|stock|env[ií]o|cuotas|disponible|talle|medida|garant[ií]a|cu[aá]nto sale|objecion|caro|descuento/.test(
+      lower
+    )
   ) {
     next = "warm";
   } else if (/hola|buen|info|consulta/.test(lower) && current === "new") {
     next = "new";
+  }
+
+  if (/gracias|listo|pagado|ya compr[eé]|recib[ií]/.test(lower) && rank[current] < rank.customer) {
+    next = "customer";
   }
 
   if (rank[next] > rank[current]) return next;
@@ -32,7 +40,9 @@ export function scoreLeadFromMessage(message: string, current: WhatsappLeadStatu
 
 export function detectIntentSnippet(message: string): string {
   const lower = message.toLowerCase();
-  if (/comprar|pago|link/.test(lower)) return "intención de compra";
+  if (/comprar|pago|link|reserv/.test(lower)) return "intención de compra";
+  if (/caro|descuento|promo/.test(lower)) return "objeción de precio";
+  if (/lo pienso|después|más tarde/.test(lower)) return "objeción de tiempo";
   if (/precio/.test(lower)) return "consulta de precio";
   if (/stock|disponible/.test(lower)) return "consulta de stock";
   if (/env[ií]o/.test(lower)) return "consulta de envío";

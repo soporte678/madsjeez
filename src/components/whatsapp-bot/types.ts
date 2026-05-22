@@ -28,6 +28,7 @@ export type BotConfig = {
   maxAutoMessagesBeforeHandoff: number;
   businessHoursEnabled: boolean;
   businessHours: BusinessHoursConfig | null;
+  allowWhatsAppGroups?: boolean;
 };
 
 export type ConversationRow = {
@@ -36,6 +37,12 @@ export type ConversationRow = {
   status: string;
   leadStatus: string;
   leadName?: string | null;
+  leadFullName?: string | null;
+  leadPushName?: string | null;
+  leadProfilePicUrl?: string | null;
+  leadTags?: string[];
+  leadWhatsappLabels?: string[];
+  leadLastSyncedAt?: string | null;
   leadId?: string;
   lastMessageAt: string | null;
   lastMessage: { content: string; senderType: string; createdAt?: string } | null;
@@ -46,6 +53,7 @@ export type MessageRow = {
   direction: string;
   senderType: string;
   content: string;
+  source?: string;
   createdAt: string;
 };
 
@@ -53,6 +61,14 @@ export type LeadRow = {
   id: string;
   phone: string;
   name?: string | null;
+  pushName?: string | null;
+  firstName?: string | null;
+  fullName?: string | null;
+  businessName?: string | null;
+  verifiedName?: string | null;
+  profilePicUrl?: string | null;
+  isBusiness?: boolean;
+  whatsappLabels?: string[];
   status: string;
   intent: string | null;
   source?: string;
@@ -61,6 +77,7 @@ export type LeadRow = {
   email?: string | null;
   company?: string | null;
   lastMessageAt: string | null;
+  lastSyncedAt?: string | null;
   createdAt?: string;
 };
 
@@ -107,8 +124,36 @@ export function formatTime(iso: string | null): string {
   return d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
 }
 
-export function displayName(c: { leadName?: string | null; phone: string }): string {
-  return c.leadName?.trim() || c.phone;
+export function displayName(c: {
+  leadName?: string | null;
+  leadFullName?: string | null;
+  leadPushName?: string | null;
+  name?: string | null;
+  phone: string;
+  fullName?: string | null;
+  firstName?: string | null;
+  pushName?: string | null;
+  businessName?: string | null;
+  verifiedName?: string | null;
+}): string {
+  const full = (c.fullName ?? c.leadFullName)?.trim();
+  const push = (c.pushName ?? c.leadPushName)?.trim();
+  const verified = c.verifiedName?.trim();
+  const business = c.businessName?.trim();
+  const alias = c.leadName?.trim() || c.name?.trim() || c.firstName?.trim();
+  return full || push || verified || business || alias || c.phone;
+}
+
+export function formatSyncedAt(iso: string | null | undefined): string {
+  if (!iso) return "Nunca";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleString("es-AR", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 export function isToday(iso: string | null | undefined): boolean {

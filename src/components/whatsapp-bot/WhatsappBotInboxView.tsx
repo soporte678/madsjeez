@@ -11,9 +11,13 @@ import {
   UserRound,
   Wifi,
 } from "lucide-react";
-import { WaAvatar, WaCard, WaPill } from "./ui";
+import { toast } from "sonner";
+import { waCatch, waFetch } from "./WaShared";
+import { WaAvatar, WaButton, WaCard, WaChipList, WaPill } from "./ui";
+import { WaEmpty } from "./WaShared";
 import {
   displayName,
+  formatSyncedAt,
   formatTime,
   LEAD_LABEL,
   LEAD_STATUSES,
@@ -59,7 +63,10 @@ function Pipeline({
               </div>
               {top ? (
                 <div className="wa-pipeline-card">
-                  <p className="truncate font-bold text-white text-xs">{top.name || top.phone}</p>
+                  <div className="flex items-center gap-2 mb-1">
+                    <WaAvatar label={displayName(top)} imageUrl={top.profilePicUrl} size="sm" />
+                    <p className="truncate font-bold text-white text-xs min-w-0">{displayName(top)}</p>
+                  </div>
                   <p className="text-[10px] text-slate-500 truncate mt-0.5">{top.intent ?? "—"}</p>
                   <select
                     className="wa-field mt-2 py-1 text-[10px]"
@@ -108,6 +115,8 @@ type Props = {
   onRefresh: () => void;
   /** Incrementar tras enviar mensaje para bajar el scroll del chat. */
   chatScrollTrigger?: number;
+  /** Recargar leads tras sync de contacto. */
+  onLeadsRefresh?: () => void;
 };
 
 const CHAT_SCROLL_THRESHOLD_PX = 96;
@@ -147,9 +156,11 @@ export default function WhatsappBotInboxView({
   onPatchLead,
   onRefresh,
   chatScrollTrigger = 0,
+  onLeadsRefresh,
 }: Props) {
   const [notesDraft, setNotesDraft] = useState("");
   const [tagsDraft, setTagsDraft] = useState("");
+  const [crmSyncing, setCrmSyncing] = useState<"contacts" | "recent" | null>(null);
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const stickToBottomRef = useRef(true);
   const prevSelectedIdRef = useRef<string | null>(null);
@@ -164,7 +175,7 @@ export default function WhatsappBotInboxView({
       list = list.filter(
         (c) =>
           c.phone.includes(q) ||
-          (c.leadName?.toLowerCase().includes(q) ?? false) ||
+          displayName(c).toLowerCase().includes(q) ||
           (c.lastMessage?.content.toLowerCase().includes(q) ?? false)
       );
     }
@@ -179,6 +190,39 @@ export default function WhatsappBotInboxView({
   const syncOk = connStatus === "connected";
   const botCount = conversations.filter((c) => c.status === "bot_active").length;
   const humanCount = conversations.filter((c) => c.status === "human_active").length;
+
+  async function runCrmSync(action: "contacts" | "recent") {
+    if (!selected) return;
+    setCrmSyncing(action);
+    try {
+      const d = await waFetch<{
+        totalCreated?: number;
+        totalUpdated?: number;
+        errors?: string[];
+        noHistoryWarning?: boolean;
+      }>("/api/seller/whatsapp-bot/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: action === "recent" ? "recent" : "contacts",
+          phone: action === "recent" ? selected.phone : undefined,
+          enrichProfile: true,
+        }),
+      });
+      toast.success(
+        `Sync OK · nuevos: ${d.totalCreated ?? 0} · actualizados: ${d.totalUpdated ?? 0}`
+      );
+      if (d.noHistoryWarning || d.errors?.length) {
+        toast.info(d.errors?.[0] ?? "Historial limitado en esta instancia Evolution.");
+      }
+      onRefresh();
+      onLeadsRefresh?.();
+    } catch (e) {
+      waCatch(e);
+    } finally {
+      setCrmSyncing(null);
+    }
+  }
 
   useEffect(() => {
     if (selectedId !== prevSelectedIdRef.current) {
@@ -220,7 +264,7 @@ export default function WhatsappBotInboxView({
   }, [chatScrollTrigger]);
 
   return (
-    <div className="wa-page wa-inbox">
+    <div className="wa-page wa-inbox w-full max-w-none">
       <header className="wa-inbox-header">
         <div>
           <h1 className="wa-page-title">Inbox de WhatsApp</h1>
@@ -292,9 +336,12 @@ export default function WhatsappBotInboxView({
         <WaCard className="wa-col-list flex flex-col p-0 min-h-0">
           <div className="wa-scroll flex-1 overflow-y-auto p-2 space-y-1">
             {filteredConversations.length === 0 ? (
-              <p className="p-4 text-sm text-slate-500">
-                Sin conversaciones. Conectá WhatsApp y esperá un mensaje nuevo.
-              </p>
+              <div className="p-4">
+                <WaEmpty
+                  title="Sin conversaciones"
+                  desc="Conectá WhatsApp en Configuración y esperá un mensaje nuevo después del QR."
+                />
+              </div>
             ) : (
               filteredConversations.map((c) => (
                 <button
@@ -303,7 +350,7 @@ export default function WhatsappBotInboxView({
                   onClick={() => onSelectConversation(c.id)}
                   className={`wa-conv-item ${selectedId === c.id ? "wa-conv-item--active" : ""}`}
                 >
-                  <WaAvatar label={displayName(c)} />
+                  <WaAvatar label={displayName(c)} imageUrl={c.leadProfilePicUrl} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <p className="truncate font-bold text-white text-sm">{displayName(c)}</p>
@@ -336,7 +383,7 @@ export default function WhatsappBotInboxView({
             <>
               <div className="wa-chat-head">
                 <div className="flex items-center gap-3">
-                  <WaAvatar label={displayName(selected)} />
+                  <WaAvatar label={displayName(selected)} imageUrl={selected.leadProfilePicUrl} />
                   <div>
                     <p className="font-black text-white">{displayName(selected)}</p>
                     <p className="text-xs text-slate-400">{selected.phone}</p>
@@ -344,13 +391,13 @@ export default function WhatsappBotInboxView({
                 </div>
                 <div className="flex gap-2">
                   {selected.status !== "human_active" ? (
-                    <button type="button" className="wa-btn-ghost text-xs" onClick={() => onHandoff(selected.id)}>
+                    <WaButton variant="ghost" className="text-xs" onClick={() => onHandoff(selected.id)}>
                       <UserRound className="h-4 w-4" /> Tomar control
-                    </button>
+                    </WaButton>
                   ) : (
-                    <button type="button" className="wa-btn-ghost text-xs" onClick={() => onReactivate(selected.id)}>
+                    <WaButton variant="ghost" className="text-xs" onClick={() => onReactivate(selected.id)}>
                       <Bot className="h-4 w-4" /> Reactivar bot
-                    </button>
+                    </WaButton>
                   )}
                 </div>
               </div>
@@ -379,6 +426,7 @@ export default function WhatsappBotInboxView({
                               : m.senderType === "seller"
                                 ? "Vos"
                                 : "Bot IA"}
+                            {m.source && m.source !== "webhook" ? ` · ${m.source}` : ""}
                           </p>
                           <p className="whitespace-pre-wrap break-words">{m.content}</p>
                           <p className="text-[10px] opacity-60 mt-1">{formatTime(m.createdAt)}</p>
@@ -398,14 +446,14 @@ export default function WhatsappBotInboxView({
                     placeholder="Escribí un mensaje…"
                     disabled={connStatus !== "connected" || sending}
                   />
-                  <button
-                    type="button"
-                    className="wa-btn-primary bg-green-600 hover:bg-green-500"
+                  <WaButton
+                    className="bg-green-600 hover:bg-green-500"
                     onClick={onSendReply}
-                    disabled={sending || !replyText.trim() || connStatus !== "connected"}
+                    disabled={!replyText.trim() || connStatus !== "connected"}
+                    loading={sending}
                   >
-                    {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                  </button>
+                    <Send className="h-4 w-4" />
+                  </WaButton>
                 </div>
                 {connStatus !== "connected" ? (
                   <p className="mt-2 text-xs text-amber-400">Conectá WhatsApp en Configuración para enviar.</p>
@@ -419,15 +467,45 @@ export default function WhatsappBotInboxView({
           {selected ? (
             <>
               <div className="flex items-center gap-3">
-                <WaAvatar label={displayName(selected)} className="h-14 w-14 text-lg" />
+                <WaAvatar
+                  label={displayName(selected)}
+                  imageUrl={selected.leadProfilePicUrl}
+                  className="h-14 w-14 text-lg"
+                />
                 <div>
                   <p className="text-lg font-black text-white">{displayName(selected)}</p>
                   <WaPill tone={LEAD_TONE[selected.leadStatus] ?? "slate"}>
                     {LEAD_LABEL[selected.leadStatus] ?? selected.leadStatus}
                   </WaPill>
                   <p className="mt-1 text-sm text-slate-400">{selected.phone}</p>
+                  {selectedLead?.pushName && selectedLead.pushName !== displayName(selected) ? (
+                    <p className="text-xs text-slate-500">WA: {selectedLead.pushName}</p>
+                  ) : null}
                 </div>
               </div>
+              <div className="flex flex-wrap gap-2">
+                <WaButton
+                  variant="ghost"
+                  className="text-xs py-1"
+                  loading={crmSyncing === "contacts"}
+                  disabled={crmSyncing !== null || connStatus !== "connected"}
+                  onClick={() => runCrmSync("contacts")}
+                >
+                  <RefreshCw className="h-3.5 w-3.5" /> Sync contacto
+                </WaButton>
+                <WaButton
+                  variant="ghost"
+                  className="text-xs py-1"
+                  loading={crmSyncing === "recent"}
+                  disabled={crmSyncing !== null || connStatus !== "connected"}
+                  onClick={() => runCrmSync("recent")}
+                >
+                  Sync mensajes
+                </WaButton>
+              </div>
+              <p className="text-xs text-slate-500">
+                Últ. sync: {formatSyncedAt(selected.leadLastSyncedAt ?? selectedLead?.lastSyncedAt)}
+              </p>
               {selected.leadId ? (
                 <div className="wa-soft p-3">
                   <p className="text-xs text-slate-400 mb-2">Etapa del lead</p>
@@ -458,12 +536,35 @@ export default function WhatsappBotInboxView({
                     : "Bot IA respondiendo"}
                 </p>
               </div>
+              {(selected.leadWhatsappLabels?.length ?? 0) > 0 ||
+              (selectedLead?.whatsappLabels?.length ?? 0) > 0 ? (
+                <div className="wa-soft p-3">
+                  <p className="text-xs font-bold text-white mb-2">Etiquetas de WhatsApp</p>
+                  <WaChipList
+                    items={
+                      selected.leadWhatsappLabels?.length
+                        ? selected.leadWhatsappLabels
+                        : (selectedLead?.whatsappLabels ?? [])
+                    }
+                    kind="whatsapp"
+                    empty="Sin etiquetas en WhatsApp"
+                  />
+                  <p className="text-[10px] text-slate-500 mt-2">
+                    Vienen de tu cuenta WA — no se editan desde acá.
+                  </p>
+                </div>
+              ) : null}
               {selected.leadId && selectedLead ? (
                 <>
                   <div className="wa-soft p-3">
-                    <p className="text-xs text-slate-400 mb-2">Etiquetas (coma)</p>
+                    <p className="text-xs font-bold text-white mb-2">Tags CRM</p>
+                    {(selectedLead.tags ?? []).length > 0 ? (
+                      <WaChipList items={selectedLead.tags ?? []} kind="crm" />
+                    ) : (
+                      <p className="text-xs text-slate-500 mb-2">Todavía sin tags CRM</p>
+                    )}
                     <input
-                      className="wa-field text-sm"
+                      className="wa-field text-sm mt-2"
                       defaultValue={(selectedLead.tags ?? []).join(", ")}
                       onChange={(e) => setTagsDraft(e.target.value)}
                       onBlur={() => {
@@ -474,7 +575,7 @@ export default function WhatsappBotInboxView({
                           .slice(0, 12);
                         onPatchLead(selected.leadId!, { tags });
                       }}
-                      placeholder="ej. mayorista, envío"
+                      placeholder="mayorista, envío (separá con coma)"
                     />
                   </div>
                   <div className="wa-soft p-3">

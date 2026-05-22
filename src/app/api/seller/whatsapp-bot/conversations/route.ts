@@ -13,7 +13,7 @@ export async function GET() {
     orderBy: { lastMessageAt: "desc" },
     take: 50,
     include: {
-      lead: { select: { status: true, name: true, intent: true } },
+      lead: { select: { status: true, name: true, intent: true, pushName: true, fullName: true, businessName: true, profilePicUrl: true, tags: true, whatsappLabels: true, lastSyncedAt: true } },
       messages: {
         orderBy: { createdAt: "desc" },
         take: 1,
@@ -30,6 +30,12 @@ export async function GET() {
       leadId: c.leadId,
       leadStatus: c.lead.status,
       leadName: c.lead.name,
+      leadFullName: c.lead.fullName,
+      leadPushName: c.lead.pushName,
+      leadProfilePicUrl: c.lead.profilePicUrl,
+      leadTags: c.lead.tags,
+      leadWhatsappLabels: c.lead.whatsappLabels,
+      leadLastSyncedAt: c.lead.lastSyncedAt,
       leadIntent: c.lead.intent,
       lastMessageAt: c.lastMessageAt,
       lastMessage: c.messages[0]

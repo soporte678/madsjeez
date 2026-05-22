@@ -285,6 +285,9 @@ export class EvolutionWhatsAppProvider implements WhatsAppProvider {
       resolveInstanceName(p.instanceName) ||
       resolveInstanceName(data.instance);
     const remoteJid = String(key.remoteJid ?? data.remoteJid ?? "");
+    if (remoteJid.endsWith("@g.us")) {
+      return { handled: false, instanceName, isGroup: true };
+    }
     const phone = remoteJid.split("@")[0]?.replace(/\D/g, "") || "";
     const message = (data.message ?? {}) as Record<string, unknown>;
     const text =
@@ -302,6 +305,7 @@ export class EvolutionWhatsAppProvider implements WhatsAppProvider {
       text: text.trim(),
       providerMessageId: String(key.id ?? ""),
       fromMe: false,
+      remoteJid,
     };
   }
 }

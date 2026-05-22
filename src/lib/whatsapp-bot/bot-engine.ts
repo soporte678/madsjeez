@@ -1,7 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { getWhatsappBotEnv, parseSellerIdFromInstance } from "./config";
-import { generateBotReply, FALLBACK_NO_AI } from "./ai-response-service";
-import { buildStoreContext } from "./seller-knowledge-service";
+import { generateBotReply as generateAiBotReply } from "@/lib/ai/aiService";
+import { formatStoreContextForPrompt, buildStoreContext } from "./seller-knowledge-service";
+import { searchCatalogBeforeReply } from "@/lib/ai/aiService";
+import { FALLBACK_NO_AI } from "./ai-response-service";
 import { customerWantsHuman, requestHumanHandoff } from "./human-handoff-service";
 import { detectIntentSnippet, scoreLeadFromMessage } from "./lead-scoring-service";
 import { getWhatsAppProvider } from "./providers/evolution-provider";
@@ -17,9 +19,13 @@ export type InboundMessageInput = {
   phone: string;
   text: string;
   providerMessageId?: string;
+  remoteJid?: string;
+  isGroup?: boolean;
 };
 
 export async function processInboundWhatsappMessage(input: InboundMessageInput) {
+  if (input.isGroup) return;
+
   if (await isDuplicateInboundMessage(input.providerMessageId)) {
     return;
   }
@@ -99,7 +105,9 @@ export async function processInboundWhatsappMessage(input: InboundMessageInput) 
       senderType: "customer",
       content: input.text,
       messageType: "text",
+      source: "webhook",
       providerMessageId: input.providerMessageId,
+      remoteJid: input.remoteJid,
     },
   });
 
@@ -143,6 +151,7 @@ export async function processInboundWhatsappMessage(input: InboundMessageInput) 
   if (!config.enabled || !config.autoReplyEnabled) return;
   if (conversation.status === "human_active") return;
   if (session.status !== "connected") return;
+  if (input.isGroup && !config.allowWhatsAppGroups) return;
 
   if (config.businessHoursEnabled) {
     const hours = parseBusinessHours(config.businessHours);
@@ -174,6 +183,7 @@ export async function processInboundWhatsappMessage(input: InboundMessageInput) 
 
   const { appBase } = getWhatsappBotEnv();
   const storeContext = await buildStoreContext(sellerId, input.text, appBase);
+  const catalogMatches = await searchCatalogBeforeReply(sellerId, input.text, appBase);
 
   const recent = await prisma.whatsappMessage.findMany({
     where: { conversationId: conversation.id },
@@ -182,19 +192,95 @@ export async function processInboundWhatsappMessage(input: InboundMessageInput) 
   });
 
   const recentMessages = recent.reverse().map((m) => ({
-    role: (m.direction === "inbound" ? "user" : "assistant") as "user" | "assistant",
+    direction: m.direction as "inbound" | "outbound",
+    senderType: m.senderType,
     content: m.content.slice(0, 400),
+    createdAt: m.createdAt,
   }));
 
-  const { text: reply } = await generateBotReply({
-    customerMessage: input.text,
-    storeContext,
-    tone: config.tone,
-    customInstructions: config.customInstructions,
+  const aiResult = await generateAiBotReply({
+    contact: {
+      id: lead.id,
+      phone: lead.phone,
+      name: lead.name,
+      pushName: lead.pushName,
+      fullName: lead.fullName,
+      businessName: lead.businessName,
+      status: lead.status,
+      intent: lead.intent,
+      tags: lead.tags,
+    },
+    conversation: {
+      id: conversation.id,
+      status: conversation.status,
+      botMessageCount: conversation.botMessageCount,
+    },
     recentMessages,
+    customerMessage: input.text,
+    catalogMatches: catalogMatches.map((p) => ({
+      id: p.id,
+      title: p.title,
+      price: p.price,
+      stock: p.stock,
+      productUrl: p.productUrl,
+    })),
+    botSettings: {
+      enabled: config.enabled,
+      tone: config.tone,
+      customInstructions: config.customInstructions,
+      humanHandoffEnabled: config.humanHandoffEnabled,
+      maxAutoMessagesBeforeHandoff: config.maxAutoMessagesBeforeHandoff,
+    },
+    storeContextBlock: formatStoreContextForPrompt(storeContext),
   });
 
-  await sendAndStore(session.providerInstanceId, phone, conversation.id, reply, "bot");
+  await prisma.whatsappLead.update({
+    where: { id: lead.id },
+    data: {
+      intent: aiResult.intent,
+      ...(aiResult.suggestedStage ? { status: aiResult.suggestedStage } : {}),
+    },
+  });
+
+  if (aiResult.shouldHandoff && config.humanHandoffEnabled) {
+    await requestHumanHandoff(conversation.id, aiResult.reason ?? "derivacion_ia", {
+      notifySeller: true,
+      phone,
+    });
+    await sendAndStore(
+      session.providerInstanceId,
+      phone,
+      conversation.id,
+      aiResult.text || "Te derivo con el vendedor.",
+      "bot"
+    );
+    await prisma.whatsappBotEvent.create({
+      data: {
+        sellerId,
+        conversationId: conversation.id,
+        type: "ai_handoff",
+        payload: { intent: aiResult.intent, reason: aiResult.reason },
+      },
+    });
+    return;
+  }
+
+  if (!aiResult.text.trim()) return;
+
+  await sendAndStore(session.providerInstanceId, phone, conversation.id, aiResult.text, "bot");
+
+  await prisma.whatsappBotEvent.create({
+    data: {
+      sellerId,
+      conversationId: conversation.id,
+      type: aiResult.usedAi ? "ai_reply" : "rule_reply",
+      payload: {
+        intent: aiResult.intent,
+        provider: aiResult.aiProvider,
+        error: aiResult.aiError,
+      },
+    },
+  });
 
   await prisma.whatsappConversation.update({
     where: { id: conversation.id },

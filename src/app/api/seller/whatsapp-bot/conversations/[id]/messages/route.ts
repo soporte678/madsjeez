@@ -26,14 +26,15 @@ export async function GET(
     where: { conversationId: id },
     orderBy: { createdAt: "asc" },
     take: limit,
-    select: {
-      id: true,
-      direction: true,
-      senderType: true,
-      content: true,
-      messageType: true,
-      createdAt: true,
-    },
+      select: {
+        id: true,
+        direction: true,
+        senderType: true,
+        content: true,
+        messageType: true,
+        source: true,
+        createdAt: true,
+      },
   });
 
   return NextResponse.json({ messages });

@@ -15,6 +15,11 @@ export const WHATSAPP_INSTRUCTION_PRESETS: { id: string; label: string; text: st
     text: "Destacá productos con envío gratis cuando aplique. Si hay intención de compra, pasá el link del producto y ofrecé ayuda para cerrar la compra en la web.",
   },
   {
+    id: "closer",
+    label: "Closer de ventas (recomendado)",
+    text: "Actuá como closer: calificá con una pregunta, recomendá producto del catálogo, manejá objeciones con empatía y cerrá con CTA (link, cantidad, envío o MP). Máximo 3 oraciones. Español argentino.",
+  },
+  {
     id: "corto",
     label: "Respuestas muy breves",
     text: "Máximo 2 oraciones por mensaje. Sin listas largas. Tono directo.",

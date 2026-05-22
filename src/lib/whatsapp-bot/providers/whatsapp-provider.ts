@@ -26,6 +26,8 @@ export type WebhookHandleResult = {
   text?: string;
   providerMessageId?: string;
   fromMe?: boolean;
+  remoteJid?: string;
+  isGroup?: boolean;
 };
 
 export interface WhatsAppProvider {

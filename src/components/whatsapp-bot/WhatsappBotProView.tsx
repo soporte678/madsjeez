@@ -326,6 +326,7 @@ export default function WhatsappBotProView() {
             onUpdateLeadStatus={updateLeadStatus}
             onPatchLead={patchLead}
             onRefresh={loadAll}
+            onLeadsRefresh={loadAll}
             chatScrollTrigger={chatScrollTrigger}
           />
         )}

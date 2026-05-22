@@ -193,6 +193,7 @@ model User {
   whatsappBotEvents    WhatsappBotEvent[]
   whatsappAutomations  WhatsappAutomation[]
   whatsappCampaigns    WhatsappCampaign[]
+  whatsappSyncJobs     WhatsappSyncJob[]
 
   // Reputación
   reputationHistory ReputationHistory[] @relation("ReputationHistory")
@@ -1777,6 +1778,28 @@ enum WhatsappCampaignStatus {
   finished
 }
 
+enum WhatsappMessageSource {
+  webhook
+  history_sync
+  manual
+  bot
+}
+
+enum WhatsappSyncJobType {
+  contacts
+  chats
+  messages
+  full
+}
+
+enum WhatsappSyncJobStatus {
+  pending
+  running
+  completed
+  partial_error
+  failed
+}
+
 model WhatsappSession {
   id                 String                @id @default(cuid())
   sellerId           String                @map("seller_id")
@@ -1811,6 +1834,7 @@ model SellerBotConfig {
   autoReplyEnabled              Boolean         @default(true) @map("auto_reply_enabled")
   humanHandoffEnabled           Boolean         @default(true) @map("human_handoff_enabled")
   maxAutoMessagesBeforeHandoff  Int             @default(12) @map("max_auto_messages_before_handoff")
+  allowWhatsAppGroups           Boolean         @default(false) @map("allow_whatsapp_groups")
   customInstructions            String?         @map("custom_instructions") @db.Text
   createdAt                     DateTime        @default(now()) @map("created_at")
   updatedAt                     DateTime        @updatedAt @map("updated_at")
@@ -1823,8 +1847,18 @@ model WhatsappLead {
   sellerId      String             @map("seller_id")
   seller        User               @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   storeId       String?            @map("store_id")
+  jid           String?
   phone         String
   name          String?
+  pushName      String?            @map("push_name")
+  firstName     String?            @map("first_name")
+  fullName      String?            @map("full_name")
+  businessName  String?            @map("business_name")
+  verifiedName  String?            @map("verified_name")
+  profilePicUrl String?            @map("profile_pic_url") @db.Text
+  isBusiness    Boolean            @default(false) @map("is_business")
+  whatsappLabels String[]          @default([]) @map("whatsapp_labels")
+  about         String?            @db.Text
   email         String?
   company       String?
   source        String             @default("whatsapp")
@@ -1832,7 +1866,9 @@ model WhatsappLead {
   intent        String?            @db.Text
   tags          String[]           @default([])
   internalNotes String?            @map("internal_notes") @db.Text
+  rawWhatsappData Json?            @map("raw_whatsapp_data")
   lastMessageAt DateTime?          @map("last_message_at")
+  lastSyncedAt  DateTime?          @map("last_synced_at")
   assignedTo    String?            @map("assigned_to")
   createdAt     DateTime           @default(now()) @map("created_at")
   updatedAt     DateTime           @updatedAt @map("updated_at")
@@ -1841,6 +1877,7 @@ model WhatsappLead {
 
   @@unique([sellerId, phone])
   @@index([sellerId, status])
+  @@index([sellerId, jid])
   @@map("whatsapp_leads")
 }
 
@@ -1894,6 +1931,7 @@ model WhatsappConversation {
   phone             String
   status            WhatsappConversationStatus @default(bot_active)
   botMessageCount   Int                        @default(0) @map("bot_message_count")
+  aiSummary         String?                    @map("ai_summary") @db.Text
   lastMessageAt     DateTime?                  @map("last_message_at")
   createdAt         DateTime                   @default(now()) @map("created_at")
   updatedAt         DateTime                   @updatedAt @map("updated_at")
@@ -1915,12 +1953,35 @@ model WhatsappMessage {
   senderType        WhatsappMessageSenderType @map("sender_type")
   content           String                    @db.Text
   messageType       WhatsappMessageType       @default(text) @map("message_type")
+  source            WhatsappMessageSource     @default(webhook)
   providerMessageId String?                   @map("provider_message_id")
+  remoteJid         String?                   @map("remote_jid")
   metadata          Json?
   createdAt         DateTime                  @default(now()) @map("created_at")
 
   @@index([conversationId, createdAt])
+  @@index([providerMessageId])
   @@map("whatsapp_messages")
+}
+
+model WhatsappSyncJob {
+  id           String                @id @default(cuid())
+  sellerId     String                @map("seller_id")
+  seller       User                  @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  type         WhatsappSyncJobType
+  status       WhatsappSyncJobStatus @default(pending)
+  startedAt    DateTime              @default(now()) @map("started_at")
+  finishedAt   DateTime?             @map("finished_at")
+  totalFound   Int                   @default(0) @map("total_found")
+  totalCreated Int                   @default(0) @map("total_created")
+  totalUpdated Int                   @default(0) @map("total_updated")
+  totalSkipped Int                   @default(0) @map("total_skipped")
+  errors       Json                  @default("[]")
+  metadata     Json                  @default("{}")
+  createdAt    DateTime              @default(now()) @map("created_at")
+
+  @@index([sellerId, createdAt])
+  @@map("whatsapp_sync_jobs")
 }
 
 model WhatsappBotEvent {

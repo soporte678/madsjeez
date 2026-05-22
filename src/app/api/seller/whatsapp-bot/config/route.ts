@@ -45,6 +45,9 @@ export async function PATCH(req: NextRequest) {
   if (typeof body.businessHoursEnabled === "boolean") {
     data.businessHoursEnabled = body.businessHoursEnabled;
   }
+  if (typeof body.allowWhatsAppGroups === "boolean") {
+    data.allowWhatsAppGroups = body.allowWhatsAppGroups;
+  }
   if (body.businessHours !== undefined) {
     const parsed = parseBusinessHours(body.businessHours);
     data.businessHours = parsed ?? DEFAULT_BUSINESS_HOURS;

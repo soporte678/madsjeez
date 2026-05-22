@@ -51,6 +51,11 @@ export async function POST(req: NextRequest) {
   const sellerId = parseSellerIdFromInstance(instanceName);
 
   if (sellerId && parsed.phone && parsed.text) {
+    const config = await prisma.sellerBotConfig.findUnique({ where: { sellerId } });
+    if (parsed.isGroup && !config?.allowWhatsAppGroups) {
+      return NextResponse.json({ ok: true, skipped: "group" });
+    }
+
     const msgRl = simpleRateLimit(`wa-in:${sellerId}:${parsed.phone}`, 30, 60_000);
     if (!msgRl.ok) {
       return NextResponse.json({ ok: true, rate_limited: true });
@@ -62,6 +67,8 @@ export async function POST(req: NextRequest) {
         phone: parsed.phone,
         text: parsed.text,
         providerMessageId: parsed.providerMessageId,
+        remoteJid: parsed.remoteJid,
+        isGroup: parsed.isGroup,
       });
     } catch (e) {
       console.error("[whatsapp-bot] inbound error", e instanceof Error ? e.message : e);
