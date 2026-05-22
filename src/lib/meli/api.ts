@@ -79,6 +79,27 @@ export async function meliPutItem(
   });
 }
 
+/** Crea una publicación nueva en la cuenta del token. */
+export async function meliPostItem(accessToken: string, body: Record<string, unknown>) {
+  return meliApi<{ id?: string; permalink?: string; status?: string }>(accessToken, "/items", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+export async function meliPostItemDescription(
+  accessToken: string,
+  itemId: string,
+  plainText: string
+) {
+  return meliApi<unknown>(accessToken, `/items/${itemId}/description`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ plain_text: plainText }),
+  });
+}
+
 export type MeliDescriptionResponse = { plain_text?: string; text?: string };
 
 export async function meliGetItemDescription(accessToken: string, itemId: string) {

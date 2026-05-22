@@ -17,6 +17,8 @@ import {
   Upload,
   Download,
   Check,
+  FileDown,
+  ArrowRightLeft,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -211,6 +213,9 @@ export default function MeliIntegrationView() {
   const [loadingLocal, setLoadingLocal] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [listingKind, setListingKind] = useState<MeliListingKind>("standard");
+  const [targetAccountId, setTargetAccountId] = useState<string | null>(null);
+  const [mlaPasteText, setMlaPasteText] = useState("");
+  const [publishingToAccount, setPublishingToAccount] = useState(false);
 
   const loadStatus = useCallback(async () => {
     setLoadingStatus(true);
@@ -223,6 +228,11 @@ export default function MeliIntegrationView() {
         setSelectedAccountId((prev) => {
           if (prev && d.accounts?.some((a) => a.id === prev)) return prev;
           return d.accountId || primary?.id || null;
+        });
+        setTargetAccountId((prev) => {
+          if (prev && d.accounts?.some((a) => a.id === prev)) return prev;
+          const second = d.accounts?.[1];
+          return second?.id ?? null;
         });
       } else {
         setMeliStatus({ connected: false, meliUserId: null, expiresAt: null });
@@ -594,6 +604,69 @@ export default function MeliIntegrationView() {
       setPromoPreview(JSON.stringify(d, null, 2).slice(0, 12000));
     } catch {
       toast.error("Error al cargar promociones ML");
+    }
+  };
+
+  const downloadCatalogCsv = () => {
+    if (!selectedAccountId) {
+      toast.error("Elegí la cuenta ML origen.");
+      return;
+    }
+    window.location.href = `/api/meli/export-catalog?accountId=${encodeURIComponent(selectedAccountId)}&format=csv`;
+    toast.success("Descargando CSV con códigos MLA…");
+  };
+
+  const runPublishToTargetAccount = async (publishAll: boolean) => {
+    if (!selectedAccountId || !targetAccountId) {
+      toast.error("Elegí cuenta origen y cuenta destino.");
+      return;
+    }
+    if (selectedAccountId === targetAccountId) {
+      toast.error("La cuenta destino debe ser distinta de la origen.");
+      return;
+    }
+    const mlaLines = mlaPasteText
+      .split(/[\s,;]+/)
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+    const label = publishAll ? "TODAS las publicaciones vinculadas" : `${mlaLines.length || "las"} MLA indicados`;
+    if (
+      !window.confirm(
+        `¿Crear publicaciones nuevas en la cuenta destino para ${label}?\n\nOrigen: cuenta activa\nDestino: otra cuenta ML\n\nEl producto en MADSJEEZ quedará vinculado al nuevo MLA de la cuenta destino.`
+      )
+    ) {
+      return;
+    }
+    setPublishingToAccount(true);
+    try {
+      const r = await fetch("/api/meli/publish-to-account", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sourceAccountId: selectedAccountId,
+          targetAccountId,
+          confirmed: true,
+          publishAll,
+          meliItemIds: publishAll ? undefined : mlaLines,
+          maxItems: publishAll ? 500 : 200,
+        }),
+      });
+      const d = await r.json();
+      if (!r.ok) {
+        toast.error(d.error || "Error al publicar en cuenta destino");
+        return;
+      }
+      toast.success(
+        `Listo: ${d.published ?? 0} publicadas, ${d.skipped ?? 0} ya estaban, ${d.failed ?? 0} con error.`
+      );
+      if (d.errors?.length) {
+        console.warn("publish-to-account errors", d.errors);
+      }
+      await loadStatus();
+    } catch {
+      toast.error("Error de red");
+    } finally {
+      setPublishingToAccount(false);
     }
   };
 
@@ -1114,6 +1187,126 @@ export default function MeliIntegrationView() {
 
       {syncDirection === "export" && (
         <div className="space-y-6">
+          <section className={`${meliPanel} ${meliGlowCyan} space-y-5 p-6 md:p-8`}>
+            <div className="flex items-start gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-cyan-400/25 bg-cyan-500/10 text-cyan-300">
+                <ArrowRightLeft className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white">
+                  Pasar publicaciones entre cuentas ML (vía MADSJEEZ)
+                </h3>
+                <p className="mt-1 text-sm text-slate-400">
+                  Flujo recomendado: importá desde la <strong className="text-slate-200">cuenta 1</strong> al
+                  marketplace, exportá el CSV con códigos <strong className="text-slate-200">MLA</strong>, luego
+                  publicá en la <strong className="text-slate-200">cuenta 3</strong> (u otra). El MLA del CSV identifica
+                  cada producto en tu catálogo local.
+                </p>
+              </div>
+            </div>
+
+            <ol className="grid gap-3 text-sm text-slate-300 sm:grid-cols-3">
+              <li className={meliSubCard}>
+                <span className="text-xs font-bold text-cyan-300">1</span>
+                <p className="mt-1">En Importar: traé todo desde la cuenta origen (cuenta activa arriba).</p>
+              </li>
+              <li className={meliSubCard}>
+                <span className="text-xs font-bold text-cyan-300">2</span>
+                <p className="mt-1">Exportá CSV con MLA, SKU y datos del marketplace.</p>
+              </li>
+              <li className={meliSubCard}>
+                <span className="text-xs font-bold text-cyan-300">3</span>
+                <p className="mt-1">Elegí cuenta destino y publicá (todas o solo los MLA del CSV).</p>
+              </li>
+            </ol>
+
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                disabled={!selectedAccountId}
+                onClick={downloadCatalogCsv}
+                className={meliBtnGhost}
+              >
+                <FileDown className="h-4 w-4" />
+                Exportar CSV (cuenta activa)
+              </button>
+              <span className="self-center text-xs text-slate-500">
+                {linkedCount} vinculadas en origen · columnas: product_id, mla, sku, titulo…
+              </span>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-400">Cuenta origen (marketplace)</label>
+                <p className="rounded-lg border border-white/10 bg-slate-950/50 px-3 py-2 text-sm text-slate-200">
+                  {activeAccount?.label || activeAccount?.nickname || "—"} (cuenta activa del selector superior)
+                </p>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-400">Cuenta destino ML</label>
+                <select
+                  value={targetAccountId || ""}
+                  onChange={(e) => setTargetAccountId(e.target.value || null)}
+                  className={meliSelect}
+                >
+                  <option value="">Elegir cuenta…</option>
+                  {(meliStatus?.accounts ?? [])
+                    .filter((a) => a.id !== selectedAccountId)
+                    .map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.label || a.nickname || `ML ${a.meliUserId}`}
+                        {a.isPrimary ? " · principal" : ""}
+                      </option>
+                    ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-400">
+                MLA a publicar (opcional — pegá del CSV o dejá vacío para todas)
+              </label>
+              <textarea
+                value={mlaPasteText}
+                onChange={(e) => setMlaPasteText(e.target.value)}
+                rows={4}
+                placeholder={"MLA1234567890\nMLA9876543210\n…"}
+                className={`${meliInput} font-mono text-xs`}
+              />
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                disabled={!meliStatus?.connected || publishingToAccount || !targetAccountId}
+                onClick={() => runPublishToTargetAccount(true)}
+                className={meliBtnTeal}
+              >
+                {publishingToAccount ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Upload className="h-4 w-4" />
+                )}
+                Publicar todas en cuenta destino
+              </button>
+              <button
+                type="button"
+                disabled={
+                  !meliStatus?.connected || publishingToAccount || !targetAccountId || !mlaPasteText.trim()
+                }
+                onClick={() => runPublishToTargetAccount(false)}
+                className={meliBtnGhost}
+              >
+                Publicar solo MLA pegados
+              </button>
+            </div>
+            <p className="text-[11px] text-slate-500">
+              Se crea una publicación <strong>nueva</strong> en ML en la cuenta destino. La publicación original en la
+              cuenta 1 sigue en Mercado Libre hasta que la pauses o cierres allí. Mercado Libre puede rechazar ítems si
+              faltan atributos obligatorios de la categoría.
+            </p>
+          </section>
+
           <section className={`${meliPanel} ${meliGlowCyan} space-y-4 p-6`}>
             <h3 className="flex items-center gap-2 font-semibold text-white">
               <Upload className="h-5 w-5 text-cyan-400" />
