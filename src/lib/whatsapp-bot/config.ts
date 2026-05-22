@@ -13,8 +13,14 @@ export function getWhatsappBotEnv() {
   const instancePrefix =
     process.env.EVOLUTION_DEFAULT_INSTANCE_PREFIX?.trim() || "madsjeez_seller_";
   const webhookSecret = process.env.EVOLUTION_WEBHOOK_SECRET?.trim() || "";
-  const ollamaBase = process.env.OLLAMA_BASE_URL?.replace(/\/$/, "") || "http://localhost:11434";
+  const ollamaRaw = process.env.OLLAMA_BASE_URL?.replace(/\/$/, "").trim() || "";
+  const ollamaBase =
+    ollamaRaw ||
+    (process.env.NODE_ENV === "production" ? "" : "http://localhost:11434");
   const ollamaModel = process.env.OLLAMA_MODEL?.trim() || "qwen2.5:7b";
+  const ollamaConfigured =
+    Boolean(ollamaBase) &&
+    !/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(ollamaBase);
   const appBase =
     process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
     process.env.NEXTAUTH_URL?.replace(/\/$/, "") ||
@@ -30,7 +36,7 @@ export function getWhatsappBotEnv() {
     ollamaModel,
     appBase,
     evolutionConfigured: Boolean(evolutionUrl && evolutionKey),
-    ollamaConfigured: Boolean(ollamaBase),
+    ollamaConfigured,
   };
 }
 
