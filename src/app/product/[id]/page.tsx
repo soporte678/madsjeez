@@ -37,8 +37,23 @@ function hasValidSupabaseConfig() {
   return true;
 }
 
+/** IDs Prisma (cuid) — catálogo ML / panel; no están en la tabla legacy de Supabase. */
+function isPrismaCatalogId(id: string): boolean {
+  return /^c[a-z0-9]{20,}$/i.test(id);
+}
+
+function isBenignSupabaseEmptyRow(error: { code?: string; message?: string }): boolean {
+  const msg = String(error.message || "").toLowerCase();
+  return (
+    error.code === "PGRST116" ||
+    msg.includes("0 rows") ||
+    msg.includes("cannot coerce the result to a single json object")
+  );
+}
+
 async function getProduct(id: string) {
   if (!hasValidSupabaseConfig()) return null;
+  if (isPrismaCatalogId(id)) return null;
 
   const supabase = await createClient();
 
@@ -51,13 +66,13 @@ async function getProduct(id: string) {
       categories:category_id(id, name, slug)
     `)
     .eq("id", id)
-    .single();
+    .maybeSingle();
 
   if (error) {
-    // In production, missing/invalid public key should degrade silently to Prisma fallback.
-    if (!String(error.message || "").toLowerCase().includes("invalid api key")) {
+    if (!isBenignSupabaseEmptyRow(error) && !String(error.message || "").toLowerCase().includes("invalid api key")) {
       console.error("getProduct error:", error.message, error.details);
     }
+    return null;
   }
   if (!product) return null;
 
