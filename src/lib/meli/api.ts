@@ -39,13 +39,14 @@ export async function meliSearchUserItems(
   scrollId?: string,
   listingKind: MeliListingKind = "all"
 ) {
-  const qs = new URLSearchParams({ limit: "100" });
+  // search_type=scan desde la 1ª página: sin esto ML pagina por offset y el scroll
+  // se corta (~100 ítems) aunque paging.total reporte cientos (ej. 923).
+  const qs = new URLSearchParams({ limit: "100", search_type: "scan" });
   const catalogListing = meliListingKindSearchParam(listingKind);
   if (catalogListing != null) {
     qs.set("catalog_listing", catalogListing);
   }
   if (scrollId) {
-    qs.set("search_type", "scan");
     qs.set("scroll_id", scrollId);
   }
   return meliApi<MeliItemsSearchResponse>(

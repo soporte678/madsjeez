@@ -57,13 +57,15 @@ export async function collectMeliItemIds(
     scrollId = payload.scroll_id;
     pages++;
 
-    if (!batch.length) break;
-
     for (const id of batch) {
       if (id) seen.add(id);
     }
 
     if (!scrollId) break;
+    if (!batch.length) {
+      warnings.push("items/search devolvió página vacía; se detuvo el escaneo.");
+      break;
+    }
   }
 
   if (pages >= maxPages && scrollId) {
@@ -108,7 +110,8 @@ export async function fetchMeliItemIdsPage(
   };
   const ids = (payload.results || []).filter(Boolean);
   const nextScrollId = payload.scroll_id || null;
-  const done = !ids.length || !nextScrollId;
+  // Termina solo cuando ML no devuelve scroll_id (no por página vacía intermedia).
+  const done = !nextScrollId;
 
   return {
     ids,

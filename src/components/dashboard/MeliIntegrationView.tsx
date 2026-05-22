@@ -317,7 +317,7 @@ export default function MeliIntegrationView() {
   const [localUnpublished, setLocalUnpublished] = useState<LocalUnpublished[]>([]);
   const [loadingLocal, setLoadingLocal] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
-  const [listingKind, setListingKind] = useState<MeliListingKind>("standard");
+  const [listingKind, setListingKind] = useState<MeliListingKind>("all");
 
   useEffect(() => {
     setLiveScan({ status: "idle", pages: 0, ids: [], pagingTotal: null });
@@ -720,6 +720,18 @@ export default function MeliIntegrationView() {
       toast.success(
         `Escaneo completo: ${ids.length} en ML, ${mergedRows.length} filas en tabla (${meliListingKindShort(listingKind)}).`
       );
+      if (pagingTotal != null && pagingTotal > ids.length + 2) {
+        const diff = pagingTotal - ids.length;
+        if (listingKind === "standard") {
+          toast.message("Hay más publicaciones en ML que las estándar escaneadas", {
+            description: `ML reporta ~${pagingTotal} en total; se listaron ${ids.length} estándar (~${diff} pueden ser catálogo ML). Probá tipo «Todas».`,
+          });
+        } else {
+          toast.message("El total de ML no coincide con lo escaneado", {
+            description: `ML reporta ~${pagingTotal}; se obtuvieron ${ids.length}. Reintentá el escaneo o revisá avisos.`,
+          });
+        }
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Error de red";
       setLiveScan({
@@ -1218,9 +1230,9 @@ export default function MeliIntegrationView() {
                 onChange={(e) => setListingKind(e.target.value as MeliListingKind)}
                 className={meliSelect}
               >
+                <option value="all">Todas (recomendado si ML muestra ~900+)</option>
                 <option value="standard">Solo estándar (sin catálogo)</option>
                 <option value="catalog">Solo catálogo ML</option>
-                <option value="all">Todas</option>
               </select>
             </label>
             <button
