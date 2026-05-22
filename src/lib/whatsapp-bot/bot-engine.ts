@@ -209,13 +209,15 @@ export async function syncSessionConnectionState(sellerId: string) {
   const state = await provider.getConnectionState(session.providerInstanceId);
   const wasConnected = session.status === "connected";
 
+  const isConnected = state.status === "connected";
+
   await prisma.whatsappSession.update({
     where: { id: session.id },
     data: {
       status: state.status,
-      qrCode: state.qrCode ?? session.qrCode,
+      qrCode: isConnected ? null : (state.qrCode ?? session.qrCode),
       phoneNumber: state.phoneNumber ?? session.phoneNumber,
-      lastConnectedAt: state.status === "connected" ? new Date() : session.lastConnectedAt,
+      lastConnectedAt: isConnected ? new Date() : session.lastConnectedAt,
       lastError: state.error ?? null,
     },
   });

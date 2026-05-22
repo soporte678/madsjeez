@@ -22,13 +22,15 @@ export async function GET() {
     where: { sellerId: auth.ctx.sellerId },
   });
 
+  const connected = session?.status === "connected";
+
   return NextResponse.json({
     session: session
       ? {
           id: session.id,
           status: session.status,
           phoneNumber: session.phoneNumber,
-          hasQr: Boolean(session.qrCode),
+          hasQr: connected ? false : Boolean(session.qrCode),
           lastConnectedAt: session.lastConnectedAt,
           lastError: session.lastError,
         }

@@ -78,6 +78,28 @@ async function listInstanceNames(): Promise<string[]> {
   }
 }
 
+/** Re-aplica webhook en instancias ya creadas (create solo lo setea al crear). */
+async function ensureInstanceWebhook(
+  instanceName: string,
+  webhookUrl: string,
+  webhookSecret: string
+): Promise<void> {
+  await evolutionJson(`/webhook/set/${encodeURIComponent(instanceName)}`, {
+    method: "POST",
+    body: JSON.stringify({
+      enabled: true,
+      url: webhookUrl,
+      webhookByEvents: false,
+      webhookBase64: false,
+      events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE"],
+      headers: webhookSecret
+        ? { "x-madsjeez-webhook-secret": webhookSecret }
+        : undefined,
+    }),
+  });
+  logEvolutionSafe("webhook_set", { instanceName });
+}
+
 async function ensureInstanceCreated(
   instanceName: string,
   webhookUrl: string,
@@ -86,6 +108,7 @@ async function ensureInstanceCreated(
   const existing = await listInstanceNames();
   if (existing.some((n) => n === instanceName)) {
     logEvolutionSafe("instance_already_exists", { instanceName });
+    await ensureInstanceWebhook(instanceName, webhookUrl, webhookSecret);
     return;
   }
 
@@ -233,8 +256,23 @@ export class EvolutionWhatsAppProvider implements WhatsAppProvider {
     const p = payload as Record<string, unknown>;
     const event = String(p.event ?? p.type ?? "").toUpperCase();
 
+    const resolveInstanceName = (raw: unknown): string => {
+      if (!raw) return "";
+      if (typeof raw === "string") return raw;
+      if (typeof raw === "object" && raw !== null) {
+        const o = raw as Record<string, unknown>;
+        const name =
+          o.instanceName ?? o.instance ?? o.name ?? o.instanceId;
+        if (typeof name === "string") return name;
+      }
+      return "";
+    };
+
     if (event.includes("CONNECTION")) {
-      return { handled: true, instanceName: String(p.instance ?? p.instanceName ?? "") };
+      return {
+        handled: true,
+        instanceName: resolveInstanceName(p.instance) || resolveInstanceName(p.instanceName),
+      };
     }
 
     const data = (p.data ?? p) as Record<string, unknown>;
@@ -242,7 +280,10 @@ export class EvolutionWhatsAppProvider implements WhatsAppProvider {
     const fromMe = Boolean(key.fromMe ?? data.fromMe);
     if (fromMe) return { handled: false };
 
-    const instanceName = String(p.instance ?? data.instance ?? "");
+    const instanceName =
+      resolveInstanceName(p.instance) ||
+      resolveInstanceName(p.instanceName) ||
+      resolveInstanceName(data.instance);
     const remoteJid = String(key.remoteJid ?? data.remoteJid ?? "");
     const phone = remoteJid.split("@")[0]?.replace(/\D/g, "") || "";
     const message = (data.message ?? {}) as Record<string, unknown>;

@@ -52,6 +52,19 @@ export async function connectSellerWhatsapp(sellerId: string) {
 export async function refreshSellerQr(sellerId: string) {
   const session = await getOrCreateWhatsappSession(sellerId);
   const provider = getWhatsAppProvider();
+  const state = await provider.getConnectionState(session.providerInstanceId);
+  if (state.status === "connected") {
+    return prisma.whatsappSession.update({
+      where: { id: session.id },
+      data: {
+        status: "connected",
+        qrCode: null,
+        phoneNumber: state.phoneNumber ?? session.phoneNumber,
+        lastConnectedAt: session.lastConnectedAt ?? new Date(),
+        lastError: null,
+      },
+    });
+  }
   const result = await provider.getQRCode(session.providerInstanceId);
   return prisma.whatsappSession.update({
     where: { id: session.id },

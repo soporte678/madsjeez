@@ -122,6 +122,9 @@ export default function WhatsappBotView() {
         const data = await sessRes.json();
         setSession(data.session);
         setConfig(data.config);
+        if (data.session?.status === "connected") {
+          setQrCode(null);
+        }
       }
       if (convRes.ok) {
         const data = await convRes.json();
@@ -141,6 +144,15 @@ export default function WhatsappBotView() {
   useEffect(() => {
     loadAll();
   }, [loadAll]);
+
+  useEffect(() => {
+    const st = session?.status;
+    if (st !== "qr_pending") return;
+    const poll = setInterval(() => {
+      loadAll();
+    }, 4000);
+    return () => clearInterval(poll);
+  }, [session?.status, loadAll]);
 
   useEffect(() => {
     if (!selectedId) return;
@@ -317,6 +329,13 @@ export default function WhatsappBotView() {
           {session?.phoneNumber ? ` · ${session.phoneNumber}` : null}
         </p>
         {session?.lastError ? <p className="text-sm text-destructive">{session.lastError}</p> : null}
+        {status === "connected" ? (
+          <p className="text-sm text-muted-foreground rounded-lg border border-green-500/30 bg-green-500/5 px-3 py-2">
+            WhatsApp vinculado. Las conversaciones aparecen cuando alguien te escribe por este número después de
+            conectar (no se importan chats anteriores de WhatsApp). Activá &quot;Activar bot automático&quot; para
+            respuestas con IA.
+          </p>
+        ) : null}
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
@@ -348,7 +367,7 @@ export default function WhatsappBotView() {
             <RefreshCw className="h-4 w-4" />
           </button>
         </div>
-        {qrCode ? (
+        {qrCode && status !== "connected" ? (
           <div className="mt-4 p-4 border rounded-lg bg-muted/30">
             <p className="text-sm mb-2">Escaneá con WhatsApp → Dispositivos vinculados:</p>
             {qrCode.startsWith("data:") || qrCode.startsWith("http") ? (
