@@ -55,8 +55,11 @@ export type LeadRow = {
   name?: string | null;
   status: string;
   intent: string | null;
+  source?: string;
   tags?: string[];
   internalNotes?: string | null;
+  email?: string | null;
+  company?: string | null;
   lastMessageAt: string | null;
   createdAt?: string;
 };

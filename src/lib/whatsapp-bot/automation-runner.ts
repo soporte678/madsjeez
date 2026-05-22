@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
-import { getWhatsAppProvider } from "./providers/evolution-provider";
-import { saveOutboundMessage } from "./message-service";
+import type { WhatsappLeadStatus } from "@prisma/client";
+import { sendWhatsappOutboundToPhone } from "./message-service";
+import { requestHumanHandoff } from "./human-handoff-service";
 
 type Ctx = {
   sellerId: string;
@@ -9,7 +10,18 @@ type Ctx = {
   leadId: string;
   conversationId: string;
   leadStatus: string;
+  previousLeadStatus?: string;
+  isNewContact?: boolean;
 };
+
+const VALID_STAGES: WhatsappLeadStatus[] = [
+  "new",
+  "warm",
+  "hot",
+  "customer",
+  "closed",
+  "lost",
+];
 
 export async function runWhatsappAutomations(ctx: Ctx) {
   const rules = await prisma.whatsappAutomation.findMany({
@@ -32,11 +44,14 @@ export async function runWhatsappAutomations(ctx: Ctx) {
       }
       case "stage_change": {
         const stage = String(trigger.stage ?? "");
-        match = stage === ctx.leadStatus;
+        match =
+          ctx.previousLeadStatus !== undefined &&
+          ctx.previousLeadStatus !== ctx.leadStatus &&
+          stage === ctx.leadStatus;
         break;
       }
       case "new_contact":
-        match = ctx.leadStatus === "new";
+        match = ctx.isNewContact === true;
         break;
       default:
         break;
@@ -49,13 +64,16 @@ export async function runWhatsappAutomations(ctx: Ctx) {
         case "send_message": {
           const msg = String(action.message ?? "").trim();
           if (!msg) break;
-          const provider = getWhatsAppProvider();
-          await provider.sendText(ctx.sellerId, ctx.phone, msg);
-          await saveOutboundMessage({
-            conversationId: ctx.conversationId,
-            content: msg,
+          const result = await sendWhatsappOutboundToPhone({
+            sellerId: ctx.sellerId,
+            phone: ctx.phone,
+            text: msg,
             senderType: "bot",
+            leadId: ctx.leadId,
           });
+          if (!result.ok) {
+            console.error("[whatsapp-automation] send failed", rule.id, result.error);
+          }
           break;
         }
         case "tag_contact": {
@@ -69,15 +87,18 @@ export async function runWhatsappAutomations(ctx: Ctx) {
         }
         case "assign_stage": {
           const stage = String(action.stage ?? "");
-          const valid = ["new", "warm", "hot", "customer", "closed", "lost"];
-          if (!valid.includes(stage)) break;
+          if (!VALID_STAGES.includes(stage as WhatsappLeadStatus)) break;
           await prisma.whatsappLead.update({
             where: { id: ctx.leadId },
-            data: { status: stage as "new" },
+            data: { status: stage as WhatsappLeadStatus },
           });
           break;
         }
-        case "notify_human":
+        case "notify_human": {
+          await requestHumanHandoff(
+            ctx.conversationId,
+            `Automatización: ${rule.name}`
+          );
           await prisma.whatsappBotEvent.create({
             data: {
               sellerId: ctx.sellerId,
@@ -87,6 +108,7 @@ export async function runWhatsappAutomations(ctx: Ctx) {
             },
           });
           break;
+        }
         default:
           break;
       }

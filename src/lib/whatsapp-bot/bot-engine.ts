@@ -43,6 +43,7 @@ export async function processInboundWhatsappMessage(input: InboundMessageInput) 
     where: { sellerId_phone: { sellerId, phone } },
   });
   const previousLeadStatus = lead?.status;
+  const isNewContact = !lead;
 
   if (!lead) {
     lead = await prisma.whatsappLead.create({
@@ -110,6 +111,8 @@ export async function processInboundWhatsappMessage(input: InboundMessageInput) 
     leadId: lead.id,
     conversationId: conversation.id,
     leadStatus: lead.status,
+    previousLeadStatus,
+    isNewContact,
   });
 
   await notifySellerWhatsapp({

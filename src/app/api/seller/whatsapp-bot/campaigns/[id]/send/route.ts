@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireSellerSession } from "@/lib/whatsapp-bot/auth";
 import { prisma } from "@/lib/prisma";
-import { getWhatsAppProvider } from "@/lib/whatsapp-bot/providers/evolution-provider";
+import { sendWhatsappOutboundToPhone } from "@/lib/whatsapp-bot/message-service";
 
 const RATE_LIMIT_MS = 2500;
+const MAX_TARGETS = 50;
 
 export async function POST(
   req: NextRequest,
@@ -38,37 +39,82 @@ export async function POST(
     return NextResponse.json({ error: "already_running" }, { status: 409 });
   }
 
-  const segment = campaign.segment as { stages?: string[]; tags?: string[] };
-  const stages = segment.stages ?? ["new", "warm", "hot"];
+  const session = await prisma.whatsappSession.findUnique({
+    where: { sellerId: auth.ctx.sellerId },
+  });
+  if (!session || session.status !== "connected") {
+    return NextResponse.json(
+      {
+        error: "whatsapp_not_connected",
+        message: "Conectá WhatsApp en Configuración antes de enviar campañas.",
+      },
+      { status: 503 }
+    );
+  }
 
-  const leads = await prisma.whatsappLead.findMany({
+  const segment = campaign.segment as { stages?: string[]; tags?: string[] };
+  const stages = (segment.stages ?? ["new", "warm", "hot"]) as (
+    | "new"
+    | "warm"
+    | "hot"
+    | "customer"
+    | "closed"
+    | "lost"
+  )[];
+  const tagFilter = Array.isArray(segment.tags)
+    ? segment.tags.map((t) => String(t).toLowerCase())
+    : [];
+
+  let leads = await prisma.whatsappLead.findMany({
     where: {
       sellerId: auth.ctx.sellerId,
-      status: { in: stages as ("new" | "warm" | "hot" | "customer" | "closed" | "lost")[] },
+      status: { in: stages },
     },
-    take: 50,
+    take: 200,
   });
+
+  if (tagFilter.length > 0) {
+    leads = leads.filter((l) =>
+      l.tags.some((t) => tagFilter.includes(t.toLowerCase()))
+    );
+  }
+
+  const targets = leads.slice(0, MAX_TARGETS);
 
   await prisma.whatsappCampaign.update({
     where: { id },
     data: { status: "running" },
   });
 
-  const provider = getWhatsAppProvider();
   let sent = 0;
+  let failed = 0;
+  const errors: string[] = [];
 
-  for (const lead of leads) {
-    try {
-      await provider.sendText(auth.ctx.sellerId, lead.phone, campaign.messageTemplate);
+  for (const lead of targets) {
+    const personalized = campaign.messageTemplate
+      .replace(/\{\{name\}\}/gi, lead.name?.trim() || lead.phone)
+      .replace(/\{\{phone\}\}/gi, lead.phone);
+
+    const result = await sendWhatsappOutboundToPhone({
+      sellerId: auth.ctx.sellerId,
+      phone: lead.phone,
+      text: personalized,
+      senderType: "seller",
+      leadId: lead.id,
+    });
+
+    if (result.ok) {
       sent++;
       await prisma.whatsappCampaign.update({
         where: { id },
-        data: { sentCount: { increment: 1 } },
+        data: { sentCount: { increment: 1 }, deliveredCount: { increment: 1 } },
       });
-      await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
-    } catch (e) {
-      console.error("[campaign-send]", lead.phone, e);
+    } else {
+      failed++;
+      if (errors.length < 3) errors.push(`${lead.phone}: ${result.error}`);
     }
+
+    await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
   }
 
   await prisma.whatsappCampaign.update({
@@ -79,7 +125,9 @@ export async function POST(
   return NextResponse.json({
     ok: true,
     sent,
-    totalTargets: leads.length,
-    warning: "Máximo 50 contactos por envío. Rate limit 2.5s entre mensajes.",
+    failed,
+    totalTargets: targets.length,
+    errors: errors.length ? errors : undefined,
+    warning: `Máximo ${MAX_TARGETS} contactos por envío. Rate limit ${RATE_LIMIT_MS / 1000}s entre mensajes.`,
   });
 }

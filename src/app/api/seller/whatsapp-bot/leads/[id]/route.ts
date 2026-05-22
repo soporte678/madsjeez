@@ -61,3 +61,24 @@ export async function PATCH(
   const updated = await prisma.whatsappLead.findUnique({ where: { id } });
   return NextResponse.json({ lead: updated });
 }
+
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const auth = await requireSellerSession();
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
+  const { id } = await params;
+  const deleted = await prisma.whatsappLead.deleteMany({
+    where: { id, sellerId: auth.ctx.sellerId },
+  });
+
+  if (deleted.count === 0) {
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
+
+  return NextResponse.json({ ok: true });
+}

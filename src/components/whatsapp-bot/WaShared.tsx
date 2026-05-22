@@ -1,6 +1,32 @@
 "use client";
 
 import { ReactNode } from "react";
+import { toast } from "sonner";
+
+export async function waFetch<T = Record<string, unknown>>(
+  url: string,
+  init?: RequestInit
+): Promise<T> {
+  const res = await fetch(url, init);
+  const data = (await res.json().catch(() => ({}))) as T & {
+    error?: string;
+    message?: string;
+  };
+  if (!res.ok) {
+    const msg =
+      typeof data.message === "string"
+        ? data.message
+        : typeof data.error === "string"
+          ? data.error
+          : `Error ${res.status}`;
+    throw new Error(msg);
+  }
+  return data;
+}
+
+export function waCatch(err: unknown, fallback = "Operación fallida") {
+  toast.error(err instanceof Error ? err.message.slice(0, 220) : fallback);
+}
 
 export function WaPageHeader({
   title,

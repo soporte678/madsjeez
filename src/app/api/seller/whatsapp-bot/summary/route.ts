@@ -41,8 +41,14 @@ export async function GET() {
       lastMessageAt: c.lastMessageAt,
     })),
     alerts: [
-      !evolution.ok ? "Evolution API no responde correctamente." : null,
+      !evolution.ok
+        ? "Evolution API no responde. Revisá variables EVOLUTION_API_URL y EVOLUTION_API_KEY."
+        : null,
       metrics.openChats > 20 ? "Muchos chats abiertos — considerá derivar a humano." : null,
+      metrics.automationsEnabled === 0
+        ? "No tenés automatizaciones activas."
+        : null,
+      metrics.campaignsActive > 0 ? "Hay campañas en ejecución." : null,
     ].filter(Boolean),
   });
 }

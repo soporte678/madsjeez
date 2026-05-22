@@ -68,15 +68,22 @@ export async function searchSellerProducts(
       price: true,
       stock: true,
       freeShipping: true,
+      attributes: {
+        where: { name: "whatsapp_keywords" },
+        take: 1,
+        select: { value: true },
+      },
     },
   });
 
   const scored = products
     .map((p) => {
       const title = p.title.toLowerCase();
+      const kw = (p.attributes[0]?.value ?? "").toLowerCase();
       let score = 0;
       for (const t of terms) {
         if (title.includes(t)) score += 2;
+        if (kw.includes(t)) score += 3;
       }
       return { p, score };
     })

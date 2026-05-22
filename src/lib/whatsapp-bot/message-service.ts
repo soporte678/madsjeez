@@ -74,3 +74,67 @@ export async function sendSellerWhatsappMessage(params: {
 
   return msg;
 }
+
+/** Envío outbound genérico (bot, automatizaciones, campañas). */
+export async function sendWhatsappOutboundToPhone(params: {
+  sellerId: string;
+  phone: string;
+  text: string;
+  senderType: WhatsappMessageSenderType;
+  leadId?: string;
+}): Promise<{ ok: true; conversationId: string } | { ok: false; error: string }> {
+  const text = params.text.trim().slice(0, 4000);
+  if (!text) return { ok: false, error: "empty_message" };
+
+  const session = await prisma.whatsappSession.findUnique({
+    where: { sellerId: params.sellerId },
+  });
+  if (!session || session.status !== "connected") {
+    return { ok: false, error: "whatsapp_not_connected" };
+  }
+
+  const phone = params.phone.replace(/\D/g, "");
+  const lead =
+    params.leadId != null
+      ? await prisma.whatsappLead.findFirst({
+          where: { id: params.leadId, sellerId: params.sellerId },
+        })
+      : await prisma.whatsappLead.findUnique({
+          where: { sellerId_phone: { sellerId: params.sellerId, phone } },
+        });
+  if (!lead) return { ok: false, error: "lead_not_found" };
+
+  let conversation = await prisma.whatsappConversation.findUnique({
+    where: { sellerId_phone: { sellerId: params.sellerId, phone } },
+  });
+  if (!conversation) {
+    conversation = await prisma.whatsappConversation.create({
+      data: {
+        sellerId: params.sellerId,
+        storeId: params.sellerId,
+        leadId: lead.id,
+        whatsappSessionId: session.id,
+        phone,
+        status: "bot_active",
+        lastMessageAt: new Date(),
+      },
+    });
+  }
+
+  const provider = getWhatsAppProvider();
+  const sent = await provider.sendMessage(session.providerInstanceId, phone, text);
+  if (!sent.ok) return { ok: false, error: sent.error || "send_failed" };
+
+  await saveOutboundMessage(conversation.id, text, params.senderType, sent.providerMessageId);
+  const now = new Date();
+  await prisma.whatsappConversation.update({
+    where: { id: conversation.id },
+    data: { lastMessageAt: now },
+  });
+  await prisma.whatsappLead.update({
+    where: { id: lead.id },
+    data: { lastMessageAt: now },
+  });
+
+  return { ok: true, conversationId: conversation.id };
+}

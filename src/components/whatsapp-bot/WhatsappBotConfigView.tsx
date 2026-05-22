@@ -10,7 +10,8 @@ import {
   QrCode,
   Sparkles,
 } from "lucide-react";
-import type { Dispatch, SetStateAction } from "react";
+import { useState, type Dispatch, SetStateAction } from "react";
+import { toast } from "sonner";
 import { DEFAULT_BUSINESS_HOURS, type BusinessHoursConfig } from "@/lib/whatsapp-bot/business-hours";
 import { WHATSAPP_INSTRUCTION_PRESETS } from "@/lib/whatsapp-bot/instruction-presets";
 import { WaCard } from "./ui";
@@ -103,11 +104,51 @@ export default function WhatsappBotConfigView({
   onPatchConfig,
   setConfig,
 }: Props) {
+  const [testingAi, setTestingAi] = useState(false);
+  const [testingEvolution, setTestingEvolution] = useState(false);
   const bh = (config?.businessHours as BusinessHoursConfig | null) ?? DEFAULT_BUSINESS_HOURS;
   const { leadsToday, openChats, conversionPct } = computeMetrics(leads, conversations);
 
+  async function testEvolution() {
+    setTestingEvolution(true);
+    try {
+      const res = await fetch("/api/seller/whatsapp-bot/health");
+      const data = await res.json();
+      if (!res.ok) throw new Error("health_failed");
+      if (data.evolution?.ok) {
+        toast.success("Evolution API responde correctamente");
+      } else {
+        toast.error(
+          data.evolution?.error?.slice(0, 180) ??
+            "Evolution no configurada. Revisá EVOLUTION_API_URL y EVOLUTION_API_KEY."
+        );
+      }
+    } catch {
+      toast.error("No se pudo verificar Evolution");
+    } finally {
+      setTestingEvolution(false);
+    }
+  }
+
+  async function testAi() {
+    setTestingAi(true);
+    try {
+      const res = await fetch("/api/seller/whatsapp-bot/health/test-ai", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.message?.slice(0, 200) ?? "Prueba de IA fallida");
+        return;
+      }
+      toast.success(`IA OK (${data.provider}): ${data.reply?.slice(0, 120)}…`);
+    } catch {
+      toast.error("Error al probar IA");
+    } finally {
+      setTestingAi(false);
+    }
+  }
+
   return (
-    <div className="wa-config">
+    <div className="wa-page wa-config">
       <header className="wa-inbox-header">
         <div>
           <h1 className="wa-page-title">Configuración</h1>
@@ -177,6 +218,18 @@ export default function WhatsappBotConfigView({
             <button type="button" className="wa-btn-ghost text-red-300" onClick={onDisconnect}>
               <PowerOff className="h-4 w-4" /> Desconectar
             </button>
+            <button
+              type="button"
+              className="wa-btn-ghost"
+              disabled={testingEvolution}
+              onClick={testEvolution}
+            >
+              {testingEvolution ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Probar Evolution"
+              )}
+            </button>
           </div>
           {qrCode && connStatus !== "connected" ? (
             <div className="p-4 wa-soft">
@@ -210,6 +263,14 @@ export default function WhatsappBotConfigView({
             El motor se elige por servidor (<code className="text-blue-200">WHATSAPP_AI_PROVIDER</code>
             ). Sin Gemini ni Ollama, el bot usa reglas y plantillas.
           </p>
+          <button
+            type="button"
+            className="wa-btn-ghost text-sm"
+            disabled={testingAi}
+            onClick={testAi}
+          >
+            {testingAi ? <Loader2 className="h-4 w-4 animate-spin" /> : "Probar respuesta IA"}
+          </button>
 
           <div className="wa-toggle-grid">
             <ToggleRow
