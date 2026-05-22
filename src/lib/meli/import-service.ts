@@ -1,6 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import type { MeliItemDetail } from "./types";
-import { meliGetItem, meliGetItemDescription, meliSearchUserItems } from "./api";
+import { meliGetItem, meliGetItemDescription } from "./api";
+import {
+  collectMeliItemIds,
+  resolveMeliScrollMaxPages,
+  runPool,
+  type MeliCollectItemsResult,
+} from "./import-scroll";
 import { ensureFallbackCategory, resolveCategoryForMeliId } from "./category-map";
 import { persistMeliImageBatch } from "./image-import";
 import {
@@ -253,6 +259,28 @@ async function importSingleMeliItem(
   }
 }
 
+const MELI_IMPORT_CONCURRENCY = 4;
+
+function tallyImportResult(
+  r: { kind: "imported" | "updated" | "skipped" },
+  counts: { imported: number; updated: number; skipped: number }
+): void {
+  if (r.kind === "imported") counts.imported++;
+  if (r.kind === "updated") counts.updated++;
+  if (r.kind === "skipped") counts.skipped++;
+}
+
+export async function listMeliItemIdsForUser(
+  accessToken: string,
+  meliUserId: string,
+  options?: { maxPages?: number; listingKind?: MeliListingKind; importAll?: boolean }
+): Promise<MeliCollectItemsResult & { listingKind: MeliListingKind }> {
+  const listingKind = options?.listingKind ?? "standard";
+  const maxPages = resolveMeliScrollMaxPages(options?.maxPages, { importAll: options?.importAll });
+  const collected = await collectMeliItemIds(accessToken, meliUserId, listingKind, maxPages);
+  return { ...collected, listingKind };
+}
+
 export async function importMeliItemsForUser(
   prismaUserId: string,
   meliOAuthAccountId: string,
@@ -264,6 +292,8 @@ export async function importMeliItemsForUser(
     persistImages?: boolean;
     /** standard = solo tradicionales (catalog_listing=false en ML) */
     listingKind?: MeliListingKind;
+    importAll?: boolean;
+    concurrency?: number;
   }
 ): Promise<{
   imported: number;
@@ -271,13 +301,12 @@ export async function importMeliItemsForUser(
   skipped: number;
   errors: string[];
   itemResults: MeliImportItemResult[];
+  totalListed?: number;
+  pagesScanned?: number;
 }> {
-  const maxPages = Math.min(Math.max(options?.maxPages ?? 50, 1), 100);
   const persistImages = options?.persistImages !== false;
   const listingKind = options?.listingKind ?? "all";
-  const filterIds = options?.itemIds?.length
-    ? [...new Set(options.itemIds.map((x) => String(x).trim()).filter(Boolean))]
-    : null;
+  const concurrency = Math.min(Math.max(options?.concurrency ?? MELI_IMPORT_CONCURRENCY, 1), 8);
 
   const sellerProducts = await prisma.product.findMany({
     where: { sellerId: prismaUserId },
@@ -287,80 +316,83 @@ export async function importMeliItemsForUser(
 
   const errors: string[] = [];
   const itemResults: MeliImportItemResult[] = [];
-  let imported = 0;
-  let updated = 0;
-  let skipped = 0;
+  const counts = { imported: 0, updated: 0, skipped: 0 };
 
-  if (filterIds?.length) {
-    for (const itemId of filterIds) {
-      const r = await importSingleMeliItem(
-        prismaUserId,
-        meliOAuthAccountId,
-        accessToken,
-        itemId,
-        errors,
-        itemResults,
-        { persistImages, listingKind },
-        dedupe
-      );
-      if (r.kind === "imported") imported++;
-      if (r.kind === "updated") updated++;
-      if (r.kind === "skipped") skipped++;
-    }
-    return { imported, updated, skipped, errors, itemResults };
+  let idsToImport = options?.itemIds?.length
+    ? [...new Set(options.itemIds.map((x) => String(x).trim()).filter(Boolean))]
+    : null;
+
+  let pagesScanned: number | undefined;
+  let totalListed: number | undefined;
+
+  if (!idsToImport?.length) {
+    const maxPages = resolveMeliScrollMaxPages(options?.maxPages, { importAll: options?.importAll });
+    const collected = await collectMeliItemIds(accessToken, meliUserId, listingKind, maxPages);
+    pagesScanned = collected.pages;
+    totalListed = collected.ids.length;
+    errors.push(...collected.warnings);
+    idsToImport = collected.ids;
   }
 
-  let scrollId: string | undefined;
-  let pages = 0;
-  const seenIds = new Set<string>();
-
-  while (pages < maxPages) {
-    const search = await meliSearchUserItems(accessToken, meliUserId, scrollId, listingKind);
-    if (!search.ok) {
-      errors.push(`items/search HTTP ${search.status}`);
-      break;
-    }
-
-    const payload = search.data as { results?: string[]; scroll_id?: string };
-    const ids = payload.results || [];
-    scrollId = payload.scroll_id;
-    pages++;
-
-    if (!ids.length) break;
-
-    for (const itemId of ids) {
-      if (seenIds.has(itemId)) continue;
-      seenIds.add(itemId);
-
-      const r = await importSingleMeliItem(
-        prismaUserId,
-        meliOAuthAccountId,
-        accessToken,
-        itemId,
-        errors,
-        itemResults,
-        { persistImages, listingKind },
-        dedupe
-      );
-      if (r.kind === "imported") imported++;
-      if (r.kind === "updated") updated++;
-      if (r.kind === "skipped") skipped++;
-    }
-
-    if (!scrollId) break;
+  if (!idsToImport.length) {
+    return { ...counts, errors, itemResults, totalListed: 0, pagesScanned };
   }
 
-  return { imported, updated, skipped, errors, itemResults };
+  const results = await runPool(idsToImport, concurrency, (itemId) =>
+    importSingleMeliItem(
+      prismaUserId,
+      meliOAuthAccountId,
+      accessToken,
+      itemId,
+      errors,
+      itemResults,
+      { persistImages, listingKind },
+      dedupe
+    )
+  );
+
+  for (const r of results) tallyImportResult(r, counts);
+
+  return { ...counts, errors, itemResults, totalListed, pagesScanned };
+}
+
+async function countLinkedMeliIds(
+  prismaUserId: string,
+  meliIds: string[]
+): Promise<{ alreadyLinked: number; existingMap: Map<string, { id: string; meliItemId: string | null; price: number; stock: number; sku: string | null; title: string }> }> {
+  const existingMap = new Map<
+    string,
+    { id: string; meliItemId: string | null; price: number; stock: number; sku: string | null; title: string }
+  >();
+  const CHUNK = 400;
+  for (let i = 0; i < meliIds.length; i += CHUNK) {
+    const chunk = meliIds.slice(i, i + CHUNK);
+    const rows = await prisma.product.findMany({
+      where: { sellerId: prismaUserId, meliItemId: { in: chunk } },
+      select: { id: true, meliItemId: true, price: true, stock: true, sku: true, title: true },
+    });
+    for (const r of rows) {
+      if (r.meliItemId) existingMap.set(r.meliItemId, r);
+    }
+  }
+  return { alreadyLinked: existingMap.size, existingMap };
 }
 
 export async function previewMeliItemsForUser(
   prismaUserId: string,
   accessToken: string,
   meliUserId: string,
-  options?: { maxPages?: number; sampleSize?: number; listingKind?: MeliListingKind }
+  options?: {
+    maxPages?: number;
+    sampleSize?: number;
+    listingKind?: MeliListingKind;
+    importAll?: boolean;
+  }
 ): Promise<{
   totalFound: number;
   uniqueFound: number;
+  pagingTotal: number | null;
+  pagesScanned: number;
   alreadyLinked: number;
   toCreate: number;
   toUpdate: number;
@@ -373,24 +405,18 @@ export async function previewMeliItemsForUser(
   rows: MeliImportPreviewRow[];
   samples: MeliImportPreviewRow[];
   warnings: string[];
+  allItemIds?: string[];
 }> {
-  const maxPages = Math.min(Math.max(options?.maxPages ?? 30, 1), 100);
-  const sampleCap = Math.min(Math.max(options?.sampleSize ?? 25, 5), 2000);
+  const maxPages = resolveMeliScrollMaxPages(options?.maxPages, { importAll: options?.importAll });
+  const sampleCap = Math.min(Math.max(options?.sampleSize ?? 80, 5), 500);
   const listingKind = options?.listingKind ?? "all";
 
-  let scrollId: string | undefined;
-  let pages = 0;
-  let totalFound = 0;
-  const uniqueIds = new Set<string>();
   const warnings: string[] = [];
   const rows: MeliImportPreviewRow[] = [];
 
   const byStatus: Record<string, number> = {};
   const byCondition: Record<string, number> = {};
   const byListingType: Record<string, number> = {};
-  let alreadyLinked = 0;
-  let toCreate = 0;
-  let toUpdate = 0;
   let skippedDuplicates = 0;
 
   const sellerProducts = await prisma.product.findMany({
@@ -399,37 +425,18 @@ export async function previewMeliItemsForUser(
   });
   const dedupe = createSellerDedupeIndex(sellerProducts);
 
-  while (pages < maxPages) {
-    const search = await meliSearchUserItems(accessToken, meliUserId, scrollId, listingKind);
-    if (!search.ok) {
-      warnings.push(`items/search HTTP ${search.status}`);
-      break;
-    }
+  const collected = await collectMeliItemIds(accessToken, meliUserId, listingKind, maxPages);
+  warnings.push(...collected.warnings);
 
-    const payload = search.data as { results?: string[]; scroll_id?: string };
-    const ids = payload.results || [];
-    scrollId = payload.scroll_id;
-    pages++;
-    if (!ids.length) break;
+  const uniqueIds = collected.ids;
+  const totalFound = uniqueIds.length;
+  const { alreadyLinked, existingMap } = await countLinkedMeliIds(prismaUserId, uniqueIds);
+  let toCreate = Math.max(0, uniqueIds.length - alreadyLinked);
+  let toUpdate = alreadyLinked;
 
-    totalFound += ids.length;
-    const batchIds: string[] = [];
-    for (const id of ids) {
-      if (uniqueIds.has(id)) continue;
-      uniqueIds.add(id);
-      batchIds.push(id);
-    }
-    if (!batchIds.length) continue;
+  const sampleIds = uniqueIds.slice(0, sampleCap);
 
-    const existingRows = await prisma.product.findMany({
-      where: { meliItemId: { in: batchIds } },
-      select: { id: true, meliItemId: true, price: true, stock: true, sku: true, title: true },
-    });
-    const existingMap = new Map(
-      existingRows.filter((r) => r.meliItemId).map((r) => [r.meliItemId as string, r])
-    );
-
-    for (const itemId of batchIds) {
+  for (const itemId of sampleIds) {
       const itemRes = await meliGetItem(accessToken, itemId);
       if (!itemRes.ok || !(itemRes.data as MeliItemDetail)?.id) {
         warnings.push(`${itemId}: publicación HTTP ${itemRes.status}`);
@@ -472,12 +479,8 @@ export async function previewMeliItemsForUser(
           action = "skip";
           skipReason = dupOnUpdate.reason;
           skippedDuplicates++;
-        } else {
-          alreadyLinked++;
-          toUpdate++;
-          if (existingProductId) {
-            registerProductInDedupeIndex(dedupe, existingProductId, item.title, sellerSku);
-          }
+        } else if (existingProductId) {
+          registerProductInDedupeIndex(dedupe, existingProductId, item.title, sellerSku);
         }
       } else {
         const dup = checkImportDuplicate(dedupe, item.title, sellerSku);
@@ -486,7 +489,6 @@ export async function previewMeliItemsForUser(
           skipReason = dup.reason;
           skippedDuplicates++;
         } else {
-          toCreate++;
           registerProductInDedupeIndex(dedupe, `preview-${item.id}`, item.title, sellerSku);
         }
       }
@@ -515,19 +517,23 @@ export async function previewMeliItemsForUser(
       });
     }
 
-    if (!scrollId) break;
+  if (toCreate > 0 && skippedDuplicates > 0) {
+    toCreate = Math.max(0, toCreate - skippedDuplicates);
   }
 
   return {
     totalFound,
-    uniqueFound: uniqueIds.size,
+    uniqueFound: uniqueIds.length,
+    pagingTotal: collected.pagingTotal,
+    pagesScanned: collected.pages,
     alreadyLinked,
     toCreate,
     toUpdate,
     skippedDuplicates,
     breakdown: { byStatus, byCondition, byListingType },
     rows,
-    samples: rows.slice(0, sampleCap),
+    samples: rows,
     warnings,
+    allItemIds: uniqueIds,
   };
 }

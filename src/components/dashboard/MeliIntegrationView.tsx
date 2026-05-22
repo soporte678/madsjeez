@@ -64,6 +64,8 @@ type PreviewRow = {
 type ImportPreview = {
   totalFound: number;
   uniqueFound: number;
+  pagingTotal?: number | null;
+  pagesScanned?: number;
   alreadyLinked: number;
   toCreate: number;
   toUpdate: number;
@@ -76,7 +78,10 @@ type ImportPreview = {
   rows: PreviewRow[];
   samples: PreviewRow[];
   warnings: string[];
+  allItemIds?: string[];
 };
+
+const MELI_IMPORT_BATCH_SIZE = 35;
 
 type LocalUnpublished = {
   id: string;
@@ -194,6 +199,7 @@ export default function MeliIntegrationView() {
   const [meliStatus, setMeliStatus] = useState<MeliStatus | null>(null);
   const [loadingStatus, setLoadingStatus] = useState(true);
   const [importing, setImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState<{ done: number; total: number } | null>(null);
   const [pushing, setPushing] = useState(false);
   const [syncingCamp, setSyncingCamp] = useState(false);
   const [promoPreview, setPromoPreview] = useState<string | null>(null);
@@ -345,8 +351,9 @@ export default function MeliIntegrationView() {
     setLoadingImportPreview(true);
     try {
       const qs = new URLSearchParams({
-        maxPages: "50",
-        sampleSize: "2000",
+        maxPages: "0",
+        importAll: "1",
+        sampleSize: "80",
         accountId: selectedAccountId,
         listingKind,
       });
@@ -367,7 +374,11 @@ export default function MeliIntegrationView() {
         setSelectedPullIds(new Set(preview.rows.filter((x) => x.action !== "skip").map((x) => x.id)));
         setSelectedPushIds(new Set());
         setPage(1);
-        toast.success(`Catálogo leído: ${preview.rows.length} publicaciones en esta vista previa.`);
+        const detailNote =
+          preview.uniqueFound > preview.rows.length
+            ? ` (${preview.rows.length} con detalle en tabla; ${preview.uniqueFound} detectadas en ML)`
+            : "";
+        toast.success(`Catálogo leído: ${preview.uniqueFound} publicaciones${detailNote}.`);
       }
       if (preview?.warnings?.length) {
         toast.message("Avisos al leer Mercado Libre", {
@@ -454,47 +465,88 @@ export default function MeliIntegrationView() {
     }
     if (
       !window.confirm(
-        "¿Importar automáticamente TODAS las publicaciones estándar de esta cuenta ML? (sin catálogo ML). Puede tardar varios minutos."
+        "¿Importar TODAS las publicaciones estándar de esta cuenta ML? (sin catálogo ML). Se procesan en lotes; puede tardar varios minutos si tenés miles de publicaciones."
       )
     ) {
       return;
     }
     setImporting(true);
     setRowPullErrors({});
+    setImportProgress({ done: 0, total: 0 });
+    let imported = 0;
+    let updated = 0;
+    let skipped = 0;
+    let errorCount = 0;
+    const errorSamples: string[] = [];
+
     try {
-      const r = await fetch("/api/meli/import", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          maxPages: 50,
-          accountId: selectedAccountId,
-          persistImages: true,
-          listingKind: "standard",
-          importAll: true,
-          confirmed: true,
-        }),
+      const listQs = new URLSearchParams({
+        mode: "ids",
+        maxPages: "0",
+        importAll: "1",
+        accountId: selectedAccountId,
+        listingKind: "standard",
       });
-      const d = await r.json();
-      if (!r.ok) {
-        toast.error(d.error || "Error al importar");
+      const listRes = await fetch(`/api/meli/import?${listQs.toString()}`);
+      const listData = await listRes.json();
+      if (!listRes.ok) {
+        toast.error(listData.error || "No se pudo listar el catálogo en Mercado Libre");
         return;
       }
-      const skippedN = Number(d.skipped) || 0;
+
+      const itemIds: string[] = Array.isArray(listData.itemIds) ? listData.itemIds : [];
+      if (!itemIds.length) {
+        toast.message("No hay publicaciones estándar para importar en esta cuenta.");
+        return;
+      }
+
+      setImportProgress({ done: 0, total: itemIds.length });
+      toast.message(`Importando ${itemIds.length} publicaciones en lotes de ${MELI_IMPORT_BATCH_SIZE}…`);
+
+      for (let i = 0; i < itemIds.length; i += MELI_IMPORT_BATCH_SIZE) {
+        const chunk = itemIds.slice(i, i + MELI_IMPORT_BATCH_SIZE);
+        setImportProgress({ done: i, total: itemIds.length });
+
+        const r = await fetch("/api/meli/import", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            accountId: selectedAccountId,
+            persistImages: true,
+            listingKind: "standard",
+            confirmed: true,
+            itemIds: chunk,
+          }),
+        });
+        const d = await r.json();
+        if (!r.ok) {
+          toast.error(d.error || `Error en lote ${Math.floor(i / MELI_IMPORT_BATCH_SIZE) + 1}`);
+          break;
+        }
+        imported += Number(d.imported) || 0;
+        updated += Number(d.updated) || 0;
+        skipped += Number(d.skipped) || 0;
+        errorCount += Number(d.errorCount) || 0;
+        if (Array.isArray(d.errors)) errorSamples.push(...d.errors.slice(0, 2));
+      }
+
+      setImportProgress({ done: itemIds.length, total: itemIds.length });
       toast.success(
-        `Importación automática: ${d.imported} nuevas, ${d.updated} actualizadas` +
-          (skippedN > 0 ? `, ${skippedN} omitidas` : "")
+        `Importación completa: ${imported} nuevas, ${updated} actualizadas` +
+          (skipped > 0 ? `, ${skipped} omitidas` : "")
       );
       await loadImportPreview(true);
       await loadStatus();
-      if (d.errorCount > 0) {
-        toast.message(`${d.errorCount} avisos`, {
-          description: (d.errors || []).slice(0, 3).join(" · "),
+      if (errorCount > 0) {
+        toast.message(`${errorCount} avisos durante la importación`, {
+          description: errorSamples.slice(0, 4).join(" · "),
         });
       }
     } catch {
       toast.error("Error de red al importar");
     } finally {
       setImporting(false);
+      setImportProgress(null);
     }
   };
 
@@ -893,7 +945,9 @@ export default function MeliIntegrationView() {
               title="Importa todas las publicaciones estándar de la cuenta activa sin seleccionar fila por fila"
             >
               {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-              Importar todas (solo estándar)
+              {importProgress && importProgress.total > 0
+                ? `Importando ${Math.min(importProgress.done + MELI_IMPORT_BATCH_SIZE, importProgress.total)}/${importProgress.total}…`
+                : "Importar todas (solo estándar)"}
             </button>
             <button
               type="button"
@@ -909,8 +963,12 @@ export default function MeliIntegrationView() {
           {importPreview && (
             <div className="rounded-xl border border-white/10 bg-slate-950/40 p-4 space-y-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
               <p className="text-xs font-medium text-slate-200">
-                Resumen: {importPreview.uniqueFound} publicaciones únicas escaneadas ({importPreview.totalFound}{" "}
-                registros en respuesta paginada de ML).
+                Resumen: {importPreview.uniqueFound} publicaciones en Mercado Libre
+                {importPreview.pagingTotal != null ? ` (ML reporta ~${importPreview.pagingTotal})` : ""}
+                {importPreview.pagesScanned != null ? ` · ${importPreview.pagesScanned} páginas scan` : ""}.
+                {importPreview.rows.length < importPreview.uniqueFound
+                  ? ` Tabla con detalle de las primeras ${importPreview.rows.length}; importación masiva usa el listado completo.`
+                  : ""}
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                 <div className={meliSubCard}>

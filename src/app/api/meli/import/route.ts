@@ -2,7 +2,12 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getMeliAccessTokenForUser } from "@/lib/meli/prisma-session";
-import { importMeliItemsForUser, previewMeliItemsForUser } from "@/lib/meli/import-service";
+import {
+  importMeliItemsForUser,
+  listMeliItemIdsForUser,
+  previewMeliItemsForUser,
+} from "@/lib/meli/import-service";
+import { resolveMeliScrollMaxPages } from "@/lib/meli/import-scroll";
 import type { MeliListingKind } from "@/lib/meli/listing-kind";
 import { prisma } from "@/lib/prisma";
 
@@ -25,8 +30,10 @@ export async function GET(req: Request) {
     }
 
     const url = new URL(req.url);
-    const maxPages = Math.min(Math.max(Number(url.searchParams.get("maxPages") || 30), 1), 100);
-    const sampleSize = Math.min(Math.max(Number(url.searchParams.get("sampleSize") || 500), 5), 2000);
+    const mode = url.searchParams.get("mode") || "preview";
+    const importAllScan = url.searchParams.get("importAll") === "1" || url.searchParams.get("maxPages") === "0";
+    const maxPages = resolveMeliScrollMaxPages(url.searchParams.get("maxPages"), { importAll: importAllScan });
+    const sampleSize = Math.min(Math.max(Number(url.searchParams.get("sampleSize") || 80), 5), 500);
     const aid = url.searchParams.get("accountId") || undefined;
     const listingKind = parseListingKind(url.searchParams.get("listingKind") || "standard");
 
@@ -40,10 +47,30 @@ export async function GET(req: Request) {
       select: { lastCatalogImportAt: true, meliUserId: true, nickname: true, label: true },
     });
 
+    if (mode === "ids") {
+      const listed = await listMeliItemIdsForUser(tok.accessToken, tok.meliUserId, {
+        maxPages,
+        listingKind,
+        importAll: importAllScan,
+      });
+      return NextResponse.json({
+        ok: true,
+        accountId: tok.accountId,
+        meliUserId: tok.meliUserId,
+        listingKind,
+        itemIds: listed.ids,
+        total: listed.ids.length,
+        pagesScanned: listed.pages,
+        pagingTotal: listed.pagingTotal,
+        warnings: listed.warnings,
+      });
+    }
+
     const preview = await previewMeliItemsForUser(session.user.id, tok.accessToken, tok.meliUserId, {
       maxPages,
       sampleSize,
       listingKind,
+      importAll: importAllScan,
     });
 
     return NextResponse.json({
@@ -73,16 +100,13 @@ export async function POST(req: Request) {
 
     const url = new URL(req.url);
     const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
-    const maxPages =
-      typeof body.maxPages === "number"
-        ? body.maxPages
-        : Math.min(parseInt(String(body.maxPages || "50"), 10) || 50, 100);
+    const importAll = Boolean(body.importAll);
+    const maxPages = resolveMeliScrollMaxPages(body.maxPages, { importAll });
     const requireConfirm = Boolean(body.requireConfirm);
     const confirmed = Boolean(body.confirmed);
     const persistImages = body.persistImages !== false;
     const aid = accountIdFrom(body, url);
     const listingKind = parseListingKind(body.listingKind ?? "standard");
-    const importAll = Boolean(body.importAll);
     const itemIds = importAll
       ? undefined
       : Array.isArray(body.itemIds)
@@ -121,6 +145,7 @@ export async function POST(req: Request) {
         maxPages,
         persistImages,
         listingKind,
+        importAll: importAll && !itemIds?.length,
         ...(itemIds?.length ? { itemIds } : {}),
       }
     );
@@ -141,9 +166,12 @@ export async function POST(req: Request) {
       imported: result.imported,
       updated: result.updated,
       skipped: result.skipped,
+      totalListed: result.totalListed ?? null,
+      pagesScanned: result.pagesScanned ?? null,
       errors: result.errors.slice(0, 50),
       errorCount: result.errors.length,
-      itemResults: result.itemResults,
+      itemResults: result.itemResults.slice(0, 200),
+      itemResultsTruncated: result.itemResults.length > 200,
     });
   } catch (e) {
     console.error("meli/import:", e);
