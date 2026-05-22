@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type RefObject } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Bot,
   CheckCircle2,
@@ -106,8 +106,23 @@ type Props = {
   onUpdateLeadStatus: (leadId: string, status: string) => void;
   onPatchLead: (leadId: string, body: Record<string, unknown>) => void;
   onRefresh: () => void;
-  messagesEndRef: RefObject<HTMLDivElement | null>;
+  /** Incrementar tras enviar mensaje para bajar el scroll del chat. */
+  chatScrollTrigger?: number;
 };
+
+const CHAT_SCROLL_THRESHOLD_PX = 96;
+
+function scrollChatToBottom(el: HTMLDivElement, behavior: ScrollBehavior = "auto") {
+  if (behavior === "smooth") {
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  } else {
+    el.scrollTop = el.scrollHeight;
+  }
+}
+
+function isChatNearBottom(el: HTMLDivElement): boolean {
+  return el.scrollHeight - el.scrollTop - el.clientHeight <= CHAT_SCROLL_THRESHOLD_PX;
+}
 
 export default function WhatsappBotInboxView({
   session,
@@ -131,10 +146,14 @@ export default function WhatsappBotInboxView({
   onUpdateLeadStatus,
   onPatchLead,
   onRefresh,
-  messagesEndRef,
+  chatScrollTrigger = 0,
 }: Props) {
   const [notesDraft, setNotesDraft] = useState("");
   const [tagsDraft, setTagsDraft] = useState("");
+  const chatScrollRef = useRef<HTMLDivElement>(null);
+  const stickToBottomRef = useRef(true);
+  const prevSelectedIdRef = useRef<string | null>(null);
+  const prevLastMessageIdRef = useRef<string | null>(null);
   const selected = conversations.find((c) => c.id === selectedId) ?? null;
   const selectedLead = selected?.leadId ? leads.find((l) => l.id === selected.leadId) : null;
 
@@ -160,6 +179,45 @@ export default function WhatsappBotInboxView({
   const syncOk = connStatus === "connected";
   const botCount = conversations.filter((c) => c.status === "bot_active").length;
   const humanCount = conversations.filter((c) => c.status === "human_active").length;
+
+  useEffect(() => {
+    if (selectedId !== prevSelectedIdRef.current) {
+      prevSelectedIdRef.current = selectedId;
+      prevLastMessageIdRef.current = null;
+      stickToBottomRef.current = true;
+      const el = chatScrollRef.current;
+      if (el) requestAnimationFrame(() => scrollChatToBottom(el));
+    }
+  }, [selectedId]);
+
+  useEffect(() => {
+    const el = chatScrollRef.current;
+    if (!el || messages.length === 0) return;
+
+    const last = messages[messages.length - 1];
+    const lastId = last?.id ?? null;
+    const isNewTail = lastId !== prevLastMessageIdRef.current;
+    prevLastMessageIdRef.current = lastId;
+
+    if (!isNewTail) return;
+
+    const shouldScroll =
+      stickToBottomRef.current ||
+      (messages.length === 1 && messagesLoading === false);
+
+    if (shouldScroll) {
+      requestAnimationFrame(() =>
+        scrollChatToBottom(el, stickToBottomRef.current ? "smooth" : "auto")
+      );
+    }
+  }, [messages, messagesLoading]);
+
+  useEffect(() => {
+    const el = chatScrollRef.current;
+    if (!el || chatScrollTrigger === 0) return;
+    stickToBottomRef.current = true;
+    requestAnimationFrame(() => scrollChatToBottom(el, "smooth"));
+  }, [chatScrollTrigger]);
 
   return (
     <div className="wa-page wa-inbox">
@@ -296,7 +354,14 @@ export default function WhatsappBotInboxView({
                   )}
                 </div>
               </div>
-              <div className="wa-chat-bg wa-scroll flex-1 overflow-y-auto px-4 py-4 min-h-[280px]">
+              <div
+                ref={chatScrollRef}
+                className="wa-chat-bg wa-scroll flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 min-h-[280px]"
+                onScroll={() => {
+                  const el = chatScrollRef.current;
+                  if (el) stickToBottomRef.current = isChatNearBottom(el);
+                }}
+              >
                 {messagesLoading && messages.length === 0 ? (
                   <Loader2 className="mx-auto mt-12 h-6 w-6 animate-spin text-slate-500" />
                 ) : (
@@ -322,7 +387,6 @@ export default function WhatsappBotInboxView({
                     );
                   })
                 )}
-                <div ref={messagesEndRef} />
               </div>
               <div className="wa-chat-compose">
                 <div className="flex gap-2">

@@ -45,7 +45,7 @@ export default function WhatsappBotProView() {
   const [replyText, setReplyText] = useState("");
   const [sending, setSending] = useState(false);
   const [aiHealth, setAiHealth] = useState<AiHealth | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [chatScrollTrigger, setChatScrollTrigger] = useState(0);
   const selectedIdRef = useRef(selectedId);
 
   selectedIdRef.current = selectedId;
@@ -116,10 +116,6 @@ export default function WhatsappBotProView() {
     const t = setInterval(() => loadMessages(selectedId), 5000);
     return () => clearInterval(t);
   }, [selectedId, loadMessages]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
 
   async function handleConnect() {
     setConnecting(true);
@@ -229,6 +225,7 @@ export default function WhatsappBotProView() {
       setReplyText("");
       await loadMessages(selectedId);
       await loadAll();
+      setChatScrollTrigger((n) => n + 1);
     } finally {
       setSending(false);
     }
@@ -329,7 +326,7 @@ export default function WhatsappBotProView() {
             onUpdateLeadStatus={updateLeadStatus}
             onPatchLead={patchLead}
             onRefresh={loadAll}
-            messagesEndRef={messagesEndRef}
+            chatScrollTrigger={chatScrollTrigger}
           />
         )}
       </WhatsappBotLayout>
