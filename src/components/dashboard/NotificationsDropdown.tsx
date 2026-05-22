@@ -47,6 +47,7 @@ function getNotificationImage(type: string, topic: string): string {
     claim: 'https://via.placeholder.com/80?text=Reclamo',
     message: 'https://via.placeholder.com/80?text=Mensaje',
     promotion: 'https://via.placeholder.com/80?text=Promo',
+    whatsapp: 'https://via.placeholder.com/80?text=WA',
   };
   return map[type] || 'https://via.placeholder.com/80?text=Notif';
 }
@@ -58,8 +59,17 @@ function getNotificationTitle(type: string, topic: string): string {
     claim: 'Nuevo reclamo',
     message: 'Nuevo mensaje',
     promotion: 'Promoción',
+    whatsapp: 'WhatsApp',
   };
   return map[type] || 'Notificación';
+}
+
+function openNotificationLink(item: NotificationItem) {
+  if (item.type === 'whatsapp') {
+    window.location.href = '/dashboard#whatsapp-bot';
+    return true;
+  }
+  return false;
 }
 
 export default function NotificationsDropdown({ isOpen, onClose }: NotificationsDropdownProps) {
@@ -212,7 +222,10 @@ export default function NotificationsDropdown({ isOpen, onClose }: Notifications
           filtered.map((item) => (
             <div
               key={item.id}
-              onClick={() => !item.isRead && markAsRead(item.id)}
+              onClick={() => {
+                openNotificationLink(item);
+                if (!item.isRead) markAsRead(item.id);
+              }}
               className={`flex gap-4 p-4 border-b border-[#f5f5f5] hover:bg-[#f5f5f5] transition-colors cursor-pointer group ${
                 !item.isRead ? 'bg-[#f0f7ff]' : ''
               }`}

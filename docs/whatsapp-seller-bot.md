@@ -59,9 +59,12 @@
 1. ✅ Modelos + migración  
 2. ✅ Provider abstracto + Evolution  
 3. ✅ BotEngine + conocimiento catálogo + Ollama fallback  
-4. ✅ APIs sesión / config / conversaciones / handoff  
-5. ✅ Dashboard “Bot de WhatsApp”  
-6. Pendiente: notificaciones push al vendedor, embeddings, horario comercial estricto, firma webhook Evolution avanzada  
+4. ✅ APIs sesión / config / conversaciones / handoff / mensajes / leads PATCH  
+5. ✅ Dashboard con chat, QR, config y leads  
+6. ✅ Notificaciones Prisma (`type: whatsapp`) + email Resend en handoff/lead caliente  
+7. ✅ Horario comercial (`business-hours.ts` + config)  
+8. ✅ Webhook: secreto obligatorio en prod, rate limit, dedupe por `providerMessageId`  
+9. Pendiente: embeddings/pgvector, cola async, medios (imagen/audio), tests E2E  
 
 ---
 

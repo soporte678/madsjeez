@@ -1,17 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getWhatsappBotEnv } from "@/lib/whatsapp-bot/config";
+import { getWhatsappBotEnv, parseSellerIdFromInstance } from "@/lib/whatsapp-bot/config";
 import { getWhatsAppProvider } from "@/lib/whatsapp-bot/providers/evolution-provider";
 import { processInboundWhatsappMessage } from "@/lib/whatsapp-bot/bot-engine";
 import { prisma } from "@/lib/prisma";
-import { parseSellerIdFromInstance } from "@/lib/whatsapp-bot/config";
+import { simpleRateLimit } from "@/lib/simple-rate-limit";
 
 export async function POST(req: NextRequest) {
   const { webhookSecret } = getWhatsappBotEnv();
+  const isProd = process.env.NODE_ENV === "production";
+
+  if (isProd && !webhookSecret) {
+    console.error("[whatsapp-bot] EVOLUTION_WEBHOOK_SECRET required in production");
+    return NextResponse.json({ error: "misconfigured" }, { status: 503 });
+  }
+
   if (webhookSecret) {
-    const header = req.headers.get("x-madsjeez-webhook-secret") || req.headers.get("apikey");
+    const header =
+      req.headers.get("x-madsjeez-webhook-secret") ||
+      req.headers.get("apikey") ||
+      req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
     if (header !== webhookSecret) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
+  }
+
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("x-real-ip") ||
+    "unknown";
+  const rl = simpleRateLimit(`evolution-webhook:${ip}`, 120, 60_000);
+  if (!rl.ok) {
+    return NextResponse.json({ error: "rate_limited" }, { status: 429 });
   }
 
   let payload: unknown;
@@ -32,6 +51,11 @@ export async function POST(req: NextRequest) {
   const sellerId = parseSellerIdFromInstance(instanceName);
 
   if (sellerId && parsed.phone && parsed.text) {
+    const msgRl = simpleRateLimit(`wa-in:${sellerId}:${parsed.phone}`, 30, 60_000);
+    if (!msgRl.ok) {
+      return NextResponse.json({ ok: true, rate_limited: true });
+    }
+
     try {
       await processInboundWhatsappMessage({
         instanceName,

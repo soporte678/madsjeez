@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Loader2,
   MessageCircle,
@@ -10,8 +10,10 @@ import {
   UserRound,
   Bot,
   RefreshCw,
+  Send,
 } from "lucide-react";
 import { toast } from "sonner";
+import { DEFAULT_BUSINESS_HOURS, type BusinessHoursConfig } from "@/lib/whatsapp-bot/business-hours";
 
 type SessionState = {
   id: string;
@@ -28,6 +30,9 @@ type BotConfig = {
   customInstructions: string | null;
   humanHandoffEnabled: boolean;
   autoReplyEnabled: boolean;
+  maxAutoMessagesBeforeHandoff: number;
+  businessHoursEnabled: boolean;
+  businessHours: BusinessHoursConfig | null;
 };
 
 type ConversationRow = {
@@ -35,8 +40,17 @@ type ConversationRow = {
   phone: string;
   status: string;
   leadStatus: string;
+  leadId?: string;
   lastMessageAt: string | null;
   lastMessage: { content: string; senderType: string } | null;
+};
+
+type MessageRow = {
+  id: string;
+  direction: string;
+  senderType: string;
+  content: string;
+  createdAt: string;
 };
 
 type LeadRow = {
@@ -63,6 +77,8 @@ const LEAD_LABEL: Record<string, string> = {
   lost: "Perdido",
 };
 
+const LEAD_STATUSES = ["new", "warm", "hot", "customer", "closed", "lost"] as const;
+
 export default function WhatsappBotView() {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<SessionState | null>(null);
@@ -73,9 +89,29 @@ export default function WhatsappBotView() {
   const [conversations, setConversations] = useState<ConversationRow[]>([]);
   const [leads, setLeads] = useState<LeadRow[]>([]);
   const [savingConfig, setSavingConfig] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<MessageRow[]>([]);
+  const [messagesLoading, setMessagesLoading] = useState(false);
+  const [replyText, setReplyText] = useState("");
+  const [sending, setSending] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const selected = conversations.find((c) => c.id === selectedId) ?? null;
+
+  const loadMessages = useCallback(async (conversationId: string) => {
+    setMessagesLoading(true);
+    try {
+      const res = await fetch(`/api/seller/whatsapp-bot/conversations/${conversationId}/messages`);
+      if (res.ok) {
+        const data = await res.json();
+        setMessages(data.messages ?? []);
+      }
+    } finally {
+      setMessagesLoading(false);
+    }
+  }, []);
 
   const loadAll = useCallback(async () => {
-    setLoading(true);
     try {
       const [sessRes, convRes, leadsRes] = await Promise.all([
         fetch("/api/seller/whatsapp-bot/session"),
@@ -106,13 +142,28 @@ export default function WhatsappBotView() {
     loadAll();
   }, [loadAll]);
 
+  useEffect(() => {
+    if (!selectedId) return;
+    loadMessages(selectedId);
+    const t = setInterval(() => loadMessages(selectedId), 5000);
+    return () => clearInterval(t);
+  }, [selectedId, loadMessages]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
   async function handleConnect() {
     setConnecting(true);
     try {
       const res = await fetch("/api/seller/whatsapp-bot/session", { method: "POST" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast.error(data.error === "evolution_not_configured" ? "Evolution API no configurada en el servidor" : "Error al conectar");
+        toast.error(
+          data.error === "evolution_not_configured"
+            ? "Evolution API no configurada en el servidor"
+            : "Error al conectar"
+        );
         return;
       }
       toast.success("Sesión iniciada. Mostrá el QR para vincular WhatsApp.");
@@ -154,7 +205,7 @@ export default function WhatsappBotView() {
     }
   }
 
-  async function patchConfig(partial: Partial<BotConfig>) {
+  async function patchConfig(partial: Record<string, unknown>) {
     setSavingConfig(true);
     try {
       const res = await fetch("/api/seller/whatsapp-bot/config", {
@@ -179,6 +230,7 @@ export default function WhatsappBotView() {
     if (res.ok) {
       toast.success("Tomaste el control de la conversación");
       await loadAll();
+      if (selectedId === conversationId) loadMessages(conversationId);
     }
   }
 
@@ -192,6 +244,44 @@ export default function WhatsappBotView() {
     }
   }
 
+  async function sendReply() {
+    if (!selectedId || !replyText.trim()) return;
+    setSending(true);
+    try {
+      const res = await fetch(`/api/seller/whatsapp-bot/conversations/${selectedId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: replyText }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(
+          data.error === "whatsapp_not_connected"
+            ? "WhatsApp no está conectado"
+            : "No se pudo enviar"
+        );
+        return;
+      }
+      setReplyText("");
+      await loadMessages(selectedId);
+      await loadAll();
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function updateLeadStatus(leadId: string, status: string) {
+    const res = await fetch(`/api/seller/whatsapp-bot/leads/${leadId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+    if (res.ok) {
+      await loadAll();
+      toast.success("Lead actualizado");
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16 text-muted-foreground text-sm gap-2">
@@ -202,16 +292,17 @@ export default function WhatsappBotView() {
   }
 
   const status = session?.status ?? "disconnected";
+  const bh = (config?.businessHours as BusinessHoursConfig | null) ?? DEFAULT_BUSINESS_HOURS;
 
   return (
-    <div className="space-y-8 max-w-4xl">
+    <div className="space-y-8 max-w-6xl">
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <MessageCircle className="h-7 w-7 text-primary" />
           Bot de WhatsApp
         </h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Conectá tu WhatsApp con QR y dejá que el asistente responda leads usando solo tu catálogo real en Madsjeez.
+          Conectá tu WhatsApp, respondé leads con IA basada en tu catálogo y tomá el control humano cuando quieras.
         </p>
       </div>
 
@@ -222,10 +313,7 @@ export default function WhatsappBotView() {
           <span className="font-medium text-primary">{STATUS_LABEL[status] ?? status}</span>
           {session?.phoneNumber ? ` · ${session.phoneNumber}` : null}
         </p>
-        {session?.lastError ? (
-          <p className="text-sm text-destructive">{session.lastError}</p>
-        ) : null}
-
+        {session?.lastError ? <p className="text-sm text-destructive">{session.lastError}</p> : null}
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
@@ -257,10 +345,9 @@ export default function WhatsappBotView() {
             <RefreshCw className="h-4 w-4" />
           </button>
         </div>
-
         {qrCode ? (
           <div className="mt-4 p-4 border rounded-lg bg-muted/30">
-            <p className="text-sm mb-2">Escaneá este código con WhatsApp → Dispositivos vinculados:</p>
+            <p className="text-sm mb-2">Escaneá con WhatsApp → Dispositivos vinculados:</p>
             {qrCode.startsWith("data:") || qrCode.startsWith("http") ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={qrCode} alt="QR WhatsApp" className="max-w-[280px] mx-auto" />
@@ -273,35 +360,84 @@ export default function WhatsappBotView() {
 
       <section className="rounded-xl border bg-card p-6 space-y-4">
         <h2 className="font-semibold">Configuración del bot</h2>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={config?.enabled ?? false}
-            disabled={savingConfig}
-            onChange={(e) => patchConfig({ enabled: e.target.checked })}
-          />
-          Activar bot automático
-        </label>
-        <div>
-          <label className="text-sm text-muted-foreground">Tono</label>
-          <select
-            className="mt-1 w-full max-w-xs border rounded-lg px-3 py-2 text-sm bg-background"
-            value={config?.tone ?? "cercano"}
-            disabled={savingConfig}
-            onChange={(e) => patchConfig({ tone: e.target.value })}
-          >
-            <option value="cercano">Cercano</option>
-            <option value="profesional">Profesional</option>
-            <option value="rapido">Rápido</option>
-            <option value="experto">Experto</option>
-          </select>
+        <div className="grid sm:grid-cols-2 gap-3">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={config?.enabled ?? false}
+              disabled={savingConfig}
+              onChange={(e) => patchConfig({ enabled: e.target.checked })}
+            />
+            Activar bot automático
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={config?.autoReplyEnabled ?? true}
+              disabled={savingConfig}
+              onChange={(e) => patchConfig({ autoReplyEnabled: e.target.checked })}
+            />
+            Respuesta automática
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={config?.humanHandoffEnabled ?? true}
+              disabled={savingConfig}
+              onChange={(e) => patchConfig({ humanHandoffEnabled: e.target.checked })}
+            />
+            Derivar a humano si lo piden
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={config?.businessHoursEnabled ?? false}
+              disabled={savingConfig}
+              onChange={(e) =>
+                patchConfig({
+                  businessHoursEnabled: e.target.checked,
+                  businessHours: bh,
+                })
+              }
+            />
+            Horario comercial
+          </label>
+        </div>
+        <div className="flex flex-wrap gap-4">
+          <div>
+            <label className="text-sm text-muted-foreground">Tono</label>
+            <select
+              className="mt-1 block w-full max-w-xs border rounded-lg px-3 py-2 text-sm bg-background"
+              value={config?.tone ?? "cercano"}
+              disabled={savingConfig}
+              onChange={(e) => patchConfig({ tone: e.target.value })}
+            >
+              <option value="cercano">Cercano</option>
+              <option value="profesional">Profesional</option>
+              <option value="rapido">Rápido</option>
+              <option value="experto">Experto</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-sm text-muted-foreground">Máx. mensajes bot antes de derivar</label>
+            <input
+              type="number"
+              min={3}
+              max={50}
+              className="mt-1 block w-24 border rounded-lg px-3 py-2 text-sm bg-background"
+              defaultValue={config?.maxAutoMessagesBeforeHandoff ?? 12}
+              onBlur={(e) =>
+                patchConfig({ maxAutoMessagesBeforeHandoff: Number(e.target.value) || 12 })
+              }
+            />
+          </div>
         </div>
         <div>
           <label className="text-sm text-muted-foreground">Instrucciones personalizadas</label>
           <textarea
             className="mt-1 w-full border rounded-lg px-3 py-2 text-sm min-h-[80px] bg-background"
             defaultValue={config?.customInstructions ?? ""}
-            placeholder="Ej: Siempre ofrecé retiro en depósito si preguntan por CABA."
+            placeholder="Ej: Ofrecé retiro en depósito si preguntan por CABA."
             onBlur={(e) => {
               if (e.target.value !== (config?.customInstructions ?? "")) {
                 patchConfig({ customInstructions: e.target.value });
@@ -309,48 +445,82 @@ export default function WhatsappBotView() {
             }}
           />
         </div>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={config?.humanHandoffEnabled ?? true}
-            disabled={savingConfig}
-            onChange={(e) => patchConfig({ humanHandoffEnabled: e.target.checked })}
-          />
-          Derivar a humano cuando el cliente lo pida
-        </label>
+        {config?.businessHoursEnabled ? (
+          <div>
+            <label className="text-sm text-muted-foreground">Mensaje fuera de horario</label>
+            <textarea
+              className="mt-1 w-full border rounded-lg px-3 py-2 text-sm min-h-[60px] bg-background"
+              defaultValue={bh.offlineMessage ?? ""}
+              onBlur={(e) =>
+                patchConfig({
+                  businessHours: { ...bh, offlineMessage: e.target.value },
+                })
+              }
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Horario por defecto: lun–vie 9–18, sáb 9–13 (Argentina). Personalización avanzada vía API.
+            </p>
+          </div>
+        ) : null}
       </section>
 
-      <section className="rounded-xl border bg-card p-6 space-y-3">
-        <h2 className="font-semibold">Conversaciones</h2>
-        {conversations.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Aún no hay conversaciones.</p>
-        ) : (
-          <ul className="divide-y">
-            {conversations.map((c) => (
-              <li key={c.id} className="py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      <div className="grid lg:grid-cols-5 gap-4 min-h-[420px]">
+        <section className="lg:col-span-2 rounded-xl border bg-card p-4 flex flex-col">
+          <h2 className="font-semibold mb-3">Conversaciones</h2>
+          {conversations.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Aún no hay conversaciones.</p>
+          ) : (
+            <ul className="divide-y overflow-y-auto flex-1 -mx-2">
+              {conversations.map((c) => (
+                <li key={c.id}>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedId(c.id)}
+                    className={`w-full text-left px-2 py-3 hover:bg-muted/60 transition-colors ${
+                      selectedId === c.id ? "bg-muted" : ""
+                    }`}
+                  >
+                    <p className="font-medium text-sm">{c.phone}</p>
+                    <p className="text-xs text-muted-foreground line-clamp-1">
+                      {c.lastMessage?.content ?? "—"}
+                    </p>
+                    <p className="text-xs mt-1 flex items-center gap-1">
+                      {c.status === "human_active" ? (
+                        <span className="text-amber-600">
+                          <UserRound className="h-3 w-3 inline" /> Humano
+                        </span>
+                      ) : (
+                        <span className="text-primary">
+                          <Bot className="h-3 w-3 inline" /> Bot
+                        </span>
+                      )}
+                      <span className="text-muted-foreground">· {LEAD_LABEL[c.leadStatus] ?? c.leadStatus}</span>
+                    </p>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section className="lg:col-span-3 rounded-xl border bg-card p-4 flex flex-col">
+          {!selected ? (
+            <p className="text-sm text-muted-foreground m-auto">Seleccioná una conversación para ver el chat.</p>
+          ) : (
+            <>
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-3 mb-3">
                 <div>
-                  <p className="font-medium text-sm">{c.phone}</p>
-                  <p className="text-xs text-muted-foreground line-clamp-1">
-                    {c.lastMessage?.content ?? "—"}
-                  </p>
-                  <p className="text-xs mt-1">
-                    {c.status === "human_active" ? (
-                      <span className="text-amber-600 flex items-center gap-1">
-                        <UserRound className="h-3 w-3" /> Humano
-                      </span>
-                    ) : (
-                      <span className="text-primary flex items-center gap-1">
-                        <Bot className="h-3 w-3" /> Bot activo
-                      </span>
-                    )}
+                  <p className="font-semibold">{selected.phone}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {selected.status === "human_active" ? "Modo humano" : "Bot activo"}
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  {c.status !== "human_active" ? (
+                  {selected.status !== "human_active" ? (
                     <button
                       type="button"
                       className="text-xs border rounded px-2 py-1"
-                      onClick={() => handoff(c.id)}
+                      onClick={() => handoff(selected.id)}
                     >
                       Tomar control
                     </button>
@@ -358,17 +528,74 @@ export default function WhatsappBotView() {
                     <button
                       type="button"
                       className="text-xs border rounded px-2 py-1"
-                      onClick={() => reactivate(c.id)}
+                      onClick={() => reactivate(selected.id)}
                     >
                       Reactivar bot
                     </button>
                   )}
                 </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+              </div>
+
+              <div className="flex-1 overflow-y-auto space-y-2 min-h-[240px] max-h-[360px] pr-1">
+                {messagesLoading && messages.length === 0 ? (
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground mx-auto mt-8" />
+                ) : (
+                  messages.map((m) => {
+                    const isOut = m.direction === "outbound";
+                    return (
+                      <div
+                        key={m.id}
+                        className={`flex ${isOut ? "justify-end" : "justify-start"}`}
+                      >
+                        <div
+                          className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
+                            isOut
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted"
+                          }`}
+                        >
+                          <p className="text-[10px] opacity-70 mb-0.5">
+                            {m.senderType === "customer"
+                              ? "Cliente"
+                              : m.senderType === "seller"
+                                ? "Vos"
+                                : "Bot"}
+                          </p>
+                          <p className="whitespace-pre-wrap break-words">{m.content}</p>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+
+              <div className="mt-3 flex gap-2 border-t pt-3">
+                <input
+                  type="text"
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendReply()}
+                  placeholder="Escribí tu respuesta…"
+                  className="flex-1 border rounded-lg px-3 py-2 text-sm bg-background"
+                  disabled={sending || status !== "connected"}
+                />
+                <button
+                  type="button"
+                  onClick={sendReply}
+                  disabled={sending || !replyText.trim() || status !== "connected"}
+                  className="rounded-lg bg-primary px-3 py-2 text-primary-foreground disabled:opacity-50"
+                >
+                  {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                </button>
+              </div>
+              {status !== "connected" ? (
+                <p className="text-xs text-amber-600 mt-2">Conectá WhatsApp para enviar mensajes.</p>
+              ) : null}
+            </>
+          )}
+        </section>
+      </div>
 
       <section className="rounded-xl border bg-card p-6 space-y-3">
         <h2 className="font-semibold">Leads</h2>
@@ -377,9 +604,24 @@ export default function WhatsappBotView() {
         ) : (
           <ul className="divide-y">
             {leads.map((l) => (
-              <li key={l.id} className="py-2 flex justify-between text-sm">
-                <span>{l.phone}</span>
-                <span className="text-muted-foreground">{LEAD_LABEL[l.status] ?? l.status}</span>
+              <li key={l.id} className="py-2 flex flex-wrap items-center justify-between gap-2 text-sm">
+                <div>
+                  <span className="font-medium">{l.phone}</span>
+                  {l.intent ? (
+                    <span className="text-xs text-muted-foreground block">{l.intent}</span>
+                  ) : null}
+                </div>
+                <select
+                  className="text-xs border rounded px-2 py-1 bg-background"
+                  value={l.status}
+                  onChange={(e) => updateLeadStatus(l.id, e.target.value)}
+                >
+                  {LEAD_STATUSES.map((s) => (
+                    <option key={s} value={s}>
+                      {LEAD_LABEL[s]}
+                    </option>
+                  ))}
+                </select>
               </li>
             ))}
           </ul>

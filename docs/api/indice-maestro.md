@@ -101,6 +101,17 @@ Listado de handlers bajo `src/app/api`. Los métodos se obtienen del export en c
 | GET | `/api/user/me` |
 | GET, POST | `/api/variations` |
 | PUT, DELETE | `/api/variations/{id}` |
+| GET, PATCH | `/api/seller/whatsapp-bot/config` |
+| GET | `/api/seller/whatsapp-bot/conversations` |
+| GET | `/api/seller/whatsapp-bot/conversations/{id}` |
+| GET, POST | `/api/seller/whatsapp-bot/conversations/{id}/messages` |
+| POST | `/api/seller/whatsapp-bot/conversations/{id}/handoff` |
+| POST | `/api/seller/whatsapp-bot/conversations/{id}/reactivate` |
+| GET | `/api/seller/whatsapp-bot/leads` |
+| PATCH | `/api/seller/whatsapp-bot/leads/{id}` |
+| GET, POST, DELETE | `/api/seller/whatsapp-bot/session` |
+| GET | `/api/seller/whatsapp-bot/session/qr` |
+| POST | `/api/webhooks/evolution` |
 | POST, GET | `/api/webhooks/mercadopago` |
 
 **Total:** la tabla debe mantenerse al día con `src/app/api/**/route.ts`; el número de archivos en el repo puede variar (sincronizar al agregar o quitar rutas).

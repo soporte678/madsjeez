@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireSellerSession } from "@/lib/whatsapp-bot/auth";
 import { prisma } from "@/lib/prisma";
 import type { WhatsappBotTone } from "@prisma/client";
+import { parseBusinessHours, DEFAULT_BUSINESS_HOURS } from "@/lib/whatsapp-bot/business-hours";
 
 const TONES: WhatsappBotTone[] = ["cercano", "profesional", "rapido", "experto"];
 
@@ -40,6 +41,13 @@ export async function PATCH(req: NextRequest) {
   }
   if (typeof body.maxAutoMessagesBeforeHandoff === "number") {
     data.maxAutoMessagesBeforeHandoff = Math.min(50, Math.max(3, Math.floor(body.maxAutoMessagesBeforeHandoff)));
+  }
+  if (typeof body.businessHoursEnabled === "boolean") {
+    data.businessHoursEnabled = body.businessHoursEnabled;
+  }
+  if (body.businessHours !== undefined) {
+    const parsed = parseBusinessHours(body.businessHours);
+    data.businessHours = parsed ?? DEFAULT_BUSINESS_HOURS;
   }
 
   const config = await prisma.sellerBotConfig.upsert({

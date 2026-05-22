@@ -5,6 +5,12 @@ import { buildStoreContext } from "./seller-knowledge-service";
 import { customerWantsHuman, requestHumanHandoff } from "./human-handoff-service";
 import { detectIntentSnippet, scoreLeadFromMessage } from "./lead-scoring-service";
 import { getWhatsAppProvider } from "./providers/evolution-provider";
+import {
+  isDuplicateInboundMessage,
+  saveOutboundMessage,
+} from "./message-service";
+import { parseBusinessHours, isWithinBusinessHours, getOfflineMessage } from "./business-hours";
+import { notifySellerWhatsapp } from "./seller-notifications";
 
 export type InboundMessageInput = {
   instanceName: string;
@@ -14,6 +20,10 @@ export type InboundMessageInput = {
 };
 
 export async function processInboundWhatsappMessage(input: InboundMessageInput) {
+  if (await isDuplicateInboundMessage(input.providerMessageId)) {
+    return;
+  }
+
   const sellerId = parseSellerIdFromInstance(input.instanceName);
   if (!sellerId) {
     console.warn("[whatsapp-bot] unknown instance", input.instanceName);
@@ -27,10 +37,13 @@ export async function processInboundWhatsappMessage(input: InboundMessageInput) 
 
   const phone = input.phone.replace(/\D/g, "");
   const now = new Date();
+  const preview = input.text.slice(0, 80);
 
   let lead = await prisma.whatsappLead.findUnique({
     where: { sellerId_phone: { sellerId, phone } },
   });
+  const previousLeadStatus = lead?.status;
+
   if (!lead) {
     lead = await prisma.whatsappLead.create({
       data: {
@@ -53,6 +66,7 @@ export async function processInboundWhatsappMessage(input: InboundMessageInput) 
         intent: detectIntentSnippet(input.text),
       },
     });
+    lead = { ...lead, status: newStatus };
   }
 
   let conversation = await prisma.whatsappConversation.findUnique({
@@ -88,6 +102,25 @@ export async function processInboundWhatsappMessage(input: InboundMessageInput) 
     },
   });
 
+  await notifySellerWhatsapp({
+    sellerId,
+    conversationId: conversation.id,
+    topic: "new_message",
+    title: "Nuevo mensaje por WhatsApp",
+    message: `${phone}: ${preview}`,
+  });
+
+  if (lead.status === "hot" && previousLeadStatus !== "hot") {
+    await notifySellerWhatsapp({
+      sellerId,
+      conversationId: conversation.id,
+      topic: "lead_hot",
+      title: "Lead caliente por WhatsApp",
+      message: `${phone} muestra intención de compra: ${detectIntentSnippet(input.text)}`,
+      sendEmail: true,
+    });
+  }
+
   const config = await prisma.sellerBotConfig.upsert({
     where: { sellerId },
     create: { sellerId, storeId: sellerId, enabled: false },
@@ -95,29 +128,34 @@ export async function processInboundWhatsappMessage(input: InboundMessageInput) 
   });
 
   if (!config.enabled || !config.autoReplyEnabled) return;
-
   if (conversation.status === "human_active") return;
+  if (session.status !== "connected") return;
+
+  if (config.businessHoursEnabled) {
+    const hours = parseBusinessHours(config.businessHours);
+    if (hours && !isWithinBusinessHours(hours, now)) {
+      const offlineMsg = getOfflineMessage(hours);
+      await sendAndStore(session.providerInstanceId, phone, conversation.id, offlineMsg, "bot");
+      return;
+    }
+  }
 
   if (customerWantsHuman(input.text) && config.humanHandoffEnabled) {
-    await requestHumanHandoff(conversation.id, "Cliente pidió hablar con humano");
-    const provider = getWhatsAppProvider();
-    await provider.sendMessage(
-      session.providerInstanceId,
+    await requestHumanHandoff(conversation.id, "Cliente pidió hablar con humano", {
+      notifySeller: true,
       phone,
-      "Dale, te derivo con el vendedor para que te ayude personalmente."
-    );
-    await saveOutbound(conversation.id, "Dale, te derivo con el vendedor para que te ayude personalmente.");
+    });
+    const handoffMsg = "Dale, te derivo con el vendedor para que te ayude personalmente.";
+    await sendAndStore(session.providerInstanceId, phone, conversation.id, handoffMsg, "bot");
     return;
   }
 
   if (conversation.botMessageCount >= config.maxAutoMessagesBeforeHandoff) {
-    await requestHumanHandoff(conversation.id, "Límite de mensajes automáticos");
-    await sendAndStore(
-      session.providerInstanceId,
+    await requestHumanHandoff(conversation.id, "Límite de mensajes automáticos", {
+      notifySeller: true,
       phone,
-      conversation.id,
-      FALLBACK_NO_AI
-    );
+    });
+    await sendAndStore(session.providerInstanceId, phone, conversation.id, FALLBACK_NO_AI, "bot");
     return;
   }
 
@@ -143,7 +181,7 @@ export async function processInboundWhatsappMessage(input: InboundMessageInput) 
     recentMessages,
   });
 
-  await sendAndStore(session.providerInstanceId, phone, conversation.id, reply);
+  await sendAndStore(session.providerInstanceId, phone, conversation.id, reply, "bot");
 
   await prisma.whatsappConversation.update({
     where: { id: conversation.id },
@@ -155,23 +193,12 @@ async function sendAndStore(
   instanceId: string,
   phone: string,
   conversationId: string,
-  text: string
+  text: string,
+  senderType: "bot" | "system" = "bot"
 ) {
   const provider = getWhatsAppProvider();
   await provider.sendMessage(instanceId, phone, text);
-  await saveOutbound(conversationId, text);
-}
-
-async function saveOutbound(conversationId: string, content: string) {
-  await prisma.whatsappMessage.create({
-    data: {
-      conversationId,
-      direction: "outbound",
-      senderType: "bot",
-      content,
-      messageType: "text",
-    },
-  });
+  await saveOutboundMessage(conversationId, text, senderType);
 }
 
 export async function syncSessionConnectionState(sellerId: string) {
@@ -180,6 +207,7 @@ export async function syncSessionConnectionState(sellerId: string) {
 
   const provider = getWhatsAppProvider();
   const state = await provider.getConnectionState(session.providerInstanceId);
+  const wasConnected = session.status === "connected";
 
   await prisma.whatsappSession.update({
     where: { id: session.id },
@@ -191,6 +219,24 @@ export async function syncSessionConnectionState(sellerId: string) {
       lastError: state.error ?? null,
     },
   });
+
+  if (wasConnected && state.status === "disconnected") {
+    const conv = await prisma.whatsappConversation.findFirst({
+      where: { sellerId },
+      orderBy: { lastMessageAt: "desc" },
+      select: { id: true },
+    });
+    if (conv) {
+      await notifySellerWhatsapp({
+        sellerId,
+        conversationId: conv.id,
+        topic: "session_disconnected",
+        title: "WhatsApp desconectado",
+        message: "Tu sesión de WhatsApp se desconectó. Volvé al panel para reconectar con QR.",
+        sendEmail: true,
+      });
+    }
+  }
 
   return state;
 }

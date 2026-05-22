@@ -27,6 +27,7 @@ export async function GET() {
       id: c.id,
       phone: c.phone,
       status: c.status,
+      leadId: c.leadId,
       leadStatus: c.lead.status,
       lastMessageAt: c.lastMessageAt,
       lastMessage: c.messages[0]
