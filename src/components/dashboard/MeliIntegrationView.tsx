@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import {
@@ -84,6 +84,83 @@ type ImportPreview = {
 };
 
 const MELI_IMPORT_BATCH_SIZE = 35;
+const MELI_SCAN_DETAIL_BATCH = 20;
+
+function mergePreviewRowsById(prev: PreviewRow[], next: PreviewRow[]): PreviewRow[] {
+  const map = new Map<string, PreviewRow>();
+  for (const r of prev) map.set(r.id, r);
+  for (const r of next) map.set(r.id, r);
+  return [...map.values()];
+}
+
+function summarizePreviewRowsClient(rows: PreviewRow[]) {
+  const breakdown = {
+    byStatus: {} as Record<string, number>,
+    byCondition: {} as Record<string, number>,
+    byListingType: {} as Record<string, number>,
+  };
+  let toCreate = 0;
+  let toUpdate = 0;
+  let skippedDuplicates = 0;
+  let alreadyLinked = 0;
+  for (const r of rows) {
+    breakdown.byStatus[r.status] = (breakdown.byStatus[r.status] || 0) + 1;
+    breakdown.byCondition[r.condition] = (breakdown.byCondition[r.condition] || 0) + 1;
+    breakdown.byListingType[r.listingType] = (breakdown.byListingType[r.listingType] || 0) + 1;
+    if (r.action === "create") toCreate++;
+    if (r.action === "update") {
+      toUpdate++;
+      alreadyLinked++;
+    }
+    if (r.action === "skip") skippedDuplicates++;
+  }
+  return { toCreate, toUpdate, skippedDuplicates, alreadyLinked, breakdown };
+}
+
+function buildLiveImportPreview(
+  rows: PreviewRow[],
+  meta: {
+    uniqueFound: number;
+    pagingTotal: number | null;
+    pagesScanned: number;
+    warnings: string[];
+    skippedByKindExtra?: number;
+  }
+): ImportPreview {
+  const summary = summarizePreviewRowsClient(rows);
+  return {
+    totalFound: meta.uniqueFound,
+    uniqueFound: meta.uniqueFound,
+    pagingTotal: meta.pagingTotal,
+    pagesScanned: meta.pagesScanned,
+    alreadyLinked: summary.alreadyLinked,
+    toCreate: summary.toCreate,
+    toUpdate: summary.toUpdate,
+    skippedDuplicates: summary.skippedDuplicates + (meta.skippedByKindExtra ?? 0),
+    breakdown: summary.breakdown,
+    rows,
+    samples: rows,
+    warnings: meta.warnings,
+    allItemIds: rows.map((r) => r.id),
+  };
+}
+
+function emptyImportPreview(): ImportPreview {
+  return {
+    totalFound: 0,
+    uniqueFound: 0,
+    pagingTotal: null,
+    pagesScanned: 0,
+    alreadyLinked: 0,
+    toCreate: 0,
+    toUpdate: 0,
+    skippedDuplicates: 0,
+    breakdown: { byStatus: {}, byCondition: {}, byListingType: {} },
+    rows: [],
+    samples: [],
+    warnings: [],
+  };
+}
 
 function meliListingKindLabel(kind: MeliListingKind): string {
   if (kind === "standard") return "estándar (sin catálogo ML)";
@@ -221,6 +298,7 @@ export default function MeliIntegrationView() {
     pagingTotal: number | null;
     error?: string;
   }>({ status: "idle", pages: 0, ids: [], pagingTotal: null });
+  const liveTableEndRef = useRef<HTMLTableRowElement>(null);
   const [pushing, setPushing] = useState(false);
   const [syncingCamp, setSyncingCamp] = useState(false);
   const [promoPreview, setPromoPreview] = useState<string | null>(null);
@@ -243,7 +321,14 @@ export default function MeliIntegrationView() {
 
   useEffect(() => {
     setLiveScan({ status: "idle", pages: 0, ids: [], pagingTotal: null });
+    setImportPreview(null);
   }, [listingKind, selectedAccountId]);
+
+  useEffect(() => {
+    if (liveScan.status === "scanning" && liveTableEndRef.current) {
+      liveTableEndRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [importPreview?.rows.length, liveScan.status]);
   const [targetAccountId, setTargetAccountId] = useState<string | null>(null);
   const [mlaPasteText, setMlaPasteText] = useState("");
   const [publishingToAccount, setPublishingToAccount] = useState(false);
@@ -523,17 +608,44 @@ export default function MeliIntegrationView() {
     return { imported, updated, skipped, errorCount, errorSamples };
   };
 
+  const fetchPreviewRowsBatch = async (itemIds: string[]) => {
+    const r = await fetch("/api/meli/import/preview-rows", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        accountId: selectedAccountId,
+        listingKind,
+        itemIds,
+      }),
+    });
+    const d = await r.json();
+    if (!r.ok) {
+      throw new Error(d.error || "Error al leer detalle de publicaciones");
+    }
+    return {
+      rows: (d.rows || []) as PreviewRow[],
+      warnings: (d.warnings || []) as string[],
+      skippedByKind: Number(d.skippedByKind) || 0,
+    };
+  };
+
   const runLiveScan = async () => {
     if (!selectedAccountId) {
       toast.error("Seleccioná una cuenta de Mercado Libre");
       return;
     }
     setLiveScan({ status: "scanning", pages: 0, ids: [], pagingTotal: null });
+    setImportPreview(emptyImportPreview());
     setImporting(false);
+    setRowPullErrors({});
+    setPage(1);
     const seen = new Set<string>();
     let scrollId: string | undefined;
     let pages = 0;
     let pagingTotal: number | null = null;
+    const warningsAcc: string[] = [];
+    let skippedByKindTotal = 0;
+    let mergedRows: PreviewRow[] = [];
 
     try {
       for (;;) {
@@ -551,16 +663,50 @@ export default function MeliIntegrationView() {
 
         pages++;
         if (d.pagingTotal != null) pagingTotal = d.pagingTotal;
+
+        const pageNewIds: string[] = [];
         for (const id of d.ids || []) {
-          if (id) seen.add(id);
+          if (id && !seen.has(id)) {
+            seen.add(id);
+            pageNewIds.push(id);
+          }
         }
 
-        setLiveScan({
-          status: "scanning",
-          pages,
-          ids: [...seen],
-          pagingTotal,
-        });
+        for (let i = 0; i < pageNewIds.length; i += MELI_SCAN_DETAIL_BATCH) {
+          const chunk = pageNewIds.slice(i, i + MELI_SCAN_DETAIL_BATCH);
+          const detail = await fetchPreviewRowsBatch(chunk);
+          skippedByKindTotal += detail.skippedByKind;
+          warningsAcc.push(...detail.warnings);
+          mergedRows = mergePreviewRowsById(mergedRows, detail.rows);
+
+          const preview = buildLiveImportPreview(mergedRows, {
+            uniqueFound: seen.size,
+            pagingTotal,
+            pagesScanned: pages,
+            warnings: warningsAcc.slice(-40),
+            skippedByKindExtra: skippedByKindTotal,
+          });
+          setImportPreview(preview);
+          setSelectedPullIds(
+            new Set(mergedRows.filter((x) => x.action !== "skip").map((x) => x.id))
+          );
+
+          setLiveScan({
+            status: "scanning",
+            pages,
+            ids: [...seen],
+            pagingTotal,
+          });
+        }
+
+        if (!pageNewIds.length) {
+          setLiveScan({
+            status: "scanning",
+            pages,
+            ids: [...seen],
+            pagingTotal,
+          });
+        }
 
         if (d.done || !d.scrollId) break;
         scrollId = d.scrollId;
@@ -568,7 +714,12 @@ export default function MeliIntegrationView() {
 
       const ids = [...seen];
       setLiveScan({ status: "done", pages, ids, pagingTotal });
-      toast.success(`Escaneo completo: ${ids.length} publicaciones en Mercado Libre (${meliListingKindShort(listingKind)}).`);
+      setSelectedPullIds(
+        new Set(mergedRows.filter((x) => x.action !== "skip").map((x) => x.id))
+      );
+      toast.success(
+        `Escaneo completo: ${ids.length} en ML, ${mergedRows.length} filas en tabla (${meliListingKindShort(listingKind)}).`
+      );
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Error de red";
       setLiveScan({
@@ -1132,7 +1283,12 @@ export default function MeliIntegrationView() {
             </button>
             <button
               type="button"
-              disabled={!meliStatus?.connected || importing || !importPreview?.rows?.length}
+              disabled={
+                !meliStatus?.connected ||
+                importing ||
+                liveScan.status === "scanning" ||
+                !importPreview?.rows?.length
+              }
               onClick={runImport}
               className={meliBtnTeal}
             >
@@ -1161,22 +1317,30 @@ export default function MeliIntegrationView() {
               </div>
               <p className="text-xs text-slate-400">
                 {liveScan.ids.length} publicaciones detectadas
+                {importPreview?.rows.length != null
+                  ? ` · ${importPreview.rows.length} con detalle en tabla`
+                  : ""}
                 {liveScan.pagingTotal != null ? ` · ML reporta ~${liveScan.pagingTotal}` : ""}
                 {liveScan.pages > 0 ? ` · ${liveScan.pages} páginas leídas` : ""}
+                {liveScan.status === "scanning" && liveScan.ids.length > (importPreview?.rows.length ?? 0)
+                  ? " · cargando filas…"
+                  : ""}
                 {liveScan.error ? ` · ${liveScan.error}` : ""}
               </p>
             </div>
           )}
 
-          {importPreview && (
+          {importPreview && (importPreview.rows.length > 0 || liveScan.status === "scanning") && (
             <div className="rounded-xl border border-white/10 bg-slate-950/40 p-4 space-y-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
               <p className="text-xs font-medium text-slate-200">
                 Resumen: {importPreview.uniqueFound} publicaciones en Mercado Libre
                 {importPreview.pagingTotal != null ? ` (ML reporta ~${importPreview.pagingTotal})` : ""}
                 {importPreview.pagesScanned != null ? ` · ${importPreview.pagesScanned} páginas scan` : ""}.
-                {importPreview.rows.length < importPreview.uniqueFound
-                  ? ` Tabla con detalle de las primeras ${importPreview.rows.length}; importación masiva usa el listado completo.`
-                  : ""}
+                {liveScan.status === "scanning"
+                  ? ` Cargando filas en vivo (${importPreview.rows.length}/${liveScan.ids.length || importPreview.uniqueFound}).`
+                  : importPreview.rows.length < importPreview.uniqueFound
+                    ? ` Tabla con detalle de ${importPreview.rows.length}; importación masiva usa las ${importPreview.uniqueFound} detectadas.`
+                    : ""}
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                 <div className={meliSubCard}>
@@ -1301,6 +1465,14 @@ export default function MeliIntegrationView() {
                     </tr>
                   </thead>
                   <tbody className={meliTableBody}>
+                    {liveScan.status === "scanning" && pageRows.length === 0 && (
+                      <tr>
+                        <td colSpan={9} className="px-4 py-8 text-center text-slate-400">
+                          <Loader2 className="inline h-5 w-5 animate-spin mr-2 align-middle" />
+                          Conectando con Mercado Libre…
+                        </td>
+                      </tr>
+                    )}
                     {pageRows.map((s) => {
                       const pullErr = rowPullErrors[s.id];
                       const priceDiff =
@@ -1418,6 +1590,16 @@ export default function MeliIntegrationView() {
                         </tr>
                       );
                     })}
+                    {liveScan.status === "scanning" && importPreview && (
+                      <tr ref={liveTableEndRef}>
+                        <td colSpan={9} className="px-2 py-2 text-center text-[11px] text-cyan-200/90">
+                          <Loader2 className="inline h-3.5 w-3.5 animate-spin mr-1.5 align-middle" />
+                          {importPreview.rows.length < liveScan.ids.length
+                            ? `Cargando filas… ${importPreview.rows.length} / ${liveScan.ids.length}`
+                            : "Leyendo catálogo ML…"}
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>

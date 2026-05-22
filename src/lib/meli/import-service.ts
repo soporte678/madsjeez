@@ -356,6 +356,155 @@ export async function importMeliItemsForUser(
   return { ...counts, errors, itemResults, totalListed, pagesScanned };
 }
 
+const PREVIEW_FETCH_CONCURRENCY = 4;
+
+async function buildPreviewRowForItem(
+  accessToken: string,
+  itemId: string,
+  listingKind: MeliListingKind,
+  dedupe: SellerDedupeIndex,
+  existingMap: Map<
+    string,
+    { id: string; meliItemId: string | null; price: number; stock: number; sku: string | null; title: string }
+  >
+): Promise<{ row?: MeliImportPreviewRow; warning?: string; skippedKind?: boolean }> {
+  const itemRes = await meliGetItem(accessToken, itemId);
+  if (!itemRes.ok || !(itemRes.data as MeliItemDetail)?.id) {
+    return { warning: `${itemId}: publicación HTTP ${itemRes.status}` };
+  }
+  const item = itemRes.data as MeliItemDetail;
+  const catalogListing = isMeliCatalogListing(item);
+  if (listingKind === "standard" && catalogListing) {
+    return { skippedKind: true };
+  }
+  if (listingKind === "catalog" && !catalogListing) {
+    return { skippedKind: true };
+  }
+
+  const exists = existingMap.has(item.id);
+  const local = existingMap.get(item.id);
+  const sellerSku = extractSellerSku(item) || local?.sku || null;
+  const existingProductId = local?.id;
+
+  let action: MeliImportPreviewRow["action"] = exists ? "update" : "create";
+  let skipReason: string | undefined;
+
+  if (exists) {
+    const dupOnUpdate = checkImportDuplicate(dedupe, item.title, sellerSku, existingProductId);
+    if (dupOnUpdate.duplicate) {
+      action = "skip";
+      skipReason = dupOnUpdate.reason;
+    } else if (existingProductId) {
+      registerProductInDedupeIndex(dedupe, existingProductId, item.title, sellerSku);
+    }
+  } else {
+    const dup = checkImportDuplicate(dedupe, item.title, sellerSku);
+    if (dup.duplicate) {
+      action = "skip";
+      skipReason = dup.reason;
+    } else {
+      registerProductInDedupeIndex(dedupe, `preview-${item.id}`, item.title, sellerSku);
+    }
+  }
+
+  const pics = item.pictures || [];
+  const thumb = pics[0]?.secure_url || pics[0]?.url || null;
+  const status = (item.status || "unknown").toLowerCase();
+  const condition = mapCondition(item.condition);
+  const listingType = (item.listing_type_id || "unknown").toLowerCase();
+
+  return {
+    row: {
+      id: item.id,
+      title: item.title,
+      thumbnailUrl: thumb,
+      meliPrice: primaryPriceFromMeliItem(item),
+      meliStock: aggregateStockFromMeliItem(item),
+      localPrice: local ? local.price : null,
+      localStock: local ? local.stock : null,
+      sellerSku,
+      status,
+      condition,
+      listingType,
+      sold: Math.max(0, item.sold_quantity ?? 0),
+      action,
+      skipReason,
+      meliCategoryId: item.category_id || null,
+      hasVariations: Boolean(item.variations?.length),
+      isCatalogListing: catalogListing,
+    },
+  };
+}
+
+function summarizePreviewRows(rows: MeliImportPreviewRow[]): {
+  toCreate: number;
+  toUpdate: number;
+  skippedDuplicates: number;
+  alreadyLinked: number;
+  breakdown: {
+    byStatus: Record<string, number>;
+    byCondition: Record<string, number>;
+    byListingType: Record<string, number>;
+  };
+} {
+  const byStatus: Record<string, number> = {};
+  const byCondition: Record<string, number> = {};
+  const byListingType: Record<string, number> = {};
+  let toCreate = 0;
+  let toUpdate = 0;
+  let skippedDuplicates = 0;
+  let alreadyLinked = 0;
+
+  for (const r of rows) {
+    byStatus[r.status] = (byStatus[r.status] || 0) + 1;
+    byCondition[r.condition] = (byCondition[r.condition] || 0) + 1;
+    byListingType[r.listingType] = (byListingType[r.listingType] || 0) + 1;
+    if (r.action === "create") toCreate++;
+    if (r.action === "update") {
+      toUpdate++;
+      alreadyLinked++;
+    }
+    if (r.action === "skip") skippedDuplicates++;
+  }
+
+  return { toCreate, toUpdate, skippedDuplicates, alreadyLinked, breakdown: { byStatus, byCondition, byListingType } };
+}
+
+/** Detalle ML para un lote de MLA (escaneo en vivo en UI). */
+export async function previewMeliItemRowsBatch(
+  prismaUserId: string,
+  accessToken: string,
+  itemIds: string[],
+  options?: { listingKind?: MeliListingKind }
+): Promise<{ rows: MeliImportPreviewRow[]; warnings: string[]; skippedByKind: number }> {
+  const listingKind = options?.listingKind ?? "all";
+  const ids = [...new Set(itemIds.map((x) => String(x).trim()).filter(Boolean))];
+  const warnings: string[] = [];
+  let skippedByKind = 0;
+
+  if (!ids.length) return { rows: [], warnings, skippedByKind: 0 };
+
+  const sellerProducts = await prisma.product.findMany({
+    where: { sellerId: prismaUserId },
+    select: { id: true, title: true, sku: true },
+  });
+  const dedupe = createSellerDedupeIndex(sellerProducts);
+  const { existingMap } = await countLinkedMeliIds(prismaUserId, ids);
+
+  const results = await runPool(ids, PREVIEW_FETCH_CONCURRENCY, (itemId) =>
+    buildPreviewRowForItem(accessToken, itemId, listingKind, dedupe, existingMap)
+  );
+
+  const rows: MeliImportPreviewRow[] = [];
+  for (const r of results) {
+    if (r.warning) warnings.push(r.warning);
+    if (r.skippedKind) skippedByKind++;
+    if (r.row) rows.push(r.row);
+  }
+
+  return { rows, warnings, skippedByKind };
+}
+
 async function countLinkedMeliIds(
   prismaUserId: string,
   meliIds: string[]
@@ -413,124 +562,33 @@ export async function previewMeliItemsForUser(
 
   const warnings: string[] = [];
   const rows: MeliImportPreviewRow[] = [];
-
-  const byStatus: Record<string, number> = {};
-  const byCondition: Record<string, number> = {};
-  const byListingType: Record<string, number> = {};
   let skippedDuplicates = 0;
-
-  const sellerProducts = await prisma.product.findMany({
-    where: { sellerId: prismaUserId },
-    select: { id: true, title: true, sku: true },
-  });
-  const dedupe = createSellerDedupeIndex(sellerProducts);
 
   const collected = await collectMeliItemIds(accessToken, meliUserId, listingKind, maxPages);
   warnings.push(...collected.warnings);
 
   const uniqueIds = collected.ids;
   const totalFound = uniqueIds.length;
-  const { alreadyLinked, existingMap } = await countLinkedMeliIds(prismaUserId, uniqueIds);
-  let toCreate = Math.max(0, uniqueIds.length - alreadyLinked);
-  let toUpdate = alreadyLinked;
 
   const sampleIds = uniqueIds.slice(0, sampleCap);
+  const batch = await previewMeliItemRowsBatch(prismaUserId, accessToken, sampleIds, { listingKind });
+  rows.push(...batch.rows);
+  warnings.push(...batch.warnings);
+  skippedDuplicates += batch.skippedByKind;
 
-  for (const itemId of sampleIds) {
-      const itemRes = await meliGetItem(accessToken, itemId);
-      if (!itemRes.ok || !(itemRes.data as MeliItemDetail)?.id) {
-        warnings.push(`${itemId}: publicación HTTP ${itemRes.status}`);
-        continue;
-      }
-      const item = itemRes.data as MeliItemDetail;
-      const catalogListing = isMeliCatalogListing(item);
-      if (listingKind === "standard" && catalogListing) {
-        skippedDuplicates++;
-        continue;
-      }
-      if (listingKind === "catalog" && !catalogListing) {
-        skippedDuplicates++;
-        continue;
-      }
-      const status = (item.status || "unknown").toLowerCase();
-      const condition = mapCondition(item.condition);
-      const listingType = (item.listing_type_id || "unknown").toLowerCase();
-
-      byStatus[status] = (byStatus[status] || 0) + 1;
-      byCondition[condition] = (byCondition[condition] || 0) + 1;
-      byListingType[listingType] = (byListingType[listingType] || 0) + 1;
-
-      const exists = existingMap.has(item.id);
-      const local = existingMap.get(item.id);
-      const sellerSku = extractSellerSku(item) || local?.sku || null;
-      const existingProductId = local?.id;
-
-      let action: MeliImportPreviewRow["action"] = exists ? "update" : "create";
-      let skipReason: string | undefined;
-
-      if (exists) {
-        const dupOnUpdate = checkImportDuplicate(
-          dedupe,
-          item.title,
-          sellerSku,
-          existingProductId
-        );
-        if (dupOnUpdate.duplicate) {
-          action = "skip";
-          skipReason = dupOnUpdate.reason;
-          skippedDuplicates++;
-        } else if (existingProductId) {
-          registerProductInDedupeIndex(dedupe, existingProductId, item.title, sellerSku);
-        }
-      } else {
-        const dup = checkImportDuplicate(dedupe, item.title, sellerSku);
-        if (dup.duplicate) {
-          action = "skip";
-          skipReason = dup.reason;
-          skippedDuplicates++;
-        } else {
-          registerProductInDedupeIndex(dedupe, `preview-${item.id}`, item.title, sellerSku);
-        }
-      }
-
-      const pics = item.pictures || [];
-      const thumb = pics[0]?.secure_url || pics[0]?.url || null;
-
-      rows.push({
-        id: item.id,
-        title: item.title,
-        thumbnailUrl: thumb,
-        meliPrice: primaryPriceFromMeliItem(item),
-        meliStock: aggregateStockFromMeliItem(item),
-        localPrice: local ? local.price : null,
-        localStock: local ? local.stock : null,
-        sellerSku,
-        status,
-        condition,
-        listingType,
-        sold: Math.max(0, item.sold_quantity ?? 0),
-        action,
-        skipReason,
-        meliCategoryId: item.category_id || null,
-        hasVariations: Boolean(item.variations?.length),
-        isCatalogListing: catalogListing,
-      });
-    }
-
-  if (toCreate > 0 && skippedDuplicates > 0) {
-    toCreate = Math.max(0, toCreate - skippedDuplicates);
-  }
+  const summary = summarizePreviewRows(rows);
+  const linkedFromDb = await countLinkedMeliIds(prismaUserId, uniqueIds);
 
   return {
     totalFound,
     uniqueFound: uniqueIds.length,
     pagingTotal: collected.pagingTotal,
     pagesScanned: collected.pages,
-    alreadyLinked,
-    toCreate,
-    toUpdate,
-    skippedDuplicates,
-    breakdown: { byStatus, byCondition, byListingType },
+    alreadyLinked: linkedFromDb.alreadyLinked,
+    toCreate: summary.toCreate,
+    toUpdate: summary.toUpdate,
+    skippedDuplicates: summary.skippedDuplicates + batch.skippedByKind,
+    breakdown: summary.breakdown,
     rows,
     samples: rows,
     warnings,
