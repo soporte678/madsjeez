@@ -19,6 +19,8 @@ import {
   Check,
   FileDown,
   ArrowRightLeft,
+  ScanLine,
+  Rocket,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -212,6 +214,13 @@ export default function MeliIntegrationView() {
   const [loadingStatus, setLoadingStatus] = useState(true);
   const [importing, setImporting] = useState(false);
   const [importProgress, setImportProgress] = useState<{ done: number; total: number } | null>(null);
+  const [liveScan, setLiveScan] = useState<{
+    status: "idle" | "scanning" | "done" | "error";
+    pages: number;
+    ids: string[];
+    pagingTotal: number | null;
+    error?: string;
+  }>({ status: "idle", pages: 0, ids: [], pagingTotal: null });
   const [pushing, setPushing] = useState(false);
   const [syncingCamp, setSyncingCamp] = useState(false);
   const [promoPreview, setPromoPreview] = useState<string | null>(null);
@@ -231,6 +240,10 @@ export default function MeliIntegrationView() {
   const [loadingLocal, setLoadingLocal] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [listingKind, setListingKind] = useState<MeliListingKind>("standard");
+
+  useEffect(() => {
+    setLiveScan({ status: "idle", pages: 0, ids: [], pagingTotal: null });
+  }, [listingKind, selectedAccountId]);
   const [targetAccountId, setTargetAccountId] = useState<string | null>(null);
   const [mlaPasteText, setMlaPasteText] = useState("");
   const [publishingToAccount, setPublishingToAccount] = useState(false);
@@ -470,6 +483,145 @@ export default function MeliIntegrationView() {
   const headerPullIndeterminate =
     filteredRows.some((x) => selectedPullIds.has(x.id)) && !headerPullChecked;
 
+  const importMeliIdsInBatches = async (
+    itemIds: string[],
+    opts?: { onProgress?: (done: number, total: number) => void }
+  ) => {
+    let imported = 0;
+    let updated = 0;
+    let skipped = 0;
+    let errorCount = 0;
+    const errorSamples: string[] = [];
+
+    for (let i = 0; i < itemIds.length; i += MELI_IMPORT_BATCH_SIZE) {
+      const chunk = itemIds.slice(i, i + MELI_IMPORT_BATCH_SIZE);
+      opts?.onProgress?.(i, itemIds.length);
+
+      const r = await fetch("/api/meli/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          accountId: selectedAccountId,
+          persistImages: true,
+          listingKind,
+          confirmed: true,
+          itemIds: chunk,
+        }),
+      });
+      const d = await r.json();
+      if (!r.ok) {
+        throw new Error(d.error || `Error en lote ${Math.floor(i / MELI_IMPORT_BATCH_SIZE) + 1}`);
+      }
+      imported += Number(d.imported) || 0;
+      updated += Number(d.updated) || 0;
+      skipped += Number(d.skipped) || 0;
+      errorCount += Number(d.errorCount) || 0;
+      if (Array.isArray(d.errors)) errorSamples.push(...d.errors.slice(0, 2));
+    }
+
+    opts?.onProgress?.(itemIds.length, itemIds.length);
+    return { imported, updated, skipped, errorCount, errorSamples };
+  };
+
+  const runLiveScan = async () => {
+    if (!selectedAccountId) {
+      toast.error("Seleccioná una cuenta de Mercado Libre");
+      return;
+    }
+    setLiveScan({ status: "scanning", pages: 0, ids: [], pagingTotal: null });
+    setImporting(false);
+    const seen = new Set<string>();
+    let scrollId: string | undefined;
+    let pages = 0;
+    let pagingTotal: number | null = null;
+
+    try {
+      for (;;) {
+        const qs = new URLSearchParams({
+          accountId: selectedAccountId,
+          listingKind,
+        });
+        if (scrollId) qs.set("scrollId", scrollId);
+
+        const r = await fetch(`/api/meli/import/scan?${qs.toString()}`);
+        const d = await r.json();
+        if (!r.ok) {
+          throw new Error(d.error || "Error al escanear Mercado Libre");
+        }
+
+        pages++;
+        if (d.pagingTotal != null) pagingTotal = d.pagingTotal;
+        for (const id of d.ids || []) {
+          if (id) seen.add(id);
+        }
+
+        setLiveScan({
+          status: "scanning",
+          pages,
+          ids: [...seen],
+          pagingTotal,
+        });
+
+        if (d.done || !d.scrollId) break;
+        scrollId = d.scrollId;
+      }
+
+      const ids = [...seen];
+      setLiveScan({ status: "done", pages, ids, pagingTotal });
+      toast.success(`Escaneo completo: ${ids.length} publicaciones en Mercado Libre (${meliListingKindShort(listingKind)}).`);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Error de red";
+      setLiveScan({
+        status: "error",
+        pages,
+        ids: [...seen],
+        pagingTotal,
+        error: msg,
+      });
+      toast.error(msg);
+    }
+  };
+
+  const publishScannedToMarketplace = async () => {
+    if (liveScan.status !== "done" || !liveScan.ids.length) {
+      toast.error("Primero escaneá el catálogo de Mercado Libre en vivo");
+      return;
+    }
+    if (
+      !window.confirm(
+        `¿Publicar ${liveScan.ids.length} publicaciones en MADSJEEZ? Se importan en lotes desde la cuenta ML activa.`
+      )
+    ) {
+      return;
+    }
+
+    setImporting(true);
+    setRowPullErrors({});
+    setImportProgress({ done: 0, total: liveScan.ids.length });
+
+    try {
+      const result = await importMeliIdsInBatches(liveScan.ids, {
+        onProgress: (done, total) => setImportProgress({ done, total }),
+      });
+      toast.success(
+        `Marketplace actualizado: ${result.imported} nuevas, ${result.updated} actualizadas` +
+          (result.skipped > 0 ? `, ${result.skipped} omitidas` : "")
+      );
+      await loadImportPreview(true);
+      await loadStatus();
+      if (result.errorCount > 0) {
+        toast.message(`${result.errorCount} avisos`, {
+          description: result.errorSamples.slice(0, 4).join(" · "),
+        });
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Error al publicar en marketplace");
+    } finally {
+      setImporting(false);
+      setImportProgress(null);
+    }
+  };
+
   const runImportAll = async () => {
     if (!selectedAccountId) {
       toast.error("Seleccioná una cuenta de Mercado Libre");
@@ -518,34 +670,15 @@ export default function MeliIntegrationView() {
         `Importando ${itemIds.length} publicaciones (${meliListingKindShort(listingKind)}) en lotes de ${MELI_IMPORT_BATCH_SIZE}…`
       );
 
-      for (let i = 0; i < itemIds.length; i += MELI_IMPORT_BATCH_SIZE) {
-        const chunk = itemIds.slice(i, i + MELI_IMPORT_BATCH_SIZE);
-        setImportProgress({ done: i, total: itemIds.length });
+      const result = await importMeliIdsInBatches(itemIds, {
+        onProgress: (done, total) => setImportProgress({ done, total }),
+      });
+      imported = result.imported;
+      updated = result.updated;
+      skipped = result.skipped;
+      errorCount = result.errorCount;
+      errorSamples.push(...result.errorSamples);
 
-        const r = await fetch("/api/meli/import", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            accountId: selectedAccountId,
-            persistImages: true,
-            listingKind,
-            confirmed: true,
-            itemIds: chunk,
-          }),
-        });
-        const d = await r.json();
-        if (!r.ok) {
-          toast.error(d.error || `Error en lote ${Math.floor(i / MELI_IMPORT_BATCH_SIZE) + 1}`);
-          break;
-        }
-        imported += Number(d.imported) || 0;
-        updated += Number(d.updated) || 0;
-        skipped += Number(d.skipped) || 0;
-        errorCount += Number(d.errorCount) || 0;
-        if (Array.isArray(d.errors)) errorSamples.push(...d.errors.slice(0, 2));
-      }
-
-      setImportProgress({ done: itemIds.length, total: itemIds.length });
       toast.success(
         `Importación completa: ${imported} nuevas, ${updated} actualizadas` +
           (skipped > 0 ? `, ${skipped} omitidas` : "")
@@ -921,9 +1054,8 @@ export default function MeliIntegrationView() {
                 Importar publicaciones (Mercado Libre {"→"} MADSJEEZ)
               </h3>
               <p className="mt-1 text-sm text-slate-400">
-                Traé título, fotos, precio y stock desde Mercado Libre. Elegí el tipo en ML y usá{" "}
-                <strong className="text-slate-200">Importar todas</strong> para copiar el catálogo completo en lotes
-                (estándar, catálogo ML o ambos).
+                Escaneá en vivo todo el catálogo ML, revisá el conteo y publicá en MADSJEEZ con un clic. También podés
+                importar por lotes con <strong className="text-slate-200">Importar todas</strong>.
               </p>
             </div>
           </div>
@@ -942,7 +1074,40 @@ export default function MeliIntegrationView() {
             </label>
             <button
               type="button"
-              disabled={!meliStatus?.connected || loadingImportPreview || importing}
+              disabled={!meliStatus?.connected || liveScan.status === "scanning" || importing}
+              onClick={runLiveScan}
+              className={meliBtnGradient}
+              title="Lee página a página todas las publicaciones de la cuenta ML con progreso en vivo"
+            >
+              {liveScan.status === "scanning" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <ScanLine className="h-4 w-4" />
+              )}
+              {liveScan.status === "scanning"
+                ? `Escaneando… ${liveScan.ids.length}${liveScan.pagingTotal != null ? ` / ~${liveScan.pagingTotal}` : ""}`
+                : "Escanear catálogo ML (en vivo)"}
+            </button>
+            <button
+              type="button"
+              disabled={
+                !meliStatus?.connected ||
+                importing ||
+                liveScan.status !== "done" ||
+                liveScan.ids.length === 0
+              }
+              onClick={publishScannedToMarketplace}
+              className={meliBtnTeal}
+              title="Importa al marketplace todas las publicaciones del último escaneo"
+            >
+              {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
+              {importProgress && importProgress.total > 0
+                ? `Publicando ${Math.min(importProgress.done + MELI_IMPORT_BATCH_SIZE, importProgress.total)}/${importProgress.total}…`
+                : `Publicar en marketplace (${liveScan.ids.length || 0})`}
+            </button>
+            <button
+              type="button"
+              disabled={!meliStatus?.connected || loadingImportPreview || importing || liveScan.status === "scanning"}
               onClick={() => loadImportPreview()}
               className={meliBtnGhost}
             >
@@ -975,6 +1140,33 @@ export default function MeliIntegrationView() {
               Aplicar seleccionadas ({selectedPullIds.size})
             </button>
           </div>
+
+          {(liveScan.status === "scanning" || liveScan.status === "done" || liveScan.status === "error") && (
+            <div className="rounded-xl border border-cyan-500/20 bg-cyan-950/20 p-4 space-y-2">
+              <p className="text-xs font-medium text-cyan-100">
+                Escaneo en vivo — {liveScan.status === "scanning" ? "leyendo Mercado Libre…" : liveScan.status === "done" ? "completo" : "con avisos"}
+              </p>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-slate-800">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-violet-500 transition-all duration-300"
+                  style={{
+                    width:
+                      liveScan.pagingTotal && liveScan.pagingTotal > 0
+                        ? `${Math.min(100, (liveScan.ids.length / liveScan.pagingTotal) * 100)}%`
+                        : liveScan.status === "done"
+                          ? "100%"
+                          : `${Math.min(95, liveScan.pages * 8)}%`,
+                  }}
+                />
+              </div>
+              <p className="text-xs text-slate-400">
+                {liveScan.ids.length} publicaciones detectadas
+                {liveScan.pagingTotal != null ? ` · ML reporta ~${liveScan.pagingTotal}` : ""}
+                {liveScan.pages > 0 ? ` · ${liveScan.pages} páginas leídas` : ""}
+                {liveScan.error ? ` · ${liveScan.error}` : ""}
+              </p>
+            </div>
+          )}
 
           {importPreview && (
             <div className="rounded-xl border border-white/10 bg-slate-950/40 p-4 space-y-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">

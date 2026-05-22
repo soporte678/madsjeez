@@ -2,7 +2,8 @@
 import { useState, useEffect, useCallback } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { Search, Edit, Trash2, Pause, Play, Plus, ChevronLeft, ChevronRight } from "lucide-react"
+import { Search, Edit, Trash2, Pause, Play, Plus, ChevronLeft, ChevronRight, Loader2, CopyMinus } from "lucide-react"
+import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import PublicarFlow from "@/components/dashboard/PublicarFlow"
@@ -55,6 +56,7 @@ export default function Page() {
   const [totalPages, setTotalPages] = useState(1)
   const [showFlow, setShowFlow] = useState(false)
   const [editingProduct, setEditingProduct] = useState<P | null>(null)
+  const [deduping, setDeduping] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -139,6 +141,55 @@ export default function Page() {
     load()
   }
 
+  const removeDuplicatePublications = async () => {
+    setDeduping(true)
+    try {
+      const previewRes = await fetch("/api/dashboard/products/dedupe-duplicates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dryRun: true }),
+      })
+      const preview = await previewRes.json()
+      if (!previewRes.ok) {
+        toast.error(preview.error || "No se pudo analizar duplicados")
+        return
+      }
+      if (!preview.toRemove) {
+        toast.message("No hay duplicados", {
+          description: "Ninguna publicación coincide en 2 de 3: título, SKU y precio.",
+        })
+        return
+      }
+      const skipNote =
+        preview.skippedWithOrders > 0
+          ? `\n\n${preview.skippedWithOrders} tienen ventas y no se borrarán.`
+          : ""
+      if (
+        !confirm(
+          `Se eliminarán ${preview.toRemove} publicaciones duplicadas (${preview.groups} grupos).${skipNote}\n\n¿Continuar?`
+        )
+      ) {
+        return
+      }
+      const execRes = await fetch("/api/dashboard/products/dedupe-duplicates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dryRun: false }),
+      })
+      const result = await execRes.json()
+      if (!execRes.ok) {
+        toast.error(result.error || "Error al eliminar duplicados")
+        return
+      }
+      toast.success(`Eliminadas ${result.toRemove} publicaciones duplicadas`)
+      load()
+    } catch {
+      toast.error("Error de red al eliminar duplicados")
+    } finally {
+      setDeduping(false)
+    }
+  }
+
   // PublicarFlow overlay
   if (showFlow) {
     return (
@@ -165,6 +216,17 @@ export default function Page() {
               Zipnova conectado
             </span>
           )}
+          <Button
+            type="button"
+            variant="outline"
+            disabled={deduping}
+            onClick={removeDuplicatePublications}
+            className="border-amber-300 text-amber-900 hover:bg-amber-50"
+            title="Elimina duplicados si coinciden al menos 2 de: título, SKU y precio"
+          >
+            {deduping ? <Loader2 size={18} className="mr-1 animate-spin" /> : <CopyMinus size={18} className="mr-1" />}
+            Quitar duplicados
+          </Button>
           <Button onClick={openCreate} className="bg-primary hover:bg-primary-hover text-primary-foreground font-semibold"><Plus size={18} className="mr-1" />Nueva</Button>
         </div>
       </div>

@@ -3,9 +3,10 @@ import { useState, useEffect, useCallback, useRef } from "react"
 import {
   Search, Edit, Trash2, Pause, Play, Plus, ChevronLeft, ChevronRight,
   MoreVertical, Eye, Copy, ChevronDown, CheckCircle2, AlertCircle,
-  Info, TrendingDown, TrendingUp, Filter, ShoppingCart, Image as ImageIcon
+  Info, TrendingDown, TrendingUp, Filter, ShoppingCart, Image as ImageIcon, Loader2, CopyMinus
 } from "lucide-react"
 import PublicarFlow from "@/components/dashboard/PublicarFlow"
+import { toast } from "sonner"
 
 interface P { id: string; title: string; description: string | null; sku: string | null; price: number; originalPrice: number | null; stock: number; isActive: boolean; views: number; sales: number; condition: string; freeShipping: boolean; shippingCost: number; qualityScore: number; categoryId: string | null; category: { name: string } | null; images: { url: string }[]; source?: "prisma" | "supabase"; isCatalog?: boolean }
 interface S { active: number; paused: number; lowStock: number; noSales: number }
@@ -41,6 +42,7 @@ export default function PublicacionesView() {
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [activeTab, setActiveTab] = useState(0)
+  const [deduping, setDeduping] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -119,6 +121,55 @@ export default function PublicacionesView() {
     requestAnimationFrame(() => window.scrollTo(0, scrollY))
   }
 
+  const removeDuplicatePublications = async () => {
+    setDeduping(true)
+    try {
+      const previewRes = await fetch("/api/dashboard/products/dedupe-duplicates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dryRun: true }),
+      })
+      const preview = await previewRes.json()
+      if (!previewRes.ok) {
+        toast.error(preview.error || "No se pudo analizar duplicados")
+        return
+      }
+      if (!preview.toRemove) {
+        toast.message("No hay duplicados", {
+          description: "Ninguna publicación coincide en 2 de 3: título, SKU y precio.",
+        })
+        return
+      }
+      const skipNote =
+        preview.skippedWithOrders > 0
+          ? `\n\n${preview.skippedWithOrders} tienen ventas y no se borrarán.`
+          : ""
+      if (
+        !confirm(
+          `Se eliminarán ${preview.toRemove} publicaciones duplicadas (${preview.groups} grupos). Se conserva la más completa por grupo (MLA, ventas).${skipNote}\n\n¿Continuar?`
+        )
+      ) {
+        return
+      }
+      const execRes = await fetch("/api/dashboard/products/dedupe-duplicates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dryRun: false }),
+      })
+      const result = await execRes.json()
+      if (!execRes.ok) {
+        toast.error(result.error || "Error al eliminar duplicados")
+        return
+      }
+      toast.success(`Eliminadas ${result.toRemove} publicaciones duplicadas`)
+      await load()
+    } catch {
+      toast.error("Error de red al eliminar duplicados")
+    } finally {
+      setDeduping(false)
+    }
+  }
+
   if (showFlow) {
     return <PublicarFlow onClose={() => { setShowFlow(false); setEditingProduct(null) }} onPublished={handlePublished} editProduct={editingProduct || undefined} />
   }
@@ -166,7 +217,17 @@ export default function PublicacionesView() {
             {i === activeTab && <div className="absolute bottom-[-1px] left-0 w-full h-[3px] bg-primary rounded-t-sm" />}
           </button>
         ))}
-        <div className="ml-auto pb-3 pt-4">
+        <div className="ml-auto pb-3 pt-4 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={removeDuplicatePublications}
+            disabled={deduping}
+            className="border border-amber-300/60 bg-amber-50 text-amber-900 font-medium text-[13px] h-9 px-3 rounded-md flex items-center gap-1.5 hover:bg-amber-100 disabled:opacity-50"
+            title="Elimina duplicados si coinciden al menos 2 de: título, SKU y precio"
+          >
+            {deduping ? <Loader2 size={16} className="animate-spin" /> : <CopyMinus size={16} />}
+            Quitar duplicados
+          </button>
           <button onClick={openCreate} className="bg-primary hover:bg-primary-hover text-primary-foreground font-medium text-[13px] h-9 px-4 rounded-md flex items-center gap-1.5 transition-colors">
             <Plus size={16} /> Nueva publicación
           </button>

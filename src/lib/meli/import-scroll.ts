@@ -75,6 +75,50 @@ export async function collectMeliItemIds(
   return { ids: [...seen], pages, pagingTotal, warnings };
 }
 
+export type MeliScanPageResult = {
+  ids: string[];
+  nextScrollId: string | null;
+  done: boolean;
+  pagingTotal: number | null;
+  status: number;
+};
+
+/** Una página del scan ML (para progreso en vivo en UI). */
+export async function fetchMeliItemIdsPage(
+  accessToken: string,
+  meliUserId: string,
+  listingKind: MeliListingKind,
+  scrollId?: string
+): Promise<MeliScanPageResult> {
+  const search = await meliSearchUserItems(accessToken, meliUserId, scrollId, listingKind);
+  if (!search.ok) {
+    return {
+      ids: [],
+      nextScrollId: null,
+      done: true,
+      pagingTotal: null,
+      status: search.status,
+    };
+  }
+
+  const payload = search.data as {
+    results?: string[];
+    scroll_id?: string;
+    paging?: { total?: number };
+  };
+  const ids = (payload.results || []).filter(Boolean);
+  const nextScrollId = payload.scroll_id || null;
+  const done = !ids.length || !nextScrollId;
+
+  return {
+    ids,
+    nextScrollId: done ? null : nextScrollId,
+    done,
+    pagingTotal: payload.paging?.total ?? null,
+    status: search.status,
+  };
+}
+
 /** Ejecuta fn con concurrencia acotada (rate-limit friendly). */
 export async function runPool<T, R>(
   items: T[],
