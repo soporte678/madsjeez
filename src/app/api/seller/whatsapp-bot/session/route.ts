@@ -54,7 +54,13 @@ export async function POST() {
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "connect_failed";
-    return NextResponse.json({ error: msg }, { status: 503 });
+    return NextResponse.json(
+      {
+        error: msg.includes("evolution") ? "evolution_error" : "connect_failed",
+        message: msg,
+      },
+      { status: 503 }
+    );
   }
 }
 

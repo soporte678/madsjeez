@@ -1,5 +1,6 @@
 export function getWhatsappBotEnv() {
   const evolutionUrl = process.env.EVOLUTION_API_URL?.replace(/\/$/, "") || "";
+  const evolutionBasePath = process.env.EVOLUTION_API_BASE_PATH?.trim() || "";
   const evolutionKey = process.env.EVOLUTION_API_KEY?.trim() || "";
   const instancePrefix =
     process.env.EVOLUTION_DEFAULT_INSTANCE_PREFIX?.trim() || "madsjeez_seller_";
@@ -13,6 +14,7 @@ export function getWhatsappBotEnv() {
 
   return {
     evolutionUrl,
+    evolutionBasePath,
     evolutionKey,
     instancePrefix,
     webhookSecret,

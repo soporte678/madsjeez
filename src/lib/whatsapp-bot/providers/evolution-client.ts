@@ -3,17 +3,25 @@ import { getWhatsappBotEnv } from "../config";
 const DEFAULT_TIMEOUT_MS = 15_000;
 const MAX_RETRIES = 2;
 
+export function buildEvolutionRequestUrl(path: string): string {
+  const { evolutionUrl, evolutionBasePath } = getWhatsappBotEnv();
+  const base = evolutionUrl.replace(/\/$/, "");
+  const prefix = evolutionBasePath ? `/${evolutionBasePath.replace(/^\/|\/$/g, "")}` : "";
+  const p = path.startsWith("/") ? path : `/${path}`;
+  return `${base}${prefix}${p}`;
+}
+
 async function evolutionFetch(
   path: string,
   init?: RequestInit & { timeoutMs?: number }
 ): Promise<Response> {
-  const { evolutionUrl, evolutionKey } = getWhatsappBotEnv();
-  if (!evolutionUrl || !evolutionKey) {
+  const { evolutionKey } = getWhatsappBotEnv();
+  if (!evolutionKey) {
     throw new Error("evolution_not_configured");
   }
 
   const timeoutMs = init?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-  const url = `${evolutionUrl}${path.startsWith("/") ? path : `/${path}`}`;
+  const url = buildEvolutionRequestUrl(path);
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     apikey: evolutionKey,
@@ -44,6 +52,7 @@ async function evolutionFetch(
 }
 
 export async function evolutionJson<T>(path: string, init?: RequestInit): Promise<T> {
+  const url = buildEvolutionRequestUrl(path);
   const res = await evolutionFetch(path, init);
   const text = await res.text();
   let body: unknown = null;
@@ -58,8 +67,13 @@ export async function evolutionJson<T>(path: string, init?: RequestInit): Promis
     const msg =
       typeof body === "object" && body && "message" in body
         ? String((body as { message: unknown }).message)
-        : `HTTP ${res.status}`;
-    throw new Error(`evolution_error:${msg}`);
+        : typeof body === "object" && body && "error" in body
+          ? String((body as { error: unknown }).error)
+          : `HTTP ${res.status}`;
+    const err = new Error(`evolution_error:${msg}`);
+    (err as Error & { status?: number; url?: string }).status = res.status;
+    (err as Error & { status?: number; url?: string }).url = url;
+    throw err;
   }
   return body as T;
 }

@@ -83,14 +83,40 @@ OLLAMA_MODEL=qwen2.5:7b
 Webhook público (configurar en Evolution):  
 `https://<tu-dominio>/api/webhooks/evolution`
 
-## Evolution API (local)
+## Evolution API (servidor aparte — obligatorio)
+
+**`EVOLUTION_API_URL` NO es la URL de Madsjeez.** Es la URL del servidor donde corre Evolution (otro Docker, VPS o Railway service).
+
+Ejemplo correcto en Railway (Madsjeez):
+```env
+EVOLUTION_API_URL=https://evolution-production-xxxx.up.railway.app
+EVOLUTION_API_KEY=la_misma_que_AUTHENTICATION_API_KEY_del_contenedor
+```
+
+Ejemplo **incorrecto** (causa HTTP 404 en logs):
+```env
+EVOLUTION_API_URL=https://www.madsjeez.com.ar   # ← esto es tu Next.js, no Evolution
+```
+
+### Local (Docker)
 
 ```bash
-docker run -d --name evolution-api \
-  -p 8080:8080 \
-  -e AUTHENTICATION_API_KEY=tu_clave \
-  atendai/evolution-api:latest
+docker run -d --name evolution-api -p 8080:8080 -e AUTHENTICATION_API_KEY=tu_clave atendai/evolution-api:latest
 ```
+
+En `.env.local` de Madsjeez:
+```env
+EVOLUTION_API_URL=http://localhost:8080
+EVOLUTION_API_KEY=tu_clave
+```
+
+Probar desde PowerShell:
+```powershell
+curl http://localhost:8080/instance/fetchInstances -H "apikey: tu_clave"
+```
+Debe responder JSON (lista de instancias), no HTML de Next.js.
+
+Si tu proxy usa prefijo de ruta: `EVOLUTION_API_BASE_PATH=/api` (opcional).
 
 En el panel Evolution, apuntá el webhook global a la URL de Madsjeez y el mismo `EVOLUTION_WEBHOOK_SECRET` si lo usás.
 

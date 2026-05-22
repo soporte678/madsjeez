@@ -159,10 +159,13 @@ export default function WhatsappBotView() {
       const res = await fetch("/api/seller/whatsapp-bot/session", { method: "POST" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
+        const detail = typeof data.message === "string" ? data.message : data.error;
         toast.error(
           data.error === "evolution_not_configured"
             ? "Evolution API no configurada en el servidor"
-            : "Error al conectar"
+            : detail && detail.length > 20
+              ? detail.slice(0, 280)
+              : "Error al conectar con Evolution. Revisá EVOLUTION_API_URL en Railway."
         );
         return;
       }

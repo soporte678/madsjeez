@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { buildInstanceName, getWhatsappBotEnv } from "./config";
+import { checkEvolutionApiHealth } from "./evolution-health";
 import { getWhatsAppProvider } from "./providers/evolution-provider";
 
 export async function getOrCreateWhatsappSession(sellerId: string) {
@@ -23,6 +24,11 @@ export async function connectSellerWhatsapp(sellerId: string) {
   const env = getWhatsappBotEnv();
   if (!env.evolutionConfigured) {
     throw new Error("evolution_not_configured");
+  }
+
+  const health = await checkEvolutionApiHealth();
+  if (!health.ok) {
+    throw new Error(health.hint || health.error || "evolution_unreachable");
   }
 
   const session = await getOrCreateWhatsappSession(sellerId);

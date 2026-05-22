@@ -12,12 +12,20 @@ type EvolutionConnectResponse = {
   base64?: string;
   code?: string;
   pairingCode?: string;
+  qrcode?: { base64?: string };
   count?: number;
 };
 
 type EvolutionStateResponse = {
-  instance?: { instanceName?: string; state?: string };
+  instance?: { instanceName?: string; state?: string; status?: string };
   state?: string;
+  status?: string;
+};
+
+type FetchInstanceRow = {
+  name?: string;
+  instanceName?: string;
+  instance?: { instanceName?: string; instance?: string };
 };
 
 function mapConnectionState(raw?: string): ConnectionStateResult["status"] {
@@ -31,9 +39,73 @@ function mapConnectionState(raw?: string): ConnectionStateResult["status"] {
 
 function extractQr(data: EvolutionConnectResponse | null): string | null {
   if (!data) return null;
-  if (data.base64) return data.base64.startsWith("data:") ? data.base64 : `data:image/png;base64,${data.base64}`;
+  const b64 = data.base64 ?? data.qrcode?.base64;
+  if (b64) return b64.startsWith("data:") ? b64 : `data:image/png;base64,${b64}`;
   if (data.code) return data.code;
   return null;
+}
+
+function evolutionErrorHint(e: unknown): string {
+  const err = e as Error & { status?: number; url?: string };
+  if (err.status === 404) {
+    return "Evolution API no encontrada (404). EVOLUTION_API_URL debe ser el host de Evolution, no Madsjeez. Ver docs/whatsapp-seller-bot.md";
+  }
+  if (err.status === 401 || err.status === 403) {
+    return "API key de Evolution incorrecta (EVOLUTION_API_KEY).";
+  }
+  return err.message || "evolution_failed";
+}
+
+async function listInstanceNames(): Promise<string[]> {
+  try {
+    const raw = await evolutionJson<FetchInstanceRow[] | { instances?: FetchInstanceRow[] }>(
+      "/instance/fetchInstances",
+      { method: "GET" }
+    );
+    const rows = Array.isArray(raw) ? raw : (raw.instances ?? []);
+    return rows
+      .map(
+        (r) =>
+          r.instanceName ??
+          r.name ??
+          r.instance?.instanceName ??
+          r.instance?.instance ??
+          ""
+      )
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+async function ensureInstanceCreated(
+  instanceName: string,
+  webhookUrl: string,
+  webhookSecret: string
+): Promise<void> {
+  const existing = await listInstanceNames();
+  if (existing.some((n) => n === instanceName)) {
+    logEvolutionSafe("instance_already_exists", { instanceName });
+    return;
+  }
+
+  await evolutionJson("/instance/create", {
+    method: "POST",
+    body: JSON.stringify({
+      instanceName,
+      qrcode: true,
+      integration: "WHATSAPP-BAILEYS",
+      webhook: {
+        url: webhookUrl,
+        byEvents: false,
+        events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE"],
+        headers: webhookSecret
+          ? { "x-madsjeez-webhook-secret": webhookSecret }
+          : undefined,
+      },
+    }),
+  });
+  logEvolutionSafe("instance_created", { instanceName });
 }
 
 export class EvolutionWhatsAppProvider implements WhatsAppProvider {
@@ -45,25 +117,11 @@ export class EvolutionWhatsAppProvider implements WhatsAppProvider {
     const webhookUrl = `${appBase}/api/webhooks/evolution`;
 
     try {
-      await evolutionJson("/instance/create", {
-        method: "POST",
-        body: JSON.stringify({
-          instanceName,
-          qrcode: true,
-          integration: "WHATSAPP-BAILEYS",
-          webhook: {
-            url: webhookUrl,
-            enabled: true,
-            webhookByEvents: false,
-            events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE"],
-            headers: webhookSecret ? { "x-madsjeez-webhook-secret": webhookSecret } : undefined,
-          },
-        }),
-      });
-      logEvolutionSafe("instance_created", { instanceName });
+      await ensureInstanceCreated(instanceName, webhookUrl, webhookSecret);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "create_failed";
-      if (!msg.includes("already") && !msg.toLowerCase().includes("exist")) {
+      const msg = evolutionErrorHint(e);
+      const raw = e instanceof Error ? e.message : "create_failed";
+      if (!raw.toLowerCase().includes("already") && !raw.toLowerCase().includes("exist")) {
         logEvolutionSafe("instance_create_error", { instanceName, error: msg });
         return {
           providerInstanceId: instanceName,
@@ -91,8 +149,11 @@ export class EvolutionWhatsAppProvider implements WhatsAppProvider {
         error: state.error,
       };
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "connect_failed";
-      return { providerInstanceId, status: "error", error: msg };
+      return {
+        providerInstanceId,
+        status: "error",
+        error: evolutionErrorHint(e),
+      };
     }
   }
 
@@ -102,7 +163,8 @@ export class EvolutionWhatsAppProvider implements WhatsAppProvider {
         `/instance/connectionState/${encodeURIComponent(providerInstanceId)}`,
         { method: "GET" }
       );
-      const rawState = data.instance?.state ?? data.state;
+      const rawState =
+        data.instance?.state ?? data.instance?.status ?? data.state ?? data.status;
       const status = mapConnectionState(rawState);
       if (status === "connected") {
         return { status: "connected", qrCode: null };
@@ -122,7 +184,7 @@ export class EvolutionWhatsAppProvider implements WhatsAppProvider {
     } catch (e) {
       return {
         status: "error",
-        error: e instanceof Error ? e.message : "state_failed",
+        error: evolutionErrorHint(e),
       };
     }
   }
@@ -149,7 +211,7 @@ export class EvolutionWhatsAppProvider implements WhatsAppProvider {
         providerMessageId: data.key?.id ?? data.messageId,
       };
     } catch (e) {
-      return { ok: false, error: e instanceof Error ? e.message : "send_failed" };
+      return { ok: false, error: evolutionErrorHint(e) };
     }
   }
 
@@ -161,7 +223,7 @@ export class EvolutionWhatsAppProvider implements WhatsAppProvider {
     } catch (e) {
       logEvolutionSafe("logout_error", {
         instance: providerInstanceId,
-        error: e instanceof Error ? e.message : "unknown",
+        error: evolutionErrorHint(e),
       });
     }
   }
