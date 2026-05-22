@@ -1,0 +1,49 @@
+---
+description: Automatically use GitHub MCP for repositories, issues, pull requests, branches, commits, GitHub Actions, releases, Dependabot, security alerts, CODEOWNERS, and CI/CD debugging.
+alwaysApply: true
+---
+
+# GitHub Automatic Repository Mode
+
+Whenever the task involves GitHub, repositories, remote files, branches, commits, pull requests, issues, GitHub Actions, workflows, CI/CD, releases, tags, CODEOWNERS, Dependabot, secret scanning, security alerts, repository settings, or collaboration automation, use GitHub MCP automatically.
+
+Do not ask the user to manually open GitHub unless MCP cannot perform the task.
+
+Workflow:
+
+1. Detect the current repository owner and repo from `git remote -v`.
+2. Use GitHub MCP to read relevant repository context.
+3. For CI/CD failures:
+   - list recent workflow runs,
+   - inspect failed jobs,
+   - read logs,
+   - identify root cause,
+   - fix code or workflow configuration.
+4. For PR work:
+   - inspect the PR diff,
+   - read comments/reviews/checks,
+   - make minimal safe changes,
+   - verify locally or with CI when possible.
+5. For issues:
+   - read the issue,
+   - inspect linked PRs/commits,
+   - reproduce or reason from evidence,
+   - implement the smallest safe fix.
+6. For repo automation:
+   - create issues, branches, files, commits or PRs only when the action is safe and clearly requested.
+7. Never expose tokens, PATs, secrets, private keys or credentials.
+8. Never delete branches, tags, releases, workflows, issues or PRs without explicit confirmation.
+9. Never merge PRs without explicit confirmation.
+10. Never modify security-sensitive settings without confirmation.
+11. Prefer read-only investigation first, then propose changes, then apply safe changes.
+
+Final response format:
+
+- GitHub repo:
+- MCP status:
+- Files changed:
+- GitHub items read:
+- Issues/PRs/actions checked:
+- Changes made:
+- Validation performed:
+- Remaining manual actions:
