@@ -1,5 +1,13 @@
+/** Acepta host sin esquema (ej. evolution-api-production-xxx.up.railway.app). */
+function normalizeEvolutionBaseUrl(raw: string | undefined): string {
+  const trimmed = (raw || "").trim().replace(/\/$/, "");
+  if (!trimmed) return "";
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
+
 export function getWhatsappBotEnv() {
-  const evolutionUrl = process.env.EVOLUTION_API_URL?.replace(/\/$/, "") || "";
+  const evolutionUrl = normalizeEvolutionBaseUrl(process.env.EVOLUTION_API_URL);
   const evolutionBasePath = process.env.EVOLUTION_API_BASE_PATH?.trim() || "";
   const evolutionKey = process.env.EVOLUTION_API_KEY?.trim() || "";
   const instancePrefix =
