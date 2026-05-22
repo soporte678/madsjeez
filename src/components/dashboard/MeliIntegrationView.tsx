@@ -83,6 +83,18 @@ type ImportPreview = {
 
 const MELI_IMPORT_BATCH_SIZE = 35;
 
+function meliListingKindLabel(kind: MeliListingKind): string {
+  if (kind === "standard") return "estándar (sin catálogo ML)";
+  if (kind === "catalog") return "solo catálogo ML";
+  return "todas (estándar + catálogo ML)";
+}
+
+function meliListingKindShort(kind: MeliListingKind): string {
+  if (kind === "standard") return "estándar";
+  if (kind === "catalog") return "catálogo ML";
+  return "todas";
+}
+
 type LocalUnpublished = {
   id: string;
   title: string;
@@ -458,14 +470,15 @@ export default function MeliIntegrationView() {
   const headerPullIndeterminate =
     filteredRows.some((x) => selectedPullIds.has(x.id)) && !headerPullChecked;
 
-  const runImportAllStandard = async () => {
+  const runImportAll = async () => {
     if (!selectedAccountId) {
       toast.error("Seleccioná una cuenta de Mercado Libre");
       return;
     }
+    const kindLabel = meliListingKindLabel(listingKind);
     if (
       !window.confirm(
-        "¿Importar TODAS las publicaciones estándar de esta cuenta ML? (sin catálogo ML). Se procesan en lotes; puede tardar varios minutos si tenés miles de publicaciones."
+        `¿Importar TODAS las publicaciones (${kindLabel}) de esta cuenta ML? Se procesan en lotes; puede tardar varios minutos si tenés miles de publicaciones.`
       )
     ) {
       return;
@@ -485,7 +498,7 @@ export default function MeliIntegrationView() {
         maxPages: "0",
         importAll: "1",
         accountId: selectedAccountId,
-        listingKind: "standard",
+        listingKind,
       });
       const listRes = await fetch(`/api/meli/import?${listQs.toString()}`);
       const listData = await listRes.json();
@@ -496,12 +509,14 @@ export default function MeliIntegrationView() {
 
       const itemIds: string[] = Array.isArray(listData.itemIds) ? listData.itemIds : [];
       if (!itemIds.length) {
-        toast.message("No hay publicaciones estándar para importar en esta cuenta.");
+        toast.message(`No hay publicaciones (${meliListingKindShort(listingKind)}) para importar en esta cuenta.`);
         return;
       }
 
       setImportProgress({ done: 0, total: itemIds.length });
-      toast.message(`Importando ${itemIds.length} publicaciones en lotes de ${MELI_IMPORT_BATCH_SIZE}…`);
+      toast.message(
+        `Importando ${itemIds.length} publicaciones (${meliListingKindShort(listingKind)}) en lotes de ${MELI_IMPORT_BATCH_SIZE}…`
+      );
 
       for (let i = 0; i < itemIds.length; i += MELI_IMPORT_BATCH_SIZE) {
         const chunk = itemIds.slice(i, i + MELI_IMPORT_BATCH_SIZE);
@@ -513,7 +528,7 @@ export default function MeliIntegrationView() {
           body: JSON.stringify({
             accountId: selectedAccountId,
             persistImages: true,
-            listingKind: "standard",
+            listingKind,
             confirmed: true,
             itemIds: chunk,
           }),
@@ -906,8 +921,9 @@ export default function MeliIntegrationView() {
                 Importar publicaciones (Mercado Libre {"→"} MADSJEEZ)
               </h3>
               <p className="mt-1 text-sm text-slate-400">
-                Traé título, fotos, precio y stock desde Mercado Libre. Por defecto solo publicaciones{" "}
-                <strong className="text-slate-200">estándar</strong> (sin catálogo ML).
+                Traé título, fotos, precio y stock desde Mercado Libre. Elegí el tipo en ML y usá{" "}
+                <strong className="text-slate-200">Importar todas</strong> para copiar el catálogo completo en lotes
+                (estándar, catálogo ML o ambos).
               </p>
             </div>
           </div>
@@ -940,14 +956,14 @@ export default function MeliIntegrationView() {
             <button
               type="button"
               disabled={!meliStatus?.connected || importing}
-              onClick={runImportAllStandard}
+              onClick={runImportAll}
               className={meliBtnGradient}
-              title="Importa todas las publicaciones estándar de la cuenta activa sin seleccionar fila por fila"
+              title={`Importa todas las publicaciones (${meliListingKindShort(listingKind)}) de la cuenta activa sin seleccionar fila por fila`}
             >
               {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
               {importProgress && importProgress.total > 0
                 ? `Importando ${Math.min(importProgress.done + MELI_IMPORT_BATCH_SIZE, importProgress.total)}/${importProgress.total}…`
-                : "Importar todas (solo estándar)"}
+                : `Importar todas (${meliListingKindShort(listingKind)})`}
             </button>
             <button
               type="button"
