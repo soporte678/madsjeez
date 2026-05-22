@@ -18,8 +18,6 @@ import {
   Users,
 } from "lucide-react"
 import { toast } from "sonner"
-import { createClient } from "@/lib/supabase/client"
-
 interface DashboardStats {
   ventasDia: number
   enviosDemora: number
@@ -68,65 +66,16 @@ export default function AdminDashboardPage() {
   }, [])
 
   const fetchDashboardData = async () => {
-    const supabase = createClient()
     setLoading(true)
 
     try {
-      const today = new Date().toISOString().split("T")[0]
-      const { data: ventasHoy } = await supabase
-        .from("orders")
-        .select("total_amount")
-        .gte("created_at", today)
-        .eq("status", "DELIVERED")
+      const statsRes = await fetch("/api/admin/dashboard-stats", { credentials: "include" })
+      if (!statsRes.ok) {
+        throw new Error("dashboard-stats failed")
+      }
+      const core = await statsRes.json()
 
-      const ventasDia =
-        ventasHoy?.reduce((acc, order) => acc + (order.total_amount || 0), 0) || 0
-
-      const { count: enviosDemora } = await supabase
-        .from("shipments")
-        .select("*", { count: "exact", head: true })
-        .eq("status", "delayed")
-
-      const { count: mediacionesAbiertas } = await supabase
-        .from("disputes")
-        .select("*", { count: "exact", head: true })
-        .eq("status", "open")
-
-      const { count: fraudesBloqueados } = await supabase
-        .from("fraud_logs")
-        .select("*", { count: "exact", head: true })
-        .eq("action_taken", "blocked")
-        .gte(
-          "created_at",
-          new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-        )
-
-      const { count: totalUsuarios } = await supabase
-        .from("profiles")
-        .select("*", { count: "exact", head: true })
-
-      const { count: totalProductos } = await supabase
-        .from("products")
-        .select("*", { count: "exact", head: true })
-
-      const { count: totalOrdenes } = await supabase
-        .from("orders")
-        .select("*", { count: "exact", head: true })
-
-      const firstDayOfMonth = new Date()
-      firstDayOfMonth.setDate(1)
-      firstDayOfMonth.setHours(0, 0, 0, 0)
-
-      const { data: revenueData } = await supabase
-        .from("orders")
-        .select("total_amount")
-        .gte("created_at", firstDayOfMonth.toISOString())
-        .eq("status", "DELIVERED")
-
-      const ingresosMes =
-        revenueData?.reduce((acc, order) => acc + (order.total_amount || 0), 0) || 0
-
-      const trafficRes = await fetch("/api/admin/traffic/summary")
+      const trafficRes = await fetch("/api/admin/traffic/summary", { credentials: "include" })
       const traffic = trafficRes.ok
         ? await trafficRes.json()
         : {
@@ -141,14 +90,14 @@ export default function AdminDashboardPage() {
           }
 
       setStats({
-        ventasDia,
-        enviosDemora: enviosDemora || 0,
-        mediacionesAbiertas: mediacionesAbiertas || 0,
-        fraudesBloqueados: fraudesBloqueados || 0,
-        totalUsuarios: totalUsuarios || 0,
-        totalProductos: totalProductos || 0,
-        totalOrdenes: totalOrdenes || 0,
-        ingresosMes,
+        ventasDia: core.ventasDia ?? 0,
+        enviosDemora: core.enviosDemora ?? 0,
+        mediacionesAbiertas: core.mediacionesAbiertas ?? 0,
+        fraudesBloqueados: core.fraudesBloqueados ?? 0,
+        totalUsuarios: core.totalUsuarios ?? 0,
+        totalProductos: core.totalProductos ?? 0,
+        totalOrdenes: core.totalOrdenes ?? 0,
+        ingresosMes: core.ingresosMes ?? 0,
         visitas30d: traffic.total || 0,
         organico30d: traffic.organic || 0,
         pago30d: traffic.paid || 0,

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { DEFAULT_BUSINESS_HOURS, type BusinessHoursConfig } from "@/lib/whatsapp-bot/business-hours";
+import { WHATSAPP_INSTRUCTION_PRESETS } from "@/lib/whatsapp-bot/instruction-presets";
 
 type SessionState = {
   id: string;
@@ -94,6 +95,11 @@ export default function WhatsappBotView() {
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [sending, setSending] = useState(false);
+  const [aiHealth, setAiHealth] = useState<{
+    primary: string;
+    geminiConfigured: boolean;
+    ollamaConfigured: boolean;
+  } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const selected = conversations.find((c) => c.id === selectedId) ?? null;
@@ -113,10 +119,11 @@ export default function WhatsappBotView() {
 
   const loadAll = useCallback(async () => {
     try {
-      const [sessRes, convRes, leadsRes] = await Promise.all([
+      const [sessRes, convRes, leadsRes, healthRes] = await Promise.all([
         fetch("/api/seller/whatsapp-bot/session"),
         fetch("/api/seller/whatsapp-bot/conversations"),
         fetch("/api/seller/whatsapp-bot/leads"),
+        fetch("/api/seller/whatsapp-bot/health"),
       ]);
       if (sessRes.ok) {
         const data = await sessRes.json();
@@ -133,6 +140,10 @@ export default function WhatsappBotView() {
       if (leadsRes.ok) {
         const data = await leadsRes.json();
         setLeads(data.leads ?? []);
+      }
+      if (healthRes.ok) {
+        const h = await healthRes.json();
+        setAiHealth(h.ai ?? null);
       }
     } catch {
       toast.error("No se pudo cargar el bot de WhatsApp");
@@ -382,6 +393,24 @@ export default function WhatsappBotView() {
 
       <section className="rounded-xl border bg-card p-6 space-y-4">
         <h2 className="font-semibold">Configuración del bot</h2>
+        {aiHealth ? (
+          <p className="text-sm rounded-lg border px-3 py-2 bg-muted/40">
+            Motor IA:{" "}
+            <span className="font-medium">
+              {aiHealth.primary === "gemini"
+                ? "Gemini (recomendado)"
+                : aiHealth.primary === "ollama"
+                  ? "Ollama local"
+                  : "Solo reglas (sin IA generativa)"}
+            </span>
+            {aiHealth.primary === "rules" ? (
+              <span className="text-muted-foreground">
+                {" "}
+                — agregá <code className="text-xs">GEMINI_API_KEY</code> en Railway para respuestas inteligentes.
+              </span>
+            ) : null}
+          </p>
+        ) : null}
         <div className="grid sm:grid-cols-2 gap-3">
           <label className="flex items-center gap-2 text-sm">
             <input
@@ -456,10 +485,23 @@ export default function WhatsappBotView() {
         </div>
         <div>
           <label className="text-sm text-muted-foreground">Instrucciones personalizadas</label>
+          <div className="flex flex-wrap gap-2 mt-2 mb-2">
+            {WHATSAPP_INSTRUCTION_PRESETS.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                className="text-xs rounded-full border px-3 py-1 hover:bg-muted"
+                onClick={() => patchConfig({ customInstructions: p.text })}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
           <textarea
             className="mt-1 w-full border rounded-lg px-3 py-2 text-sm min-h-[80px] bg-background"
-            defaultValue={config?.customInstructions ?? ""}
+            value={config?.customInstructions ?? ""}
             placeholder="Ej: Ofrecé retiro en depósito si preguntan por CABA."
+            onChange={(e) => setConfig((c) => (c ? { ...c, customInstructions: e.target.value } : c))}
             onBlur={(e) => {
               if (e.target.value !== (config?.customInstructions ?? "")) {
                 patchConfig({ customInstructions: e.target.value });

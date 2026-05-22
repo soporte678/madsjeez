@@ -1,6 +1,7 @@
 import { getWhatsappBotEnv } from "./config";
 import type { WhatsappBotTone } from "@prisma/client";
 import { formatStoreContextForPrompt, type StoreContext } from "./seller-knowledge-service";
+import { generateGeminiWhatsappReply, isGeminiConfigured } from "./gemini-reply";
 
 const BASE_PROMPT = `Sos el asistente comercial de una tienda dentro de Madsjeez Marketplace.
 Respondé en español argentino, de forma natural, amable y vendedora.
@@ -32,11 +33,6 @@ export async function generateBotReply(params: {
   recentMessages?: { role: "user" | "assistant"; content: string }[];
 }): Promise<{ text: string; usedAi: boolean; aiError?: string }> {
   const ruleBased = buildRuleBasedReply(params.customerMessage, params.storeContext);
-  const { ollamaBase, ollamaModel, ollamaConfigured } = getWhatsappBotEnv();
-  if (!ollamaConfigured) {
-    return { text: ruleBased ?? FALLBACK_NO_AI, usedAi: false };
-  }
-
   const contextBlock = formatStoreContextForPrompt(params.storeContext);
   const history = (params.recentMessages ?? [])
     .slice(-6)
@@ -53,6 +49,21 @@ ${contextBlock}
 ${history ? `HISTORIAL:\n${history}\n` : ""}
 Cliente: ${params.customerMessage}
 Vos:`;
+
+  if (isGeminiConfigured()) {
+    try {
+      const text = await generateGeminiWhatsappReply(prompt);
+      return { text: sanitizeReply(text), usedAi: true };
+    } catch (e) {
+      const aiError = e instanceof Error ? e.message : "gemini_failed";
+      if (ruleBased) return { text: ruleBased, usedAi: false, aiError };
+    }
+  }
+
+  const { ollamaBase, ollamaModel, ollamaConfigured } = getWhatsappBotEnv();
+  if (!ollamaConfigured) {
+    return { text: ruleBased ?? FALLBACK_NO_AI, usedAi: false };
+  }
 
   try {
     const res = await fetch(`${ollamaBase}/api/generate`, {
