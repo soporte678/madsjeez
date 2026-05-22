@@ -83,6 +83,10 @@ OLLAMA_MODEL=qwen2.5:7b
 Webhook público (configurar en Evolution):  
 `https://<tu-dominio>/api/webhooks/evolution`
 
+## Solo Railway (guía paso a paso)
+
+Si todo está en Railway y no tenés Evolution desplegado: **[railway-evolution-setup.md](./railway-evolution-setup.md)**.
+
 ## Evolution API (servidor aparte — obligatorio)
 
 **`EVOLUTION_API_URL` NO es la URL de Madsjeez.** Es la URL del servidor donde corre Evolution (otro Docker, VPS o Railway service).
