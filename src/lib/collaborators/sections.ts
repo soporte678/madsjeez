@@ -34,6 +34,7 @@ export const COLLABORATOR_SECTIONS: CollaboratorSectionDef[] = [
   { id: "central-aprendizaje", label: "Central de aprendizaje", group: "Ventas" },
 
   { id: "marketing-ia", label: "Marketing IA", group: "Marketing" },
+  { id: "whatsapp-bot", label: "Bot de WhatsApp", group: "Marketing" },
   { id: "meli-ads-studio", label: "Mercado Libre Ads", group: "Marketing" },
   { id: "central-marketing", label: "Central de marketing", group: "Marketing" },
   { id: "publicidad", label: "Publicidad", group: "Marketing" },

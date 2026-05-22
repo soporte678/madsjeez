@@ -185,6 +185,13 @@ model User {
   sellerInvitesOwned SellerInvite[]
   sellerLeadProfile  SellerLead?
 
+  // WhatsApp Seller AI Bot (Evolution / multi-tenant por vendedor)
+  whatsappSessions     WhatsappSession[]
+  sellerBotConfig      SellerBotConfig?
+  whatsappLeads        WhatsappLead[]
+  whatsappConversations WhatsappConversation[]
+  whatsappBotEvents    WhatsappBotEvent[]
+
   // Reputación
   reputationHistory ReputationHistory[] @relation("ReputationHistory")
   
@@ -1694,4 +1701,200 @@ model SellerLead {
   @@index([status])
   @@index([inviteCode])
   @@map("seller_leads")
+}
+
+// --- Madsjeez Seller WhatsApp AI Bot (Evolution API + Ollama) ---
+
+enum WhatsappSessionStatus {
+  disconnected
+  qr_pending
+  connected
+  error
+}
+
+enum WhatsappProviderKind {
+  evolution
+  waha
+  baileys
+  whatsapp_web_js
+}
+
+enum WhatsappBotTone {
+  cercano
+  profesional
+  rapido
+  experto
+}
+
+enum WhatsappLeadStatus {
+  new
+  warm
+  hot
+  customer
+  closed
+  lost
+}
+
+enum WhatsappConversationStatus {
+  bot_active
+  human_active
+  closed
+}
+
+enum WhatsappMessageDirection {
+  inbound
+  outbound
+}
+
+enum WhatsappMessageSenderType {
+  customer
+  bot
+  seller
+  system
+}
+
+enum WhatsappMessageType {
+  text
+  image
+  audio
+  file
+  location
+}
+
+enum WhatsappHandoffStatus {
+  requested
+  accepted
+  resolved
+}
+
+model WhatsappSession {
+  id                 String                @id @default(cuid())
+  sellerId           String                @map("seller_id")
+  seller             User                  @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  storeId            String?               @map("store_id")
+  provider           WhatsappProviderKind  @default(evolution)
+  providerInstanceId String                @map("provider_instance_id")
+  status             WhatsappSessionStatus @default(disconnected)
+  phoneNumber        String?               @map("phone_number")
+  qrCode             String?               @map("qr_code") @db.Text
+  lastConnectedAt    DateTime?             @map("last_connected_at")
+  lastError          String?               @map("last_error") @db.Text
+  createdAt          DateTime              @default(now()) @map("created_at")
+  updatedAt          DateTime              @updatedAt @map("updated_at")
+
+  conversations WhatsappConversation[]
+
+  @@unique([sellerId])
+  @@index([providerInstanceId])
+  @@map("whatsapp_sessions")
+}
+
+model SellerBotConfig {
+  id                            String          @id @default(cuid())
+  sellerId                      String          @unique @map("seller_id")
+  seller                        User            @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  storeId                       String?         @map("store_id")
+  enabled                       Boolean         @default(false)
+  tone                          WhatsappBotTone @default(cercano)
+  businessHoursEnabled          Boolean         @default(false) @map("business_hours_enabled")
+  businessHours                 Json?           @map("business_hours")
+  autoReplyEnabled              Boolean         @default(true) @map("auto_reply_enabled")
+  humanHandoffEnabled           Boolean         @default(true) @map("human_handoff_enabled")
+  maxAutoMessagesBeforeHandoff  Int             @default(12) @map("max_auto_messages_before_handoff")
+  customInstructions            String?         @map("custom_instructions") @db.Text
+  createdAt                     DateTime        @default(now()) @map("created_at")
+  updatedAt                     DateTime        @updatedAt @map("updated_at")
+
+  @@map("seller_bot_configs")
+}
+
+model WhatsappLead {
+  id            String             @id @default(cuid())
+  sellerId      String             @map("seller_id")
+  seller        User               @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  storeId       String?            @map("store_id")
+  phone         String
+  name          String?
+  source        String             @default("whatsapp")
+  status        WhatsappLeadStatus @default(new)
+  intent        String?            @db.Text
+  lastMessageAt DateTime?          @map("last_message_at")
+  assignedTo    String?            @map("assigned_to")
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+
+  conversations WhatsappConversation[]
+
+  @@unique([sellerId, phone])
+  @@index([sellerId, status])
+  @@map("whatsapp_leads")
+}
+
+model WhatsappConversation {
+  id                String                     @id @default(cuid())
+  sellerId          String                     @map("seller_id")
+  seller            User                       @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  storeId           String?                    @map("store_id")
+  leadId            String                     @map("lead_id")
+  lead              WhatsappLead               @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  whatsappSessionId String?                    @map("whatsapp_session_id")
+  session           WhatsappSession?           @relation(fields: [whatsappSessionId], references: [id], onDelete: SetNull)
+  phone             String
+  status            WhatsappConversationStatus @default(bot_active)
+  botMessageCount   Int                        @default(0) @map("bot_message_count")
+  lastMessageAt     DateTime?                  @map("last_message_at")
+  createdAt         DateTime                   @default(now()) @map("created_at")
+  updatedAt         DateTime                   @updatedAt @map("updated_at")
+
+  messages  WhatsappMessage[]
+  events    WhatsappBotEvent[]
+  handoffs  WhatsappHumanHandoff[]
+
+  @@unique([sellerId, phone])
+  @@index([sellerId, status])
+  @@map("whatsapp_conversations")
+}
+
+model WhatsappMessage {
+  id                String                    @id @default(cuid())
+  conversationId    String                    @map("conversation_id")
+  conversation      WhatsappConversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  direction         WhatsappMessageDirection
+  senderType        WhatsappMessageSenderType @map("sender_type")
+  content           String                    @db.Text
+  messageType       WhatsappMessageType       @default(text) @map("message_type")
+  providerMessageId String?                   @map("provider_message_id")
+  metadata          Json?
+  createdAt         DateTime                  @default(now()) @map("created_at")
+
+  @@index([conversationId, createdAt])
+  @@map("whatsapp_messages")
+}
+
+model WhatsappBotEvent {
+  id             String                @id @default(cuid())
+  sellerId       String                @map("seller_id")
+  seller         User                  @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  storeId        String?               @map("store_id")
+  conversationId String?               @map("conversation_id")
+  conversation   WhatsappConversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  type           String
+  payload        Json?
+  createdAt      DateTime              @default(now()) @map("created_at")
+
+  @@index([sellerId, createdAt])
+  @@map("whatsapp_bot_events")
+}
+
+model WhatsappHumanHandoff {
+  id             String                @id @default(cuid())
+  conversationId String                @map("conversation_id")
+  conversation   WhatsappConversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  reason         String?               @db.Text
+  status         WhatsappHandoffStatus @default(requested)
+  createdAt      DateTime              @default(now()) @map("created_at")
+  resolvedAt     DateTime?             @map("resolved_at")
+
+  @@index([conversationId, status])
+  @@map("whatsapp_human_handoffs")
 }

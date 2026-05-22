@@ -36,6 +36,7 @@ import CouponCreateView from "@/components/dashboard/CouponCreateView";
 import MarketingCentralView from "@/components/dashboard/MarketingCentralView";
 import AdvertisingView from "@/components/dashboard/AdvertisingView";
 import MeliIntegrationView from "@/components/dashboard/MeliIntegrationView";
+import WhatsappBotView from "@/components/dashboard/WhatsappBotView";
 import MeliAdsStudioView from "@/components/dashboard/MeliAdsStudioView";
 import { StorePublicPanel } from "@/components/dashboard/StorePublicPanel";
 import ThemeToneSwitcher from "@/components/theme/ThemeToneSwitcher";
@@ -155,6 +156,7 @@ export default function App() {
 
   useEffect(() => {
     if (activeMenu === "meli-ads-studio") setMarketingOpen(true);
+    if (activeMenu === "whatsapp-bot") setMarketingOpen(true);
   }, [activeMenu]);
   const [marketingOpen, setMarketingOpen] = useState(false);
   const [facturacionOpen, setFacturacionOpen] = useState(false);
@@ -397,6 +399,7 @@ export default function App() {
       setIsOpen: setMarketingOpen,
       subItems: [
         { id: 'marketing-ia', label: '✨ Marketing IA (beta)' },
+        { id: 'whatsapp-bot', label: 'Bot de WhatsApp' },
         { id: 'meli-ads-studio', label: 'Mercado Libre Ads' },
         { id: 'central-marketing', label: 'Central de marketing' },
         { id: 'publicidad', label: 'Publicidad' },
@@ -1504,6 +1507,7 @@ export default function App() {
               </Suspense>
             )}
             {activeMenu === 'marketing-ia' && <MarketingIAPage />}
+            {activeMenu === 'whatsapp-bot' && <WhatsappBotView />}
             {activeMenu === 'meli-ads-studio' && (
               <Suspense
                 fallback={
