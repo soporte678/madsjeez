@@ -46,7 +46,7 @@ export default function WhatsappBotLayout({
   }
 
   return (
-    <div className="wa-layout">
+    <div className="wa-layout w-full min-h-screen">
       <aside className="wa-sidebar">
         <div className="wa-sidebar-brand">
           <div className="wa-sidebar-logo">
@@ -91,7 +91,7 @@ export default function WhatsappBotLayout({
         </footer>
       </aside>
 
-      <div className="wa-main">{children}</div>
+      <main className="wa-main flex-1 w-full min-w-0">{children}</main>
     </div>
   );
 }

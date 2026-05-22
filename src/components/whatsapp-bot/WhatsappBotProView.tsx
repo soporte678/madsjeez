@@ -262,7 +262,7 @@ export default function WhatsappBotProView() {
 
   if (loading) {
     return (
-      <div className="whatsapp-bot-pro flex items-center justify-center py-20 text-slate-400 gap-2 min-h-[480px]">
+      <div className="whatsapp-bot-pro flex w-full max-w-none min-h-screen items-center justify-center gap-2 py-20 text-slate-400">
         <Loader2 className="h-5 w-5 animate-spin" />
         Cargando CRM de WhatsApp…
       </div>
@@ -277,7 +277,7 @@ export default function WhatsappBotProView() {
         onNavigate={setActiveNav}
       >
         {activeNav === "resumen" ? (
-          <WhatsappBotResumenView />
+          <WhatsappBotResumenView onOpenConversation={openConversationByPhone} />
         ) : activeNav === "contactos" ? (
           <WhatsappBotContactosView onOpenConversation={openConversationByPhone} />
         ) : activeNav === "automatizaciones" ? (

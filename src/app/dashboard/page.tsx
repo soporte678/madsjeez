@@ -1463,7 +1463,16 @@ export default function App() {
         </aside>
 
         {/* ÁREA CENTRAL DINÁMICA */}
-        <section className="flex-1 p-6 lg:p-8">
+        <section
+          className={
+            activeMenu === "whatsapp-bot"
+              ? "flex-1 w-full min-w-0 p-0 overflow-hidden"
+              : "flex-1 min-w-0 p-6 lg:p-8"
+          }
+        >
+          {activeMenu === "whatsapp-bot" ? (
+            <WhatsappBotView />
+          ) : (
           <div className="max-w-[1200px] mx-auto">
             {activeMenu === 'resumen' && <ResumenView />}
             {activeMenu === 'reputacion' && <ReputacionView />}
@@ -1507,11 +1516,6 @@ export default function App() {
               </Suspense>
             )}
             {activeMenu === 'marketing-ia' && <MarketingIAPage />}
-            {activeMenu === 'whatsapp-bot' && (
-              <div className="-mx-4 lg:-mx-8 w-full max-w-none">
-                <WhatsappBotView />
-              </div>
-            )}
             {activeMenu === 'meli-ads-studio' && (
               <Suspense
                 fallback={
@@ -1530,6 +1534,7 @@ export default function App() {
             {activeMenu === 'campania-detalle' && <CampaignDetailView />}
             {activeMenu === 'crear-cupon' && <CouponCreateView />}
           </div>
+          )}
         </section>
       </div>
 

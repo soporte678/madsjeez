@@ -32,7 +32,9 @@
 
   width: 100%;
 
-  min-height: min(100vh, calc(100dvh - 4rem));
+  min-height: 100vh;
+
+  min-height: 100dvh;
 
 }
 
@@ -296,9 +298,9 @@
 
   min-width: 0;
 
-  width: calc(100% - 15.5rem);
+  width: 100%;
 
-  padding: 1rem clamp(1rem, 2vw, 2rem) 1.5rem;
+  padding: 0;
 
   overflow-y: auto;
 
@@ -313,6 +315,40 @@
   width: 100%;
 
   max-width: none;
+
+  box-sizing: border-box;
+
+  padding-left: 1rem;
+
+  padding-right: 1rem;
+
+}
+
+
+
+@media (min-width: 768px) {
+
+  .whatsapp-bot-pro .wa-page {
+
+    padding-left: 1.5rem;
+
+    padding-right: 1.5rem;
+
+  }
+
+}
+
+
+
+@media (min-width: 1280px) {
+
+  .whatsapp-bot-pro .wa-page {
+
+    padding-left: 2rem;
+
+    padding-right: 2rem;
+
+  }
 
 }
 
@@ -534,11 +570,23 @@
 
   gap: 0.75rem;
 
-  grid-template-columns: minmax(280px, 340px) minmax(0, 1fr) minmax(300px, 400px);
+  grid-template-columns: minmax(320px, 420px) minmax(520px, 1fr) minmax(320px, 420px);
 
-  min-height: 420px;
+  min-height: calc(100dvh - 14rem);
 
   margin-bottom: 1rem;
+
+}
+
+
+
+@media (min-width: 1536px) {
+
+  .whatsapp-bot-pro .wa-inbox-grid {
+
+    grid-template-columns: 420px 1fr 420px;
+
+  }
 
 }
 
@@ -606,9 +654,13 @@
 
 .whatsapp-bot-pro .wa-col-list,
 
-.whatsapp-bot-pro .wa-col-chat {
+.whatsapp-bot-pro .wa-col-chat,
 
-  max-height: 520px;
+.whatsapp-bot-pro .wa-col-crm {
+
+  min-height: calc(100dvh - 16rem);
+
+  max-height: calc(100dvh - 10rem);
 
 }
 

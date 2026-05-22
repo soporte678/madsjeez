@@ -162,7 +162,7 @@ export default function WhatsappBotInboxView({
   const humanCount = conversations.filter((c) => c.status === "human_active").length;
 
   return (
-    <div className="wa-inbox">
+    <div className="wa-page wa-inbox">
       <header className="wa-inbox-header">
         <div>
           <h1 className="wa-page-title">Inbox de WhatsApp</h1>
