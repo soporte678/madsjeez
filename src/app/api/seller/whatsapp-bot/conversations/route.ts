@@ -13,7 +13,7 @@ export async function GET() {
     orderBy: { lastMessageAt: "desc" },
     take: 50,
     include: {
-      lead: { select: { status: true, name: true } },
+      lead: { select: { status: true, name: true, intent: true } },
       messages: {
         orderBy: { createdAt: "desc" },
         take: 1,
@@ -29,6 +29,8 @@ export async function GET() {
       status: c.status,
       leadId: c.leadId,
       leadStatus: c.lead.status,
+      leadName: c.lead.name,
+      leadIntent: c.lead.intent,
       lastMessageAt: c.lastMessageAt,
       lastMessage: c.messages[0]
         ? {

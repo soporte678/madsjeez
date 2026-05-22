@@ -37,7 +37,7 @@ ollama pull mistral:7b
 ```env
 WHATSAPP_AI_PROVIDER=ollama
 OLLAMA_BASE_URL=http://127.0.0.1:11434
-OLLAMA_MODEL=qwen2.5:7b
+OLLAMA_MODEL=qwen2.5:3b
 
 # Evolution local o Railway (según pruebes)
 EVOLUTION_API_URL=https://evolution-api-production-85514.up.railway.app

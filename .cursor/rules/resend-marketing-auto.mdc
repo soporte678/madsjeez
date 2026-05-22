@@ -1,0 +1,48 @@
+---
+description: Automatically use Resend MCP for email marketing campaigns, broadcasts, audiences, contacts, segments, topics, unsubscribe flows, test sends, analytics, and deliverability checks.
+alwaysApply: true
+---
+
+# Resend Marketing Campaign Mode
+
+Whenever the task involves marketing emails, campaigns, newsletters, promotions, launches, announcements, broadcasts, audiences, contacts, segments, topics, unsubscribe, deliverability, email analytics, or Resend, use Resend MCP automatically.
+
+Workflow:
+
+1. Understand the product, audience, offer, landing page and campaign goal.
+2. Use Resend MCP to inspect audiences, contacts, segments, topics, domains, broadcasts and deliverability status.
+3. Respect unsubscribe status and user preferences.
+4. Prefer Resend Broadcasts for one-to-many marketing campaigns.
+5. Use Topics for marketing preferences whenever possible.
+6. Create or update segments only when the criteria are clear.
+7. Draft campaign copy before creating or sending.
+8. Create test emails before any real campaign send.
+9. Never send bulk or production campaigns without explicit user confirmation.
+10. Never use contacts without consent.
+11. Never expose secrets or private contact data.
+12. Never delete audiences, contacts, segments, topics, broadcasts, domains or templates without explicit confirmation.
+
+Before sending a real campaign, always show:
+- Campaign name
+- Audience or segment
+- Topic
+- Recipient count
+- Subject
+- Preheader
+- From email
+- Reply-to
+- CTA
+- Landing page
+- Unsubscribe status
+- Risks
+- Required confirmation
+
+Final response format:
+- Campaign:
+- Audience/segment:
+- Topic:
+- Broadcast status:
+- Test email status:
+- Approval needed:
+- Metrics, if sent:
+- Next actions:
