@@ -98,7 +98,10 @@ export default function WhatsappBotView() {
   const [aiHealth, setAiHealth] = useState<{
     primary: string;
     geminiConfigured: boolean;
-    ollamaConfigured: boolean;
+    ollamaOk?: boolean;
+    ollamaModel?: string;
+    ollamaModelCount?: number;
+    providerEnv?: string;
   } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -398,15 +401,27 @@ export default function WhatsappBotView() {
             Motor IA:{" "}
             <span className="font-medium">
               {aiHealth.primary === "gemini"
-                ? "Gemini (recomendado)"
+                ? "Gemini (nube)"
                 : aiHealth.primary === "ollama"
-                  ? "Ollama local"
+                  ? `Ollama local (${aiHealth.ollamaModel ?? "?"})`
                   : "Solo reglas (sin IA generativa)"}
             </span>
+            {aiHealth.primary === "ollama" && aiHealth.ollamaOk === false ? (
+              <span className="text-destructive block mt-1">
+                Ollama no responde — instalá desde ollama.com y ejecutá{" "}
+                <code className="text-xs">ollama pull {aiHealth.ollamaModel ?? "qwen2.5:7b"}</code>
+              </span>
+            ) : null}
             {aiHealth.primary === "rules" ? (
-              <span className="text-muted-foreground">
-                {" "}
-                — agregá <code className="text-xs">GEMINI_API_KEY</code> en Railway para respuestas inteligentes.
+              <span className="text-muted-foreground block mt-1">
+                En local: <code className="text-xs">WHATSAPP_AI_PROVIDER=ollama</code> en .env.local. En
+                producción: <code className="text-xs">GEMINI_API_KEY</code> en Railway.
+              </span>
+            ) : null}
+            {aiHealth.ollamaModelCount != null && aiHealth.ollamaModelCount > 0 ? (
+              <span className="text-muted-foreground block mt-1">
+                {aiHealth.ollamaModelCount} modelos en Ollama. Benchmark:{" "}
+                <code className="text-xs">npm run ollama:bench</code>
               </span>
             ) : null}
           </p>

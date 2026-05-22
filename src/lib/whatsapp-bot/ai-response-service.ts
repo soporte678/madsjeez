@@ -1,7 +1,8 @@
-import { getWhatsappBotEnv } from "./config";
 import type { WhatsappBotTone } from "@prisma/client";
 import { formatStoreContextForPrompt, type StoreContext } from "./seller-knowledge-service";
-import { generateGeminiWhatsappReply, isGeminiConfigured } from "./gemini-reply";
+import { generateGeminiWhatsappReply } from "./gemini-reply";
+import { resolveWhatsappAiProvider } from "./ai-provider";
+import { generateOllamaReply } from "./ollama-client";
 
 const BASE_PROMPT = `Sos el asistente comercial de una tienda dentro de Madsjeez Marketplace.
 Respondé en español argentino, de forma natural, amable y vendedora.
@@ -31,8 +32,9 @@ export async function generateBotReply(params: {
   tone: WhatsappBotTone;
   customInstructions?: string | null;
   recentMessages?: { role: "user" | "assistant"; content: string }[];
-}): Promise<{ text: string; usedAi: boolean; aiError?: string }> {
+}): Promise<{ text: string; usedAi: boolean; aiProvider?: string; aiError?: string }> {
   const ruleBased = buildRuleBasedReply(params.customerMessage, params.storeContext);
+  const provider = resolveWhatsappAiProvider();
   const contextBlock = formatStoreContextForPrompt(params.storeContext);
   const history = (params.recentMessages ?? [])
     .slice(-6)
@@ -50,52 +52,36 @@ ${history ? `HISTORIAL:\n${history}\n` : ""}
 Cliente: ${params.customerMessage}
 Vos:`;
 
-  if (isGeminiConfigured()) {
+  if (provider === "gemini") {
     try {
       const text = await generateGeminiWhatsappReply(prompt);
-      return { text: sanitizeReply(text), usedAi: true };
+      return { text: sanitizeReply(text), usedAi: true, aiProvider: "gemini" };
     } catch (e) {
       const aiError = e instanceof Error ? e.message : "gemini_failed";
-      if (ruleBased) return { text: ruleBased, usedAi: false, aiError };
+      if (ruleBased) return { text: ruleBased, usedAi: false, aiProvider: "rules", aiError };
     }
   }
 
-  const { ollamaBase, ollamaModel, ollamaConfigured } = getWhatsappBotEnv();
-  if (!ollamaConfigured) {
-    return { text: ruleBased ?? FALLBACK_NO_AI, usedAi: false };
+  if (provider === "ollama") {
+    try {
+      const { text, model } = await generateOllamaReply(prompt);
+      return {
+        text: sanitizeReply(text),
+        usedAi: true,
+        aiProvider: `ollama:${model}`,
+      };
+    } catch (e) {
+      const aiError = e instanceof Error ? e.message : "ollama_failed";
+      return {
+        text: ruleBased ?? FALLBACK_NO_AI,
+        usedAi: false,
+        aiProvider: "rules",
+        aiError,
+      };
+    }
   }
 
-  try {
-    const res = await fetch(`${ollamaBase}/api/generate`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: ollamaModel,
-        prompt,
-        stream: false,
-        options: { temperature: 0.4, num_predict: 220 },
-      }),
-      signal: AbortSignal.timeout(25_000),
-    });
-
-    if (!res.ok) {
-      throw new Error(`ollama_http_${res.status}`);
-    }
-
-    const data = (await res.json()) as { response?: string };
-    const text = (data.response ?? "").trim();
-    if (!text || text.length < 2) {
-      throw new Error("ollama_empty");
-    }
-    return { text: sanitizeReply(text), usedAi: true };
-  } catch (e) {
-    const aiError = e instanceof Error ? e.message : "ollama_failed";
-    return {
-      text: ruleBased ?? FALLBACK_NO_AI,
-      usedAi: false,
-      aiError,
-    };
-  }
+  return { text: ruleBased ?? FALLBACK_NO_AI, usedAi: false, aiProvider: "rules" };
 }
 
 function sanitizeReply(text: string): string {
