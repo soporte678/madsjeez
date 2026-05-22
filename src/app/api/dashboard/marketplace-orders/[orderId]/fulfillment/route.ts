@@ -19,7 +19,17 @@ const ALLOWED: SellerFulfillmentStage[] = [
   "completed",
 ];
 
-const FULFILLMENT_MANAGEABLE_STATUSES = new Set(["paid", "preparing", "shipped", "delivered", "completed"]);
+const FULFILLMENT_MANAGEABLE_STATUSES = new Set([
+  "paid",
+  "preparing",
+  "processing",
+  "shipped",
+  "delivered",
+  "PAID",
+  "PROCESSING",
+  "SHIPPED",
+  "DELIVERED",
+]);
 
 function stripSb(id: string) {
   return id.startsWith("sb-") ? id.slice(3) : id;
@@ -73,7 +83,11 @@ export async function PATCH(
     if (r.seller_id !== sellerUuid) {
       return NextResponse.json({ error: "No autorizado" }, { status: 403 });
     }
-    if (!FULFILLMENT_MANAGEABLE_STATUSES.has(String(r.status ?? "").toLowerCase())) {
+    const orderStatus = String(r.status ?? "");
+    if (
+      !FULFILLMENT_MANAGEABLE_STATUSES.has(orderStatus.toLowerCase()) &&
+      !FULFILLMENT_MANAGEABLE_STATUSES.has(orderStatus.toUpperCase())
+    ) {
       return NextResponse.json(
         { error: "El pedido todavia no esta pagado o no admite cambios operativos." },
         { status: 409 }

@@ -58,7 +58,7 @@ BEGIN
     -- Contar órdenes totales y completadas
     SELECT 
         COUNT(*),
-        COUNT(*) FILTER (WHERE status = 'completed')
+        COUNT(*) FILTER (WHERE status::text IN ('DELIVERED', 'completed'))
     INTO v_total_orders, v_completed_orders
     FROM orders
     WHERE seller_id = p_seller_id;
@@ -84,7 +84,7 @@ BEGIN
     -- Contar cancelaciones
     SELECT COUNT(*) INTO v_cancellations_count
     FROM orders
-    WHERE seller_id = p_seller_id AND status = 'cancelled';
+    WHERE seller_id = p_seller_id AND status::text IN ('CANCELLED', 'cancelled');
     
     -- Calcular porcentajes (evitar división por cero)
     IF v_total_orders > 0 THEN
@@ -162,7 +162,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION trigger_recalculate_on_order_complete()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.status = 'completed' AND OLD.status != 'completed' THEN
+    IF NEW.status::text IN ('DELIVERED', 'completed') AND OLD.status::text NOT IN ('DELIVERED', 'completed') THEN
         PERFORM recalculate_seller_reputation(NEW.seller_id);
     END IF;
     RETURN NEW;
@@ -215,7 +215,7 @@ CREATE TRIGGER decrement_stock_on_order_item
 CREATE OR REPLACE FUNCTION restore_product_stock()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.status = 'cancelled' AND OLD.status != 'cancelled' THEN
+    IF NEW.status::text IN ('CANCELLED', 'cancelled') AND OLD.status::text NOT IN ('CANCELLED', 'cancelled') THEN
         UPDATE products
         SET 
             stock = stock + oi.quantity,

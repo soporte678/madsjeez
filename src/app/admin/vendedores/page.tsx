@@ -636,7 +636,7 @@ function SellerDetail({
                     <div className="flex items-center gap-2">
                       <span className="font-medium">${order.total?.toLocaleString("es-AR")}</span>
                       <span className={`px-2 py-1 rounded text-xs ${
-                        order.status === "completed" ? "bg-green-100 text-green-700" :
+                        order.status === "DELIVERED" || order.status === "completed" ? "bg-green-100 text-green-700" :
                         order.status === "pending" ? "bg-yellow-100 text-yellow-700" :
                         "bg-gray-100 text-gray-700"
                       }`}>

@@ -276,7 +276,7 @@ function OrderDetailContent() {
               </Card>
 
               {/* Review Form */}
-              {order.status === "completed" && !showReviewForm && (
+              {(order.status === "DELIVERED" || order.status === "completed") && !showReviewForm && (
                 <Card>
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">

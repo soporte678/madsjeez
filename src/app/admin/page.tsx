@@ -77,7 +77,7 @@ export default function AdminDashboardPage() {
         .from("orders")
         .select("total_amount")
         .gte("created_at", today)
-        .eq("status", "completed")
+        .eq("status", "DELIVERED")
 
       const ventasDia =
         ventasHoy?.reduce((acc, order) => acc + (order.total_amount || 0), 0) || 0
@@ -121,7 +121,7 @@ export default function AdminDashboardPage() {
         .from("orders")
         .select("total_amount")
         .gte("created_at", firstDayOfMonth.toISOString())
-        .eq("status", "completed")
+        .eq("status", "DELIVERED")
 
       const ingresosMes =
         revenueData?.reduce((acc, order) => acc + (order.total_amount || 0), 0) || 0

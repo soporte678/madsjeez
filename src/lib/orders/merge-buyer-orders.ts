@@ -3,18 +3,10 @@ import { supabaseService } from "@/lib/supabase/service";
 import { getProfileUuidByEmail } from "@/lib/supabase-profile-map";
 import { normalizeEmail, normalizePhone, normalizeDocument, readGuestClaimFromShipping, guestClaimMatchesProfile } from "@/lib/orders/guest-claim";
 
+import { normalizeOrderStatusForUi } from "@/lib/orders/order-status";
+
 export function mapSupabaseOrderStatus(sb: string): string {
-  const m: Record<string, string> = {
-    pending: "PENDING",
-    paid: "PAID",
-    preparing: "PROCESSING",
-    shipped: "SHIPPED",
-    delivered: "DELIVERED",
-    completed: "DELIVERED",
-    cancelled: "CANCELLED",
-    refunded: "REFUNDED",
-  };
-  return m[sb.toLowerCase()] ?? sb.toUpperCase();
+  return normalizeOrderStatusForUi(sb);
 }
 
 /** Formato unificado para UI de compras (/orders, dashboard compras) */
