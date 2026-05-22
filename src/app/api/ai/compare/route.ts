@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
 
     const { data: products } = await supabase
       .from("products")
-      .select("id, title, description, price, original_price, condition, shipping_free, shipping_cost, stock, view_count, sold_count, product_images(url)")
+      .select("id, title, description, price, original_price, condition, free_shipping, shipping_cost, stock, views, sales, product_images(url)")
       .in("id", productIds)
 
     if (!products || products.length < 2) {
@@ -37,9 +37,9 @@ export async function POST(req: NextRequest) {
 PRODUCTO ${i + 1}: "${p.title}"
 - Precio: $${p.price}${p.original_price ? ` (antes $${p.original_price})` : ""}
 - Condición: ${p.condition}
-- Envío gratis: ${p.shipping_free ? "Sí" : "No"}${p.shipping_cost ? ` ($${p.shipping_cost})` : ""}
+- Envío gratis: ${p.free_shipping ? "Sí" : "No"}${p.shipping_cost ? ` ($${p.shipping_cost})` : ""}
 - Stock: ${p.stock}
-- Vistas: ${p.view_count} | Vendidos: ${p.sold_count}
+- Vistas: ${p.views ?? 0} | Vendidos: ${p.sales ?? 0}
 - Descripción: ${p.description?.slice(0, 200) || "Sin descripción"}
 `).join("\n")
 
@@ -87,7 +87,7 @@ Respondé SOLO con JSON:
       price: p.price,
       original_price: p.original_price,
       condition: p.condition,
-      shipping_free: p.shipping_free,
+      shipping_free: Boolean(p.free_shipping),
       image: p.product_images?.[0]?.url || null,
     }))
 

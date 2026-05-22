@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { supabaseService } from "@/lib/supabase/service";
 import { hasValidProductImageUrl } from "@/lib/productVisibility";
 import { resolveCategoryIds } from "@/lib/categoryCatalog";
+import { PRODUCT_LIST_SELECT, readFreeShipping, readSales } from "@/lib/supabase/product-row";
 
 export const dynamic = "force-dynamic";
 
@@ -41,9 +42,9 @@ function mapSupabaseRow(p: Record<string, unknown>): UnifiedProduct {
         ? Number(p.original_price)
         : null,
     condition: String(p.condition ?? "new"),
-    shipping_free: Boolean(p.shipping_free),
-    sales: Number(p.sales ?? p.sold_count ?? 0),
-    sold_count: Number(p.sold_count ?? p.sales ?? 0),
+    shipping_free: readFreeShipping(p),
+    sales: readSales(p),
+    sold_count: readSales(p),
     meli_item_id: (p.meli_item_id as string) ?? null,
     primary_image: typeof primary === "string" ? primary.trim() : null,
     seller_name: profiles?.full_name ?? null,
@@ -196,15 +197,9 @@ export async function GET(req: Request) {
     const tokens = getSearchTokens(q);
     const categoryIds = await resolveCategoryIds(cat);
 
-    const baseSelect = `
-        *,
-        product_images(url),
-        categories:category_id(name)
-      `;
-
     let sbQuery = supabaseService
       .from("products")
-      .select(baseSelect)
+      .select(PRODUCT_LIST_SELECT)
       .eq("is_active", true);
 
     if (q?.trim()) {
@@ -216,7 +211,7 @@ export async function GET(req: Request) {
     if (cond) sbQuery = sbQuery.eq("condition", cond);
     if (minPrice) sbQuery = sbQuery.gte("price", parseInt(minPrice, 10));
     if (maxPrice) sbQuery = sbQuery.lte("price", parseInt(maxPrice, 10));
-    if (freeShip === "true") sbQuery = sbQuery.eq("shipping_free", true);
+    if (freeShip === "true") sbQuery = sbQuery.eq("free_shipping", true);
 
     switch (sort) {
       case "price_asc":

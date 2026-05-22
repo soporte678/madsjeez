@@ -61,14 +61,14 @@ export async function POST(req: NextRequest) {
     // Get popular and recent products from catalog
     const { data: popularProducts } = await supabase
       .from("products")
-      .select("id, title, price, original_price, condition, shipping_free, category_id")
+      .select("id, title, price, original_price, condition, free_shipping, category_id")
       .eq("is_active", true)
-      .order("view_count", { ascending: false })
+      .order("views", { ascending: false })
       .limit(30)
 
     const { data: recentProducts } = await supabase
       .from("products")
-      .select("id, title, price, original_price, condition, shipping_free, category_id")
+      .select("id, title, price, original_price, condition, free_shipping, category_id")
       .eq("is_active", true)
       .order("created_at", { ascending: false })
       .limit(20)
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
     const uniqueProducts = allProducts.filter((p, i, arr) => arr.findIndex(x => x.id === p.id) === i)
 
     const catalogText = uniqueProducts.slice(0, 40).map(p =>
-      `ID:${p.id} | "${p.title}" | $${p.price} | ${p.condition} | ${p.shipping_free ? "Envío gratis" : ""}`
+      `ID:${p.id} | "${p.title}" | $${p.price} | ${p.condition} | ${p.free_shipping ? "Envío gratis" : ""}`
     ).join("\n")
 
     const prompt = `Sos el motor de recomendación de MadsJeez, marketplace de maquinaria y herramientas en Argentina.
@@ -117,7 +117,7 @@ Responde SOLO con JSON:
       if (recIds.length > 0) {
         const { data } = await supabase
           .from("products")
-          .select("id, title, price, original_price, condition, shipping_free, slug, product_images(url)")
+          .select("id, title, price, original_price, condition, free_shipping, product_images(url)")
           .in("id", recIds)
           .eq("is_active", true)
 

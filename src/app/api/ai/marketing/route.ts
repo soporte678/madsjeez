@@ -143,7 +143,7 @@ Generá textos para la campaña en JSON:
         const orConditions = keywords.map((k: string) => `title.ilike.%${k}%`).join(",")
         const { data } = await supabase
           .from("products")
-          .select("title, price, original_price, condition, shipping_free")
+          .select("title, price, original_price, condition, free_shipping")
           .eq("is_active", true)
           .or(orConditions)
           .limit(20)
@@ -154,7 +154,7 @@ Generá textos para la campaña en JSON:
       if (similarProducts.length === 0 && productCategory) {
         const { data } = await supabase
           .from("products")
-          .select("title, price, original_price, condition, shipping_free")
+          .select("title, price, original_price, condition, free_shipping")
           .eq("is_active", true)
           .eq("category_id", productCategory)
           .limit(20)
@@ -170,7 +170,7 @@ Generá textos para la campaña en JSON:
         title: p.title,
         price: p.price,
         condition: p.condition,
-        free_shipping: p.shipping_free,
+        free_shipping: Boolean(p.free_shipping),
       }))
 
       const prompt = `Sos un analista de pricing para un marketplace de maquinaria y herramientas en Argentina.
