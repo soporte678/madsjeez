@@ -1,6 +1,9 @@
 -- Sales Closer engine: lead CRM fields, decisions log, winning responses (learning)
 
-CREATE TYPE "WhatsappSaleOutcome" AS ENUM ('open', 'won', 'lost');
+DO $$ BEGIN
+  CREATE TYPE "WhatsappSaleOutcome" AS ENUM ('open', 'won', 'lost');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 ALTER TABLE "seller_bot_configs" ADD COLUMN IF NOT EXISTS "business_profile" TEXT;
 
