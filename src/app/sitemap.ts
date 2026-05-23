@@ -5,13 +5,22 @@ const BASE_URL = "https://www.madsjeez.com.ar";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes: MetadataRoute.Sitemap = [
-    { url: BASE_URL, lastModified: new Date(), changeFrequency: "daily", priority: 1.0 },
-    { url: `${BASE_URL}/search`, lastModified: new Date(), changeFrequency: "hourly", priority: 0.9 },
-    { url: `${BASE_URL}/coupons`, lastModified: new Date(), changeFrequency: "daily", priority: 0.7 },
-    { url: `${BASE_URL}/subscriptions`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },
-    { url: `${BASE_URL}/legal/terminos`, lastModified: new Date(), changeFrequency: "yearly", priority: 0.3 },
-    { url: `${BASE_URL}/legal/privacidad`, lastModified: new Date(), changeFrequency: "yearly", priority: 0.3 },
-    { url: `${BASE_URL}/legal/cookies`, lastModified: new Date(), changeFrequency: "yearly", priority: 0.3 },
+    { url: BASE_URL,                                  lastModified: new Date(), changeFrequency: "daily",   priority: 1.0 },
+    { url: `${BASE_URL}/vender`,                      lastModified: new Date(), changeFrequency: "weekly",  priority: 0.9 },
+    { url: `${BASE_URL}/marketplace`,                 lastModified: new Date(), changeFrequency: "weekly",  priority: 0.8 },
+    { url: `${BASE_URL}/categories`,                  lastModified: new Date(), changeFrequency: "weekly",  priority: 0.8 },
+    { url: `${BASE_URL}/quienes-somos`,               lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },
+    { url: `${BASE_URL}/help`,                        lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },
+    { url: `${BASE_URL}/seller/register`,             lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
+    { url: `${BASE_URL}/blog`,                        lastModified: new Date(), changeFrequency: "weekly",  priority: 0.7 },
+    { url: `${BASE_URL}/search`,                      lastModified: new Date(), changeFrequency: "hourly",  priority: 0.5 },
+    { url: `${BASE_URL}/coupons`,                     lastModified: new Date(), changeFrequency: "daily",   priority: 0.6 },
+    { url: `${BASE_URL}/subscriptions`,               lastModified: new Date(), changeFrequency: "monthly", priority: 0.5 },
+    { url: `${BASE_URL}/legal/terminos`,              lastModified: new Date(), changeFrequency: "yearly",  priority: 0.3 },
+    { url: `${BASE_URL}/legal/privacidad`,            lastModified: new Date(), changeFrequency: "yearly",  priority: 0.3 },
+    { url: `${BASE_URL}/legal/cookies`,               lastModified: new Date(), changeFrequency: "yearly",  priority: 0.3 },
+    { url: `${BASE_URL}/legal/reembolsos`,            lastModified: new Date(), changeFrequency: "yearly",  priority: 0.3 },
+    { url: `${BASE_URL}/legal/aviso-legal`,           lastModified: new Date(), changeFrequency: "yearly",  priority: 0.3 },
   ];
 
   try {
@@ -56,7 +65,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.6,
     }));
 
-    return [...staticRoutes, ...productRoutes, ...categoryRoutes, ...sellerRoutes];
+    // Tienda pública por slug
+    const { data: stores } = await supabase
+      .from("profiles")
+      .select("store_slug, updated_at")
+      .eq("is_seller", true)
+      .not("store_slug", "is", null)
+      .limit(2000);
+
+    const storeRoutes: MetadataRoute.Sitemap = (stores ?? [])
+      .filter((s) => s.store_slug)
+      .map((s) => ({
+        url: `${BASE_URL}/tienda/${s.store_slug}`,
+        lastModified: s.updated_at ? new Date(s.updated_at) : new Date(),
+        changeFrequency: "weekly" as const,
+        priority: 0.7,
+      }));
+
+    return [...staticRoutes, ...productRoutes, ...categoryRoutes, ...sellerRoutes, ...storeRoutes];
   } catch {
     return staticRoutes;
   }

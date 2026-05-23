@@ -1,4 +1,18 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Centro de Ayuda | MadsJeez Marketplace",
+  description:
+    "Encontrá respuestas sobre compras, ventas, envíos, pagos y devoluciones en MadsJeez Marketplace Argentina.",
+  alternates: { canonical: "https://www.madsjeez.com.ar/help" },
+  openGraph: {
+    title: "Centro de Ayuda | MadsJeez",
+    description: "Respuestas sobre compras, ventas, envíos y pagos en MadsJeez.",
+    url: "https://www.madsjeez.com.ar/help",
+    type: "website",
+  },
+};
 import { Header } from "@/components/Header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
