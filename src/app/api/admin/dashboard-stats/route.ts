@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
           createdAt: { gte: today },
           status: OrderStatus.DELIVERED,
         },
-        select: { totalAmount: true },
+        select: { total: true },
       }),
       prisma.shipment.count({ where: { status: "delayed" } }),
       prisma.claim.count({ where: { status: ClaimStatus.OPEN } }),
@@ -50,12 +50,12 @@ export async function GET(request: NextRequest) {
           createdAt: { gte: firstDayOfMonth },
           status: OrderStatus.DELIVERED,
         },
-        select: { totalAmount: true },
+        select: { total: true },
       }),
     ]);
 
-    const ventasDia = ventasHoyRows.reduce((acc, o) => acc + (o.totalAmount || 0), 0);
-    const ingresosMes = revenueRows.reduce((acc, o) => acc + (o.totalAmount || 0), 0);
+    const ventasDia = ventasHoyRows.reduce((acc, o) => acc + (o.total || 0), 0);
+    const ingresosMes = revenueRows.reduce((acc, o) => acc + (o.total || 0), 0);
 
     return NextResponse.json({
       ventasDia,
