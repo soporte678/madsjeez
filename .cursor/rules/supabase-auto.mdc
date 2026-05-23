@@ -1,6 +1,6 @@
 ---
 description: Automatically use Supabase MCP for Supabase projects, Postgres, Auth, Storage, Edge Functions, Realtime, migrations, RLS, SQL, logs, and backend fixes.
-alwaysApply: true
+alwaysApply: false
 ---
 
 # Supabase Automatic Backend Mode

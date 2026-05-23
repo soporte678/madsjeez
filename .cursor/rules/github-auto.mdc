@@ -1,6 +1,6 @@
 ---
 description: Automatically use GitHub MCP for repositories, issues, pull requests, branches, commits, GitHub Actions, releases, Dependabot, security alerts, CODEOWNERS, and CI/CD debugging.
-alwaysApply: true
+alwaysApply: false
 ---
 
 # GitHub Automatic Repository Mode

@@ -1,0 +1,28 @@
+---
+description: Use MCP tools only when the user explicitly asks or the task clearly requires external services.
+alwaysApply: false
+---
+
+# MCP On Demand
+
+Use MCP tools only when required.
+
+Railway MCP:
+Use only for Railway deploys, variables, services, logs, domains, environments or production errors.
+
+Supabase MCP:
+Use only for schema, migrations, database, auth, storage, RLS, logs or project configuration.
+
+GitHub MCP:
+Use only for issues, PRs, Actions, commits, branches, repo settings or security alerts.
+
+Resend MCP:
+Use only for email sending, campaigns, contacts, broadcasts, templates or logs.
+
+Higgsfield MCP:
+Use only for image/video generation or marketing assets.
+
+n8n:
+Use only for automation workflows, background jobs, integrations, follow-ups and reports.
+
+Do not keep all MCP tools active in every task.

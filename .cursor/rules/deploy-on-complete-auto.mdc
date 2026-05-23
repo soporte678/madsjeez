@@ -1,6 +1,6 @@
 ---
 description: Al terminar una tarea: commit+push GitHub (MCP), y Railway/Supabase si aplica. Sin secretos en chat.
-alwaysApply: true
+alwaysApply: false
 ---
 
 # Cierre automático de tareas (autorizado por el usuario)

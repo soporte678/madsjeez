@@ -263,7 +263,8 @@ export class EvolutionWhatsAppProvider implements WhatsAppProvider {
   parseWebhook(payload: unknown): WebhookHandleResult | null {
     const batch = parseEvolutionWebhookBatch(payload);
     if (batch.connectionOnly) {
-      return batch.items[0] ?? { handled: true, instanceName: batch.items[0]?.instanceName };
+      const first = batch.items[0];
+      return first ?? { handled: true, instanceName: undefined };
     }
     const inbound = batch.items.find((i) => i.handled && i.phone && i.text);
     if (inbound) return inbound;

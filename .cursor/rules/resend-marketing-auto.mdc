@@ -1,6 +1,6 @@
 ---
 description: Automatically use Resend MCP for email marketing campaigns, broadcasts, audiences, contacts, segments, topics, unsubscribe flows, test sends, analytics, and deliverability checks.
-alwaysApply: true
+alwaysApply: false
 ---
 
 # Resend Marketing Campaign Mode

@@ -1,6 +1,6 @@
 ---
 description: Automatically use Railway MCP for Railway deploys, services, environments, variables, logs, databases, and deployment fixes.
-alwaysApply: true
+alwaysApply: false
 ---
 
 # Railway Automatic DevOps Mode

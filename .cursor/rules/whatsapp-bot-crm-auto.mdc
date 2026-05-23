@@ -1,6 +1,6 @@
 ---
 description: WhatsApp Bot CRM — Evolution (vendedores) + Meta Cloud API (admin). UI premium, Prisma, sin scraping.
-alwaysApply: true
+alwaysApply: false
 ---
 
 # WhatsApp Bot CRM (Madsjeez)

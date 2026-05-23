@@ -1,0 +1,21 @@
+---
+description: Core lightweight behavior for efficient Cursor usage.
+alwaysApply: true
+---
+
+# Core Efficient Cursor Mode
+
+Work with minimal context.
+
+Rules:
+- Do not scan the whole repository unless necessary.
+- Do not load generated folders, logs, builds, media, node_modules, .next, dist, build, coverage, or cache folders.
+- Identify only the 3 to 8 files relevant to the current task.
+- Use focused search instead of full codebase scanning.
+- Prefer small, safe edits.
+- Do not activate MCP tools unless the task clearly requires them.
+- Do not load unrelated rules.
+- For Railway, Supabase, GitHub, Resend, Higgsfield, n8n, WhatsApp or Ollama tasks, use the matching rule/MCP only when explicitly needed.
+- Keep plans short.
+- Avoid long explanations unless requested.
+- Do not touch secrets.
