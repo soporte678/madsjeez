@@ -69,7 +69,13 @@ export async function POST(req: NextRequest) {
       meta: {
         usedAi: result.usedAi ?? false,
         model: result.model,
+        modelReason: (result as { modelReason?: string }).modelReason,
+        confidence: (result as { confidence?: number }).confidence,
+        latencyMs: (result as { latencyMs?: number }).latencyMs,
+        escalatedTo14b: (result as { escalatedTo14b?: boolean }).escalatedTo14b,
+        fallbackUsed: (result as { fallbackUsed?: boolean }).fallbackUsed,
         aiError: result.aiError,
+        routerEnabled: process.env.AI_MODEL_ROUTER_ENABLED?.trim().toLowerCase() !== "false",
       },
     });
   } catch (e) {

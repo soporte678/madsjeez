@@ -7,6 +7,7 @@ import {
   ngrokFetchHeaders,
 } from "@/lib/whatsapp-bot/ollama-client";
 
+import { getModelRouterEnv } from "@/lib/ai/sales-closer-env";
 import type { AIProvider } from "./AIProvider";
 import type { ChatMessage } from "./types";
 
@@ -14,21 +15,30 @@ import type { ChatMessage } from "./types";
  *  num_predict: 1200 — qwen3 necesita tokens extra para superar la fase de thinking.
  */
 function ollamaQualityOptions() {
+  const router = getModelRouterEnv();
+  const defaultCtx = router.routerEnabled ? router.numCtx.marketplace : 4096;
   const numCtx = Math.min(
     32768,
-    Math.max(2048, parseInt(process.env.OLLAMA_NUM_CTX ?? "8192", 10) || 8192)
+    Math.max(2048, parseInt(process.env.OLLAMA_NUM_CTX ?? String(defaultCtx), 10) || defaultCtx)
   );
+  const defaultPredict = router.routerEnabled
+    ? router.numPredict.marketplace
+    : parseInt(process.env.OLLAMA_NUM_PREDICT ?? "260", 10) || 260;
   return {
     temperature: 0.35,
     top_p: 0.92,
     repeat_penalty: 1.12,
-    num_predict: parseInt(process.env.OLLAMA_NUM_PREDICT ?? "1200", 10) || 1200,
+    num_predict: defaultPredict,
     num_ctx: numCtx,
   };
 }
 
-/** 5 min — prioridad calidad, no velocidad. */
-const OLLAMA_REPLY_TIMEOUT_MS = 300_000;
+function ollamaReplyTimeoutMs(): number {
+  const router = getModelRouterEnv();
+  if (router.routerEnabled) return router.timeoutMs.marketplace;
+  const n = parseInt(process.env.AI_RESPONSE_TIMEOUT_MARKETPLACE_MS ?? "180000", 10);
+  return Number.isFinite(n) ? n : 180_000;
+}
 
 export class OllamaProvider implements AIProvider {
   readonly name = "ollama";
@@ -88,7 +98,7 @@ export class OllamaProvider implements AIProvider {
         stream: false,
         options: ollamaQualityOptions(),
       }),
-      signal: AbortSignal.timeout(OLLAMA_REPLY_TIMEOUT_MS),
+      signal: AbortSignal.timeout(ollamaReplyTimeoutMs()),
     });
 
     if (!res.ok) {

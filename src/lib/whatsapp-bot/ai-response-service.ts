@@ -1,4 +1,5 @@
 import type { WhatsappBotTone } from "@prisma/client";
+import { MANDATORY_FALLBACK_MESSAGE } from "@/lib/ai/sales-closer-env";
 import { formatStoreContextForPrompt, type StoreContext } from "./seller-knowledge-service";
 import { generateGeminiWhatsappReply } from "./gemini-reply";
 import { resolveWhatsappAiProvider } from "./ai-provider";
@@ -24,8 +25,7 @@ const TONE_HINT: Record<WhatsappBotTone, string> = {
   experto: "Tono experto, con detalle técnico solo si está en el catálogo.",
 };
 
-export const FALLBACK_NO_AI =
-  "Gracias por escribir. Ya recibimos tu consulta. Te derivamos con el vendedor para confirmarte la información.";
+export const FALLBACK_NO_AI = MANDATORY_FALLBACK_MESSAGE;
 
 export async function generateBotReply(params: {
   customerMessage: string;

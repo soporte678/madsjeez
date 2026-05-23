@@ -2082,3 +2082,29 @@ model WhatsappWinningResponse {
   @@index([sellerId, intencion])
   @@map("whatsapp_winning_responses")
 }
+
+model AiMessageLog {
+  id              String   @id @default(cuid())
+  conversationId  String?  @map("conversation_id")
+  customerId      String?  @map("customer_id")
+  channel         String   @default("whatsapp")
+  incomingMessage String   @map("incoming_message") @db.Text
+  selectedModel   String?  @map("selected_model")
+  modelReason     String?  @map("model_reason")
+  confidence      Float?
+  latencyMs       Int?     @map("latency_ms")
+  escalatedTo14b  Boolean  @default(false) @map("escalated_to_14b")
+  detectedRubro   String?  @map("detected_rubro")
+  detectedIntent  String?  @map("detected_intent")
+  detectedStage   String?  @map("detected_stage")
+  objection       String?
+  reply           String?  @db.Text
+  fallbackUsed    Boolean  @default(false) @map("fallback_used")
+  errorMessage    String?  @map("error_message")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([conversationId, createdAt])
+  @@index([customerId, createdAt])
+  @@index([channel, createdAt])
+  @@map("ai_message_logs")
+}

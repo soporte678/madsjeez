@@ -1,4 +1,4 @@
-import { getSalesCloserEnv } from "@/lib/ai/sales-closer-env";
+import { getModelRouterEnv, getSalesCloserEnv } from "@/lib/ai/sales-closer-env";
 import {
   checkOllamaHealth,
   describeOllamaConfigIssue,
@@ -7,7 +7,12 @@ import {
 } from "@/lib/whatsapp-bot/ollama-client";
 import type { ChatMessage } from "./types";
 
-const OLLAMA_REPLY_TIMEOUT_MS = 300_000;
+function ollamaReplyTimeoutMs(): number {
+  const router = getModelRouterEnv();
+  if (router.routerEnabled) return router.timeoutMs.marketplace;
+  const n = parseInt(process.env.AI_RESPONSE_TIMEOUT_MARKETPLACE_MS ?? "180000", 10);
+  return Number.isFinite(n) ? n : 180_000;
+}
 
 export function extractJsonObject(raw: string): unknown | null {
   const trimmed = raw.trim();
@@ -71,7 +76,7 @@ export async function ollamaChatJson(params: {
           num_ctx: ollamaNumCtx,
         },
       }),
-      signal: AbortSignal.timeout(OLLAMA_REPLY_TIMEOUT_MS),
+      signal: AbortSignal.timeout(ollamaReplyTimeoutMs()),
     });
     if (!res.ok) throw new Error(`Ollama HTTP ${res.status}`);
     const data = (await res.json()) as {
