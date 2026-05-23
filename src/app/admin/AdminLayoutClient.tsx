@@ -27,6 +27,7 @@ import {
   RefreshCcw,
   Scale,
   Settings,
+  Sparkles,
   ShieldAlert,
   Smartphone,
   Store,
@@ -96,6 +97,7 @@ const menuGroups: MenuGroup[] = [
       { id: "consultas", label: "Consultas Generales", icon: Inbox, href: "/admin/consultas" },
       { id: "whatsapp", label: "WhatsApp Business", icon: Smartphone, href: "/admin/whatsapp" },
       { id: "whatsapp-test", label: "Test WhatsApp API", icon: FlaskConical, href: "/admin/whatsapp-test" },
+      { id: "jarvis", label: "Jarvis Orchestrator", icon: Sparkles, href: "/admin/jarvis" },
     ],
   },
   {

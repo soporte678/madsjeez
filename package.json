@@ -30,7 +30,8 @@
     "merchant:sync": "node scripts/sync-google-merchant.mjs",
     "ollama:bench": "node scripts/benchmark-ollama-models.mjs",
     "ollama:tunnel": "node scripts/update-ollama-tunnel.mjs",
-    "ollama:tunnel:watch": "node scripts/update-ollama-tunnel.mjs --watch"
+    "ollama:tunnel:watch": "node scripts/update-ollama-tunnel.mjs --watch",
+    "jarvis:dispatch": "node scripts/jarvis-dispatch.mjs"
   },
   "dependencies": {
     "@google-analytics/data": "^6.0.0",

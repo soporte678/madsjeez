@@ -2108,3 +2108,89 @@ model AiMessageLog {
   @@index([channel, createdAt])
   @@map("ai_message_logs")
 }
+
+model JarvisReport {
+  id        String   @id @default(cuid())
+  type      String
+  scope     String   @default("all")
+  summary   String   @db.Text
+  body      Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([type, createdAt])
+  @@map("jarvis_reports")
+}
+
+model JarvisFinding {
+  id                String   @id @default(cuid())
+  scope             String
+  severity          String
+  title             String
+  description       String   @db.Text
+  recommendedAction String?  @map("recommended_action") @db.Text
+  agentTarget       String?  @map("agent_target")
+  status            String   @default("open")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@index([scope, severity, status])
+  @@map("jarvis_findings")
+}
+
+model JarvisAgentTask {
+  id        String   @id @default(cuid())
+  agent     String
+  objective String   @db.Text
+  filePath  String   @map("file_path")
+  status    String   @default("open")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([agent, status, createdAt])
+  @@map("jarvis_agent_tasks")
+}
+
+model JarvisHealthCheck {
+  id        String   @id @default(cuid())
+  payload   Json
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@map("jarvis_health_checks")
+}
+
+model JarvisVoiceReport {
+  id        String   @id @default(cuid())
+  text      String   @db.Text
+  profile   String   @default("atlas")
+  audioUrl  String?  @map("audio_url")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@map("jarvis_voice_reports")
+}
+
+model JarvisAuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  payload   Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([action, createdAt])
+  @@map("jarvis_audit_logs")
+}
+
+model JarvisAiLog {
+  id                   String   @id @default(cuid())
+  command              String?
+  scope                String?
+  tier                 String
+  model                String
+  reason               String   @db.Text
+  latencyMs            Int      @map("latency_ms")
+  escalatedTo14b       Boolean  @default(false) @map("escalated_to_14b")
+  promptTokensEstimate Int?     @map("prompt_tokens_estimate")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  @@index([command, createdAt])
+  @@index([tier, createdAt])
+  @@map("jarvis_ai_logs")
+}
