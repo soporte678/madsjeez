@@ -69,9 +69,10 @@ export default async function TiendaPublicaPage({ params }: Props) {
       />
       <Navbar />
 
-      <section className="bg-gradient-to-br from-[#0f172a] to-[#16213e] text-white py-10 px-4">
-        <div className="max-w-5xl mx-auto flex flex-col md:flex-row gap-6 items-center">
-          <div className="relative h-24 w-24 shrink-0 rounded-2xl overflow-hidden border-2 border-white/20 bg-white/10">
+      {/* Store hero */}
+      <section className="bg-gradient-to-br from-[#0f172a] via-[#1a2744] to-[#0f172a] text-white pt-10 pb-12 px-4">
+        <div className="max-w-5xl mx-auto flex flex-col md:flex-row gap-6 items-center md:items-start">
+          <div className="relative h-24 w-24 shrink-0 rounded-2xl overflow-hidden border-2 border-white/20 bg-white/10 shadow-xl">
             {store.image ? (
               <Image src={store.image} alt={store.displayName} fill className="object-cover" sizes="96px" />
             ) : (
@@ -88,64 +89,89 @@ export default async function TiendaPublicaPage({ params }: Props) {
             {store.description && (
               <p className="text-slate-300 mt-2 max-w-2xl text-sm leading-relaxed">{store.description}</p>
             )}
-            <div className="flex flex-wrap justify-center md:justify-start gap-4 mt-3 text-sm text-slate-400">
-              <span className="flex items-center gap-1">
-                <Package className="h-4 w-4" />
+            <div className="flex flex-wrap justify-center md:justify-start gap-3 mt-4">
+              <span className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-slate-200">
+                <Package className="h-3.5 w-3.5 text-[#3483FA]" />
                 {store.productCount} productos
               </span>
-              <span className="flex items-center gap-1">
-                <Star className="h-4 w-4" />
+              <span className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-slate-200">
+                <Star className="h-3.5 w-3.5 text-yellow-400" />
                 {store.totalSales} ventas
               </span>
-              {memberSince && <span>Miembro desde {memberSince}</span>}
+              {memberSince && (
+                <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-slate-300">
+                  Desde {memberSince}
+                </span>
+              )}
             </div>
           </div>
         </div>
       </section>
 
+      {/* Products */}
       <section className="max-w-6xl mx-auto px-4 py-10">
         {store.products.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {store.products.map((p) => (
-              <Link
-                key={p.id}
-                href={`/product/${p.id}`}
-                className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all overflow-hidden group"
-              >
-                <div className="relative aspect-square bg-slate-50">
-                  {p.image && (
-                    <OptimizedProductImage
-                      src={p.image}
-                      title={p.title}
-                      category={p.categoryName}
-                      fill
-                      sizes="(max-width:768px) 50vw, 25vw"
-                      className="object-contain p-2 group-hover:scale-105 transition-transform"
-                    />
-                  )}
-                </div>
-                <div className="p-3">
-                  <h2 className="text-sm line-clamp-2 min-h-[40px]">{p.title}</h2>
-                  <p className="text-lg font-bold text-[#3483FA] mt-1">
-                    ${p.price.toLocaleString("es-AR")}
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
+          <>
+            <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-6">
+              Productos destacados
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {store.products.map((p) => (
+                <Link
+                  key={p.id}
+                  href={`/product/${p.id}`}
+                  className="group flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg hover:border-[#3483FA]/40 transition-all duration-200 overflow-hidden"
+                >
+                  <div className="relative aspect-square bg-slate-50">
+                    {p.image ? (
+                      <OptimizedProductImage
+                        src={p.image}
+                        title={p.title}
+                        category={p.categoryName}
+                        fill
+                        sizes="(max-width:768px) 50vw, 25vw"
+                        className="object-contain p-3 group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center">
+                        <Package className="h-10 w-10 text-slate-300" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-col flex-1 p-3 gap-1">
+                    <h2 className="text-xs font-medium text-slate-700 line-clamp-2 leading-snug min-h-[32px]">
+                      {p.title}
+                    </h2>
+                    <p className="text-base font-bold text-[#3483FA] mt-auto">
+                      ${p.price.toLocaleString("es-AR")}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </>
         ) : (
-          <p className="text-center text-slate-600">Esta tienda aún no tiene productos publicados.</p>
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 mb-4">
+              <Package className="h-8 w-8 text-slate-400" />
+            </div>
+            <p className="font-semibold text-slate-700">Esta tienda aún no tiene productos</p>
+            <p className="text-sm text-slate-400 mt-1">Volvé pronto para ver las novedades.</p>
+          </div>
         )}
 
-        <div className="mt-10 flex flex-wrap gap-4 justify-center">
+        <div className="mt-12 flex flex-wrap gap-3 justify-center">
           <Link
             href={`/search?seller=${store.id}`}
-            className="inline-flex items-center gap-2 rounded-xl bg-[#3483FA] px-6 py-3 text-sm font-bold text-white"
+            className="inline-flex items-center gap-2 rounded-xl bg-[#3483FA] px-6 py-3 text-sm font-bold text-white hover:bg-[#2968c8] transition-colors shadow-sm"
           >
             Ver todo el catálogo
             <ChevronRight className="h-4 w-4" />
           </Link>
-          <Link href="/seller/register" className="text-sm font-semibold text-[#3483FA] hover:underline">
+          <Link
+            href="/seller/register"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-6 py-3 text-sm font-semibold text-slate-700 hover:border-[#3483FA] hover:text-[#3483FA] transition-colors"
+          >
             Abrí tu tienda en MadsJeez
           </Link>
         </div>
