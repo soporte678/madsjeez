@@ -183,18 +183,18 @@ export async function processInboundWhatsappMessage(input: InboundMessageInput) 
 
   const { appBase } = getWhatsappBotEnv();
   const storeContext = await buildStoreContext(sellerId, input.text, appBase);
-  const catalogMatches = await searchCatalogBeforeReply(sellerId, input.text, appBase);
+  const catalogMatches = await searchCatalogBeforeReply(sellerId, input.text, appBase, 8);
 
   const recent = await prisma.whatsappMessage.findMany({
     where: { conversationId: conversation.id },
     orderBy: { createdAt: "desc" },
-    take: 8,
+    take: 12,
   });
 
   const recentMessages = recent.reverse().map((m) => ({
     direction: m.direction as "inbound" | "outbound",
     senderType: m.senderType,
-    content: m.content.slice(0, 400),
+    content: m.content.slice(0, 600),
     createdAt: m.createdAt,
   }));
 

@@ -3,7 +3,7 @@ import { requireSellerSession } from "@/lib/whatsapp-bot/auth";
 import { testOllamaConnection } from "@/lib/ai/aiService";
 import { resolveWhatsappAiProvider } from "@/lib/whatsapp-bot/ai-provider";
 import { getWhatsappBotEnv } from "@/lib/whatsapp-bot/config";
-import { prisma } from "@/lib/prisma";
+import { describeOllamaConfigIssue } from "@/lib/whatsapp-bot/ollama-client";import { prisma } from "@/lib/prisma";
 
 export async function POST() {
   const auth = await requireSellerSession();
@@ -21,9 +21,23 @@ export async function POST() {
 
   const { ollamaModel, ollamaBase } = getWhatsappBotEnv();
   const provider = resolveWhatsappAiProvider();
+  const configIssue = describeOllamaConfigIssue();
 
-  if (!ollamaModel) {
+  if (configIssue) {
     return NextResponse.json(
+      {
+        ok: false,
+        error: "ollama_config",
+        message: configIssue,
+        activeProvider: provider,
+        configuredModel: ollamaModel,
+        configuredBaseUrl: ollamaBase || null,
+      },
+      { status: 503 }
+    );
+  }
+
+  if (!ollamaModel) {    return NextResponse.json(
       {
         ok: false,
         error: "missing_model",
@@ -37,8 +51,8 @@ export async function POST() {
 
   return NextResponse.json({
     ...result,
+    message: result.ok ? undefined : (result.error ?? "Ollama no disponible"),
     activeProvider: provider,
     configuredModel: ollamaModel,
-    configuredBaseUrl: ollamaBase,
-  });
-}
+    configuredBaseUrl: ollamaBase || null,
+  });}

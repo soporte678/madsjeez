@@ -1,5 +1,6 @@
 import type { WhatsappLeadStatus } from "@prisma/client";
 import { resolveWhatsappAiProvider } from "@/lib/whatsapp-bot/ai-provider";
+import { describeOllamaConfigIssue } from "@/lib/whatsapp-bot/ollama-client";
 import { searchCatalogProducts } from "@/lib/whatsapp-bot/catalog-service";
 import { detectIntentSnippet, scoreLeadFromMessage } from "@/lib/whatsapp-bot/lead-scoring-service";
 import { geminiProvider } from "./GeminiProvider";
@@ -18,13 +19,17 @@ METODOLOGÍA (en cada respuesta):
 5. Cerrar: terminá SIEMPRE con una pregunta de cierre o CTA claro (link, cantidad, envío, pago).
 
 REGLAS DURAS:
-- Máximo 3 oraciones cortas por mensaje (WhatsApp, no email).
+- Priorizá CALIDAD sobre velocidad: cada respuesta debe ser precisa, humana y orientada a cerrar la venta.
+- Podés usar hasta 5 oraciones si hace falta para resolver bien la consulta (WhatsApp, no un email largo).
+- Leé todo el historial antes de responder; no repitas lo que ya dijiste.
 - Nunca inventes precios, stock, envío gratis ni promos que no estén en el catálogo o contexto.
 - Si hay producto con link, ofrecelo cuando haya intención warm/hot.
 - Lead "hot": priorizá pasar link + preguntar si quiere que le reserve / le mande MP.
 - Lead "new": calificá antes de bombardear con links.
-- Si no hay producto en catálogo, pedí detalle y ofrecé que un humano confirma en minutos (sin inventar).
-- Reclamos, estafas o pedido explícito de humano: no insistas con venta.`;
+- Ante objeciones: empatía primero, beneficio concreto después, cierre al final.
+- Si no hay producto en catálogo, pedí detalle específico y ofrecé confirmación humana en minutos (sin inventar).
+- Reclamos, estafas o pedido explícito de humano: no insistas con venta.
+- Respondé SOLO el mensaje para el cliente. Sin meta-comentarios, sin "como IA", sin listas numeradas salvo 2-3 ítems cortos.`;
 
 const STAGE_CLOSING_HINT: Record<string, string> = {
   new: "Etapa: prospecto nuevo. Objetivo: generar confianza y hacer 1 pregunta de calificación.",
@@ -89,9 +94,10 @@ export function shouldHandoffToHuman(params: {
 export async function searchCatalogBeforeReply(
   sellerId: string,
   query: string,
-  appBase: string
+  appBase: string,
+  limit = 8
 ) {
-  return searchCatalogProducts(sellerId, query, appBase, 5);
+  return searchCatalogProducts(sellerId, query, appBase, limit);
 }
 
 export function summarizeConversation(messages: BotMessage[], maxLen = 400): string {
@@ -163,6 +169,14 @@ function ruleFallback(input: BotReplyInput, intent: string): string {
   return `${hi}gracias por escribir. Contame qué producto o medida buscás y te ayudo a cerrar la compra.`;
 }
 
+function sanitizeModelReply(text: string): string {
+  return text
+    .replace(/[\s\S]*?<\/think>/gi, "")
+    .replace(/[\s\S]*?<\/redacted_reasoning>/gi, "")
+    .replace(/^(Vos|Asistente|Bot|Cliente):\s*/im, "")
+    .trim();
+}
+
 export async function generateBotReply(input: BotReplyInput): Promise<BotReplyOutput> {
   const { intent, confidence } = detectIntent(input.customerMessage);
   const handoff = shouldHandoffToHuman({
@@ -196,9 +210,9 @@ export async function generateBotReply(input: BotReplyInput): Promise<BotReplyOu
   }
 
   const provider = activeProvider();
-  const history = input.recentMessages.slice(-8).map((m) => ({
+  const history = input.recentMessages.slice(-12).map((m) => ({
     role: (m.direction === "inbound" ? "user" : "assistant") as "user" | "assistant",
-    content: m.content.slice(0, 400),
+    content: m.content.slice(0, 600),
   }));
 
   const catalogBlock = buildCatalogBlock(input.catalogMatches ?? []);
@@ -208,7 +222,7 @@ export async function generateBotReply(input: BotReplyInput): Promise<BotReplyOu
 ${stageHint}
 ${clientName ? `Nombre del cliente: ${clientName}.` : ""}
 Tono: ${input.botSettings.tone}.
-${input.botSettings.customInstructions ? `Reglas del vendedor: ${input.botSettings.customInstructions.slice(0, 600)}` : ""}
+${input.botSettings.customInstructions ? `Reglas del vendedor: ${input.botSettings.customInstructions.slice(0, 900)}` : ""}
 ${input.storeContextBlock ? `\n${input.storeContextBlock}` : ""}
 PRODUCTOS (usá solo estos datos):
 ${catalogBlock}`;
@@ -231,10 +245,7 @@ ${catalogBlock}`;
       ...history,
       { role: "user", content: input.customerMessage },
     ]);
-    const clean = text
-      .replace(/^(Vos|Asistente|Bot):\s*/i, "")
-      .trim()
-      .slice(0, 1200);
+    const clean = sanitizeModelReply(text).slice(0, 1800);
     return {
       text: clean || ruleFallback(input, intent),
       intent,
@@ -268,12 +279,18 @@ export async function testOllamaConnection(): Promise<{
   latencyMs?: number;
 }> {
   const start = Date.now();
+  const configIssue = describeOllamaConfigIssue();
+  if (configIssue) {
+    return { ok: false, error: configIssue, message: configIssue };
+  }
+
   const health = await ollamaProvider.healthCheck();
   if (!health.ok) {
-    const base = process.env.OLLAMA_BASE_URL ?? "localhost:11434";
+    const msg = health.error ?? "Ollama no responde. Verificá que el servicio esté levantado.";
     return {
       ok: false,
-      error: `Ollama no responde en ${base}. ${health.error ?? ""}`.trim(),
+      error: msg,
+      message: msg,
       models: health.models,
     };
   }

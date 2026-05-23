@@ -8,6 +8,18 @@ import {
 import type { AIProvider } from "./AIProvider";
 import type { ChatMessage } from "./types";
 
+/** Parámetros orientados a calidad (qwen3:14b puede tardar ~1 min — está OK). */
+const OLLAMA_QUALITY_OPTIONS = {
+  temperature: 0.35,
+  top_p: 0.92,
+  repeat_penalty: 1.12,
+  num_predict: 640,
+  num_ctx: 8192,
+};
+
+/** 5 min — prioridad calidad, no velocidad. */
+const OLLAMA_REPLY_TIMEOUT_MS = 300_000;
+
 export class OllamaProvider implements AIProvider {
   readonly name = "ollama";
 
@@ -64,9 +76,9 @@ export class OllamaProvider implements AIProvider {
         model: ollamaModel,
         messages,
         stream: false,
-        options: { temperature: 0.4, num_predict: 280 },
+        options: OLLAMA_QUALITY_OPTIONS,
       }),
-      signal: AbortSignal.timeout(120_000),
+      signal: AbortSignal.timeout(OLLAMA_REPLY_TIMEOUT_MS),
     });
 
     if (!res.ok) {
@@ -74,7 +86,11 @@ export class OllamaProvider implements AIProvider {
     }
 
     const data = (await res.json()) as { message?: { content?: string } };
-    const text = (data.message?.content ?? "").trim();
+    const raw = (data.message?.content ?? "").trim();
+    const text = raw
+      .replace(/[\s\S]*?<\/think>/gi, "")
+      .replace(/[\s\S]*?<\/redacted_reasoning>/gi, "")
+      .trim();
     if (!text || text.length < 2) throw new Error("Ollama devolvió respuesta vacía");
     return { text, model: ollamaModel };
   }

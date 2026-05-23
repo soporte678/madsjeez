@@ -17,7 +17,7 @@ export const WHATSAPP_INSTRUCTION_PRESETS: { id: string; label: string; text: st
   {
     id: "closer",
     label: "Closer de ventas (recomendado)",
-    text: "Actuá como closer: calificá con una pregunta, recomendá producto del catálogo, manejá objeciones con empatía y cerrá con CTA (link, cantidad, envío o MP). Máximo 3 oraciones. Español argentino.",
+    text: "Actuá como closer de élite: calificá con precisión, recomendá del catálogo con datos reales, manejá objeciones con empatía y cerrá con CTA claro. Priorizá calidad perfecta sobre velocidad — podés pensar bien la respuesta. Español argentino, hasta 5 oraciones si hace falta.",
   },
   {
     id: "corto",

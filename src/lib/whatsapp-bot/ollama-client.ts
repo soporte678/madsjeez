@@ -26,7 +26,7 @@ export function describeOllamaConfigIssue(): string | null {
     return "Falta OLLAMA_BASE_URL. Ej: http://127.0.0.1:11434 (local) o https://tu-ollama.railway.app (prod).";
   }
   if (!ollamaModel) {
-    return "Falta OLLAMA_MODEL. Ej: qwen2.5:7b";
+    return "Falta OLLAMA_MODEL. Ej: qwen3:14b";
   }
   if (process.env.NODE_ENV === "production" && isLocalOllamaHost(ollamaBase)) {
     return "En producción no podés usar localhost. Deployá Ollama en Railway, o exponé tu PC con un túnel (Cloudflare/ngrok) y poné esa URL en OLLAMA_BASE_URL.";
@@ -40,10 +40,10 @@ export async function checkOllamaHealth(): Promise<{
   error?: string;
 }> {
   const { ollamaBase } = getWhatsappBotEnv();
-  if (!ollamaBase) {
-    return { ok: false, error: "ollama_url_missing" };
+  const configIssue = describeOllamaConfigIssue();
+  if (configIssue) {
+    return { ok: false, error: configIssue, baseUrl: ollamaBase || undefined };
   }
-
   try {
     const res = await fetch(`${ollamaBase}/api/tags`, {
       signal: AbortSignal.timeout(8_000),
