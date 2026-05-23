@@ -1025,16 +1025,11 @@
   flex: 1 1 auto;
   min-height: 0;
   max-height: none;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0;
 }
 
 .whatsapp-bot-pro .wa-page.wa-inbox .wa-pipeline {
-  flex-shrink: 0;
-  padding: 0.625rem 1rem;
-}
-
-.whatsapp-bot-pro .wa-page.wa-inbox .wa-pipeline-head {
-  margin-bottom: 0.5rem;
+  display: none;
 }
 
 .whatsapp-bot-pro .wa-inbox-workspace .wa-col-list,
