@@ -31,7 +31,8 @@
     "ollama:bench": "node scripts/benchmark-ollama-models.mjs",
     "ollama:tunnel": "node scripts/update-ollama-tunnel.mjs",
     "ollama:tunnel:watch": "node scripts/update-ollama-tunnel.mjs --watch",
-    "jarvis:dispatch": "node scripts/jarvis-dispatch.mjs"
+    "jarvis:dispatch": "node scripts/jarvis-dispatch.mjs",
+    "jarvis:desktop": "npm run dev --prefix apps/jarvis-desktop-agent"
   },
   "dependencies": {
     "@google-analytics/data": "^6.0.0",

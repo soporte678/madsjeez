@@ -16,6 +16,13 @@ export type JarvisConfig = {
   voiceProfile: "atlas" | "nova";
   voiceOnlyOnRequest: boolean;
   apiSecret: string | null;
+  desktopPort: number;
+  desktopSecret: string | null;
+  agentTasksDir: string;
+  pushToTalk: boolean;
+  wakeWordEnabled: boolean;
+  sttProvider: string;
+  ttsProvider: string;
 };
 
 export type JarvisModelTier = "fast" | "normal" | "smart";
@@ -88,6 +95,13 @@ export function getJarvisConfig(): JarvisConfig {
     voiceProfile: profile === "nova" ? "nova" : "atlas",
     voiceOnlyOnRequest: parseBool(process.env.JARVIS_VOICE_ONLY_ON_REQUEST, true),
     apiSecret: process.env.JARVIS_API_SECRET?.trim() || null,
+    desktopPort: envInt("JARVIS_DESKTOP_PORT", 8787),
+    desktopSecret: process.env.JARVIS_DESKTOP_SECRET?.trim() || null,
+    agentTasksDir: process.env.JARVIS_AGENT_TASKS_DIR?.trim() || ".agent-tasks",
+    pushToTalk: parseBool(process.env.JARVIS_PUSH_TO_TALK, true),
+    wakeWordEnabled: parseBool(process.env.JARVIS_WAKE_WORD_ENABLED, false),
+    sttProvider: process.env.JARVIS_STT_PROVIDER?.trim() || "local",
+    ttsProvider: process.env.JARVIS_TTS_PROVIDER?.trim() || "local",
   };
 }
 
