@@ -1,10 +1,16 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "http";
+import { readFileSync, existsSync } from "fs";
+import { resolve, dirname } from "path";
+import { fileURLToPath } from "url";
 import { config } from "./config.js";
 import { routeCommand } from "./commands/command-router.js";
 import { handleVoiceStop } from "./voice/voice-router.js";
 import { speakText } from "./voice/tts.js";
 import { writeAgentTask } from "./integrations/agent-task-writer.js";
 import type { DesktopCommandInput } from "./types.js";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const VOICE_HTML_PATH = resolve(__dirname, "..", "public", "voice.html");
 
 function checkSecret(req: IncomingMessage): boolean {
   if (!config.secret || config.secret === "change-me") {
@@ -26,14 +32,32 @@ function json(res: ServerResponse, status: number, body: unknown) {
   res.end(JSON.stringify(body));
 }
 
+function serveVoicePanel(res: ServerResponse): void {
+  if (!existsSync(VOICE_HTML_PATH)) {
+    return json(res, 404, { error: "voice.html not found" });
+  }
+  const html = readFileSync(VOICE_HTML_PATH, "utf8");
+  res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+  res.end(html);
+}
+
+/** Rutas públicas en localhost: panel de micrófono (el POST sigue autenticado). */
+function isPublicRoute(method: string, url: string): boolean {
+  return method === "GET" && (url === "/voice" || url === "/voice/");
+}
+
 export function startServer(): void {
   const server = createServer(async (req, res) => {
+    const url = req.url?.split("?")[0] ?? "/";
+    const method = req.method ?? "GET";
+
+    if (isPublicRoute(method, url)) {
+      return serveVoicePanel(res);
+    }
+
     if (!checkSecret(req)) {
       return json(res, 401, { error: "Unauthorized" });
     }
-
-    const url = req.url ?? "/";
-    const method = req.method ?? "GET";
 
     try {
       if (method === "GET" && url === "/health") {
@@ -44,6 +68,7 @@ export function startServer(): void {
           readOnly: config.readOnly,
           voiceProfile: config.voiceProfile,
           pushToTalk: config.pushToTalk,
+          voicePanelUrl: `http://${config.host}:${config.port}/voice`,
         });
       }
 
@@ -57,7 +82,8 @@ export function startServer(): void {
         return json(res, 200, {
           status: "ok",
           mode: config.pushToTalk ? "push_to_talk" : "disabled",
-          hint: "Enviá transcript a POST /voice/stop",
+          voicePanelUrl: `http://${config.host}:${config.port}/voice`,
+          hint: "Abrí /voice en Chrome/Edge o enviá transcript a POST /voice/stop",
         });
       }
 
@@ -87,6 +113,12 @@ export function startServer(): void {
   });
 
   server.listen(config.port, config.host, () => {
+    const secretHint =
+      !config.secret || config.secret === "change-me"
+        ? "change-me (¡editá .env y reiniciá!)"
+        : `configurado (${config.secret.length} caracteres)`;
     console.log(`[atlas-desktop] http://${config.host}:${config.port} (readOnly=${config.readOnly})`);
+    console.log(`[atlas-desktop] Secreto: ${secretHint}`);
+    console.log(`[atlas-desktop] Voz (mic): http://${config.host}:${config.port}/voice`);
   });
 }

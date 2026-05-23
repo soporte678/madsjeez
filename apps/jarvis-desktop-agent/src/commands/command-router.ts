@@ -19,7 +19,7 @@ function normalize(text: string): string {
 
 function parseIntent(text: string): { action: string; payload?: string } {
   const t = normalize(text);
-  if (/estado del sistema|health|como estas/.test(t)) return { action: "marketplace_health" };
+  if (/estado del sistema|health check|como estas atlas/.test(t)) return { action: "marketplace_health" };
   if (/revis(a|ar) (el )?marketplace|auditoria marketplace/.test(t)) return { action: "marketplace_orchestrate" };
   if (/resum(i|e) errores|errores/.test(t)) return { action: "marketplace_orchestrate" };
   if (/reporte/.test(t) && /ventas|marketplace/.test(t)) return { action: "marketplace_orchestrate" };

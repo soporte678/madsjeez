@@ -23,7 +23,8 @@ Health: http://127.0.0.1:8787/health
 
 ## Voz
 
-- Push-to-talk por defecto (`POST /voice/stop` con `{ "text": "..." }`)
+- **Micrófono (push-to-talk):** abrí http://127.0.0.1:8787/voice en Chrome/Edge (`npm run voice`)
+- También podés enviar texto: `POST /voice/stop` con `{ "text": "Atlas, ..." }`
 - TTS local Windows SAPI (voces del sistema; perfiles Atlas/Nova = estilo de texto, no clon)
 - Wake word desactivado por defecto
 

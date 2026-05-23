@@ -15,7 +15,9 @@ function loadEnvFile() {
     if (i < 0) continue;
     const k = t.slice(0, i).trim();
     const v = t.slice(i + 1).trim();
-    if (!process.env[k]) process.env[k] = v;
+    if (!process.env[k] || k.startsWith("JARVIS_") || k === "MARKETPLACE_API_URL" || k === "MARKETPLACE_JARVIS_SECRET") {
+      process.env[k] = v;
+    }
   }
 }
 
