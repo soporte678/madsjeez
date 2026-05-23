@@ -1311,7 +1311,7 @@ export default function App() {
   if (showLiveMonitor) return renderLiveMonitor();
 
   return (
-    <div className="min-h-screen bg-background font-sans text-foreground flex flex-col relative">
+    <div className={`${activeMenu === "whatsapp-bot" ? "h-screen overflow-hidden" : "min-h-screen"} bg-background font-sans text-foreground flex flex-col relative`}>
       <header className="bg-[var(--shell-header-bg)] border-b border-[var(--shell-header-border)] py-2 px-4 shadow-sm z-50 relative flex-shrink-0 backdrop-blur supports-[backdrop-filter]:bg-[color-mix(in_srgb,var(--shell-header-bg)_88%,transparent)]">
         <div className="max-w-[1200px] mx-auto flex items-center justify-between">
           <RainbowLogo />
