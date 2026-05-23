@@ -7,6 +7,7 @@ import type {
   WebhookHandleResult,
   WhatsAppProvider,
 } from "./whatsapp-provider";
+import { parseEvolutionWebhookBatch } from "../webhook-parse";
 
 type EvolutionConnectResponse = {
   base64?: string;
@@ -252,61 +253,13 @@ export class EvolutionWhatsAppProvider implements WhatsAppProvider {
   }
 
   parseWebhook(payload: unknown): WebhookHandleResult | null {
-    if (!payload || typeof payload !== "object") return null;
-    const p = payload as Record<string, unknown>;
-    const event = String(p.event ?? p.type ?? "").toUpperCase();
-
-    const resolveInstanceName = (raw: unknown): string => {
-      if (!raw) return "";
-      if (typeof raw === "string") return raw;
-      if (typeof raw === "object" && raw !== null) {
-        const o = raw as Record<string, unknown>;
-        const name =
-          o.instanceName ?? o.instance ?? o.name ?? o.instanceId;
-        if (typeof name === "string") return name;
-      }
-      return "";
-    };
-
-    if (event.includes("CONNECTION")) {
-      return {
-        handled: true,
-        instanceName: resolveInstanceName(p.instance) || resolveInstanceName(p.instanceName),
-      };
+    const batch = parseEvolutionWebhookBatch(payload);
+    if (batch.connectionOnly) {
+      return batch.items[0] ?? { handled: true, instanceName: batch.items[0]?.instanceName };
     }
-
-    const data = (p.data ?? p) as Record<string, unknown>;
-    const key = (data.key ?? {}) as Record<string, unknown>;
-    const fromMe = Boolean(key.fromMe ?? data.fromMe);
-    if (fromMe) return { handled: false };
-
-    const instanceName =
-      resolveInstanceName(p.instance) ||
-      resolveInstanceName(p.instanceName) ||
-      resolveInstanceName(data.instance);
-    const remoteJid = String(key.remoteJid ?? data.remoteJid ?? "");
-    if (remoteJid.endsWith("@g.us")) {
-      return { handled: false, instanceName, isGroup: true };
-    }
-    const phone = remoteJid.split("@")[0]?.replace(/\D/g, "") || "";
-    const message = (data.message ?? {}) as Record<string, unknown>;
-    const text =
-      (message.conversation as string) ||
-      ((message.extendedTextMessage as Record<string, unknown>)?.text as string) ||
-      (data.text as string) ||
-      "";
-
-    if (!phone || !text.trim()) return null;
-
-    return {
-      handled: true,
-      instanceName,
-      phone,
-      text: text.trim(),
-      providerMessageId: String(key.id ?? ""),
-      fromMe: false,
-      remoteJid,
-    };
+    const inbound = batch.items.find((i) => i.handled && i.phone && i.text);
+    if (inbound) return inbound;
+    return batch.items[0] ?? null;
   }
 }
 

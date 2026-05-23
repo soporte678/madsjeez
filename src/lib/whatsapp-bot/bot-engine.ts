@@ -26,9 +26,13 @@ export type InboundMessageInput = {
 };
 
 export async function processInboundWhatsappMessage(input: InboundMessageInput) {
-  if (input.isGroup) return;
+  if (input.isGroup) {
+    console.info("[whatsapp-bot] skip group message", input.phone);
+    return;
+  }
 
   if (await isDuplicateInboundMessage(input.providerMessageId)) {
+    console.info("[whatsapp-bot] skip duplicate", input.providerMessageId);
     return;
   }
 
@@ -41,7 +45,10 @@ export async function processInboundWhatsappMessage(input: InboundMessageInput) 
   const session = await prisma.whatsappSession.findUnique({
     where: { sellerId },
   });
-  if (!session) return;
+  if (!session) {
+    console.warn("[whatsapp-bot] no session for seller", sellerId, "instance", input.instanceName);
+    return;
+  }
 
   const phone = input.phone.replace(/\D/g, "");
   const now = new Date();
@@ -111,6 +118,13 @@ export async function processInboundWhatsappMessage(input: InboundMessageInput) 
       providerMessageId: input.providerMessageId,
       remoteJid: input.remoteJid,
     },
+  });
+
+  console.info("[whatsapp-bot] inbound saved", {
+    sellerId,
+    conversationId: conversation.id,
+    phone,
+    preview: preview.slice(0, 60),
   });
 
   const { runWhatsappAutomations } = await import("./automation-runner");
