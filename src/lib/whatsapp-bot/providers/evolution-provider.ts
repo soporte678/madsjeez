@@ -94,14 +94,16 @@ async function ensureInstanceWebhook(
   await evolutionJson(`/webhook/set/${encodeURIComponent(instanceName)}`, {
     method: "POST",
     body: JSON.stringify({
-      enabled: true,
-      url: webhookUrl,
-      webhookByEvents: false,
-      webhookBase64: false,
-      events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE"],
-      headers: webhookSecret
-        ? { "x-madsjeez-webhook-secret": webhookSecret }
-        : undefined,
+      webhook: {
+        enabled: true,
+        url: webhookUrl,
+        webhookByEvents: false,
+        webhookBase64: false,
+        events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE"],
+        ...(webhookSecret
+          ? { headers: { "x-madsjeez-webhook-secret": webhookSecret } }
+          : {}),
+      },
     }),
   });
   logEvolutionSafe("webhook_set", { instanceName });
