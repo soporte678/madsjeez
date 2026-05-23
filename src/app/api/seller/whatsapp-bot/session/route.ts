@@ -6,6 +6,8 @@ import {
   refreshSellerQr,
 } from "@/lib/whatsapp-bot/session-service";
 import { syncSessionConnectionState } from "@/lib/whatsapp-bot/bot-engine";
+import { resyncEvolutionInstanceWebhook } from "@/lib/whatsapp-bot/providers/evolution-provider";
+import { getWhatsappBotEnv } from "@/lib/whatsapp-bot/config";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
@@ -18,6 +20,16 @@ export async function GET() {
   const session = await prisma.whatsappSession.findUnique({
     where: { sellerId: auth.ctx.sellerId },
   });
+
+  if (session?.status === "connected" && session.providerInstanceId) {
+    const { evolutionConfigured } = getWhatsappBotEnv();
+    if (evolutionConfigured) {
+      resyncEvolutionInstanceWebhook(session.providerInstanceId).catch((e) => {
+        console.warn("[whatsapp-bot] webhook resync on session GET failed", e);
+      });
+    }
+  }
+
   const config = await prisma.sellerBotConfig.findUnique({
     where: { sellerId: auth.ctx.sellerId },
   });

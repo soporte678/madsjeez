@@ -79,7 +79,13 @@ async function listInstanceNames(): Promise<string[]> {
   }
 }
 
-/** Re-aplica webhook en instancias ya creadas (create solo lo setea al crear). */
+/** Re-sincroniza webhook de Evolution con la URL y secret actuales de Railway. */
+export async function resyncEvolutionInstanceWebhook(instanceName: string): Promise<void> {
+  const { appBase, webhookSecret } = getWhatsappBotEnv();
+  const webhookUrl = `${appBase}/api/webhooks/evolution`;
+  await ensureInstanceWebhook(instanceName, webhookUrl, webhookSecret);
+}
+
 async function ensureInstanceWebhook(
   instanceName: string,
   webhookUrl: string,

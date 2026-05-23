@@ -3,6 +3,7 @@ import {
   checkOllamaHealth,
   describeOllamaConfigIssue,
   isOllamaConfiguredForApp,
+  ngrokFetchHeaders,
 } from "@/lib/whatsapp-bot/ollama-client";
 import type { ChatMessage } from "./types";
 
@@ -51,10 +52,12 @@ export async function ollamaChatJson(params: {
     throw new Error(health.error ?? "Ollama no responde");
   }
 
+  const numPredict = parseInt(process.env.OLLAMA_NUM_PREDICT ?? "1200", 10) || 1200;
+
   const runOnce = async (messages: ChatMessage[]) => {
     const res = await fetch(`${ollamaBase.replace(/\/$/, "")}/api/chat`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: ngrokFetchHeaders(ollamaBase),
       body: JSON.stringify({
         model: ollamaModel,
         messages,
@@ -64,14 +67,22 @@ export async function ollamaChatJson(params: {
           temperature: 0.3,
           top_p: 0.9,
           repeat_penalty: 1.1,
-          num_predict: 900,
+          num_predict: numPredict,
           num_ctx: ollamaNumCtx,
         },
       }),
       signal: AbortSignal.timeout(OLLAMA_REPLY_TIMEOUT_MS),
     });
     if (!res.ok) throw new Error(`Ollama HTTP ${res.status}`);
-    const data = (await res.json()) as { message?: { content?: string } };
+    const data = (await res.json()) as {
+      message?: { content?: string };
+      done_reason?: string;
+    };
+    if (data.done_reason === "length" && !data.message?.content?.trim()) {
+      throw new Error(
+        `Ollama: num_predict insuficiente (${numPredict}). Subí OLLAMA_NUM_PREDICT.`
+      );
+    }
     const raw = (data.message?.content ?? "")
       .replace(/[\s\S]*?<\/think>/gi, "")
       .replace(/[\s\S]*?<\/redacted_reasoning>/gi, "")

@@ -4,6 +4,22 @@ export function isLocalOllamaHost(base: string): boolean {
   return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(base);
 }
 
+/** Headers extra para ngrok (evita la página de advertencia del browser). */
+export function ngrokFetchHeaders(base: string): Record<string, string> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (base.includes("ngrok")) {
+    headers["ngrok-skip-browser-warning"] = "true";
+  }
+  return headers;
+}
+
+function ngrokHeaders(base: string): Record<string, string> {
+  if (base.includes("ngrok")) {
+    return { "ngrok-skip-browser-warning": "true" };
+  }
+  return {};
+}
+
 export function hasOllamaEnvConfigured(): boolean {
   const { ollamaBase, ollamaModel } = getWhatsappBotEnv();
   return Boolean(ollamaBase && ollamaModel);
@@ -46,6 +62,7 @@ export async function checkOllamaHealth(): Promise<{
   }
   try {
     const res = await fetch(`${ollamaBase}/api/tags`, {
+      headers: { "Content-Type": "application/json", ...ngrokHeaders(ollamaBase) },
       signal: AbortSignal.timeout(8_000),
     });
     if (!res.ok) {
@@ -72,7 +89,7 @@ export async function generateOllamaReply(
 
   const res = await fetch(`${ollamaBase}/api/generate`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...ngrokHeaders(ollamaBase) },
     body: JSON.stringify({
       model: useModel,
       prompt,

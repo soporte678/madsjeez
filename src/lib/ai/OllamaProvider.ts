@@ -4,11 +4,15 @@ import {
   describeOllamaConfigIssue,
   hasOllamaEnvConfigured,
   isOllamaConfiguredForApp,
+  ngrokFetchHeaders,
 } from "@/lib/whatsapp-bot/ollama-client";
+
 import type { AIProvider } from "./AIProvider";
 import type { ChatMessage } from "./types";
 
-/** Parámetros orientados a calidad (qwen3:14b puede tardar ~1 min — está OK). */
+/** Parámetros orientados a calidad.
+ *  num_predict: 1200 — qwen3 necesita tokens extra para superar la fase de thinking.
+ */
 function ollamaQualityOptions() {
   const numCtx = Math.min(
     32768,
@@ -18,7 +22,7 @@ function ollamaQualityOptions() {
     temperature: 0.35,
     top_p: 0.92,
     repeat_penalty: 1.12,
-    num_predict: 640,
+    num_predict: parseInt(process.env.OLLAMA_NUM_PREDICT ?? "1200", 10) || 1200,
     num_ctx: numCtx,
   };
 }
@@ -77,7 +81,7 @@ export class OllamaProvider implements AIProvider {
 
     const res = await fetch(`${ollamaBase.replace(/\/$/, "")}/api/chat`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: ngrokFetchHeaders(ollamaBase),
       body: JSON.stringify({
         model: ollamaModel,
         messages,
@@ -91,7 +95,21 @@ export class OllamaProvider implements AIProvider {
       throw new Error(`Ollama HTTP ${res.status}`);
     }
 
-    const data = (await res.json()) as { message?: { content?: string } };
+    const data = (await res.json()) as {
+      message?: { content?: string };
+      thinking?: string;
+      done_reason?: string;
+    };
+
+    // qwen3 thinking models (Ollama <0.7): content puede estar vacío si el budget
+    // de tokens se agotó dentro del bloque <think>. Avisamos con error claro.
+    if (data.done_reason === "length" && !data.message?.content?.trim()) {
+      throw new Error(
+        "Ollama: num_predict insuficiente para que el modelo supere la fase de thinking. " +
+        "Incrementá OLLAMA_NUM_PREDICT (actual: " + ollamaQualityOptions().num_predict + ")."
+      );
+    }
+
     const raw = (data.message?.content ?? "").trim();
     const text = raw
       .replace(/[\s\S]*?<\/think>/gi, "")
