@@ -80,7 +80,7 @@ export async function POST(req: Request) {
       guest_email?: string | null;
       guest_phone?: string | null;
       guest_document?: string | null;
-      flash?: FlashAddressData;
+      flash?: FlashAddressData & { shippingTier?: string; shippingPrice?: number; priorityScore?: number };
     };
     const shippingAddressRaw = body.shipping ?? {};
     const guestClaim = buildGuestClaim(session.user.email, {
@@ -237,12 +237,47 @@ export async function POST(req: Request) {
       }
     }
 
+    // Flash shipping: validate server-side price matches DB, cost goes 100% to driver
+    let flashShippingCost = body.flash?.shippingPrice ?? 0;
+    if (body.flash?.shippingTier && flashShippingCost > 0) {
+      try {
+        const dbOption = await prisma.flashShippingOption.findUnique({
+          where: { code: body.flash.shippingTier },
+          select: { price: true, isActive: true },
+        });
+        if (dbOption?.isActive && dbOption.price !== flashShippingCost) {
+          console.warn(
+            `checkout/mp flash price mismatch: client=${flashShippingCost}, db=${dbOption.price}, tier=${body.flash.shippingTier}. Using DB price.`
+          );
+          flashShippingCost = dbOption.price;
+          body.flash.shippingPrice = dbOption.price;
+        }
+        if (dbOption && !dbOption.isActive) {
+          return NextResponse.json(
+            { code: "FLASH_TIER_INACTIVE", error: "La opción de envío Flash seleccionada no está disponible." },
+            { status: 400 }
+          );
+        }
+      } catch {
+        // Table not migrated — accept client price (fallback pricing)
+      }
+    }
+    const effectiveShippingCost = flashShippingCost > 0 ? 0 : shippingCostFull; // Flash shipping is added separately to MP items
+
     let split = computeCheckoutEscrowSplit({
       productSubtotal: subtotal,
-      shippingCostFull,
+      shippingCostFull: effectiveShippingCost,
       affiliateCommissionPercent,
       marketplaceSalesFeePercent,
     });
+
+    // If Flash, add the Flash shipping to the total buyer charged
+    if (flashShippingCost > 0) {
+      split = {
+        ...split,
+        totalBuyerCharged: roundMoney(split.totalBuyerCharged + flashShippingCost),
+      };
+    }
 
     // En carritos de ticket bajo, 50/50 de envío puede dejar neto vendedor <= 0.
     // Fallback operativo: el comprador cubre 100% del envío para destrabar checkout.
@@ -505,7 +540,18 @@ export async function POST(req: Request) {
       currency_id: "ARS",
     }));
 
-    if (shippingCostFull > 0 && split.buyerShippingShare > 0) {
+    // Flash shipping: comprador paga 100% (va al conductor)
+    if (body.flash?.shippingPrice && body.flash.shippingPrice > 0) {
+      const flashTierLabel = body.flash.shippingTier === "flash_plus" ? "Flash Plus" :
+                              body.flash.shippingTier === "flash_local" ? "Flash Local" : "Flash Normal";
+      mpItems.push({
+        id: "flash_shipping",
+        title: `Envío ⚡ ${flashTierLabel}`,
+        quantity: 1,
+        unit_price: roundMoney(body.flash.shippingPrice),
+        currency_id: "ARS",
+      });
+    } else if (shippingCostFull > 0 && split.buyerShippingShare > 0) {
       mpItems.push({
         id: "shipping_buyer_share",
         title: "Envío (parte comprador 50%)",
@@ -659,6 +705,10 @@ export async function POST(req: Request) {
               city: fd.city,
               province: fd.province,
               postalCode: fd.postalCode,
+              shippingTier: fd.shippingTier ?? null,
+              shippingPrice: fd.shippingPrice ?? null,
+              priorityScore: fd.priorityScore ?? 50,
+              paymentStatus: "paid_by_customer",
             },
           });
           await logFlashAudit({

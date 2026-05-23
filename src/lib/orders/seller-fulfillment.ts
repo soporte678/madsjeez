@@ -1,3 +1,4 @@
+import { isPaidLikeOrderStatus } from "@/lib/orders/order-status";
 
 /** Estados operativos del vendedor (hasta API de envíos). */
 export type SellerFulfillmentStage =
@@ -100,8 +101,7 @@ export function stageCountsAsDispatched(stage: SellerFulfillmentStage): boolean 
 }
 
 function isPaidLikeMpStatus(sb: string): boolean {
-  const u = sb.toLowerCase();
-  return u === "paid" || u === "preparing" || u === "shipped" || u === "delivered" || u === "completed";
+  return isPaidLikeOrderStatus(sb);
 }
 
 export function computeDispatchDelay(args: {

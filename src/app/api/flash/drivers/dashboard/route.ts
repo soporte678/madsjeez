@@ -142,6 +142,8 @@ export async function GET() {
       tier: driver.tier,
       acceptanceRate: driver.acceptanceRate,
       payoutCbu: driver.payoutCbu,
+      mpLinked: (driver as Record<string, unknown>).mpLinked ?? false,
+      mpAccountRef: (driver as Record<string, unknown>).mpAccountRef ?? null,
       connectedMinutes,
       totalKm: driver.totalKm,
     },

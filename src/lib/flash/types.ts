@@ -122,6 +122,10 @@ export const FLASH_STATUS_LABELS: Record<FlashShipmentStatus, string> = {
   PAYMENT_CONFIRMED: "Pago confirmado",
   LABEL_GENERATED: "Etiqueta generada",
   PACKAGE_READY: "Paquete preparado",
+  AVAILABLE: "Disponible para retirar",
+  ACCEPTED_BY_DRIVER: "Aceptado por repartidor",
+  DRIVER_EN_ROUTE_TO_PICKUP: "Repartidor en camino",
+  PACKAGE_PICKED_UP: "Paquete retirado",
   ASSIGNED_TO_DRIVER: "Asignado al chofer",
   IN_TRANSIT: "En camino",
   ARRIVED_AT_ADDRESS: "Llegó al domicilio",
@@ -132,6 +136,7 @@ export const FLASH_STATUS_LABELS: Record<FlashShipmentStatus, string> = {
   PENDING_VISIT_3: "3ra visita pendiente",
   FAILED_ATTEMPT_3: "3er intento fallido",
   RETURNED_TO_SENDER: "Devuelto al remitente",
+  RETURNED_TO_SELLER: "Devuelto al vendedor",
   CANCELLED: "Cancelado",
 }
 
@@ -140,6 +145,10 @@ export const FLASH_STATUS_COLORS: Record<FlashShipmentStatus, string> = {
   PAYMENT_CONFIRMED: "bg-blue-100 text-blue-700",
   LABEL_GENERATED: "bg-purple-100 text-purple-700",
   PACKAGE_READY: "bg-indigo-100 text-indigo-700",
+  AVAILABLE: "bg-emerald-100 text-emerald-700",
+  ACCEPTED_BY_DRIVER: "bg-sky-100 text-sky-700",
+  DRIVER_EN_ROUTE_TO_PICKUP: "bg-sky-200 text-sky-800",
+  PACKAGE_PICKED_UP: "bg-cyan-100 text-cyan-700",
   ASSIGNED_TO_DRIVER: "bg-cyan-100 text-cyan-700",
   IN_TRANSIT: "bg-yellow-100 text-yellow-700",
   ARRIVED_AT_ADDRESS: "bg-orange-100 text-orange-700",
@@ -150,6 +159,7 @@ export const FLASH_STATUS_COLORS: Record<FlashShipmentStatus, string> = {
   PENDING_VISIT_3: "bg-amber-200 text-amber-800",
   FAILED_ATTEMPT_3: "bg-red-300 text-red-900",
   RETURNED_TO_SENDER: "bg-gray-300 text-gray-800",
+  RETURNED_TO_SELLER: "bg-orange-200 text-orange-900",
   CANCELLED: "bg-gray-200 text-gray-600",
 }
 

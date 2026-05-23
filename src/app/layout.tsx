@@ -60,6 +60,10 @@ export const metadata: Metadata = {
   },
 }
 
+const GA_MEASUREMENT_ID = (
+  process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim() || "G-ZXW730DHRB"
+).replace(/[^A-Z0-9-]/g, "")
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -73,6 +77,19 @@ export default function RootLayout({
             __html: `(function(){try{var t=localStorage.getItem('madsjeez-theme-tone');document.documentElement.setAttribute('data-theme',t==='soft'||t==='dark'?t:'light')}catch(e){}})();`,
           }}
         />
+        {GA_MEASUREMENT_ID ? (
+          <>
+            <script
+              async
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+            />
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_MEASUREMENT_ID}');`,
+              }}
+            />
+          </>
+        ) : null}
       </head>
       <body className="min-h-full flex flex-col font-outfit">
         <DeferredAnalytics />

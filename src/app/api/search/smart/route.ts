@@ -71,7 +71,7 @@ Responde SOLO con el JSON válido, sin markdown ni explicación.`
     let dbQuery = supabase
       .from("products")
       .select(`
-        id, title, price, original_price, condition, shipping_free, stock,
+        id, title, price, original_price, condition, free_shipping, stock,
         product_images(url, is_primary)
       `)
       .eq("is_active", true)
@@ -96,7 +96,7 @@ Responde SOLO con el JSON válido, sin markdown ni explicación.`
         price: p.price,
         original_price: p.original_price,
         condition: p.condition,
-        shipping_free: p.shipping_free,
+        shipping_free: Boolean(p.free_shipping ?? p.shipping_free),
         stock: p.stock,
         primary_image: primaryImageUrlFromRows(p.product_images),
         seller_name: null,

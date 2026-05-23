@@ -1,0 +1,56 @@
+---
+description: Automatically use Railway MCP for Railway deploys, services, environments, variables, logs, databases, and deployment fixes.
+alwaysApply: true
+---
+
+# Railway Automatic DevOps Mode
+
+Whenever the task involves Railway, deployments, services, environments, variables, logs, databases, domains, build errors, runtime errors, production issues, or environment configuration, use Railway MCP automatically.
+
+Do not ask the user to manually open Railway unless MCP cannot perform the task.
+
+Workflow:
+
+1. Detect the current app framework and deployment requirements.
+2. Detect required environment variables from:
+   - source code
+   - `.env`
+   - `.env.example`
+   - README
+   - Dockerfile
+   - package scripts
+   - Prisma/Drizzle config
+   - auth providers
+   - database clients
+   - payment/email/storage integrations
+3. Use Railway MCP to identify the correct project, service, and environment.
+4. Read current Railway variables before changing anything.
+5. Compare required variables with Railway variables.
+6. Add or update missing variables automatically when safe.
+7. Never expose secret values in chat.
+8. If secrets are missing and cannot be inferred, ask only for the missing values.
+9. If database/add-on services are required and safe to create, create them or request confirmation if they may generate cost.
+10. If deploy/build/start config is wrong, update the repo files.
+11. Trigger or apply deploy/staged changes when MCP allows it.
+12. Read Railway logs after deployment.
+13. Fix remaining errors iteratively.
+
+Safety:
+
+- Do not delete Railway projects, services, databases, domains, or environments without explicit confirmation.
+- Do not overwrite production variables unless the user explicitly confirms.
+- Prefer staging/development when the environment is unclear.
+- For production, first list variable names only and ask for confirmation.
+- Do not print tokens, private keys, database URLs, API keys, JWT secrets, OAuth secrets, or webhook secrets.
+- For long base64 secrets, multiline private keys, Firebase credentials, or PEM keys, warn the user and verify carefully.
+
+Final response format:
+
+- Railway project:
+- Service:
+- Environment:
+- Files changed:
+- Variables added/updated, names only:
+- Deploy/build status:
+- Logs checked:
+- Remaining manual actions:

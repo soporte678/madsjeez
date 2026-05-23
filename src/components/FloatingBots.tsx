@@ -6,9 +6,13 @@ import AIChatBot from "./AIChatBot";
 import WhatsAppButton from "./WhatsAppButton";
 import FloatingFabDock from "./FloatingFabDock";
 
+// Solo se muestran en home y landing page
+const ALLOWED_PATHS = ["/", "/landing"];
+
 export default function FloatingBots() {
   const pathname = usePathname();
-  if (pathname.startsWith("/admin") || pathname.startsWith("/driver")) {
+
+  if (!ALLOWED_PATHS.includes(pathname)) {
     return null;
   }
 

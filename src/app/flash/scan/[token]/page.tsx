@@ -32,6 +32,15 @@ export default function FlashScanPage() {
       .finally(() => setLoading(false))
   }, [token, status])
 
+  const handlePickup = async () => {
+    if (!shipment) return
+    const res = await fetch(`/api/flash/shipments/${shipment.id}/pickup`, { method: "POST" })
+    const data = await res.json()
+    if (!res.ok) { setError(data.error ?? "Error al confirmar retiro"); return }
+    setShipment((s) => s ? { ...s, status: "IN_TRANSIT" } : s)
+    setDone(true)
+  }
+
   const registerArrive = async (lat?: number, lng?: number) => {
     if (!shipment) return
     const res = await fetch(`/api/flash/shipments/${shipment.id}/arrive`, {
@@ -153,18 +162,38 @@ export default function FlashScanPage() {
       {/* Acciones */}
       {!showConfirm && (
         <div className="space-y-3">
-          <a href={mapsUrl} target="_blank" rel="noreferrer">
-            <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-              <Navigation className="h-4 w-4 mr-2" /> Abrir Google Maps
-            </Button>
-          </a>
-          {shipment.status !== "DELIVERED" && shipment.status !== "RETURNED_TO_SENDER" && (
+          {/* Pickup: driver scanned at seller's location */}
+          {["ACCEPTED_BY_DRIVER", "DRIVER_EN_ROUTE_TO_PICKUP", "ASSIGNED_TO_DRIVER", "PACKAGE_READY"].includes(shipment.status) && (
             <Button
-              className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-bold"
-              onClick={handleArrive}
+              className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold"
+              onClick={handlePickup}
             >
-              <Package className="h-4 w-4 mr-2" /> Confirmar llegada al domicilio
+              <Package className="h-4 w-4 mr-2" /> ✅ Confirmar retiro del paquete
             </Button>
+          )}
+
+          {/* In transit: driver heads to recipient */}
+          {["IN_TRANSIT", "ARRIVED_AT_ADDRESS", "PENDING_VISIT_2", "PENDING_VISIT_3"].includes(shipment.status) && (
+            <>
+              <a href={mapsUrl} target="_blank" rel="noreferrer">
+                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                  <Navigation className="h-4 w-4 mr-2" /> Abrir Google Maps
+                </Button>
+              </a>
+              <Button
+                className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-bold"
+                onClick={handleArrive}
+              >
+                <Package className="h-4 w-4 mr-2" /> Confirmar llegada al domicilio
+              </Button>
+            </>
+          )}
+
+          {/* Already delivered / returned */}
+          {["DELIVERED", "RETURNED_TO_SENDER", "RETURNED_TO_SELLER", "CANCELLED"].includes(shipment.status) && (
+            <div className="text-center text-gray-500 text-sm py-4">
+              Este envío ya está finalizado.
+            </div>
           )}
         </div>
       )}

@@ -75,7 +75,7 @@ Si no podés identificar el producto, devolvé:
       const { data } = await supabase
         .from("products")
         .select(`
-          id, title, price, original_price, condition, shipping_free, stock,
+          id, title, price, original_price, condition, free_shipping, stock,
           product_images(url, is_primary)
         `)
         .eq("is_active", true)
@@ -89,7 +89,7 @@ Si no podés identificar el producto, devolvé:
           price: p.price,
           original_price: p.original_price,
           condition: p.condition,
-          shipping_free: p.shipping_free,
+          shipping_free: Boolean(p.free_shipping ?? p.shipping_free),
           primary_image: primaryImageUrlFromRows(p.product_images),
           seller_name: null,
           category_name: null,

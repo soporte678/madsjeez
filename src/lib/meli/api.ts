@@ -1,4 +1,5 @@
 import type { MeliItemDetail } from "./types";
+import { meliListingKindSearchParam, type MeliListingKind } from "./listing-kind";
 
 /** Mercado Libre API helpers (server-only). */
 
@@ -35,11 +36,17 @@ export type MeliItemsSearchResponse = {
 export async function meliSearchUserItems(
   accessToken: string,
   meliUserId: string,
-  scrollId?: string
+  scrollId?: string,
+  listingKind: MeliListingKind = "all"
 ) {
-  const qs = new URLSearchParams({ limit: "100" });
+  // search_type=scan desde la 1ª página: sin esto ML pagina por offset y el scroll
+  // se corta (~100 ítems) aunque paging.total reporte cientos (ej. 923).
+  const qs = new URLSearchParams({ limit: "100", search_type: "scan" });
+  const catalogListing = meliListingKindSearchParam(listingKind);
+  if (catalogListing != null) {
+    qs.set("catalog_listing", catalogListing);
+  }
   if (scrollId) {
-    qs.set("search_type", "scan");
     qs.set("scroll_id", scrollId);
   }
   return meliApi<MeliItemsSearchResponse>(
@@ -70,6 +77,27 @@ export async function meliPutItem(
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
+  });
+}
+
+/** Crea una publicación nueva en la cuenta del token. */
+export async function meliPostItem(accessToken: string, body: Record<string, unknown>) {
+  return meliApi<{ id?: string; permalink?: string; status?: string }>(accessToken, "/items", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+export async function meliPostItemDescription(
+  accessToken: string,
+  itemId: string,
+  plainText: string
+) {
+  return meliApi<unknown>(accessToken, `/items/${itemId}/description`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ plain_text: plainText }),
   });
 }
 

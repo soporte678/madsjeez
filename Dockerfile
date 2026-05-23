@@ -30,6 +30,10 @@ RUN echo "=== Next build (standalone) ===" && \
 FROM node:22-bookworm-slim AS runner
 WORKDIR /app
 
+# Prisma necesita el binario `openssl` para detectar la versión de libssl en runtime.
+# bookworm-slim ya trae libssl3 pero no el CLI — instalarlo resuelve los warnings.
+RUN apt-get update -y && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
+
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 

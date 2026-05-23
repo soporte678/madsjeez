@@ -1,0 +1,82 @@
+---
+description: Equipo de especialistas Agency Agents — roles, herramientas y protocolo de trabajo en Madsjeez
+alwaysApply: true
+---
+
+# Agency Agents — equipo de especialistas (Madsjeez)
+
+**Referencia upstream:** [msitarzewski/agency-agents](https://github.com/msitarzewski/agency-agents)  
+**Copia local (solo lectura):** `.cursor/references/agency-agents/` — actualizar con `git -C .cursor/references/agency-agents pull`  
+**Índice del proyecto:** `docs/agency-agents-reference.md`
+
+## Principio
+
+Agency Agents es **biblioteca de roles**, no una segunda arquitectura. No copiar `.md` de agentes al repo ni crear carpetas paralelas de “agentes”. Leer el agente relevante en la referencia local y **aplicar su mentalidad** al código existente de Madsjeez.
+
+## Protocolo obligatorio
+
+1. **Auditar primero** en código existente (grep, rutas, Prisma, tests) antes de proponer cambios.
+2. **Cambios incrementales**, reversibles y testeables; un PR conceptual por preocupación.
+3. **No duplicar módulos** ni reimplementar flujos que ya existen.
+4. **Zona roja** (explicar agente, archivos, cambio, riesgo y prueba **antes** de editar):
+   - Checkout / pagos: `src/app/api/checkout/`, `src/lib/checkout/`, `src/lib/mercadopago/`, `src/app/api/webhooks/mercadopago/`
+   - Órdenes / carrito: `src/app/api/orders/`, `src/app/api/cart/`
+   - Flash / logística: `src/lib/flash/`, `src/app/api/flash/`, `src/app/admin/flash/`, `src/app/seller/flash/`
+   - Modelos / migraciones: `prisma/schema.prisma`, `prisma/migrations/`
+   - Admin / seller dashboards sensibles: `src/app/admin/`, `src/app/seller/`, `src/app/api/admin/`
+5. Máximo **3 reintentos** por enfoque; luego escalar (descomponer tarea o cambiar agente).
+6. **Evidencia sobre afirmaciones** en QA (tests, request/response, capturas).
+
+## Formato de respuesta (cuando el usuario pida una tarea)
+
+Responder siempre con estas secciones:
+
+- **Rol/agente recomendado** — nombre Agency + división; si son varios, orden de activación.
+- **Objetivo** — resultado medible en 1–2 frases.
+- **Archivos o áreas a revisar** — rutas concretas en este repo.
+- **Prompt exacto para ejecutar** — bloque copiable para Cursor / Windsurf / Claude / Codex / Verdent / Antigravity.
+- **Qué no tocar** — módulos y contratos que deben quedar intactos.
+- **Criterios de éxito** — checks verificables (tests, API, UX, métricas).
+
+## Asignación por herramienta
+
+| Herramienta | Preferir para |
+|-------------|----------------|
+| **Cursor** | Backend, Prisma, APIs, pagos MP, Flash (zonas, asignación, liquidaciones), seguridad, webhooks |
+| **Windsurf** | Frontend, checkout UI, dashboard conductor, admin UI, UX, performance |
+| **Claude** | Arquitectura, refactors grandes, análisis profundo, documentación técnica |
+| **Codex** | Fixes puntuales, tests, scripts, PRs acotados |
+| **Verdent** | Revisión, coordinación, automatización de flujos |
+| **Antigravity** | Skills/agentes especializados cuando el usuario lo indique |
+
+## Mapa rápido: dominio Madsjeez → agente Agency
+
+| Dominio | Agente(s) | Archivo referencia |
+|---------|-----------|-------------------|
+| Marketplace / catálogo / búsqueda | Backend Architect + Database Optimizer | `engineering/engineering-backend-architect.md`, `engineering/engineering-database-optimizer.md` |
+| Checkout / Mercado Pago / escrow | Backend Architect + Security Engineer + API Tester | `engineering/engineering-security-engineer.md`, `testing/testing-api-tester.md` |
+| Flash / envíos / conductor | Backend Architect + SRE + Incident Response Commander (si prod) | `engineering/engineering-sre.md`, `engineering/engineering-incident-response-commander.md` |
+| Frontend / ProductCard / home | Frontend Developer + UI Designer | `engineering/engineering-frontend-developer.md`, `design/design-ui-designer.md` |
+| UX checkout / seller / admin | UX Researcher + UX Architect | `design/design-ux-researcher.md`, `design/design-ux-architect.md` |
+| Integración Meli | Backend Architect + API Tester | `testing/testing-api-tester.md` |
+| SEO / merchant / contenido | SEO Specialist + Content Creator | `marketing/marketing-seo-specialist.md`, `marketing/marketing-content-creator.md` |
+| Marketing / growth | Growth Hacker + Analytics Reporter | `marketing/marketing-growth-hacker.md`, `support/support-analytics-reporter.md` |
+| Testing / regresiones | Evidence Collector + API Tester + Reality Checker | `testing/testing-evidence-collector.md`, `testing/testing-reality-checker.md` |
+| Seguridad / auth / webhooks | Security Engineer + Code Reviewer | `engineering/engineering-security-engineer.md`, `engineering/engineering-code-reviewer.md` |
+| Refactor / arquitectura grande | Software Architect + Backend Architect | `engineering/engineering-software-architect.md` |
+| Onboarding al repo | Codebase Onboarding Engineer | `engineering/engineering-codebase-onboarding-engineer.md` |
+| Coordinación multi-fase | Agents Orchestrator (NEXUS) | `strategy/nexus-strategy.md`, `strategy/QUICKSTART.md` |
+
+Detalle de rutas del repo y prompts por escenario: `docs/agency-agents-reference.md`.
+
+## Modos NEXUS (tamaño de tarea)
+
+- **NEXUS-Micro** (1–5 días): bug, endpoint, UI puntual — 1–2 agentes + QA al cierre.
+- **NEXUS-Sprint** (2–6 semanas): feature/MVP — PM + diseño + eng + Evidence Collector.
+- **NEXUS-Full**: producto nuevo; no usar salvo pedido explícito.
+
+Plantillas de activación: `.cursor/references/agency-agents/strategy/coordination/agent-activation-prompts.md`
+
+## Cómo leer un agente
+
+Abrir solo el `.md` necesario bajo `.cursor/references/agency-agents/{division}/`. Extraer: misión, entregables, métricas de éxito y estilo de comunicación. **No** pegar el archivo entero en el chat salvo que el usuario lo pida.

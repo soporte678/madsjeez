@@ -25,6 +25,48 @@ Variables opcionales en Railway:
 
 - `GOOGLE_MERCHANT_BRAND` — nombre de marca en el feed (default: MadsJeez Marketplace).
 
+### 2b. Content API for Shopping (push desde MadsJeez)
+
+Además del feed XML, el backend puede **insertar/actualizar** productos vía **Content API v2.1** (`products.custombatch`).
+
+**Variables Railway (obligatorias para API):**
+
+| Variable | Uso |
+|----------|-----|
+| `GOOGLE_MERCHANT_CENTER_ID` | ID numérico de la cuenta Merchant |
+| `GOOGLE_MERCHANT_CLIENT_ID` | OAuth Client (Google Cloud Console) |
+| `GOOGLE_MERCHANT_CLIENT_SECRET` | OAuth secret |
+| `GOOGLE_MERCHANT_REFRESH_TOKEN` | Refresh token con scope `content` |
+| `GOOGLE_MERCHANT_BRAND` | Marca en productos |
+| `GOOGLE_MERCHANT_CONTENT_LANGUAGE` | `es` (default) |
+| `GOOGLE_MERCHANT_TARGET_COUNTRY` | `AR` (default) |
+
+**Obtener refresh token (una vez):**
+
+1. En Google Cloud: API **Content API for Shopping** habilitada; OAuth consent + redirect URI  
+   `https://www.madsjeez.com.ar/api/admin/google-merchant/oauth/callback`
+2. Logueado como admin en el panel:  
+   `GET /api/admin/google-merchant/oauth/url?redirect_uri=...` → abrir `authorizeUrl`
+3. Tras autorizar, el callback devuelve `refresh_token` → pegarlo en Railway.
+
+**Endpoints admin (sesión admin Supabase):**
+
+| Método | Ruta |
+|--------|------|
+| GET | `/api/admin/google-merchant/status` |
+| POST | `/api/admin/google-merchant/sync` body `{ "limit": 5000, "purgeInactive": true }` |
+
+**Cron / CI:**
+
+```bash
+POST /api/internal/google-merchant/sync
+Authorization: Bearer {ADMIN_SETUP_SECRET}
+```
+
+Script: `npm run merchant:sync -- https://www.madsjeez.com.ar`
+
+El feed XML (`/feeds/google-shopping.xml`) puede coexistir; en Merchant Center evitá dos fuentes contradictorias para el mismo país (elegí **API** o **feed programado**, no ambos con reglas distintas).
+
 ### 3. Datos estructurados en ficha de producto
 
 Cada `/product/[id]` incluye JSON-LD `Product` + `Offer` (precio ARS, stock, imágenes con caption SEO).

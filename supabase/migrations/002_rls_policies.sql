@@ -201,7 +201,7 @@ CREATE POLICY "Buyers can create reviews" ON reviews
             SELECT 1 FROM orders 
             WHERE id = order_id 
             AND buyer_id = auth.uid() 
-            AND status = 'completed'
+            AND status::text IN ('DELIVERED', 'completed')
         )
     );
 

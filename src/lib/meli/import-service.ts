@@ -1,6 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import type { MeliItemDetail } from "./types";
-import { meliGetItem, meliGetItemDescription, meliSearchUserItems } from "./api";
+import { meliGetItem, meliGetItemDescription } from "./api";
+import {
+  collectMeliItemIds,
+  resolveMeliScrollMaxPages,
+  runPool,
+  type MeliCollectItemsResult,
+} from "./import-scroll";
 import { ensureFallbackCategory, resolveCategoryForMeliId } from "./category-map";
 import { persistMeliImageBatch } from "./image-import";
 import {
@@ -17,6 +23,7 @@ import {
   mapMeliItemToProductCore,
   primaryPriceFromMeliItem,
 } from "./item-mapper";
+import { isMeliCatalogListing, type MeliListingKind } from "./listing-kind";
 
 export { extractSellerSku };
 
@@ -37,6 +44,7 @@ export type MeliImportPreviewRow = {
   skipReason?: string;
   meliCategoryId: string | null;
   hasVariations: boolean;
+  isCatalogListing: boolean;
 };
 
 export type MeliImportItemResult = {
@@ -119,7 +127,7 @@ async function importSingleMeliItem(
   itemId: string,
   errors: string[],
   itemResults: MeliImportItemResult[],
-  options: { persistImages: boolean },
+  options: { persistImages: boolean; listingKind: MeliListingKind },
   dedupe: SellerDedupeIndex
 ): Promise<{ kind: "imported" | "updated" | "skipped" }> {
   const itemRes = await meliGetItem(accessToken, itemId);
@@ -130,6 +138,19 @@ async function importSingleMeliItem(
     return { kind: "skipped" };
   }
   const item = itemRes.data as MeliItemDetail;
+
+  if (options.listingKind === "standard" && isMeliCatalogListing(item)) {
+    const msg = "Publicación de catálogo ML (omitida; solo estándar)";
+    errors.push(`${itemId}: ${msg}`);
+    itemResults.push({ itemId: item.id, ok: false, error: msg });
+    return { kind: "skipped" };
+  }
+  if (options.listingKind === "catalog" && !isMeliCatalogListing(item)) {
+    const msg = "Publicación estándar (omitida; solo catálogo ML)";
+    errors.push(`${itemId}: ${msg}`);
+    itemResults.push({ itemId: item.id, ok: false, error: msg });
+    return { kind: "skipped" };
+  }
 
   let plainDescription = "";
   const descRes = await meliGetItemDescription(accessToken, itemId);
@@ -238,6 +259,28 @@ async function importSingleMeliItem(
   }
 }
 
+const MELI_IMPORT_CONCURRENCY = 4;
+
+function tallyImportResult(
+  r: { kind: "imported" | "updated" | "skipped" },
+  counts: { imported: number; updated: number; skipped: number }
+): void {
+  if (r.kind === "imported") counts.imported++;
+  if (r.kind === "updated") counts.updated++;
+  if (r.kind === "skipped") counts.skipped++;
+}
+
+export async function listMeliItemIdsForUser(
+  accessToken: string,
+  meliUserId: string,
+  options?: { maxPages?: number; listingKind?: MeliListingKind; importAll?: boolean }
+): Promise<MeliCollectItemsResult & { listingKind: MeliListingKind }> {
+  const listingKind = options?.listingKind ?? "standard";
+  const maxPages = resolveMeliScrollMaxPages(options?.maxPages, { importAll: options?.importAll });
+  const collected = await collectMeliItemIds(accessToken, meliUserId, listingKind, maxPages);
+  return { ...collected, listingKind };
+}
+
 export async function importMeliItemsForUser(
   prismaUserId: string,
   meliOAuthAccountId: string,
@@ -247,6 +290,10 @@ export async function importMeliItemsForUser(
     maxPages?: number;
     itemIds?: string[];
     persistImages?: boolean;
+    /** standard = solo tradicionales (catalog_listing=false en ML) */
+    listingKind?: MeliListingKind;
+    importAll?: boolean;
+    concurrency?: number;
   }
 ): Promise<{
   imported: number;
@@ -254,12 +301,12 @@ export async function importMeliItemsForUser(
   skipped: number;
   errors: string[];
   itemResults: MeliImportItemResult[];
+  totalListed?: number;
+  pagesScanned?: number;
 }> {
-  const maxPages = Math.min(Math.max(options?.maxPages ?? 50, 1), 100);
   const persistImages = options?.persistImages !== false;
-  const filterIds = options?.itemIds?.length
-    ? [...new Set(options.itemIds.map((x) => String(x).trim()).filter(Boolean))]
-    : null;
+  const listingKind = options?.listingKind ?? "all";
+  const concurrency = Math.min(Math.max(options?.concurrency ?? MELI_IMPORT_CONCURRENCY, 1), 8);
 
   const sellerProducts = await prisma.product.findMany({
     where: { sellerId: prismaUserId },
@@ -269,80 +316,232 @@ export async function importMeliItemsForUser(
 
   const errors: string[] = [];
   const itemResults: MeliImportItemResult[] = [];
-  let imported = 0;
-  let updated = 0;
-  let skipped = 0;
+  const counts = { imported: 0, updated: 0, skipped: 0 };
 
-  if (filterIds?.length) {
-    for (const itemId of filterIds) {
-      const r = await importSingleMeliItem(
-        prismaUserId,
-        meliOAuthAccountId,
-        accessToken,
-        itemId,
-        errors,
-        itemResults,
-        { persistImages },
-        dedupe
-      );
-      if (r.kind === "imported") imported++;
-      if (r.kind === "updated") updated++;
-      if (r.kind === "skipped") skipped++;
-    }
-    return { imported, updated, skipped, errors, itemResults };
+  let idsToImport = options?.itemIds?.length
+    ? [...new Set(options.itemIds.map((x) => String(x).trim()).filter(Boolean))]
+    : null;
+
+  let pagesScanned: number | undefined;
+  let totalListed: number | undefined;
+
+  if (!idsToImport?.length) {
+    const maxPages = resolveMeliScrollMaxPages(options?.maxPages, { importAll: options?.importAll });
+    const collected = await collectMeliItemIds(accessToken, meliUserId, listingKind, maxPages);
+    pagesScanned = collected.pages;
+    totalListed = collected.ids.length;
+    errors.push(...collected.warnings);
+    idsToImport = collected.ids;
   }
 
-  let scrollId: string | undefined;
-  let pages = 0;
-  const seenIds = new Set<string>();
-
-  while (pages < maxPages) {
-    const search = await meliSearchUserItems(accessToken, meliUserId, scrollId);
-    if (!search.ok) {
-      errors.push(`items/search HTTP ${search.status}`);
-      break;
-    }
-
-    const payload = search.data as { results?: string[]; scroll_id?: string };
-    const ids = payload.results || [];
-    scrollId = payload.scroll_id;
-    pages++;
-
-    if (!ids.length) break;
-
-    for (const itemId of ids) {
-      if (seenIds.has(itemId)) continue;
-      seenIds.add(itemId);
-
-      const r = await importSingleMeliItem(
-        prismaUserId,
-        meliOAuthAccountId,
-        accessToken,
-        itemId,
-        errors,
-        itemResults,
-        { persistImages },
-        dedupe
-      );
-      if (r.kind === "imported") imported++;
-      if (r.kind === "updated") updated++;
-      if (r.kind === "skipped") skipped++;
-    }
-
-    if (!scrollId) break;
+  if (!idsToImport.length) {
+    return { ...counts, errors, itemResults, totalListed: 0, pagesScanned };
   }
 
-  return { imported, updated, skipped, errors, itemResults };
+  const results = await runPool(idsToImport, concurrency, (itemId) =>
+    importSingleMeliItem(
+      prismaUserId,
+      meliOAuthAccountId,
+      accessToken,
+      itemId,
+      errors,
+      itemResults,
+      { persistImages, listingKind },
+      dedupe
+    )
+  );
+
+  for (const r of results) tallyImportResult(r, counts);
+
+  return { ...counts, errors, itemResults, totalListed, pagesScanned };
+}
+
+const PREVIEW_FETCH_CONCURRENCY = 4;
+
+async function buildPreviewRowForItem(
+  accessToken: string,
+  itemId: string,
+  listingKind: MeliListingKind,
+  dedupe: SellerDedupeIndex,
+  existingMap: Map<
+    string,
+    { id: string; meliItemId: string | null; price: number; stock: number; sku: string | null; title: string }
+  >
+): Promise<{ row?: MeliImportPreviewRow; warning?: string; skippedKind?: boolean }> {
+  const itemRes = await meliGetItem(accessToken, itemId);
+  if (!itemRes.ok || !(itemRes.data as MeliItemDetail)?.id) {
+    return { warning: `${itemId}: publicación HTTP ${itemRes.status}` };
+  }
+  const item = itemRes.data as MeliItemDetail;
+  const catalogListing = isMeliCatalogListing(item);
+  if (listingKind === "standard" && catalogListing) {
+    return { skippedKind: true };
+  }
+  if (listingKind === "catalog" && !catalogListing) {
+    return { skippedKind: true };
+  }
+
+  const exists = existingMap.has(item.id);
+  const local = existingMap.get(item.id);
+  const sellerSku = extractSellerSku(item) || local?.sku || null;
+  const existingProductId = local?.id;
+
+  let action: MeliImportPreviewRow["action"] = exists ? "update" : "create";
+  let skipReason: string | undefined;
+
+  if (exists) {
+    const dupOnUpdate = checkImportDuplicate(dedupe, item.title, sellerSku, existingProductId);
+    if (dupOnUpdate.duplicate) {
+      action = "skip";
+      skipReason = dupOnUpdate.reason;
+    } else if (existingProductId) {
+      registerProductInDedupeIndex(dedupe, existingProductId, item.title, sellerSku);
+    }
+  } else {
+    const dup = checkImportDuplicate(dedupe, item.title, sellerSku);
+    if (dup.duplicate) {
+      action = "skip";
+      skipReason = dup.reason;
+    } else {
+      registerProductInDedupeIndex(dedupe, `preview-${item.id}`, item.title, sellerSku);
+    }
+  }
+
+  const pics = item.pictures || [];
+  const thumb = pics[0]?.secure_url || pics[0]?.url || null;
+  const status = (item.status || "unknown").toLowerCase();
+  const condition = mapCondition(item.condition);
+  const listingType = (item.listing_type_id || "unknown").toLowerCase();
+
+  return {
+    row: {
+      id: item.id,
+      title: item.title,
+      thumbnailUrl: thumb,
+      meliPrice: primaryPriceFromMeliItem(item),
+      meliStock: aggregateStockFromMeliItem(item),
+      localPrice: local ? local.price : null,
+      localStock: local ? local.stock : null,
+      sellerSku,
+      status,
+      condition,
+      listingType,
+      sold: Math.max(0, item.sold_quantity ?? 0),
+      action,
+      skipReason,
+      meliCategoryId: item.category_id || null,
+      hasVariations: Boolean(item.variations?.length),
+      isCatalogListing: catalogListing,
+    },
+  };
+}
+
+function summarizePreviewRows(rows: MeliImportPreviewRow[]): {
+  toCreate: number;
+  toUpdate: number;
+  skippedDuplicates: number;
+  alreadyLinked: number;
+  breakdown: {
+    byStatus: Record<string, number>;
+    byCondition: Record<string, number>;
+    byListingType: Record<string, number>;
+  };
+} {
+  const byStatus: Record<string, number> = {};
+  const byCondition: Record<string, number> = {};
+  const byListingType: Record<string, number> = {};
+  let toCreate = 0;
+  let toUpdate = 0;
+  let skippedDuplicates = 0;
+  let alreadyLinked = 0;
+
+  for (const r of rows) {
+    byStatus[r.status] = (byStatus[r.status] || 0) + 1;
+    byCondition[r.condition] = (byCondition[r.condition] || 0) + 1;
+    byListingType[r.listingType] = (byListingType[r.listingType] || 0) + 1;
+    if (r.action === "create") toCreate++;
+    if (r.action === "update") {
+      toUpdate++;
+      alreadyLinked++;
+    }
+    if (r.action === "skip") skippedDuplicates++;
+  }
+
+  return { toCreate, toUpdate, skippedDuplicates, alreadyLinked, breakdown: { byStatus, byCondition, byListingType } };
+}
+
+/** Detalle ML para un lote de MLA (escaneo en vivo en UI). */
+export async function previewMeliItemRowsBatch(
+  prismaUserId: string,
+  accessToken: string,
+  itemIds: string[],
+  options?: { listingKind?: MeliListingKind }
+): Promise<{ rows: MeliImportPreviewRow[]; warnings: string[]; skippedByKind: number }> {
+  const listingKind = options?.listingKind ?? "all";
+  const ids = [...new Set(itemIds.map((x) => String(x).trim()).filter(Boolean))];
+  const warnings: string[] = [];
+  let skippedByKind = 0;
+
+  if (!ids.length) return { rows: [], warnings, skippedByKind: 0 };
+
+  const sellerProducts = await prisma.product.findMany({
+    where: { sellerId: prismaUserId },
+    select: { id: true, title: true, sku: true },
+  });
+  const dedupe = createSellerDedupeIndex(sellerProducts);
+  const { existingMap } = await countLinkedMeliIds(prismaUserId, ids);
+
+  const results = await runPool(ids, PREVIEW_FETCH_CONCURRENCY, (itemId) =>
+    buildPreviewRowForItem(accessToken, itemId, listingKind, dedupe, existingMap)
+  );
+
+  const rows: MeliImportPreviewRow[] = [];
+  for (const r of results) {
+    if (r.warning) warnings.push(r.warning);
+    if (r.skippedKind) skippedByKind++;
+    if (r.row) rows.push(r.row);
+  }
+
+  return { rows, warnings, skippedByKind };
+}
+
+async function countLinkedMeliIds(
+  prismaUserId: string,
+  meliIds: string[]
+): Promise<{ alreadyLinked: number; existingMap: Map<string, { id: string; meliItemId: string | null; price: number; stock: number; sku: string | null; title: string }> }> {
+  const existingMap = new Map<
+    string,
+    { id: string; meliItemId: string | null; price: number; stock: number; sku: string | null; title: string }
+  >();
+  const CHUNK = 400;
+  for (let i = 0; i < meliIds.length; i += CHUNK) {
+    const chunk = meliIds.slice(i, i + CHUNK);
+    const rows = await prisma.product.findMany({
+      where: { sellerId: prismaUserId, meliItemId: { in: chunk } },
+      select: { id: true, meliItemId: true, price: true, stock: true, sku: true, title: true },
+    });
+    for (const r of rows) {
+      if (r.meliItemId) existingMap.set(r.meliItemId, r);
+    }
+  }
+  return { alreadyLinked: existingMap.size, existingMap };
 }
 
 export async function previewMeliItemsForUser(
   prismaUserId: string,
   accessToken: string,
   meliUserId: string,
-  options?: { maxPages?: number; sampleSize?: number }
+  options?: {
+    maxPages?: number;
+    sampleSize?: number;
+    listingKind?: MeliListingKind;
+    importAll?: boolean;
+  }
 ): Promise<{
   totalFound: number;
   uniqueFound: number;
+  pagingTotal: number | null;
+  pagesScanned: number;
   alreadyLinked: number;
   toCreate: number;
   toUpdate: number;
@@ -355,150 +554,44 @@ export async function previewMeliItemsForUser(
   rows: MeliImportPreviewRow[];
   samples: MeliImportPreviewRow[];
   warnings: string[];
+  allItemIds?: string[];
 }> {
-  const maxPages = Math.min(Math.max(options?.maxPages ?? 30, 1), 100);
-  const sampleCap = Math.min(Math.max(options?.sampleSize ?? 25, 5), 2000);
+  const maxPages = resolveMeliScrollMaxPages(options?.maxPages, { importAll: options?.importAll });
+  const sampleCap = Math.min(Math.max(options?.sampleSize ?? 80, 5), 500);
+  const listingKind = options?.listingKind ?? "all";
 
-  let scrollId: string | undefined;
-  let pages = 0;
-  let totalFound = 0;
-  const uniqueIds = new Set<string>();
   const warnings: string[] = [];
   const rows: MeliImportPreviewRow[] = [];
-
-  const byStatus: Record<string, number> = {};
-  const byCondition: Record<string, number> = {};
-  const byListingType: Record<string, number> = {};
-  let alreadyLinked = 0;
-  let toCreate = 0;
-  let toUpdate = 0;
   let skippedDuplicates = 0;
 
-  const sellerProducts = await prisma.product.findMany({
-    where: { sellerId: prismaUserId },
-    select: { id: true, title: true, sku: true },
-  });
-  const dedupe = createSellerDedupeIndex(sellerProducts);
+  const collected = await collectMeliItemIds(accessToken, meliUserId, listingKind, maxPages);
+  warnings.push(...collected.warnings);
 
-  while (pages < maxPages) {
-    const search = await meliSearchUserItems(accessToken, meliUserId, scrollId);
-    if (!search.ok) {
-      warnings.push(`items/search HTTP ${search.status}`);
-      break;
-    }
+  const uniqueIds = collected.ids;
+  const totalFound = uniqueIds.length;
 
-    const payload = search.data as { results?: string[]; scroll_id?: string };
-    const ids = payload.results || [];
-    scrollId = payload.scroll_id;
-    pages++;
-    if (!ids.length) break;
+  const sampleIds = uniqueIds.slice(0, sampleCap);
+  const batch = await previewMeliItemRowsBatch(prismaUserId, accessToken, sampleIds, { listingKind });
+  rows.push(...batch.rows);
+  warnings.push(...batch.warnings);
+  skippedDuplicates += batch.skippedByKind;
 
-    totalFound += ids.length;
-    const batchIds: string[] = [];
-    for (const id of ids) {
-      if (uniqueIds.has(id)) continue;
-      uniqueIds.add(id);
-      batchIds.push(id);
-    }
-    if (!batchIds.length) continue;
-
-    const existingRows = await prisma.product.findMany({
-      where: { meliItemId: { in: batchIds } },
-      select: { id: true, meliItemId: true, price: true, stock: true, sku: true, title: true },
-    });
-    const existingMap = new Map(
-      existingRows.filter((r) => r.meliItemId).map((r) => [r.meliItemId as string, r])
-    );
-
-    for (const itemId of batchIds) {
-      const itemRes = await meliGetItem(accessToken, itemId);
-      if (!itemRes.ok || !(itemRes.data as MeliItemDetail)?.id) {
-        warnings.push(`${itemId}: publicación HTTP ${itemRes.status}`);
-        continue;
-      }
-      const item = itemRes.data as MeliItemDetail;
-      const status = (item.status || "unknown").toLowerCase();
-      const condition = mapCondition(item.condition);
-      const listingType = (item.listing_type_id || "unknown").toLowerCase();
-
-      byStatus[status] = (byStatus[status] || 0) + 1;
-      byCondition[condition] = (byCondition[condition] || 0) + 1;
-      byListingType[listingType] = (byListingType[listingType] || 0) + 1;
-
-      const exists = existingMap.has(item.id);
-      const local = existingMap.get(item.id);
-      const sellerSku = extractSellerSku(item) || local?.sku || null;
-      const existingProductId = local?.id;
-
-      let action: MeliImportPreviewRow["action"] = exists ? "update" : "create";
-      let skipReason: string | undefined;
-
-      if (exists) {
-        const dupOnUpdate = checkImportDuplicate(
-          dedupe,
-          item.title,
-          sellerSku,
-          existingProductId
-        );
-        if (dupOnUpdate.duplicate) {
-          action = "skip";
-          skipReason = dupOnUpdate.reason;
-          skippedDuplicates++;
-        } else {
-          alreadyLinked++;
-          toUpdate++;
-          if (existingProductId) {
-            registerProductInDedupeIndex(dedupe, existingProductId, item.title, sellerSku);
-          }
-        }
-      } else {
-        const dup = checkImportDuplicate(dedupe, item.title, sellerSku);
-        if (dup.duplicate) {
-          action = "skip";
-          skipReason = dup.reason;
-          skippedDuplicates++;
-        } else {
-          toCreate++;
-          registerProductInDedupeIndex(dedupe, `preview-${item.id}`, item.title, sellerSku);
-        }
-      }
-
-      const pics = item.pictures || [];
-      const thumb = pics[0]?.secure_url || pics[0]?.url || null;
-
-      rows.push({
-        id: item.id,
-        title: item.title,
-        thumbnailUrl: thumb,
-        meliPrice: primaryPriceFromMeliItem(item),
-        meliStock: aggregateStockFromMeliItem(item),
-        localPrice: local ? local.price : null,
-        localStock: local ? local.stock : null,
-        sellerSku,
-        status,
-        condition,
-        listingType,
-        sold: Math.max(0, item.sold_quantity ?? 0),
-        action,
-        skipReason,
-        meliCategoryId: item.category_id || null,
-        hasVariations: Boolean(item.variations?.length),
-      });
-    }
-
-    if (!scrollId) break;
-  }
+  const summary = summarizePreviewRows(rows);
+  const linkedFromDb = await countLinkedMeliIds(prismaUserId, uniqueIds);
 
   return {
     totalFound,
-    uniqueFound: uniqueIds.size,
-    alreadyLinked,
-    toCreate,
-    toUpdate,
-    skippedDuplicates,
-    breakdown: { byStatus, byCondition, byListingType },
+    uniqueFound: uniqueIds.length,
+    pagingTotal: collected.pagingTotal,
+    pagesScanned: collected.pages,
+    alreadyLinked: linkedFromDb.alreadyLinked,
+    toCreate: summary.toCreate,
+    toUpdate: summary.toUpdate,
+    skippedDuplicates: summary.skippedDuplicates + batch.skippedByKind,
+    breakdown: summary.breakdown,
     rows,
-    samples: rows.slice(0, sampleCap),
+    samples: rows,
     warnings,
+    allItemIds: uniqueIds,
   };
 }

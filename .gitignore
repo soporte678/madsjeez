@@ -53,6 +53,9 @@ next-env.d.ts
 # generated files
 /src/generated/prisma
 
+# Agency Agents — copia local de consulta (ver .cursor/references/README.md)
+.cursor/references/agency-agents/
+
 # IDE
 .idea/
 .vscode/

@@ -36,6 +36,7 @@ import CouponCreateView from "@/components/dashboard/CouponCreateView";
 import MarketingCentralView from "@/components/dashboard/MarketingCentralView";
 import AdvertisingView from "@/components/dashboard/AdvertisingView";
 import MeliIntegrationView from "@/components/dashboard/MeliIntegrationView";
+import WhatsappBotView from "@/components/dashboard/WhatsappBotView";
 import MeliAdsStudioView from "@/components/dashboard/MeliAdsStudioView";
 import { StorePublicPanel } from "@/components/dashboard/StorePublicPanel";
 import ThemeToneSwitcher from "@/components/theme/ThemeToneSwitcher";
@@ -155,6 +156,7 @@ export default function App() {
 
   useEffect(() => {
     if (activeMenu === "meli-ads-studio") setMarketingOpen(true);
+    if (activeMenu === "whatsapp-bot") setMarketingOpen(true);
   }, [activeMenu]);
   const [marketingOpen, setMarketingOpen] = useState(false);
   const [facturacionOpen, setFacturacionOpen] = useState(false);
@@ -397,6 +399,7 @@ export default function App() {
       setIsOpen: setMarketingOpen,
       subItems: [
         { id: 'marketing-ia', label: '✨ Marketing IA (beta)' },
+        { id: 'whatsapp-bot', label: 'Bot de WhatsApp' },
         { id: 'meli-ads-studio', label: 'Mercado Libre Ads' },
         { id: 'central-marketing', label: 'Central de marketing' },
         { id: 'publicidad', label: 'Publicidad' },
@@ -1308,7 +1311,7 @@ export default function App() {
   if (showLiveMonitor) return renderLiveMonitor();
 
   return (
-    <div className="min-h-screen bg-background font-sans text-foreground flex flex-col relative">
+    <div className={`${activeMenu === "whatsapp-bot" ? "h-screen overflow-hidden" : "min-h-screen"} bg-background font-sans text-foreground flex flex-col relative`}>
       <header className="bg-[var(--shell-header-bg)] border-b border-[var(--shell-header-border)] py-2 px-4 shadow-sm z-50 relative flex-shrink-0 backdrop-blur supports-[backdrop-filter]:bg-[color-mix(in_srgb,var(--shell-header-bg)_88%,transparent)]">
         <div className="max-w-[1200px] mx-auto flex items-center justify-between">
           <RainbowLogo />
@@ -1358,7 +1361,7 @@ export default function App() {
       </header>
 
       {/* CONTENIDO PRINCIPAL: sidebar pegado al borde izquierdo */}
-      <div className="flex-1 flex">
+      <div className="flex-1 flex min-h-0 overflow-hidden">
         {/* SIDEBAR IZQUIERDO: pegado al borde, sin margen */}
         <aside className="w-56 flex-shrink-0 bg-card/95 border-r border-border shadow-[inset_-1px_0_0_var(--border)]">
           <div className="py-6 px-0">
@@ -1460,7 +1463,16 @@ export default function App() {
         </aside>
 
         {/* ÁREA CENTRAL DINÁMICA */}
-        <section className="flex-1 p-6 lg:p-8">
+        <section
+          className={
+            activeMenu === "whatsapp-bot"
+              ? "flex-1 w-full min-w-0 p-0 overflow-hidden flex flex-col min-h-0"
+              : "flex-1 min-w-0 p-6 lg:p-8"
+          }
+        >
+          {activeMenu === "whatsapp-bot" ? (
+            <WhatsappBotView />
+          ) : (
           <div className="max-w-[1200px] mx-auto">
             {activeMenu === 'resumen' && <ResumenView />}
             {activeMenu === 'reputacion' && <ReputacionView />}
@@ -1522,6 +1534,7 @@ export default function App() {
             {activeMenu === 'campania-detalle' && <CampaignDetailView />}
             {activeMenu === 'crear-cupon' && <CouponCreateView />}
           </div>
+          )}
         </section>
       </div>
 

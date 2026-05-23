@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     if (productId) {
       const { data: product } = await supabase
         .from("products")
-        .select("title, description, price, original_price, condition, stock, shipping_free, shipping_cost")
+        .select("title, description, price, original_price, condition, stock, free_shipping, shipping_cost")
         .eq("id", productId)
         .single()
       if (product) {
@@ -36,7 +36,7 @@ Descripción: ${product.description?.slice(0, 300) || "Sin descripción"}
 Precio: $${product.price}${product.original_price ? ` (antes $${product.original_price})` : ""}
 Condición: ${product.condition}
 Stock: ${product.stock}
-Envío: ${product.shipping_free ? "Gratis" : `$${product.shipping_cost || "a calcular"}`}`
+Envío: ${product.free_shipping ? "Gratis" : `$${product.shipping_cost || "a calcular"}`}`
       }
     }
 

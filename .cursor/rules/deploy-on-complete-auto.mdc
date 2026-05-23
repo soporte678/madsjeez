@@ -1,0 +1,36 @@
+---
+description: Al terminar una tarea: commit+push GitHub (MCP), y Railway/Supabase si aplica. Sin secretos en chat.
+alwaysApply: true
+---
+
+# Cierre automático de tareas (autorizado por el usuario)
+
+Cuando completes una tarea de código o infra solicitada por el usuario:
+
+## GitHub (obligatorio si hay cambios en el repo)
+
+1. `git status` — commitear solo archivos de la tarea (no `tmp_*`, logs, `.env.local`, secretos).
+2. Mensaje de commit claro en español o inglés del proyecto.
+3. `git push origin main` (o la rama de trabajo) vía **GitHub MCP** o `gh`.
+4. Confirmar al usuario: commit hash y que el push terminó (sin mostrar tokens).
+
+## Railway (si la tarea toca deploy, env, Evolution, WhatsApp bot prod)
+
+- Usar **Railway MCP** para revisar variables (nombres), logs y redeploy de **madsjeez** / **EVOLUTION-API** cuando haga falta.
+- No sobrescribir secretos sin necesidad; no imprimir valores.
+- Tras push a `main`, redeploy **madsjeez** si el cambio requiere producción.
+
+## Supabase (si la tarea toca schema, RLS, migraciones)
+
+- Usar **Supabase MCP** para `list_tables`, migraciones, advisors.
+- Aplicar migraciones en remoto solo si la tarea lo incluye y es seguro.
+- Preferir `prisma migrate` en el flujo del proyecto cuando corresponda.
+
+## Seguridad
+
+- Nunca commitear API keys, PATs, `.env.local`.
+- Acciones destructivas (borrar servicios, contactos, dominios) solo con confirmación explícita en esa tarea.
+
+## Al responder al usuario
+
+- Separar: **hecho en código/GitHub** vs **pendiente manual** (QR, claves en dashboard, Ollama local).

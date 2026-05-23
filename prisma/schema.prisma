@@ -185,6 +185,18 @@ model User {
   sellerInvitesOwned SellerInvite[]
   sellerLeadProfile  SellerLead?
 
+  // WhatsApp Seller AI Bot (Evolution / multi-tenant por vendedor)
+  whatsappSessions     WhatsappSession[]
+  sellerBotConfig      SellerBotConfig?
+  whatsappLeads        WhatsappLead[]
+  whatsappConversations WhatsappConversation[]
+  whatsappBotEvents    WhatsappBotEvent[]
+  whatsappAutomations  WhatsappAutomation[]
+  whatsappCampaigns    WhatsappCampaign[]
+  whatsappSyncJobs     WhatsappSyncJob[]
+  whatsappCloserDecisions WhatsappCloserDecision[]
+  whatsappWinningResponses WhatsappWinningResponse[]
+
   // Reputación
   reputationHistory ReputationHistory[] @relation("ReputationHistory")
   
@@ -1266,6 +1278,10 @@ enum FlashShipmentStatus {
   PAYMENT_CONFIRMED
   LABEL_GENERATED
   PACKAGE_READY
+  AVAILABLE
+  ACCEPTED_BY_DRIVER
+  DRIVER_EN_ROUTE_TO_PICKUP
+  PACKAGE_PICKED_UP
   ASSIGNED_TO_DRIVER
   IN_TRANSIT
   ARRIVED_AT_ADDRESS
@@ -1276,6 +1292,7 @@ enum FlashShipmentStatus {
   PENDING_VISIT_3
   FAILED_ATTEMPT_3
   RETURNED_TO_SENDER
+  RETURNED_TO_SELLER
   CANCELLED
 }
 
@@ -1320,6 +1337,16 @@ model FlashShipment {
   labelUrl         String?              @map("label_url")
   qrToken          String               @unique @map("qr_token")
   labelPrintCount  Int                  @default(0) @map("label_print_count")
+
+  // Tier de envío Flash (flash_local, flash_plus, flash_normal)
+  shippingTier     String?              @map("shipping_tier")
+  shippingPrice    Float?               @map("shipping_price")
+  priorityScore    Int                  @default(50) @map("priority_score")
+
+  // Pago del envío al conductor
+  paymentStatus    String               @default("pending") @map("payment_status") // pending | paid_by_customer | driver_assigned | ready_to_settle | settled_to_driver | failed | refunded | cancelled
+  settlementId     String?              @unique @map("settlement_id")
+  settlement       FlashDriverSettlement? @relation("ShipmentSettlement")
 
   // Estimado de entrega
   estimatedDelivery DateTime?           @map("estimated_delivery")
@@ -1387,6 +1414,9 @@ model FlashDriver {
   tier          FlashDriverTier       @default(BRONZE)
   acceptanceRate Float                @default(100) @map("acceptance_rate")
   payoutCbu     String?               @map("payout_cbu")
+  mpLinked      Boolean               @default(false) @map("mp_linked")
+  mpAccountRef  String?               @map("mp_account_ref")  // MercadoPago account reference (non-sensitive)
+  mpLinkedAt    DateTime?             @map("mp_linked_at")
   connectedAt   DateTime?             @map("connected_at")
   totalKm       Float                 @default(0) @map("total_km")
 
@@ -1395,6 +1425,7 @@ model FlashDriver {
   earnings      FlashDriverEarning[]
   supportTickets FlashSupportTicket[]
   blocks        FlashDriverBlock[]
+  settlements   FlashDriverSettlement[]
 
   createdAt     DateTime              @default(now()) @map("created_at")
   updatedAt     DateTime              @updatedAt @map("updated_at")
@@ -1552,6 +1583,63 @@ model FlashAuditLog {
   @@map("flash_audit_logs")
 }
 
+// ---------------------------------------------------------------------------
+// Flash Shipping Options (configurable desde admin)
+// ---------------------------------------------------------------------------
+model FlashShippingOption {
+  id            String   @id @default(cuid())
+  code          String   @unique                    // flash_local | flash_plus | flash_normal
+  name          String                               // "Flash Local — Entrega lo antes posible"
+  description   String
+  price         Float                                // ARS
+  priority      Int      @default(50)                // flash_plus=100, flash_local=70, flash_normal=50
+  coverageType  String   @map("coverage_type")       // local_radius | priority_radius | flex_zone
+  radiusKm      Float?   @map("radius_km")           // radio en km para local/plus
+  isActive      Boolean  @default(true) @map("is_active")
+  estimatedTime String?  @map("estimated_time")      // "Menos de 2 hs"
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("flash_shipping_options")
+}
+
+model FlashZone {
+  id                  String   @id @default(cuid())
+  name                String                          // "CABA + GBA Norte"
+  type                String                          // flex | local
+  city                String?
+  province            String?
+  postalCodes         String[] @map("postal_codes")   // ["1000","1001",...]
+  radiusKm            Float?   @map("radius_km")
+  centerLat           Float?   @map("center_lat")
+  centerLng           Float?   @map("center_lng")
+  isActive            Boolean  @default(true) @map("is_active")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  @@map("flash_zones")
+}
+
+model FlashDriverSettlement {
+  id                String    @id @default(cuid())
+  shipmentId        String    @unique @map("shipment_id")
+  shipment          FlashShipment @relation("ShipmentSettlement", fields: [shipmentId], references: [id], onDelete: Cascade)
+  driverId          String    @map("driver_id")
+  driver            FlashDriver @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  amount            Float
+  provider          String    @default("mercadopago")
+  status            String    @default("pending") // pending | processing | settled | failed | refunded
+  externalPaymentId String?   @map("external_payment_id")
+  paidAt            DateTime? @map("paid_at")
+  errorMessage      String?   @map("error_message")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@index([driverId])
+  @@index([status])
+  @@map("flash_driver_settlements")
+}
+
 model WebVisit {
   id          String   @id @default(cuid())
   path        String
@@ -1618,4 +1706,378 @@ model SellerLead {
   @@index([status])
   @@index([inviteCode])
   @@map("seller_leads")
+}
+
+// --- Madsjeez Seller WhatsApp AI Bot (Evolution API + Ollama) ---
+
+enum WhatsappSessionStatus {
+  disconnected
+  qr_pending
+  connected
+  error
+}
+
+enum WhatsappProviderKind {
+  evolution
+  waha
+  baileys
+  whatsapp_web_js
+}
+
+enum WhatsappBotTone {
+  cercano
+  profesional
+  rapido
+  experto
+}
+
+enum WhatsappLeadStatus {
+  new
+  warm
+  hot
+  customer
+  closed
+  lost
+}
+
+enum WhatsappConversationStatus {
+  bot_active
+  human_active
+  closed
+}
+
+enum WhatsappMessageDirection {
+  inbound
+  outbound
+}
+
+enum WhatsappMessageSenderType {
+  customer
+  bot
+  seller
+  system
+}
+
+enum WhatsappMessageType {
+  text
+  image
+  audio
+  file
+  location
+}
+
+enum WhatsappHandoffStatus {
+  requested
+  accepted
+  resolved
+}
+
+enum WhatsappCampaignStatus {
+  draft
+  scheduled
+  running
+  paused
+  finished
+}
+
+enum WhatsappMessageSource {
+  webhook
+  history_sync
+  manual
+  bot
+}
+
+enum WhatsappSyncJobType {
+  contacts
+  chats
+  messages
+  full
+}
+
+enum WhatsappSyncJobStatus {
+  pending
+  running
+  completed
+  partial_error
+  failed
+}
+
+enum WhatsappSaleOutcome {
+  open
+  won
+  lost
+}
+
+model WhatsappSession {
+  id                 String                @id @default(cuid())
+  sellerId           String                @map("seller_id")
+  seller             User                  @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  storeId            String?               @map("store_id")
+  provider           WhatsappProviderKind  @default(evolution)
+  providerInstanceId String                @map("provider_instance_id")
+  status             WhatsappSessionStatus @default(disconnected)
+  phoneNumber        String?               @map("phone_number")
+  qrCode             String?               @map("qr_code") @db.Text
+  lastConnectedAt    DateTime?             @map("last_connected_at")
+  lastError          String?               @map("last_error") @db.Text
+  createdAt          DateTime              @default(now()) @map("created_at")
+  updatedAt          DateTime              @updatedAt @map("updated_at")
+
+  conversations WhatsappConversation[]
+
+  @@unique([sellerId])
+  @@index([providerInstanceId])
+  @@map("whatsapp_sessions")
+}
+
+model SellerBotConfig {
+  id                            String          @id @default(cuid())
+  sellerId                      String          @unique @map("seller_id")
+  seller                        User            @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  storeId                       String?         @map("store_id")
+  enabled                       Boolean         @default(false)
+  tone                          WhatsappBotTone @default(cercano)
+  businessHoursEnabled          Boolean         @default(false) @map("business_hours_enabled")
+  businessHours                 Json?           @map("business_hours")
+  autoReplyEnabled              Boolean         @default(true) @map("auto_reply_enabled")
+  humanHandoffEnabled           Boolean         @default(true) @map("human_handoff_enabled")
+  maxAutoMessagesBeforeHandoff  Int             @default(12) @map("max_auto_messages_before_handoff")
+  allowWhatsAppGroups           Boolean         @default(false) @map("allow_whatsapp_groups")
+  customInstructions            String?         @map("custom_instructions") @db.Text
+  businessProfile               String?         @map("business_profile")
+  createdAt                     DateTime        @default(now()) @map("created_at")
+  updatedAt                     DateTime        @updatedAt @map("updated_at")
+
+  @@map("seller_bot_configs")
+}
+
+model WhatsappLead {
+  id            String             @id @default(cuid())
+  sellerId      String             @map("seller_id")
+  seller        User               @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  storeId       String?            @map("store_id")
+  jid           String?
+  phone         String
+  name          String?
+  pushName      String?            @map("push_name")
+  firstName     String?            @map("first_name")
+  fullName      String?            @map("full_name")
+  businessName  String?            @map("business_name")
+  verifiedName  String?            @map("verified_name")
+  profilePicUrl String?            @map("profile_pic_url") @db.Text
+  isBusiness    Boolean            @default(false) @map("is_business")
+  whatsappLabels String[]          @default([]) @map("whatsapp_labels")
+  about         String?            @db.Text
+  email         String?
+  company       String?
+  source        String             @default("whatsapp")
+  status        WhatsappLeadStatus @default(new)
+  intent        String?            @db.Text
+  rubro         String?
+  objecion      String?
+  datoFaltante  String?            @map("dato_faltante")
+  saleOutcome   WhatsappSaleOutcome @default(open) @map("sale_outcome")
+  lossReason    String?            @map("loss_reason") @db.Text
+  businessProfile String?          @map("business_profile")
+  tags          String[]           @default([])
+  internalNotes String?            @map("internal_notes") @db.Text
+  rawWhatsappData Json?            @map("raw_whatsapp_data")
+  lastMessageAt DateTime?          @map("last_message_at")
+  lastSyncedAt  DateTime?          @map("last_synced_at")
+  assignedTo    String?            @map("assigned_to")
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+
+  conversations WhatsappConversation[]
+  closerDecisions WhatsappCloserDecision[]
+  winningResponses WhatsappWinningResponse[]
+
+  @@unique([sellerId, phone])
+  @@index([sellerId, status])
+  @@index([sellerId, jid])
+  @@index([sellerId, rubro])
+  @@index([sellerId, saleOutcome])
+  @@map("whatsapp_leads")
+}
+
+model WhatsappAutomation {
+  id            String    @id @default(cuid())
+  sellerId      String    @map("seller_id")
+  seller        User      @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  name          String
+  triggerType   String    @map("trigger_type")
+  triggerConfig Json      @default("{}") @map("trigger_config")
+  actionType    String    @map("action_type")
+  actionConfig  Json      @default("{}") @map("action_config")
+  enabled       Boolean   @default(true)
+  runCount      Int       @default(0) @map("run_count")
+  lastRunAt     DateTime? @map("last_run_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@index([sellerId, enabled])
+  @@map("whatsapp_automations")
+}
+
+model WhatsappCampaign {
+  id             String                 @id @default(cuid())
+  sellerId       String                 @map("seller_id")
+  seller         User                   @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  name           String
+  segment        Json                   @default("{}")
+  messageTemplate String                @map("message_template") @db.Text
+  status         WhatsappCampaignStatus @default(draft)
+  scheduledAt    DateTime?              @map("scheduled_at")
+  sentCount      Int                    @default(0) @map("sent_count")
+  deliveredCount Int                    @default(0) @map("delivered_count")
+  repliedCount   Int                    @default(0) @map("replied_count")
+  createdAt      DateTime               @default(now()) @map("created_at")
+  updatedAt      DateTime               @updatedAt @map("updated_at")
+
+  @@index([sellerId, status])
+  @@map("whatsapp_campaigns")
+}
+
+model WhatsappConversation {
+  id                String                     @id @default(cuid())
+  sellerId          String                     @map("seller_id")
+  seller            User                       @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  storeId           String?                    @map("store_id")
+  leadId            String                     @map("lead_id")
+  lead              WhatsappLead               @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  whatsappSessionId String?                    @map("whatsapp_session_id")
+  session           WhatsappSession?           @relation(fields: [whatsappSessionId], references: [id], onDelete: SetNull)
+  phone             String
+  status            WhatsappConversationStatus @default(bot_active)
+  botMessageCount   Int                        @default(0) @map("bot_message_count")
+  aiSummary         String?                    @map("ai_summary") @db.Text
+  lastMessageAt     DateTime?                  @map("last_message_at")
+  createdAt         DateTime                   @default(now()) @map("created_at")
+  updatedAt         DateTime                   @updatedAt @map("updated_at")
+
+  messages  WhatsappMessage[]
+  events    WhatsappBotEvent[]
+  handoffs  WhatsappHumanHandoff[]
+  closerDecisions WhatsappCloserDecision[]
+
+  @@unique([sellerId, phone])
+  @@index([sellerId, status])
+  @@map("whatsapp_conversations")
+}
+
+model WhatsappMessage {
+  id                String                    @id @default(cuid())
+  conversationId    String                    @map("conversation_id")
+  conversation      WhatsappConversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  direction         WhatsappMessageDirection
+  senderType        WhatsappMessageSenderType @map("sender_type")
+  content           String                    @db.Text
+  messageType       WhatsappMessageType       @default(text) @map("message_type")
+  source            WhatsappMessageSource     @default(webhook)
+  providerMessageId String?                   @map("provider_message_id")
+  remoteJid         String?                   @map("remote_jid")
+  metadata          Json?
+  createdAt         DateTime                  @default(now()) @map("created_at")
+
+  @@index([conversationId, createdAt])
+  @@index([providerMessageId])
+  @@map("whatsapp_messages")
+}
+
+model WhatsappSyncJob {
+  id           String                @id @default(cuid())
+  sellerId     String                @map("seller_id")
+  seller       User                  @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  type         WhatsappSyncJobType
+  status       WhatsappSyncJobStatus @default(pending)
+  startedAt    DateTime              @default(now()) @map("started_at")
+  finishedAt   DateTime?             @map("finished_at")
+  totalFound   Int                   @default(0) @map("total_found")
+  totalCreated Int                   @default(0) @map("total_created")
+  totalUpdated Int                   @default(0) @map("total_updated")
+  totalSkipped Int                   @default(0) @map("total_skipped")
+  errors       Json                  @default("[]")
+  metadata     Json                  @default("{}")
+  createdAt    DateTime              @default(now()) @map("created_at")
+
+  @@index([sellerId, createdAt])
+  @@map("whatsapp_sync_jobs")
+}
+
+model WhatsappBotEvent {
+  id             String                @id @default(cuid())
+  sellerId       String                @map("seller_id")
+  seller         User                  @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  storeId        String?               @map("store_id")
+  conversationId String?               @map("conversation_id")
+  conversation   WhatsappConversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  type           String
+  payload        Json?
+  createdAt      DateTime              @default(now()) @map("created_at")
+
+  @@index([sellerId, createdAt])
+  @@map("whatsapp_bot_events")
+}
+
+model WhatsappHumanHandoff {
+  id             String                @id @default(cuid())
+  conversationId String                @map("conversation_id")
+  conversation   WhatsappConversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  reason         String?               @db.Text
+  status         WhatsappHandoffStatus @default(requested)
+  createdAt      DateTime              @default(now()) @map("created_at")
+  resolvedAt     DateTime?             @map("resolved_at")
+
+  @@index([conversationId, status])
+  @@map("whatsapp_human_handoffs")
+}
+
+model WhatsappCloserDecision {
+  id                String                @id @default(cuid())
+  sellerId          String                @map("seller_id")
+  seller            User                  @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  conversationId    String?               @map("conversation_id")
+  conversation      WhatsappConversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  leadId            String?               @map("lead_id")
+  lead              WhatsappLead?         @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  channel           String                @default("whatsapp")
+  businessProfile   String?               @map("business_profile")
+  rubro             String?
+  intencion         String?
+  etapaLead         String?               @map("etapa_lead")
+  objecion          String?
+  datoFaltante      String?               @map("dato_faltante")
+  accionRecomendada String?               @map("accion_recomendada")
+  derivarHumano     Boolean               @default(false) @map("derivar_humano")
+  respuestaCliente  String                @map("respuesta_cliente") @db.Text
+  etiquetas         String[]              @default([])
+  modelUsed         String?               @map("model_used")
+  rawJson           Json?                 @map("raw_json")
+  createdAt         DateTime              @default(now()) @map("created_at")
+
+  @@index([sellerId, createdAt])
+  @@index([leadId, createdAt])
+  @@index([conversationId, createdAt])
+  @@map("whatsapp_closer_decisions")
+}
+
+model WhatsappWinningResponse {
+  id               String   @id @default(cuid())
+  sellerId         String   @map("seller_id")
+  seller           User     @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  leadId           String?  @map("lead_id")
+  lead             WhatsappLead? @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  conversationId   String?  @map("conversation_id")
+  rubro            String
+  intencion        String?
+  objecion         String?
+  customerSnippet  String?  @map("customer_snippet") @db.Text
+  winningResponse  String   @map("winning_response") @db.Text
+  tags             String[] @default([])
+  useCount         Int      @default(0) @map("use_count")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  @@index([sellerId, rubro])
+  @@index([sellerId, intencion])
+  @@map("whatsapp_winning_responses")
 }

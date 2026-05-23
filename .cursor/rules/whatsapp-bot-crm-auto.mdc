@@ -1,0 +1,26 @@
+---
+description: WhatsApp Bot CRM — Evolution (vendedores) + Meta Cloud API (admin). UI premium, Prisma, sin scraping.
+alwaysApply: true
+---
+
+# WhatsApp Bot CRM (Madsjeez)
+
+Dos integraciones — no mezclar:
+
+1. **Vendedor (Evolution + QR):** `src/lib/whatsapp-bot/`, `src/app/api/seller/whatsapp-bot/`, `src/app/api/webhooks/evolution/`, UI `src/components/whatsapp-bot/`.
+2. **Admin (Meta Cloud API):** `src/lib/meta/whatsapp/`, `/admin/whatsapp`, `/api/meta/whatsapp/*`.
+
+## Reglas
+
+- APIs oficiales: Evolution para multi-vendedor QR; Meta Cloud API para plantillas admin.
+- **No** scraping WhatsApp Web, Selenium ni Baileys no oficial en prod sin advertir.
+- Datos en **Prisma** (`whatsapp_*`), no duplicar schema Supabase del starter salvo referencia.
+- No afirmar import de historial completo: solo mensajes **nuevos** post-conexión; coexistence Meta es flujo aparte.
+- No mostrar secretos en frontend ni chat.
+- Mantener estética `whatsapp-bot-pro` al tocar el inbox.
+- IA: Ollama local dev, Gemini prod Railway; ver `docs/ollama-local-bot.md`.
+
+## UI
+
+- Inbox 3 columnas: lista, chat, panel CRM.
+- Búsqueda y filtros client-side; pipeline de leads por `WhatsappLeadStatus`.
