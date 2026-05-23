@@ -6,7 +6,12 @@ import { getWhatsappBotEnv } from "@/lib/whatsapp-bot/config";
 import { getExpectedWebhookUrl } from "@/lib/whatsapp-bot/webhook-debug-store";
 import { prisma } from "@/lib/prisma";
 import { resolveWhatsappAiProvider } from "@/lib/whatsapp-bot/ai-provider";
-import { checkOllamaHealth, describeOllamaConfigIssue, isOllamaConfiguredForApp } from "@/lib/whatsapp-bot/ollama-client";
+import {
+  checkOllamaHealth,
+  describeOllamaConfigIssue,
+  isOllamaConfiguredForApp,
+} from "@/lib/whatsapp-bot/ollama-client";
+
 export async function GET() {
   const auth = await requireSellerSession();
   if (!auth.ok) {
@@ -65,4 +70,3 @@ export async function GET() {
     },
   });
 }
-

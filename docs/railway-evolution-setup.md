@@ -64,12 +64,7 @@ NEXTAUTH_URL=https://www.madsjeez.com.ar
 
 **Sin** barra final en `EVOLUTION_API_URL`.
 
-Opcional (IA en la nube más adelante; no hace falta para QR):
-
-```env
-OLLAMA_BASE_URL=
-OLLAMA_MODEL=qwen2.5:7b
-```
+**Ollama (IA):** no viene con Madsjeez en Railway. Ver [railway-ollama-setup.md](./railway-ollama-setup.md). Sin `OLLAMA_BASE_URL`, el bot igual responde con reglas + catálogo.
 
 Redeploy **Madsjeez** después de guardar.
 

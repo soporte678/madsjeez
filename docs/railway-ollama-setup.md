@@ -1,60 +1,71 @@
-# Ollama en Railway (prod)
+# Ollama en Railway (Bot WhatsApp)
 
-Para que el bot WhatsApp use **Ollama en producción**, Madsjeez (Railway) necesita una URL pública de Ollama. `localhost` no funciona entre servicios.
+## Importante
 
-## 1. Nuevo servicio Ollama
+- **Madsjeez** (`railway.toml`) = solo Next.js. **Ollama es otro servicio** en el mismo proyecto Railway.
+- `localhost:11434` en variables de Railway **no funciona** (el contenedor de Madsjeez no ve tu PC).
+- Sin `OLLAMA_BASE_URL` válida → el bot usa **reglas + catálogo** (sigue funcionando).
 
-En Railway (proyecto `overflowing-charm` o uno dedicado):
+## 1. Servicio Ollama en Railway
 
-1. **New Service** → **Docker Image** → `ollama/ollama:latest`
-2. **Volume** montado en `/root/.ollama` (persistir modelos)
-3. Variable: `OLLAMA_HOST=0.0.0.0:11434`
-4. **Networking** → generar dominio público (ej. `ollama-production-xxxx.up.railway.app`)
-5. Deploy
+1. Mismo proyecto → **New** → Docker `ollama/ollama:latest` o template https://railway.com/deploy/ollama-or-self-host-open-source-llms  
+2. **Volume** `/root/.ollama`  
+3. **RAM ≥ 8 GB** para modelos 7B+  
+4. Dominio público o red privada Railway  
+5. En shell del servicio: `ollama pull qwen2.5:7b` (o el modelo que uses)
 
-## 2. Descargar modelo
-
-Desde Railway shell del servicio Ollama, o one-off:
-
-```bash
-ollama pull qwen2.5:7b
-# o más liviano: ollama pull qwen2.5:3b
-```
-
-Verificá:
+Verificar:
 
 ```bash
-curl https://ollama-production-xxxx.up.railway.app/api/tags
+curl https://TU-OLLAMA.up.railway.app/api/tags
 ```
 
-## 3. Variables en Madsjeez (servicio web)
+## 2. Variables en Madsjeez
 
 ```env
 WHATSAPP_AI_PROVIDER=ollama
-OLLAMA_BASE_URL=https://ollama-production-xxxx.up.railway.app
+OLLAMA_BASE_URL=https://TU-OLLAMA.up.railway.app
 OLLAMA_MODEL=qwen2.5:7b
+```
+
+Red privada (recomendado):
+
+```env
+OLLAMA_BASE_URL=http://${{Ollama.RAILWAY_PRIVATE_DOMAIN}}:11434
 ```
 
 Redeploy Madsjeez.
 
-## 4. Probar desde el panel
+## 3. Verificar operativo
 
-Configuración → Motor IA → **Probar Ollama** y **Probar respuesta IA**.
+**Panel:** Bot de WhatsApp → Configuración → **Probar Ollama**.
 
-Debe decir `provider: ollama` y una respuesta en español argentino.
+**API** (logueado como vendedor):
 
-## 5. Alternativa: Ollama en tu PC + túnel
+`GET /api/seller/whatsapp-bot/health`
 
-Si tenés GPU local (32 GB / 12 GB VRAM):
+Campos clave:
 
-1. `ollama serve` en Windows
-2. Cloudflare Tunnel o ngrok al puerto 11434
-3. `OLLAMA_BASE_URL=https://tu-tunel.example.com` en Railway
+- `ai.ollamaOk: true` → operativo  
+- `ai.ollamaConfigIssue` → qué falta corregir  
+- `ai.ollamaReachable` → el servidor responde `/api/tags`  
+- `pipeline.ollamaOk` → listo para el pipeline del bot  
 
-Útil para staging; para prod 24/7 preferí Ollama en Railway o un VPS.
+## 4. Local (tu PC)
 
-## Notas
+```powershell
+ollama serve
+ollama pull qwen2.5:7b
+```
 
-- Modelos 7B necesitan RAM/VRAM suficiente en el servicio Railway (plan con memoria adecuada).
-- Timeout del bot: 120 s por respuesta Ollama (`OllamaProvider`).
-- Si Ollama falla, el bot usa **reglas de fallback** (closer básico), no Gemini, cuando `WHATSAPP_AI_PROVIDER=ollama`.
+`.env.local`:
+
+```env
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=qwen2.5:7b
+WHATSAPP_AI_PROVIDER=ollama
+```
+
+## 5. Túnel desde PC a Railway (alternativa)
+
+Si querés usar la GPU de tu PC en prod: Cloudflare Tunnel / ngrok al puerto 11434 y esa URL en `OLLAMA_BASE_URL` en Railway.

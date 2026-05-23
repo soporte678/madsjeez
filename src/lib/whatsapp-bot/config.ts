@@ -33,6 +33,7 @@ export function getWhatsappBotEnv() {
     ollamaModel,
     appBase,
     evolutionConfigured: Boolean(evolutionUrl && evolutionKey),
+    ollamaConfigured: Boolean(ollamaBase.length > 0),
   };
 }
 
