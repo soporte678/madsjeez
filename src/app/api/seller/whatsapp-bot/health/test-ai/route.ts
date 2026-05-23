@@ -51,6 +51,7 @@ export async function POST() {
       botSettings: {
         enabled: true,
         tone: botConfig?.tone ?? "cercano",
+        botDisplayName: botConfig?.botDisplayName,
         customInstructions: botConfig?.customInstructions,
         humanHandoffEnabled: true,
         maxAutoMessagesBeforeHandoff: botConfig?.maxAutoMessagesBeforeHandoff ?? 12,

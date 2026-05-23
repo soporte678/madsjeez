@@ -886,6 +886,52 @@ export default function WhatsappBotConfigView({
 
             />
 
+            <div className="space-y-2">
+
+              <label className="text-sm text-slate-300" htmlFor="bot-display-name">
+
+                Nombre del bot
+
+              </label>
+
+              <input
+
+                id="bot-display-name"
+
+                className="wa-field"
+
+                value={config?.botDisplayName ?? ""}
+
+                onChange={(e) =>
+
+                  setConfig((c) => (c ? { ...c, botDisplayName: e.target.value } : c))
+
+                }
+
+                onBlur={(e) => {
+
+                  const v = e.target.value.trim();
+
+                  onPatchConfig({ botDisplayName: v.length > 0 ? v : null });
+
+                }}
+
+                placeholder="Ej: Laura, Mauro, Asistente de la tienda…"
+
+                maxLength={64}
+
+              />
+
+              <p className="text-xs text-slate-400">
+
+                El bot se presentará con este nombre en WhatsApp y en las pruebas de IA. Si lo dejás vacío,
+
+                usa un asistente genérico sin nombre propio.
+
+              </p>
+
+            </div>
+
             <div className="flex flex-wrap gap-2">
 
               {WHATSAPP_INSTRUCTION_PRESETS.map((p) => (

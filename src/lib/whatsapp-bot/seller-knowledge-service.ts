@@ -1,12 +1,26 @@
-import { prisma } from "@/lib/prisma";
-import { searchSellerProducts, type CatalogProductHit } from "./product-search-service";
+import {
+  formatCompactCatalogIndex,
+  formatRelevantCatalogHits,
+  type CatalogProductHit,
+} from "./catalog-product-map";
+import {
+  getSellerStoreMeta,
+  listAllActiveSellerProducts,
+  searchSellerProducts,
+} from "./product-search-service";
 
 export type StoreContext = {
   sellerName: string;
   storeSlug: string | null;
   storeUrl: string | null;
+  sellerImageUrl: string | null;
   description: string | null;
+  /** Coincidencias con el mensaje del cliente */
   products: CatalogProductHit[];
+  /** Índice compacto de todas las publicaciones activas */
+  fullCatalog: CatalogProductHit[];
+  fullCatalogBlock: string;
+  relevantCatalogBlock: string;
   paymentNote: string;
   shippingNote: string;
 };
@@ -16,27 +30,25 @@ export async function buildStoreContext(
   customerMessage: string,
   appBase: string
 ): Promise<StoreContext> {
-  const user = await prisma.user.findUnique({
-    where: { id: sellerId },
-    select: {
-      sellerName: true,
-      name: true,
-      storeSlug: true,
-      sellerDescription: true,
-    },
-  });
+  const [meta, fullCatalog, products] = await Promise.all([
+    getSellerStoreMeta(sellerId, appBase),
+    listAllActiveSellerProducts(sellerId, appBase),
+    searchSellerProducts(sellerId, customerMessage, appBase, 12),
+  ]);
 
-  const displayName = user?.sellerName || user?.name || "la tienda";
-  const storeSlug = user?.storeSlug ?? null;
-  const storeUrl = storeSlug ? `${appBase}/tienda/${storeSlug}` : null;
-  const products = await searchSellerProducts(sellerId, customerMessage, appBase);
+  const fullCatalogBlock = formatCompactCatalogIndex(fullCatalog);
+  const relevantCatalogBlock = formatRelevantCatalogHits(products);
 
   return {
-    sellerName: displayName,
-    storeSlug,
-    storeUrl,
-    description: user?.sellerDescription ?? null,
+    sellerName: meta.sellerName,
+    storeSlug: meta.storeSlug,
+    storeUrl: meta.storeUrl,
+    sellerImageUrl: meta.sellerImageUrl,
+    description: meta.description,
     products,
+    fullCatalog,
+    fullCatalogBlock,
+    relevantCatalogBlock,
     paymentNote:
       "Los medios de pago disponibles se confirman al momento de comprar en Madsjeez (Mercado Pago u otros configurados por el vendedor).",
     shippingNote:
@@ -48,23 +60,15 @@ export function formatStoreContextForPrompt(ctx: StoreContext): string {
   const lines: string[] = [
     `TIENDA: ${ctx.sellerName}`,
     ctx.storeUrl ? `URL_TIENDA: ${ctx.storeUrl}` : "",
+    ctx.sellerImageUrl ? `IMAGEN_TIENDA_VENDEDOR: ${ctx.sellerImageUrl}` : "",
     ctx.description ? `DESCRIPCION: ${ctx.description.slice(0, 800)}` : "",
     ctx.paymentNote,
     ctx.shippingNote,
-  ].filter(Boolean);
-
-  if (ctx.products.length > 0) {
-    lines.push("PRODUCTOS_ENCONTRADOS:");
-    for (const p of ctx.products) {
-      const stockLabel = p.stock > 0 ? `${p.stock} unidades` : "sin stock publicado (consultar)";
-      const ship = p.freeShipping ? "Envío gratis según publicación" : "Envío según publicación";
-      lines.push(
-        `- ${p.title} | Precio publicado: $${Math.round(p.price).toLocaleString("es-AR")} | Stock: ${stockLabel} | ${ship} | Link: ${p.productUrl}`
-      );
-    }
-  } else {
-    lines.push("PRODUCTOS_ENCONTRADOS: (ninguno coincide; no inventes productos)");
-  }
+    "",
+    ctx.fullCatalogBlock,
+    "",
+    ctx.relevantCatalogBlock,
+  ].filter((line, i, arr) => line !== "" || (i > 0 && arr[i - 1] !== ""));
 
   return lines.join("\n");
 }

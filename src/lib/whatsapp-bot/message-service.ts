@@ -11,6 +11,36 @@ export async function isDuplicateInboundMessage(providerMessageId?: string): Pro
   return Boolean(existing);
 }
 
+/** Si Evolution reenvía el mismo mensaje, reintentar auto-reply solo si aún no hubo respuesta del bot. */
+export async function loadDuplicateInboundRetryContext(providerMessageId: string) {
+  const inbound = await prisma.whatsappMessage.findFirst({
+    where: { providerMessageId, direction: "inbound" },
+    include: {
+      conversation: {
+        include: { lead: true },
+      },
+    },
+  });
+  if (!inbound?.conversation) return null;
+
+  const botReply = await prisma.whatsappMessage.findFirst({
+    where: {
+      conversationId: inbound.conversationId,
+      direction: "outbound",
+      senderType: "bot",
+      createdAt: { gte: inbound.createdAt },
+    },
+    select: { id: true },
+  });
+
+  return {
+    inbound,
+    conversation: inbound.conversation,
+    lead: inbound.conversation.lead,
+    alreadyReplied: Boolean(botReply),
+  };
+}
+
 export async function saveOutboundMessage(
   conversationId: string,
   content: string,

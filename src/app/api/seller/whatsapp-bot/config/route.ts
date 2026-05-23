@@ -36,6 +36,12 @@ export async function PATCH(req: NextRequest) {
   if (typeof body.customInstructions === "string") {
     data.customInstructions = body.customInstructions.slice(0, 2000);
   }
+  if (body.botDisplayName === null || body.botDisplayName === "") {
+    data.botDisplayName = null;
+  } else if (typeof body.botDisplayName === "string") {
+    const name = body.botDisplayName.trim().slice(0, 64);
+    data.botDisplayName = name.length > 0 ? name : null;
+  }
   if (typeof body.tone === "string" && TONES.includes(body.tone as WhatsappBotTone)) {
     data.tone = body.tone;
   }

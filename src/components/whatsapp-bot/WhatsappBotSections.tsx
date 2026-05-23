@@ -774,13 +774,21 @@ type CatalogItem = {
   title: string;
   price: number;
   stock: number;
+  sku?: string | null;
   category: string;
   active: boolean;
   keywords?: string;
+  imageUrl?: string | null;
+  productUrl?: string;
+  storeUrl?: string | null;
+  sellerImageUrl?: string | null;
 };
 
 export function WhatsappBotCatalogoView() {
   const [products, setProducts] = useState<CatalogItem[]>([]);
+  const [total, setTotal] = useState(0);
+  const [storeUrl, setStoreUrl] = useState<string | null>(null);
+  const [sellerImageUrl, setSellerImageUrl] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [debouncedQ, setDebouncedQ] = useState("");
   const [loading, setLoading] = useState(true);
@@ -793,9 +801,14 @@ export function WhatsappBotCatalogoView() {
 
   const load = useCallback(() => {
     setLoading(true);
-    const url = `/api/seller/whatsapp-bot/catalog?active=false${debouncedQ ? `&q=${encodeURIComponent(debouncedQ)}` : ""}`;
-    waFetch<{ products: CatalogItem[] }>(url)
-      .then((d) => setProducts(d.products ?? []))
+    const url = `/api/seller/whatsapp-bot/catalog?active=false&pageSize=200${debouncedQ ? `&q=${encodeURIComponent(debouncedQ)}` : ""}`;
+    waFetch<{ products: CatalogItem[]; total: number; store?: { storeUrl?: string | null; sellerImageUrl?: string | null } }>(url)
+      .then((d) => {
+        setProducts(d.products ?? []);
+        setTotal(d.total ?? d.products?.length ?? 0);
+        setStoreUrl(d.store?.storeUrl ?? null);
+        setSellerImageUrl(d.store?.sellerImageUrl ?? null);
+      })
       .catch(waCatch)
       .finally(() => setLoading(false));
   }, [debouncedQ]);
@@ -838,8 +851,34 @@ export function WhatsappBotCatalogoView() {
     <div className="wa-page w-full max-w-none">
       <WaPageHeader
         title="Catálogo"
-        subtitle="Productos de tu tienda — el bot los usa para responder"
+        subtitle={`Publicaciones del marketplace — ${total} producto${total === 1 ? "" : "s"} · el bot lee todo el catálogo activo`}
       />
+      {(storeUrl || sellerImageUrl) && (
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-slate-700/60 bg-slate-900/40 px-4 py-3">
+          {sellerImageUrl ? (
+            <img
+              src={sellerImageUrl}
+              alt="Tienda"
+              className="h-10 w-10 rounded-full object-cover border border-slate-600"
+            />
+          ) : null}
+          <div className="min-w-0">
+            <p className="text-sm text-slate-300">Tu tienda en Madsjeez</p>
+            {storeUrl ? (
+              <a
+                href={storeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-blue-300 hover:underline truncate block max-w-md"
+              >
+                {storeUrl}
+              </a>
+            ) : (
+              <p className="text-xs text-slate-500">Configurá tu slug de tienda para link público</p>
+            )}
+          </div>
+        </div>
+      )}
       <input
         className="wa-field mb-4 max-w-md"
         placeholder="Buscar producto o SKU…"
@@ -873,9 +912,38 @@ export function WhatsappBotCatalogoView() {
             {products.map((p) => (
               <WaTableRow key={p.id}>
                 <WaTd>
-                  <p className={`font-bold line-clamp-2 ${p.active ? "text-white" : "text-slate-400"}`}>
-                    {p.title}
-                  </p>
+                  <div className="flex items-start gap-3 min-w-0">
+                    {p.imageUrl ? (
+                      <a href={p.productUrl} target="_blank" rel="noopener noreferrer">
+                        <img
+                          src={p.imageUrl}
+                          alt=""
+                          className="h-12 w-12 rounded-lg object-cover border border-slate-600 shrink-0"
+                        />
+                      </a>
+                    ) : (
+                      <div className="h-12 w-12 rounded-lg bg-slate-800 border border-slate-700 shrink-0 flex items-center justify-center">
+                        <Package className="h-5 w-5 text-slate-500" />
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      {p.productUrl ? (
+                        <a
+                          href={p.productUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`font-bold line-clamp-2 hover:text-blue-300 ${p.active ? "text-white" : "text-slate-400"}`}
+                        >
+                          {p.title}
+                        </a>
+                      ) : (
+                        <p className={`font-bold line-clamp-2 ${p.active ? "text-white" : "text-slate-400"}`}>
+                          {p.title}
+                        </p>
+                      )}
+                      {p.sku ? <p className="text-xs text-slate-500 mt-0.5">SKU: {p.sku}</p> : null}
+                    </div>
+                  </div>
                 </WaTd>
                 <WaTd align="right" className="text-green-400 font-bold whitespace-nowrap">
                   ${p.price.toLocaleString("es-AR")}

@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/prisma";
-import { searchCatalogBeforeReply } from "@/lib/ai/aiService";
 import { formatStoreContextForPrompt, buildStoreContext } from "@/lib/whatsapp-bot/seller-knowledge-service";
 import { getSalesCloserEnv } from "@/lib/ai/sales-closer-env";
 import { detectRubro, normalizeBusinessProfile } from "@/lib/ai/prompts/closer-router";
@@ -9,16 +8,8 @@ import type {
   SalesCloserContext,
 } from "@/lib/ai/sales-closer-types";
 
-function buildCatalogBlock(
-  products: { title: string; price: number; stock: number; productUrl?: string }[]
-): string {
-  if (!products.length) return "Sin productos coincidentes.";
-  return products
-    .map(
-      (p) =>
-        `- ${p.title}: $${Math.round(p.price).toLocaleString("es-AR")}, stock ${p.stock}${p.productUrl ? `, ${p.productUrl}` : ""}`
-    )
-    .join("\n");
+function buildCatalogBlock(fullCatalogBlock: string, relevantBlock: string): string {
+  return [fullCatalogBlock, relevantBlock].filter(Boolean).join("\n\n");
 }
 
 export async function loadWinningExamplesBlock(params: {
@@ -100,19 +91,12 @@ export async function buildSalesCloserContext(params: {
     "general";
   const businessProfile = normalizeBusinessProfile(profileHint);
 
-  const catalogHits = await searchCatalogBeforeReply(
-    params.sellerId,
-    params.message,
-    appBase,
-    8
-  );
+  const storeContext = await buildStoreContext(params.sellerId, params.message, appBase);
   const rubroDetected = detectRubro({
     message: params.message,
     businessProfileHint: businessProfile,
-    catalogTitles: catalogHits.map((p) => p.title),
+    catalogTitles: storeContext.products.map((p) => p.title),
   });
-
-  const storeContext = await buildStoreContext(params.sellerId, params.message, appBase);
   const winningExamplesBlock = await loadWinningExamplesBlock({
     sellerId: params.sellerId,
     rubro: rubroDetected,
@@ -158,17 +142,11 @@ export async function buildSalesCloserContext(params: {
       businessName: lead.businessName,
     },
     recentMessages,
-    catalogBlock: buildCatalogBlock(
-      catalogHits.map((p) => ({
-        title: p.title,
-        price: p.price,
-        stock: p.stock,
-        productUrl: p.productUrl,
-      }))
-    ),
+    catalogBlock: buildCatalogBlock(storeContext.fullCatalogBlock, storeContext.relevantCatalogBlock),
     storeContextBlock: formatStoreContextForPrompt(storeContext),
     winningExamplesBlock,
     customInstructions: botConfig?.customInstructions ?? null,
+    botDisplayName: botConfig?.botDisplayName ?? null,
     botTone: botConfig?.tone ?? "cercano",
   };
 }

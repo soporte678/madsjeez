@@ -3,6 +3,7 @@ import { formatStoreContextForPrompt, type StoreContext } from "./seller-knowled
 import { generateGeminiWhatsappReply } from "./gemini-reply";
 import { resolveWhatsappAiProvider } from "./ai-provider";
 import { generateOllamaReply } from "./ollama-client";
+import { buildBotIdentityPromptBlock } from "./bot-identity";
 
 const BASE_PROMPT = `Sos el asistente comercial de una tienda dentro de Madsjeez Marketplace.
 Respondé en español argentino, de forma natural, amable y vendedora.
@@ -30,6 +31,7 @@ export async function generateBotReply(params: {
   customerMessage: string;
   storeContext: StoreContext;
   tone: WhatsappBotTone;
+  botDisplayName?: string | null;
   customInstructions?: string | null;
   recentMessages?: { role: "user" | "assistant"; content: string }[];
 }): Promise<{ text: string; usedAi: boolean; aiProvider?: string; aiError?: string }> {
@@ -42,6 +44,7 @@ export async function generateBotReply(params: {
     .join("\n");
 
   const prompt = `${BASE_PROMPT}
+${buildBotIdentityPromptBlock(params.botDisplayName)}
 ${TONE_HINT[params.tone]}
 ${params.customInstructions ? `INSTRUCCIONES_VENDEDOR: ${params.customInstructions.slice(0, 500)}` : ""}
 

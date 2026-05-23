@@ -739,7 +739,7 @@ export default function WhatsappBotInboxView({
         </div>
       </div>
 
-      <Pipeline leads={leads} onUpdateStatus={onUpdateLeadStatus} />
+      <Pipeline leads={leads} />
     </div>
   );
 }

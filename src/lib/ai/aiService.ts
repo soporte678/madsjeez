@@ -6,6 +6,8 @@ import { detectIntentSnippet, scoreLeadFromMessage } from "@/lib/whatsapp-bot/le
 import { geminiProvider } from "./GeminiProvider";
 import { ollamaProvider } from "./OllamaProvider";
 import type { AIProvider } from "./AIProvider";
+import { formatCatalogHitLine } from "@/lib/whatsapp-bot/catalog-product-map";
+import { buildBotIdentityPromptBlock } from "@/lib/whatsapp-bot/bot-identity";
 import type { BotReplyInput, BotReplyOutput, BotMessage, LeadStage } from "./types";
 
 const BASE_SYSTEM = `Sos un CLOSER comercial de élite en Madsjeez Marketplace (español argentino, vos/tu).
@@ -95,7 +97,7 @@ export async function searchCatalogBeforeReply(
   sellerId: string,
   query: string,
   appBase: string,
-  limit = 8
+  limit = 12
 ) {
   return searchCatalogProducts(sellerId, query, appBase, limit);
 }
@@ -120,12 +122,7 @@ function buildCatalogBlock(
   products: NonNullable<BotReplyInput["catalogMatches"]>
 ): string {
   if (!products.length) return "Sin productos coincidentes en catálogo.";
-  return products
-    .map(
-      (p) =>
-        `- ${p.title}: $${Math.round(p.price).toLocaleString("es-AR")}, stock ${p.stock}${p.productUrl ? `, ${p.productUrl}` : ""}`
-    )
-    .join("\n");
+  return products.map((p) => formatCatalogHitLine(p)).join("\n");
 }
 
 function contactDisplayName(contact: BotReplyInput["contact"]): string {
@@ -219,13 +216,12 @@ export async function generateBotReply(input: BotReplyInput): Promise<BotReplyOu
   const clientName = contactDisplayName(input.contact);
   const stageHint = STAGE_CLOSING_HINT[input.contact.status] ?? STAGE_CLOSING_HINT.new;
   const system = `${BASE_SYSTEM}
+${buildBotIdentityPromptBlock(input.botSettings.botDisplayName)}
 ${stageHint}
 ${clientName ? `Nombre del cliente: ${clientName}.` : ""}
 Tono: ${input.botSettings.tone}.
 ${input.botSettings.customInstructions ? `Reglas del vendedor: ${input.botSettings.customInstructions.slice(0, 900)}` : ""}
-${input.storeContextBlock ? `\n${input.storeContextBlock}` : ""}
-PRODUCTOS (usá solo estos datos):
-${catalogBlock}`;
+${input.storeContextBlock ? `\n${input.storeContextBlock}` : `PRODUCTOS (usá solo estos datos):\n${catalogBlock}`}`;
 
   if (!provider) {
     return {
@@ -281,7 +277,7 @@ export async function testOllamaConnection(): Promise<{
   const start = Date.now();
   const configIssue = describeOllamaConfigIssue();
   if (configIssue) {
-    return { ok: false, error: configIssue, message: configIssue };
+    return { ok: false, error: configIssue };
   }
 
   const health = await ollamaProvider.healthCheck();
@@ -290,7 +286,6 @@ export async function testOllamaConnection(): Promise<{
     return {
       ok: false,
       error: msg,
-      message: msg,
       models: health.models,
     };
   }

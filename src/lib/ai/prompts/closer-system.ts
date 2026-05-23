@@ -1,4 +1,5 @@
 import { formatPlaybookForPrompt } from "./closer-playbooks";
+import { buildBotIdentityPromptBlock } from "@/lib/whatsapp-bot/bot-identity";
 import type { BusinessProfileId } from "../sales-closer-types";
 
 export const CLOSER_JSON_SCHEMA = `{
@@ -39,10 +40,12 @@ export function buildCloserSystemPrompt(params: {
   clientBlock: string;
   historyBlock: string;
   customInstructions?: string | null;
+  botDisplayName?: string | null;
 }): string {
   return [
     "Sos un SUPER CLOSER de ventas — motor de decisión comercial, NO un chatbot genérico.",
     `Canal: ${params.channel}.`,
+    buildBotIdentityPromptBlock(params.botDisplayName),
     CLOSER_GLOBAL_RULES,
     formatPlaybookForPrompt(params.rubro),
     params.storeContextBlock,

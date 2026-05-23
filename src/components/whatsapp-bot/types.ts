@@ -22,6 +22,7 @@ export type SessionState = {
 export type BotConfig = {
   enabled: boolean;
   tone: string;
+  botDisplayName: string | null;
   customInstructions: string | null;
   humanHandoffEnabled: boolean;
   autoReplyEnabled: boolean;

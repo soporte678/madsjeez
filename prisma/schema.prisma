@@ -1844,6 +1844,7 @@ model SellerBotConfig {
   maxAutoMessagesBeforeHandoff  Int             @default(12) @map("max_auto_messages_before_handoff")
   allowWhatsAppGroups           Boolean         @default(false) @map("allow_whatsapp_groups")
   customInstructions            String?         @map("custom_instructions") @db.Text
+  botDisplayName                String?         @map("bot_display_name")
   businessProfile               String?         @map("business_profile")
   createdAt                     DateTime        @default(now()) @map("created_at")
   updatedAt                     DateTime        @updatedAt @map("updated_at")

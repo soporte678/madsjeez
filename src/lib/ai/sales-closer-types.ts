@@ -89,5 +89,6 @@ export type SalesCloserContext = {
   storeContextBlock: string;
   winningExamplesBlock: string;
   customInstructions: string | null;
+  botDisplayName: string | null;
   botTone: string;
 };

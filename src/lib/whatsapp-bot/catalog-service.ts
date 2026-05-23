@@ -1,14 +1,19 @@
 import { prisma } from "@/lib/prisma";
-import { searchSellerProducts, type CatalogProductHit } from "./product-search-service";
+import {
+  listAllActiveSellerProducts,
+  searchSellerProducts,
+  type CatalogProductHit,
+} from "./product-search-service";
 
-export { searchSellerProducts as searchCatalogProducts };
+export { searchSellerProducts as searchCatalogProducts, listAllActiveSellerProducts };
 
 export async function getActiveCatalog(
   sellerId: string,
   appBase: string,
-  limit = 20
+  limit?: number
 ): Promise<CatalogProductHit[]> {
-  return searchSellerProducts(sellerId, "", appBase, limit);
+  const all = await listAllActiveSellerProducts(sellerId, appBase);
+  return limit ? all.slice(0, limit) : all;
 }
 
 export async function getProductById(sellerId: string, productId: string) {

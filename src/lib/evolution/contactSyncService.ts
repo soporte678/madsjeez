@@ -141,8 +141,8 @@ export async function syncWhatsappContacts(
           totalSkipped++;
           continue;
         }
-        if (result.created) totalCreated++;
-        else if (result.updated) totalUpdated++;
+        if ("created" in result && result.created) totalCreated++;
+        else if ("updated" in result && result.updated) totalUpdated++;
       } catch (e) {
         errors.push(e instanceof Error ? e.message : "contact_sync_error");
       }

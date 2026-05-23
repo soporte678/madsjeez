@@ -61,9 +61,9 @@ CREATE INDEX IF NOT EXISTS "whatsapp_closer_decisions_conversation_id_created_at
 CREATE INDEX IF NOT EXISTS "whatsapp_winning_responses_seller_id_rubro_idx" ON "whatsapp_winning_responses"("seller_id", "rubro");
 CREATE INDEX IF NOT EXISTS "whatsapp_winning_responses_seller_id_intencion_idx" ON "whatsapp_winning_responses"("seller_id", "intencion");
 
-ALTER TABLE "whatsapp_closer_decisions" ADD CONSTRAINT "whatsapp_closer_decisions_seller_id_fkey" FOREIGN KEY ("seller_id") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "whatsapp_closer_decisions" ADD CONSTRAINT "whatsapp_closer_decisions_seller_id_fkey" FOREIGN KEY ("seller_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "whatsapp_closer_decisions" ADD CONSTRAINT "whatsapp_closer_decisions_conversation_id_fkey" FOREIGN KEY ("conversation_id") REFERENCES "whatsapp_conversations"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 ALTER TABLE "whatsapp_closer_decisions" ADD CONSTRAINT "whatsapp_closer_decisions_lead_id_fkey" FOREIGN KEY ("lead_id") REFERENCES "whatsapp_leads"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
-ALTER TABLE "whatsapp_winning_responses" ADD CONSTRAINT "whatsapp_winning_responses_seller_id_fkey" FOREIGN KEY ("seller_id") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "whatsapp_winning_responses" ADD CONSTRAINT "whatsapp_winning_responses_seller_id_fkey" FOREIGN KEY ("seller_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "whatsapp_winning_responses" ADD CONSTRAINT "whatsapp_winning_responses_lead_id_fkey" FOREIGN KEY ("lead_id") REFERENCES "whatsapp_leads"("id") ON DELETE SET NULL ON UPDATE CASCADE;

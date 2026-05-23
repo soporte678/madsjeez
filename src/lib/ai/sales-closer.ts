@@ -68,7 +68,10 @@ function ruleBasedFallback(params: {
     intent === "pedido_humano" ||
     /humano|persona|vendedor/.test(params.message.toLowerCase());
 
-  let respuesta = "Gracias por escribir. Contame qué necesitás y te ayudo a cerrar la compra.";
+  const botName = params.ctx.botDisplayName?.trim();
+  let respuesta = botName
+    ? `Hola, soy ${botName}. Gracias por escribir. Contame qué necesitás y te ayudo a cerrar la compra.`
+    : "Gracias por escribir. Contame qué necesitás y te ayudo a cerrar la compra.";
   if (intent === "objecion_precio") {
     respuesta =
       "Entiendo la duda de precio. Revisemos el producto exacto del catálogo y te confirmo valor y stock real. ¿Qué modelo o medida buscás?";
@@ -258,6 +261,7 @@ export async function runSalesCloser(input: SalesCloserInput): Promise<SalesClos
     clientBlock: formatClientBlock(ctx),
     historyBlock: formatHistoryBlock(ctx),
     customInstructions: ctx.customInstructions,
+    botDisplayName: ctx.botDisplayName,
   });
 
   try {
@@ -286,29 +290,6 @@ export async function runSalesCloser(input: SalesCloserInput): Promise<SalesClos
     output.etiquetas = [output.rubro, output.intencion].filter(Boolean);
   }
 
-  await persistCloserDecision({
-    sellerId: input.sellerId,
-    leadId: ctx.leadId,
-    conversationId: ctx.conversationId,
-    channel,
-    businessProfile: profile,
-    output,
-    model,
-    rawJson,
-  });
-
-  if (output.derivar_humano && ctx.conversationId) {
-    const botConfig = await prisma.sellerBotConfig.findUnique({
-      where: { sellerId: input.sellerId },
-    });
-    if (botConfig?.humanHandoffEnabled !== false) {
-      await requestHumanHandoff(ctx.conversationId, output.accion_recomendada || "closer_derivar", {
-        notifySeller: true,
-        phone: ctx.lead.phone,
-      });
-    }
-  }
-
   if (input.sendReply && output.respuesta_cliente && ctx.conversationId) {
     const session = await prisma.whatsappSession.findUnique({
       where: { sellerId: input.sellerId },
@@ -325,7 +306,48 @@ export async function runSalesCloser(input: SalesCloserInput): Promise<SalesClos
         where: { id: ctx.conversationId },
         data: { botMessageCount: { increment: 1 } },
       });
+      console.info("[whatsapp-bot] closer reply sent", {
+        sellerId: input.sellerId,
+        conversationId: ctx.conversationId,
+        usedAi: output.usedAi,
+        aiError: output.aiError,
+      });
+    } else {
+      console.warn("[whatsapp-bot] closer reply skipped — session not connected", {
+        sellerId: input.sellerId,
+        sessionStatus: session?.status,
+      });
     }
+  }
+
+  if (output.derivar_humano && ctx.conversationId) {
+    const botConfig = await prisma.sellerBotConfig.findUnique({
+      where: { sellerId: input.sellerId },
+    });
+    if (botConfig?.humanHandoffEnabled !== false) {
+      await requestHumanHandoff(ctx.conversationId, output.accion_recomendada || "closer_derivar", {
+        notifySeller: true,
+        phone: ctx.lead.phone,
+      });
+    }
+  }
+
+  try {
+    await persistCloserDecision({
+      sellerId: input.sellerId,
+      leadId: ctx.leadId,
+      conversationId: ctx.conversationId,
+      channel,
+      businessProfile: profile,
+      output,
+      model,
+      rawJson,
+    });
+  } catch (e) {
+    console.error(
+      "[whatsapp-bot] closer persist failed (reply may have been sent)",
+      e instanceof Error ? e.message : e
+    );
   }
 
   return output;

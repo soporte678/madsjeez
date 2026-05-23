@@ -33,11 +33,17 @@ export type CatalogProductMatch = {
   price: number;
   stock: number;
   productUrl?: string;
+  imageUrl?: string | null;
+  sku?: string | null;
+  category?: string | null;
+  freeShipping?: boolean;
+  description?: string | null;
 };
 
 export type BotSettings = {
   enabled: boolean;
   tone: WhatsappBotTone;
+  botDisplayName?: string | null;
   customInstructions?: string | null;
   humanHandoffEnabled: boolean;
   maxAutoMessagesBeforeHandoff: number;
