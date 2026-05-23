@@ -107,10 +107,6 @@ function activeProvider(): AIProvider | null {
   const p = resolveWhatsappAiProvider();
   if (p === "ollama" && ollamaProvider.isConfigured()) return ollamaProvider;
   if (p === "gemini" && geminiProvider.isConfigured()) return geminiProvider;
-  if (p === "auto") {
-    if (geminiProvider.isConfigured()) return geminiProvider;
-    if (ollamaProvider.isConfigured()) return ollamaProvider;
-  }
   return null;
 }
 
@@ -271,14 +267,6 @@ export async function testOllamaConnection(): Promise<{
   error?: string;
   latencyMs?: number;
 }> {
-  const envProvider = process.env.WHATSAPP_AI_PROVIDER?.trim().toLowerCase();
-  if (envProvider && envProvider !== "ollama" && envProvider !== "auto") {
-    return {
-      ok: false,
-      error: "WHATSAPP_AI_PROVIDER no está en ollama (valor actual: " + envProvider + ")",
-    };
-  }
-
   const start = Date.now();
   const health = await ollamaProvider.healthCheck();
   if (!health.ok) {

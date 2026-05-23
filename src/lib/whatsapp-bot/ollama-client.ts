@@ -4,6 +4,11 @@ export function isLocalOllamaHost(base: string): boolean {
   return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(base);
 }
 
+export function hasOllamaEnvConfigured(): boolean {
+  const { ollamaBase, ollamaModel } = getWhatsappBotEnv();
+  return Boolean(ollamaBase && ollamaModel);
+}
+
 /** Ollama usable: URL set and not localhost-only while app runs in production (Railway). */
 export function isOllamaConfiguredForApp(): boolean {
   const { ollamaBase } = getWhatsappBotEnv();
@@ -14,6 +19,20 @@ export function isOllamaConfiguredForApp(): boolean {
   return true;
 }
 
+/** Mensaje claro cuando Ollama está forzado pero mal configurado en prod. */
+export function describeOllamaConfigIssue(): string | null {
+  const { ollamaBase, ollamaModel } = getWhatsappBotEnv();
+  if (!ollamaBase) {
+    return "Falta OLLAMA_BASE_URL. Ej: http://127.0.0.1:11434 (local) o https://tu-ollama.railway.app (prod).";
+  }
+  if (!ollamaModel) {
+    return "Falta OLLAMA_MODEL. Ej: qwen2.5:7b";
+  }
+  if (process.env.NODE_ENV === "production" && isLocalOllamaHost(ollamaBase)) {
+    return "En producción no podés usar localhost. Deployá Ollama en Railway, o exponé tu PC con un túnel (Cloudflare/ngrok) y poné esa URL en OLLAMA_BASE_URL.";
+  }
+  return null;
+}
 export async function checkOllamaHealth(): Promise<{
   ok: boolean;
   baseUrl?: string;

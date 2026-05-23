@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { requireSellerSession } from "@/lib/whatsapp-bot/auth";
-import { generateBotReply } from "@/lib/whatsapp-bot/ai-response-service";
+import { generateBotReply as generateAiBotReply } from "@/lib/ai/aiService";
+import { searchCatalogBeforeReply } from "@/lib/ai/aiService";
 import { resolveWhatsappAiProvider } from "@/lib/whatsapp-bot/ai-provider";
-import { buildStoreContext } from "@/lib/whatsapp-bot/seller-knowledge-service";
+import { formatStoreContextForPrompt, buildStoreContext } from "@/lib/whatsapp-bot/seller-knowledge-service";
 import { prisma } from "@/lib/prisma";
 
 export async function POST() {
@@ -21,17 +22,47 @@ export async function POST() {
       prisma.sellerBotConfig.findUnique({ where: { sellerId: auth.ctx.sellerId } }),
     ]);
 
-    const result = await generateBotReply({
+    const catalogMatches = await searchCatalogBeforeReply(
+      auth.ctx.sellerId,
+      "envío CABA",
+      appBase
+    );
+
+    const result = await generateAiBotReply({
+      contact: {
+        id: "test",
+        phone: "0000000000",
+        status: "warm",
+      },
+      conversation: {
+        id: "test",
+        status: "bot_active",
+        botMessageCount: 0,
+      },
+      recentMessages: [],
       customerMessage: "Hola, ¿cuánto sale el envío a CABA?",
-      storeContext,
-      tone: botConfig?.tone ?? "cercano",
-      customInstructions: botConfig?.customInstructions,
+      catalogMatches: catalogMatches.map((p) => ({
+        id: p.id,
+        title: p.title,
+        price: p.price,
+        stock: p.stock,
+        productUrl: p.productUrl,
+      })),
+      botSettings: {
+        enabled: true,
+        tone: botConfig?.tone ?? "cercano",
+        customInstructions: botConfig?.customInstructions,
+        humanHandoffEnabled: true,
+        maxAutoMessagesBeforeHandoff: botConfig?.maxAutoMessagesBeforeHandoff ?? 12,
+      },
+      storeContextBlock: formatStoreContextForPrompt(storeContext),
     });
 
     return NextResponse.json({
-      ok: true,
+      ok: Boolean(result.text),
       provider,
       usedAi: result.usedAi,
+      aiProvider: result.aiProvider,
       reply: result.text.slice(0, 500),
       aiError: result.aiError,
     });
@@ -43,7 +74,9 @@ export async function POST() {
         provider,
         error: msg,
         message:
-          "No se pudo generar respuesta de prueba. Revisá GEMINI_API_KEY u Ollama local.",
+          provider === "ollama"
+            ? "No se pudo probar Ollama. Verificá que esté corriendo (ollama serve) y OLLAMA_BASE_URL / OLLAMA_MODEL."
+            : "No se pudo generar respuesta de prueba. Revisá la configuración del motor IA.",
       },
       { status: 503 }
     );

@@ -85,7 +85,10 @@ export type AiHealth = {
   primary: string;
   geminiConfigured: boolean;
   ollamaOk?: boolean;
+  ollamaReachable?: boolean;
   ollamaModel?: string;
+  ollamaBaseUrl?: string;
+  ollamaConfigIssue?: string | null;
   providerEnv?: string;
 };
 

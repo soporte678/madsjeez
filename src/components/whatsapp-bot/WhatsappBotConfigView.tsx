@@ -612,11 +612,19 @@ export default function WhatsappBotConfigView({
 
             <p className="wa-honest-box text-xs">
 
-              El motor se elige en el servidor (<code className="text-blue-200">WHATSAPP_AI_PROVIDER</code>
+              Con <code className="text-blue-200">WHATSAPP_AI_PROVIDER=ollama</code> el bot usa{" "}
 
-              ). Sin Gemini ni Ollama, el bot usa reglas y plantillas.
+              <strong>Ollama siempre</strong> (via <code className="text-blue-200">/api/chat</code>). En prod
+
+              la URL debe ser pública (Railway o túnel), no localhost.
 
             </p>
+
+            {aiHealth?.ollamaConfigIssue ? (
+
+              <WaErrorBanner message={aiHealth.ollamaConfigIssue} />
+
+            ) : null}
 
             <div className="flex flex-wrap gap-2">
 

@@ -1,5 +1,10 @@
 import { getWhatsappBotEnv } from "@/lib/whatsapp-bot/config";
-import { checkOllamaHealth, isOllamaConfiguredForApp } from "@/lib/whatsapp-bot/ollama-client";
+import {
+  checkOllamaHealth,
+  describeOllamaConfigIssue,
+  hasOllamaEnvConfigured,
+  isOllamaConfiguredForApp,
+} from "@/lib/whatsapp-bot/ollama-client";
 import type { AIProvider } from "./AIProvider";
 import type { ChatMessage } from "./types";
 
@@ -7,11 +12,14 @@ export class OllamaProvider implements AIProvider {
   readonly name = "ollama";
 
   isConfigured(): boolean {
-    const { ollamaBase, ollamaModel } = getWhatsappBotEnv();
-    return Boolean(ollamaBase && ollamaModel && isOllamaConfiguredForApp());
+    return hasOllamaEnvConfigured();
   }
 
   async healthCheck() {
+    const configIssue = describeOllamaConfigIssue();
+    if (configIssue) {
+      return { ok: false, error: configIssue, models: [] as string[] };
+    }
     const health = await checkOllamaHealth();
     return {
       ok: health.ok,
@@ -24,14 +32,19 @@ export class OllamaProvider implements AIProvider {
     const { ollamaBase, ollamaModel } = getWhatsappBotEnv();
     if (!ollamaBase) throw new Error("Falta configurar OLLAMA_BASE_URL");
     if (!ollamaModel) throw new Error("Falta configurar OLLAMA_MODEL");
+
+    const configIssue = describeOllamaConfigIssue();
+    if (configIssue) throw new Error(configIssue);
     if (!isOllamaConfiguredForApp()) {
-      throw new Error("Ollama localhost no disponible en producción. Usá Gemini o un Ollama accesible por red.");
+      throw new Error(
+        "Ollama no accesible desde este entorno. En prod usá URL pública (Railway o túnel), no localhost."
+      );
     }
 
     const health = await this.healthCheck();
     if (!health.ok) {
       throw new Error(
-        `Ollama no responde en ${ollamaBase}. Verificá que el servicio esté levantado.`
+        health.error ?? `Ollama no responde en ${ollamaBase}. Verificá que el servicio esté levantado.`
       );
     }
     const modelNames = health.models ?? [];

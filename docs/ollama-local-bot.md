@@ -44,9 +44,42 @@ EVOLUTION_API_URL=https://evolution-api-production-85514.up.railway.app
 EVOLUTION_API_KEY=<tu clave>
 ```
 
-Con `WHATSAPP_AI_PROVIDER=ollama` el bot **no usa Gemini** aunque exista `GEMINI_API_KEY`.
+Con `WHATSAPP_AI_PROVIDER=ollama` el bot **usa Ollama siempre** (no cae a Gemini salvo que Ollama falle y el fallback sea reglas).
 
-En **producción (Railway)** dejá `WHATSAPP_AI_PROVIDER` vacío o `gemini` y **no** pongas `OLLAMA_BASE_URL=localhost`.
+## Producción (Railway + Ollama)
+
+Railway **no puede** llamar a `localhost:11434` de tu PC. Tenés dos caminos:
+
+### A) Ollama en Railway (recomendado para prod)
+
+1. Creá un servicio Docker con imagen `ollama/ollama` + volume para modelos.
+2. Dominio público: `https://ollama-xxx.up.railway.app`
+3. En el servicio **Madsjeez** (variables):
+
+```env
+WHATSAPP_AI_PROVIDER=ollama
+OLLAMA_BASE_URL=https://ollama-xxx.up.railway.app
+OLLAMA_MODEL=qwen2.5:7b
+```
+
+4. Entrá al contenedor Ollama y ejecutá `ollama pull qwen2.5:7b`.
+
+Guía detallada: [railway-ollama-setup.md](./railway-ollama-setup.md)
+
+### B) Ollama en tu PC + túnel (dev/staging con prod webhook)
+
+1. Ollama corriendo en tu PC (`ollama serve`).
+2. Túnel (Cloudflare Tunnel o ngrok) hacia el puerto 11434.
+3. En Railway: `OLLAMA_BASE_URL=https://tu-tunel.ngrok-free.app`
+
+### C) Solo desarrollo local
+
+```powershell
+npm run dev
+# .env.local con WHATSAPP_AI_PROVIDER=ollama y OLLAMA_BASE_URL=http://127.0.0.1:11434
+```
+
+Webhook Evolution puede apuntar a ngrok de tu `npm run dev` para probar Ollama end-to-end.
 
 ## 4. Benchmark de tiempos de respuesta
 
@@ -78,6 +111,6 @@ El script imprime ranking por latencia y sugiere `OLLAMA_MODEL`.
 - En Ollama, modelos cuantizados Q4_K_M son el sweet spot para 12 GB
 - Si un 7B va lento, probá `qwen2.5:3b` para respuestas &lt; 3 s
 
-## Producción
+## Producción sin Ollama remoto
 
-Railway → `GEMINI_API_KEY` + `WHATSAPP_AI_PROVIDER=gemini` (default). Ollama local solo para dev en tu PC.
+Si no deployás Ollama accesible por red, **no** uses `WHATSAPP_AI_PROVIDER=ollama` en Railway — el panel mostrará el error en Config → Motor IA → Probar Ollama.

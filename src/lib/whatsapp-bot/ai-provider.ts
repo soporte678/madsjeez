@@ -1,24 +1,25 @@
 import { isGeminiConfigured } from "./gemini-reply";
-import { isOllamaConfiguredForApp } from "./ollama-client";
+import { hasOllamaEnvConfigured, isOllamaConfiguredForApp } from "./ollama-client";
 
 export type WhatsappAiProvider = "gemini" | "ollama" | "rules";
 
 export function resolveWhatsappAiProvider(): WhatsappAiProvider {
   const forced = process.env.WHATSAPP_AI_PROVIDER?.trim().toLowerCase();
-  if (forced === "ollama" && isOllamaConfiguredForApp()) return "ollama";
-  if (forced === "gemini" && isGeminiConfigured()) return "gemini";
+
+  // Forzado explícito: respetar elección del vendedor (Ollama primero si lo pidió)
+  if (forced === "ollama") return "ollama";
+  if (forced === "gemini") return "gemini";
   if (forced === "rules") return "rules";
 
+  // auto o vacío: Ollama primero si está accesible, sino Gemini, sino reglas
   if (forced === "auto" || !forced) {
-    if (isOllamaConfiguredForApp() && process.env.NODE_ENV !== "production") {
-      return "ollama";
-    }
-    if (isGeminiConfigured()) return "gemini";
     if (isOllamaConfiguredForApp()) return "ollama";
+    if (isGeminiConfigured()) return "gemini";
+    if (hasOllamaEnvConfigured()) return "ollama";
     return "rules";
   }
 
-  if (isGeminiConfigured()) return "gemini";
   if (isOllamaConfiguredForApp()) return "ollama";
+  if (isGeminiConfigured()) return "gemini";
   return "rules";
 }
