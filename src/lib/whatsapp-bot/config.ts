@@ -17,7 +17,7 @@ export function getWhatsappBotEnv() {
   const ollamaBase =
     ollamaRaw ||
     (process.env.NODE_ENV === "production" ? "" : "http://localhost:11434");
-  const ollamaModel = process.env.OLLAMA_MODEL?.trim() || "qwen2.5:7b";
+  const ollamaModel = process.env.OLLAMA_MODEL?.trim() || "qwen3:14b";
   const appBase =
     process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
     process.env.NEXTAUTH_URL?.replace(/\/$/, "") ||

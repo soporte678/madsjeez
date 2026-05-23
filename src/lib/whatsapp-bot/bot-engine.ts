@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { getWhatsappBotEnv, parseSellerIdFromInstance } from "./config";
 import { generateBotReply as generateAiBotReply } from "@/lib/ai/aiService";
+import { runSalesCloser } from "@/lib/ai/sales-closer";
+import { isSalesCloserAutoReplyEnabled } from "@/lib/ai/sales-closer-env";
 import { formatStoreContextForPrompt, buildStoreContext } from "./seller-knowledge-service";
 import { searchCatalogBeforeReply } from "@/lib/ai/aiService";
 import { FALLBACK_NO_AI } from "./ai-response-service";
@@ -178,6 +180,19 @@ export async function processInboundWhatsappMessage(input: InboundMessageInput) 
       phone,
     });
     await sendAndStore(session.providerInstanceId, phone, conversation.id, FALLBACK_NO_AI, "bot");
+    return;
+  }
+
+  if (isSalesCloserAutoReplyEnabled()) {
+    await runSalesCloser({
+      sellerId,
+      conversationId: conversation.id,
+      customerId: lead.id,
+      message: input.text,
+      channel: "whatsapp",
+      businessProfile: config.businessProfile ?? undefined,
+      sendReply: true,
+    });
     return;
   }
 

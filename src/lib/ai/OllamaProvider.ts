@@ -9,13 +9,19 @@ import type { AIProvider } from "./AIProvider";
 import type { ChatMessage } from "./types";
 
 /** Parámetros orientados a calidad (qwen3:14b puede tardar ~1 min — está OK). */
-const OLLAMA_QUALITY_OPTIONS = {
-  temperature: 0.35,
-  top_p: 0.92,
-  repeat_penalty: 1.12,
-  num_predict: 640,
-  num_ctx: 8192,
-};
+function ollamaQualityOptions() {
+  const numCtx = Math.min(
+    32768,
+    Math.max(2048, parseInt(process.env.OLLAMA_NUM_CTX ?? "8192", 10) || 8192)
+  );
+  return {
+    temperature: 0.35,
+    top_p: 0.92,
+    repeat_penalty: 1.12,
+    num_predict: 640,
+    num_ctx: numCtx,
+  };
+}
 
 /** 5 min — prioridad calidad, no velocidad. */
 const OLLAMA_REPLY_TIMEOUT_MS = 300_000;
@@ -76,7 +82,7 @@ export class OllamaProvider implements AIProvider {
         model: ollamaModel,
         messages,
         stream: false,
-        options: OLLAMA_QUALITY_OPTIONS,
+        options: ollamaQualityOptions(),
       }),
       signal: AbortSignal.timeout(OLLAMA_REPLY_TIMEOUT_MS),
     });

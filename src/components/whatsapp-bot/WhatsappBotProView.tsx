@@ -267,7 +267,7 @@ export default function WhatsappBotProView() {
   }
 
   return (
-    <div className="whatsapp-bot-pro w-full max-w-none overflow-x-hidden min-h-screen">
+    <div className="whatsapp-bot-pro w-full max-w-none overflow-x-hidden h-full min-h-0 flex flex-col">
       <WhatsappBotLayout
         activeNav={activeNav}
         conversationCount={conversations.length}

@@ -52,6 +52,9 @@ export async function PATCH(req: NextRequest) {
     const parsed = parseBusinessHours(body.businessHours);
     data.businessHours = parsed ?? DEFAULT_BUSINESS_HOURS;
   }
+  if (typeof body.businessProfile === "string") {
+    data.businessProfile = body.businessProfile.slice(0, 64);
+  }
 
   const config = await prisma.sellerBotConfig.upsert({
     where: { sellerId: auth.ctx.sellerId },

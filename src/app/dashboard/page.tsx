@@ -1361,7 +1361,7 @@ export default function App() {
       </header>
 
       {/* CONTENIDO PRINCIPAL: sidebar pegado al borde izquierdo */}
-      <div className="flex-1 flex">
+      <div className="flex-1 flex min-h-0 overflow-hidden">
         {/* SIDEBAR IZQUIERDO: pegado al borde, sin margen */}
         <aside className="w-56 flex-shrink-0 bg-card/95 border-r border-border shadow-[inset_-1px_0_0_var(--border)]">
           <div className="py-6 px-0">
@@ -1466,7 +1466,7 @@ export default function App() {
         <section
           className={
             activeMenu === "whatsapp-bot"
-              ? "flex-1 w-full min-w-0 p-0 overflow-hidden"
+              ? "flex-1 w-full min-w-0 p-0 overflow-hidden flex flex-col min-h-0"
               : "flex-1 min-w-0 p-6 lg:p-8"
           }
         >

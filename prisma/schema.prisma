@@ -194,6 +194,8 @@ model User {
   whatsappAutomations  WhatsappAutomation[]
   whatsappCampaigns    WhatsappCampaign[]
   whatsappSyncJobs     WhatsappSyncJob[]
+  whatsappCloserDecisions WhatsappCloserDecision[]
+  whatsappWinningResponses WhatsappWinningResponse[]
 
   // Reputación
   reputationHistory ReputationHistory[] @relation("ReputationHistory")
@@ -1800,6 +1802,12 @@ enum WhatsappSyncJobStatus {
   failed
 }
 
+enum WhatsappSaleOutcome {
+  open
+  won
+  lost
+}
+
 model WhatsappSession {
   id                 String                @id @default(cuid())
   sellerId           String                @map("seller_id")
@@ -1836,6 +1844,7 @@ model SellerBotConfig {
   maxAutoMessagesBeforeHandoff  Int             @default(12) @map("max_auto_messages_before_handoff")
   allowWhatsAppGroups           Boolean         @default(false) @map("allow_whatsapp_groups")
   customInstructions            String?         @map("custom_instructions") @db.Text
+  businessProfile               String?         @map("business_profile")
   createdAt                     DateTime        @default(now()) @map("created_at")
   updatedAt                     DateTime        @updatedAt @map("updated_at")
 
@@ -1864,6 +1873,12 @@ model WhatsappLead {
   source        String             @default("whatsapp")
   status        WhatsappLeadStatus @default(new)
   intent        String?            @db.Text
+  rubro         String?
+  objecion      String?
+  datoFaltante  String?            @map("dato_faltante")
+  saleOutcome   WhatsappSaleOutcome @default(open) @map("sale_outcome")
+  lossReason    String?            @map("loss_reason") @db.Text
+  businessProfile String?          @map("business_profile")
   tags          String[]           @default([])
   internalNotes String?            @map("internal_notes") @db.Text
   rawWhatsappData Json?            @map("raw_whatsapp_data")
@@ -1874,10 +1889,14 @@ model WhatsappLead {
   updatedAt     DateTime           @updatedAt @map("updated_at")
 
   conversations WhatsappConversation[]
+  closerDecisions WhatsappCloserDecision[]
+  winningResponses WhatsappWinningResponse[]
 
   @@unique([sellerId, phone])
   @@index([sellerId, status])
   @@index([sellerId, jid])
+  @@index([sellerId, rubro])
+  @@index([sellerId, saleOutcome])
   @@map("whatsapp_leads")
 }
 
@@ -1939,6 +1958,7 @@ model WhatsappConversation {
   messages  WhatsappMessage[]
   events    WhatsappBotEvent[]
   handoffs  WhatsappHumanHandoff[]
+  closerDecisions WhatsappCloserDecision[]
 
   @@unique([sellerId, phone])
   @@index([sellerId, status])
@@ -2010,4 +2030,54 @@ model WhatsappHumanHandoff {
 
   @@index([conversationId, status])
   @@map("whatsapp_human_handoffs")
+}
+
+model WhatsappCloserDecision {
+  id                String                @id @default(cuid())
+  sellerId          String                @map("seller_id")
+  seller            User                  @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  conversationId    String?               @map("conversation_id")
+  conversation      WhatsappConversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  leadId            String?               @map("lead_id")
+  lead              WhatsappLead?         @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  channel           String                @default("whatsapp")
+  businessProfile   String?               @map("business_profile")
+  rubro             String?
+  intencion         String?
+  etapaLead         String?               @map("etapa_lead")
+  objecion          String?
+  datoFaltante      String?               @map("dato_faltante")
+  accionRecomendada String?               @map("accion_recomendada")
+  derivarHumano     Boolean               @default(false) @map("derivar_humano")
+  respuestaCliente  String                @map("respuesta_cliente") @db.Text
+  etiquetas         String[]              @default([])
+  modelUsed         String?               @map("model_used")
+  rawJson           Json?                 @map("raw_json")
+  createdAt         DateTime              @default(now()) @map("created_at")
+
+  @@index([sellerId, createdAt])
+  @@index([leadId, createdAt])
+  @@index([conversationId, createdAt])
+  @@map("whatsapp_closer_decisions")
+}
+
+model WhatsappWinningResponse {
+  id               String   @id @default(cuid())
+  sellerId         String   @map("seller_id")
+  seller           User     @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  leadId           String?  @map("lead_id")
+  lead             WhatsappLead? @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  conversationId   String?  @map("conversation_id")
+  rubro            String
+  intencion        String?
+  objecion         String?
+  customerSnippet  String?  @map("customer_snippet") @db.Text
+  winningResponse  String   @map("winning_response") @db.Text
+  tags             String[] @default([])
+  useCount         Int      @default(0) @map("use_count")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  @@index([sellerId, rubro])
+  @@index([sellerId, intencion])
+  @@map("whatsapp_winning_responses")
 }

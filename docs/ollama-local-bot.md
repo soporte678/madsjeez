@@ -14,12 +14,9 @@ Probá en este orden (menor = más rápido, 7b = mejor calidad):
 
 | Modelo | VRAM aprox. | Uso |
 |--------|-------------|-----|
-| `qwen2.5:3b` | ~2 GB | Muy rápido, bueno para pruebas |
-| `llama3.2:3b` | ~2 GB | Rápido, inglés/español OK |
-| `gemma2:2b` | ~1.5 GB | Ultra rápido |
-| `phi3:mini` | ~2.5 GB | Compacto Microsoft |
-| `qwen2.5:7b` | ~4.5–6 GB | **Recomendado** calidad/velocidad |
-| `mistral:7b` | ~4.5 GB | Alternativa 7B |
+| `qwen3:14b` | ~9 GB | **Tu modelo actual** — mejor calidad closer (más lento) |
+| `qwen2.5:7b` | ~4.5–6 GB | Balance calidad/velocidad |
+| `qwen2.5:3b` | ~2 GB | Muy rápido, pruebas |
 
 No cargues dos modelos 7B a la vez en 12 GB; Ollama descarga uno y libera el anterior al cambiar.
 
@@ -37,7 +34,7 @@ ollama pull mistral:7b
 ```env
 WHATSAPP_AI_PROVIDER=ollama
 OLLAMA_BASE_URL=http://127.0.0.1:11434
-OLLAMA_MODEL=qwen2.5:3b
+OLLAMA_MODEL=qwen3:14b
 
 # Evolution local o Railway (según pruebes)
 EVOLUTION_API_URL=https://evolution-api-production-85514.up.railway.app
