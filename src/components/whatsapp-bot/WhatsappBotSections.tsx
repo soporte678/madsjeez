@@ -784,9 +784,12 @@ type CatalogItem = {
   sellerImageUrl?: string | null;
 };
 
+const CATALOG_PAGE_SIZE = 30;
+
 export function WhatsappBotCatalogoView() {
   const [products, setProducts] = useState<CatalogItem[]>([]);
   const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [storeUrl, setStoreUrl] = useState<string | null>(null);
   const [sellerImageUrl, setSellerImageUrl] = useState<string | null>(null);
   const [q, setQ] = useState("");
@@ -794,14 +797,21 @@ export function WhatsappBotCatalogoView() {
   const [loading, setLoading] = useState(true);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
+  const totalPages = Math.max(1, Math.ceil(total / CATALOG_PAGE_SIZE));
+
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedQ(q), 350);
+    const t = setTimeout(() => {
+      setDebouncedQ(q);
+      setPage(1); // reset to page 1 on new search
+    }, 350);
     return () => clearTimeout(t);
   }, [q]);
 
   const load = useCallback(() => {
     setLoading(true);
-    const url = `/api/seller/whatsapp-bot/catalog?active=false&pageSize=200${debouncedQ ? `&q=${encodeURIComponent(debouncedQ)}` : ""}`;
+    const url = debouncedQ
+      ? `/api/seller/whatsapp-bot/catalog?active=false&pageSize=${CATALOG_PAGE_SIZE}&q=${encodeURIComponent(debouncedQ)}`
+      : `/api/seller/whatsapp-bot/catalog?active=false&pageSize=${CATALOG_PAGE_SIZE}&page=${page}`;
     waFetch<{ products: CatalogItem[]; total: number; store?: { storeUrl?: string | null; sellerImageUrl?: string | null } }>(url)
       .then((d) => {
         setProducts(d.products ?? []);
@@ -811,7 +821,7 @@ export function WhatsappBotCatalogoView() {
       })
       .catch(waCatch)
       .finally(() => setLoading(false));
-  }, [debouncedQ]);
+  }, [debouncedQ, page]);
 
   useEffect(() => {
     load();
@@ -896,87 +906,151 @@ export function WhatsappBotCatalogoView() {
           desc="Publicá productos en Madsjeez para que el bot los cite en las respuestas."
         />
       ) : (
-        <WaTableWrap>
-          <WaTableHead>
-            <tr>
-              <WaTh>Producto</WaTh>
-              <WaTh align="right">Precio</WaTh>
-              <WaTh align="center">Stock</WaTh>
-              <WaTh>Categoría</WaTh>
-              <WaTh>Palabras clave IA</WaTh>
-              <WaTh align="center">Bot</WaTh>
-              <WaTh align="right">Acción</WaTh>
-            </tr>
-          </WaTableHead>
-          <WaTableBody>
-            {products.map((p) => (
-              <WaTableRow key={p.id}>
-                <WaTd>
-                  <div className="flex items-start gap-3 min-w-0">
-                    {p.imageUrl ? (
-                      <a href={p.productUrl} target="_blank" rel="noopener noreferrer">
-                        <img
-                          src={p.imageUrl}
-                          alt=""
-                          className="h-12 w-12 rounded-lg object-cover border border-slate-600 shrink-0"
-                        />
-                      </a>
-                    ) : (
-                      <div className="h-12 w-12 rounded-lg bg-slate-800 border border-slate-700 shrink-0 flex items-center justify-center">
-                        <Package className="h-5 w-5 text-slate-500" />
-                      </div>
-                    )}
-                    <div className="min-w-0">
-                      {p.productUrl ? (
-                        <a
-                          href={p.productUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={`font-bold line-clamp-2 hover:text-blue-300 ${p.active ? "text-white" : "text-slate-400"}`}
-                        >
-                          {p.title}
+        <>
+          <WaTableWrap>
+            <WaTableHead>
+              <tr>
+                <WaTh>Producto</WaTh>
+                <WaTh align="right">Precio</WaTh>
+                <WaTh align="center">Stock</WaTh>
+                <WaTh>Categoría</WaTh>
+                <WaTh>Palabras clave IA</WaTh>
+                <WaTh align="center">Bot</WaTh>
+                <WaTh align="right">Acción</WaTh>
+              </tr>
+            </WaTableHead>
+            <WaTableBody>
+              {products.map((p) => (
+                <WaTableRow key={p.id}>
+                  <WaTd>
+                    <div className="flex items-start gap-3 min-w-0">
+                      {p.imageUrl ? (
+                        <a href={p.productUrl} target="_blank" rel="noopener noreferrer">
+                          <img
+                            src={p.imageUrl}
+                            alt=""
+                            className="h-12 w-12 rounded-lg object-cover border border-slate-600 shrink-0"
+                          />
                         </a>
                       ) : (
-                        <p className={`font-bold line-clamp-2 ${p.active ? "text-white" : "text-slate-400"}`}>
-                          {p.title}
-                        </p>
+                        <div className="h-12 w-12 rounded-lg bg-slate-800 border border-slate-700 shrink-0 flex items-center justify-center">
+                          <Package className="h-5 w-5 text-slate-500" />
+                        </div>
                       )}
-                      {p.sku ? <p className="text-xs text-slate-500 mt-0.5">SKU: {p.sku}</p> : null}
+                      <div className="min-w-0">
+                        {p.productUrl ? (
+                          <a
+                            href={p.productUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`font-bold line-clamp-2 hover:text-blue-300 ${p.active ? "text-white" : "text-slate-400"}`}
+                          >
+                            {p.title}
+                          </a>
+                        ) : (
+                          <p className={`font-bold line-clamp-2 ${p.active ? "text-white" : "text-slate-400"}`}>
+                            {p.title}
+                          </p>
+                        )}
+                        {p.sku ? <p className="text-xs text-slate-500 mt-0.5">SKU: {p.sku}</p> : null}
+                      </div>
                     </div>
-                  </div>
-                </WaTd>
-                <WaTd align="right" className="text-green-400 font-bold whitespace-nowrap">
-                  ${p.price.toLocaleString("es-AR")}
-                </WaTd>
-                <WaTd align="center">{p.stock}</WaTd>
-                <WaTd className="wa-td-muted text-xs">{p.category}</WaTd>
-                <WaTd>
-                  <input
-                    className="wa-field text-xs min-w-[140px]"
-                    placeholder="palabras, clave"
-                    defaultValue={p.keywords ?? ""}
-                    onBlur={(e) => saveKeywords(p, e.target.value)}
-                  />
-                </WaTd>
-                <WaTd align="center">
-                  <WaPill tone={p.active ? "green" : "slate"}>
-                    {p.active ? "Activo" : "Off"}
-                  </WaPill>
-                </WaTd>
-                <WaTd align="right">
-                  <WaButton
-                    variant="ghost"
-                    className="text-xs"
-                    loading={togglingId === p.id}
-                    onClick={() => toggleActive(p)}
-                  >
-                    {p.active ? "Desactivar" : "Activar"}
-                  </WaButton>
-                </WaTd>
-              </WaTableRow>
-            ))}
-          </WaTableBody>
-        </WaTableWrap>
+                  </WaTd>
+                  <WaTd align="right" className="text-green-400 font-bold whitespace-nowrap">
+                    ${p.price.toLocaleString("es-AR")}
+                  </WaTd>
+                  <WaTd align="center">{p.stock}</WaTd>
+                  <WaTd className="wa-td-muted text-xs">{p.category}</WaTd>
+                  <WaTd>
+                    <input
+                      className="wa-field text-xs min-w-[140px]"
+                      placeholder="palabras, clave"
+                      defaultValue={p.keywords ?? ""}
+                      onBlur={(e) => saveKeywords(p, e.target.value)}
+                    />
+                  </WaTd>
+                  <WaTd align="center">
+                    <WaPill tone={p.active ? "green" : "slate"}>
+                      {p.active ? "Activo" : "Off"}
+                    </WaPill>
+                  </WaTd>
+                  <WaTd align="right">
+                    <WaButton
+                      variant="ghost"
+                      className="text-xs"
+                      loading={togglingId === p.id}
+                      onClick={() => toggleActive(p)}
+                    >
+                      {p.active ? "Desactivar" : "Activar"}
+                    </WaButton>
+                  </WaTd>
+                </WaTableRow>
+              ))}
+            </WaTableBody>
+          </WaTableWrap>
+
+          {/* Paginación */}
+          {!debouncedQ && totalPages > 1 && (
+            <div className="mt-4 flex items-center justify-between gap-2 text-sm">
+              <span className="text-slate-400 text-xs">
+                Página {page} de {totalPages} · {total} productos
+              </span>
+              <div className="flex items-center gap-1">
+                {/* Anterior */}
+                <button
+                  disabled={page <= 1 || loading}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  className="px-2 py-1 rounded text-slate-300 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
+                  ‹
+                </button>
+
+                {/* Números de página */}
+                {(() => {
+                  const pages: (number | "…")[] = [];
+                  if (totalPages <= 7) {
+                    for (let i = 1; i <= totalPages; i++) pages.push(i);
+                  } else {
+                    pages.push(1);
+                    if (page > 3) pages.push("…");
+                    for (let i = Math.max(2, page - 1); i <= Math.min(totalPages - 1, page + 1); i++) {
+                      pages.push(i);
+                    }
+                    if (page < totalPages - 2) pages.push("…");
+                    pages.push(totalPages);
+                  }
+                  return pages.map((p, i) =>
+                    p === "…" ? (
+                      <span key={`ellipsis-${i}`} className="px-1 text-slate-500">…</span>
+                    ) : (
+                      <button
+                        key={p}
+                        onClick={() => setPage(p as number)}
+                        disabled={loading}
+                        className={`w-7 h-7 rounded text-xs font-medium transition-colors disabled:cursor-not-allowed ${
+                          page === p
+                            ? "bg-blue-600 text-white"
+                            : "text-slate-300 hover:bg-slate-700"
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    )
+                  );
+                })()}
+
+                {/* Siguiente */}
+                <button
+                  disabled={page >= totalPages || loading}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  className="px-2 py-1 rounded text-slate-300 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
+                  ›
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
