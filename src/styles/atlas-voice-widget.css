@@ -1,0 +1,276 @@
+/* Atlas voice widget — floating admin FAB + embedded panel */
+
+.atlas-voice-fab {
+  position: fixed;
+  z-index: 9990;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 229, 255, 0.45);
+  background: linear-gradient(145deg, #0a1a28, #0e2a3a);
+  color: #00e5ff;
+  box-shadow: 0 4px 24px rgba(0, 229, 255, 0.25);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.atlas-voice-fab:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 28px rgba(0, 229, 255, 0.4);
+}
+
+.atlas-voice-fab-dot {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.4);
+}
+
+.atlas-voice-fab-dot.on {
+  background: #00ffaa;
+  box-shadow: 0 0 6px #00ffaa;
+}
+
+.atlas-voice-fab-dot.off {
+  background: #64748b;
+}
+
+.atlas-voice-widget--floating {
+  position: fixed;
+  z-index: 9991;
+  right: 1.25rem;
+  bottom: 5rem;
+  width: min(340px, calc(100vw - 2rem));
+  padding: 1rem;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 229, 255, 0.35);
+  background: rgba(6, 18, 38, 0.96);
+  color: #e8f4ff;
+  font-family: system-ui, sans-serif;
+  font-size: 0.875rem;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45), 0 0 32px rgba(0, 229, 255, 0.12);
+  backdrop-filter: blur(12px);
+}
+
+.atlas-voice-widget--embedded {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 229, 255, 0.25);
+  background: rgba(0, 30, 60, 0.35);
+}
+
+.atlas-voice-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: transparent;
+  border: none;
+  color: rgba(232, 244, 255, 0.6);
+  cursor: pointer;
+  padding: 0.25rem;
+}
+
+.atlas-voice-close:hover {
+  color: #00e5ff;
+}
+
+.atlas-voice-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding-right: 1.5rem;
+}
+
+.atlas-voice-header strong {
+  display: block;
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+  color: #00e5ff;
+}
+
+.atlas-voice-sub {
+  display: block;
+  font-size: 0.72rem;
+  color: rgba(232, 244, 255, 0.55);
+  margin-top: 0.15rem;
+}
+
+.atlas-voice-icon {
+  color: #00e5ff;
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.atlas-voice-status-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+
+.atlas-voice-pill {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 0.2rem 0.45rem;
+  border-radius: 3px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  color: rgba(232, 244, 255, 0.7);
+}
+
+.atlas-voice-pill.ok {
+  border-color: rgba(0, 255, 170, 0.4);
+  color: #00ffaa;
+  background: rgba(0, 255, 170, 0.08);
+}
+
+.atlas-voice-pill.warn {
+  border-color: rgba(255, 176, 32, 0.4);
+  color: #ffb020;
+  background: rgba(255, 176, 32, 0.08);
+}
+
+.atlas-voice-pill.off {
+  opacity: 0.55;
+}
+
+.atlas-voice-ptt {
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  padding: 0.85rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: linear-gradient(135deg, #0891b2, #06b6d4);
+  color: #042f2e;
+  user-select: none;
+  touch-action: none;
+}
+
+.atlas-voice-ptt.listening {
+  background: linear-gradient(135deg, #0e7490, #22d3ee);
+  box-shadow: 0 0 20px rgba(34, 211, 238, 0.45);
+}
+
+.atlas-voice-ptt:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.atlas-voice-hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.78rem;
+  color: rgba(232, 244, 255, 0.55);
+  line-height: 1.35;
+}
+
+.atlas-voice-hint.warn {
+  color: #fcd34d;
+}
+
+.atlas-voice-hint.error {
+  color: #f87171;
+}
+
+.atlas-voice-response {
+  margin: 0.65rem 0 0;
+  padding: 0.5rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  background: rgba(0, 0, 0, 0.25);
+  border-left: 2px solid rgba(0, 229, 255, 0.5);
+}
+
+.atlas-voice-response.ok {
+  border-left-color: #00ffaa;
+  color: #c6f6e4;
+}
+
+.atlas-voice-response.error {
+  border-left-color: #f87171;
+  color: #fecaca;
+}
+
+.atlas-voice-response.warn {
+  border-left-color: #ffb020;
+  color: #fde68a;
+}
+
+.atlas-voice-link-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+  padding: 0;
+  background: none;
+  border: none;
+  color: rgba(0, 229, 255, 0.75);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.atlas-voice-link-btn:hover {
+  color: #00e5ff;
+}
+
+.atlas-voice-secret-block {
+  margin-top: 0.5rem;
+}
+
+.atlas-voice-secret-block label {
+  display: block;
+  font-size: 0.72rem;
+  color: rgba(232, 244, 255, 0.55);
+  margin-bottom: 0.25rem;
+}
+
+.atlas-voice-secret-block input {
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  background: rgba(0, 0, 0, 0.35);
+  color: #e8f4ff;
+  font-size: 0.8rem;
+}
+
+.atlas-voice-mini-btn {
+  margin-top: 0.5rem;
+  width: 100%;
+  padding: 0.4rem;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 229, 255, 0.3);
+  background: rgba(0, 229, 255, 0.08);
+  color: #e8f4ff;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.atlas-voice-mini-btn:hover {
+  background: rgba(0, 229, 255, 0.15);
+}
+
+@media (max-width: 480px) {
+  .atlas-voice-fab {
+    right: 1rem;
+    bottom: 1rem;
+  }
+
+  .atlas-voice-widget--floating {
+    right: 1rem;
+    bottom: 4.5rem;
+    width: calc(100vw - 2rem);
+  }
+}

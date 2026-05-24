@@ -10,6 +10,11 @@ const AtlasHudScene = dynamic(
   { ssr: false, loading: () => null }
 );
 
+const AtlasVoiceWidget = dynamic(
+  () => import("@/components/admin/atlas/AtlasVoiceWidget").then((m) => m.AtlasVoiceWidget),
+  { ssr: false, loading: () => null }
+);
+
 type JarvisPanelData = {
   status?: string;
   enabled?: boolean;
@@ -255,6 +260,14 @@ export function AtlasJarvisPanel() {
             </div>
           </section>
         </div>
+
+        <section className="atlas-hud-panel">
+          <p className="atlas-hud-panel-title">◈ Voz Atlas (widget)</p>
+          <p className="text-xs opacity-60 mb-2">
+            Push-to-talk en Chrome/Edge. También hay un botón flotante (mic) en todo el admin.
+          </p>
+          <AtlasVoiceWidget variant="embedded" />
+        </section>
 
         <section className="atlas-hud-panel">
           <p className="atlas-hud-panel-title">◈ Desktop Agent — Windows</p>

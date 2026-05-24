@@ -27,9 +27,35 @@ async function readJson<T>(req: IncomingMessage): Promise<T> {
   return JSON.parse(raw || "{}") as T;
 }
 
-function json(res: ServerResponse, status: number, body: unknown) {
-  res.writeHead(status, { "Content-Type": "application/json" });
+function json(res: ServerResponse, status: number, body: unknown, req?: IncomingMessage) {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (req) applyCors(req, res, headers);
+  res.writeHead(status, headers);
   res.end(JSON.stringify(body));
+}
+
+/** CORS for admin web → local desktop bridge (Chrome Private Network Access). */
+function applyCors(req: IncomingMessage, res: ServerResponse, headers: Record<string, string>): void {
+  const origin = req.headers.origin;
+  const allowed =
+    origin &&
+    (/^https:\/\/(www\.)?madsjeez\.com\.ar$/i.test(origin) ||
+      /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin));
+  if (allowed) {
+    headers["Access-Control-Allow-Origin"] = origin;
+    headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS";
+    headers["Access-Control-Allow-Headers"] = "Content-Type, x-jarvis-secret";
+    headers["Access-Control-Allow-Private-Network"] = "true";
+  }
+}
+
+function handleOptions(req: IncomingMessage, res: ServerResponse): boolean {
+  if (req.method !== "OPTIONS") return false;
+  const headers: Record<string, string> = {};
+  applyCors(req, res, headers);
+  res.writeHead(204, headers);
+  res.end();
+  return true;
 }
 
 function serveVoicePanel(res: ServerResponse): void {
@@ -48,6 +74,8 @@ function isPublicRoute(method: string, url: string): boolean {
 
 export function startServer(): void {
   const server = createServer(async (req, res) => {
+    if (handleOptions(req, res)) return;
+
     const url = req.url?.split("?")[0] ?? "/";
     const method = req.method ?? "GET";
 
@@ -56,7 +84,7 @@ export function startServer(): void {
     }
 
     if (!checkSecret(req)) {
-      return json(res, 401, { error: "Unauthorized" });
+      return json(res, 401, { error: "Unauthorized" }, req);
     }
 
     try {
@@ -69,13 +97,13 @@ export function startServer(): void {
           voiceProfile: config.voiceProfile,
           pushToTalk: config.pushToTalk,
           voicePanelUrl: `http://${config.host}:${config.port}/voice`,
-        });
+        }, req);
       }
 
       if (method === "POST" && url === "/command") {
         const body = await readJson<DesktopCommandInput>(req);
         const result = await routeCommand(body);
-        return json(res, 200, result);
+        return json(res, 200, result, req);
       }
 
       if (method === "POST" && url === "/voice/start") {
@@ -84,31 +112,31 @@ export function startServer(): void {
           mode: config.pushToTalk ? "push_to_talk" : "disabled",
           voicePanelUrl: `http://${config.host}:${config.port}/voice`,
           hint: "Abrí /voice en Chrome/Edge o enviá transcript a POST /voice/stop",
-        });
+        }, req);
       }
 
       if (method === "POST" && url === "/voice/stop") {
         const body = await readJson<{ text: string }>(req);
         const result = await handleVoiceStop(body.text ?? "");
-        return json(res, 200, result);
+        return json(res, 200, result, req);
       }
 
       if (method === "POST" && url === "/speak") {
         const body = await readJson<{ text: string }>(req);
         await speakText(body.text ?? "");
-        return json(res, 200, { status: "ok" });
+        return json(res, 200, { status: "ok" }, req);
       }
 
       if (method === "POST" && url === "/agent-task") {
         const body = await readJson<{ agent: string; objective: string }>(req);
         const agent = (body.agent || "cursor") as "cursor" | "claude" | "windsurf" | "codex";
         const path = await writeAgentTask(agent, body.objective || "Tarea Atlas");
-        return json(res, 200, { status: "ok", path });
+        return json(res, 200, { status: "ok", path }, req);
       }
 
-      json(res, 404, { error: "Not found" });
+      json(res, 404, { error: "Not found" }, req);
     } catch (e) {
-      json(res, 500, { error: e instanceof Error ? e.message : "error" });
+      json(res, 500, { error: e instanceof Error ? e.message : "error" }, req);
     }
   });
 

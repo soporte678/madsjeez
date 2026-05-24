@@ -1,6 +1,7 @@
 "use client"
 
 import "@/styles/admin-theme.css"
+import dynamic from "next/dynamic"
 import { useEffect, useState } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
@@ -39,6 +40,11 @@ import {
   ChevronDown,
   ChevronRight,
 } from "lucide-react"
+
+const AtlasVoiceWidget = dynamic(
+  () => import("@/components/admin/atlas/AtlasVoiceWidget").then((m) => m.AtlasVoiceWidget),
+  { ssr: false }
+)
 
 interface MenuItem {
   id: string
@@ -520,6 +526,8 @@ export function AdminLayoutClient({
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { border-radius: 10px; }
       `}</style>
+
+      {!isLoginPage ? <AtlasVoiceWidget variant="floating" /> : null}
     </div>
   )
 }
