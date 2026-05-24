@@ -11,7 +11,9 @@
     "typecheck": "tsc --noEmit",
     "voice": "start http://127.0.0.1:8787/voice?secret=mi-atlas-2026-secreto"
   },
-  "dependencies": {},
+  "dependencies": {
+    "edge-tts": "^1.0.1"
+  },
   "devDependencies": {
     "@types/node": "^22.10.0",
     "tsx": "^4.19.0",

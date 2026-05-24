@@ -348,13 +348,25 @@ Si sigue 502: revisá logs del servicio n8n en Railway (Postgres conectado, `WEB
 
 ## Voces Atlas / Nova
 
+Voces **propias** inspiradas en asistente sci-fi (no clonan actores ni personajes de película).
 
+| Perfil | Estilo | Voz neural (desktop, `JARVIS_TTS_PROVIDER=edge`) |
+|--------|--------|-----------------------------------------------------|
+| **Atlas** | Masculino calmado, seguro, fluido (tipo JARVIS) | `es-AR-TomasNeural` |
+| **Nova** | Femenino profesional, ágil (tipo Friday) | `es-AR-ElenaNeural` |
 
-- **Atlas**: guion masculino calmado/tecnológico (TTS Windows)
+Ajuste en `apps/jarvis-desktop-agent/.env`:
 
-- **Nova**: guion femenino profesional/cálido
+```env
+JARVIS_TTS_PROVIDER=edge
+JARVIS_VOICE_PROFILE=atlas
+JARVIS_TTS_VOICE_ATLAS=es-AR-TomasNeural
+JARVIS_TTS_VOICE_NOVA=es-AR-ElenaNeural
+```
 
-- No imitan voces de películas ni actores
+Opcional (acento británico más “sci-fi”, respuestas en inglés): `JARVIS_TTS_VOICE_ATLAS=en-GB-RyanNeural`
+
+Widget web: usa la mejor voz **Online** de Chrome/Edge en español (más fluida que la voz por defecto).
 
 
 

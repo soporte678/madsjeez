@@ -1,5 +1,6 @@
 import type { JarvisCommandInput, JarvisReportType } from "@/jarvis/types";
 import { parseVoiceTranscript as parseWake, type VoiceParseResult } from "@/lib/jarvis/wake-word";
+import { speakAtlasBrowser, type AtlasVoiceProfile } from "@/lib/jarvis/atlas-speech-synthesis";
 
 export type VoiceRouteWeb = {
   kind: "web";
@@ -168,12 +169,6 @@ export function parseVoiceTranscript(raw: string, requireWake: boolean): VoiceRo
   return webRouteFromInput(routed.input, routed.reportType, label);
 }
 
-export function speakAtlas(text: string, profile: "atlas" | "nova" = "atlas"): void {
-  if (typeof window === "undefined" || !window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text.slice(0, 500));
-  u.lang = "es-AR";
-  u.rate = profile === "nova" ? 1.02 : 0.98;
-  u.pitch = profile === "nova" ? 1.1 : 0.92;
-  window.speechSynthesis.speak(u);
+export function speakAtlas(text: string, profile: AtlasVoiceProfile = "atlas"): void {
+  void speakAtlasBrowser(text, profile);
 }
