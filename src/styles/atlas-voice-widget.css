@@ -2,21 +2,51 @@
 
 .atlas-voice-fab {
   position: fixed;
-  z-index: 9990;
+  z-index: 99999;
   right: 1.25rem;
   bottom: 1.25rem;
-  width: 3.25rem;
-  height: 3.25rem;
+  width: 4.25rem;
+  height: 4.25rem;
   border-radius: 50%;
-  border: 1px solid rgba(0, 229, 255, 0.45);
+  border: 2px solid rgba(0, 229, 255, 0.65);
   background: linear-gradient(145deg, #0a1a28, #0e2a3a);
   color: #00e5ff;
-  box-shadow: 0 4px 24px rgba(0, 229, 255, 0.25);
+  box-shadow: 0 4px 28px rgba(0, 229, 255, 0.45), 0 0 0 4px rgba(0, 229, 255, 0.12);
   cursor: pointer;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 0.1rem;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.atlas-voice-fab-pulse {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 229, 255, 0.35);
+  animation: atlas-voice-pulse 2s ease-out infinite;
+  pointer-events: none;
+}
+
+@keyframes atlas-voice-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+}
+
+.atlas-voice-fab-label {
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  color: #7dd3fc;
 }
 
 .atlas-voice-fab:hover {
@@ -45,7 +75,7 @@
 
 .atlas-voice-widget--floating {
   position: fixed;
-  z-index: 9991;
+  z-index: 99999;
   right: 1.25rem;
   bottom: 5rem;
   width: min(340px, calc(100vw - 2rem));
@@ -260,6 +290,48 @@
 
 .atlas-voice-mini-btn:hover {
   background: rgba(0, 229, 255, 0.15);
+}
+
+.atlas-voice-profile-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.65rem;
+}
+
+.atlas-voice-profile-label {
+  font-size: 0.72rem;
+  color: rgba(232, 244, 255, 0.55);
+  margin-right: 0.15rem;
+}
+
+.atlas-voice-profile-btn {
+  flex: 1;
+  padding: 0.35rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(0, 0, 0, 0.2);
+  color: rgba(232, 244, 255, 0.75);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+}
+
+.atlas-voice-profile-btn.active.atlas {
+  border-color: rgba(34, 211, 238, 0.55);
+  background: rgba(34, 211, 238, 0.15);
+  color: #67e8f9;
+}
+
+.atlas-voice-profile-btn.active.nova {
+  border-color: rgba(244, 114, 182, 0.55);
+  background: rgba(244, 114, 182, 0.12);
+  color: #f9a8d4;
+}
+
+.atlas-voice-profile-btn:hover {
+  border-color: rgba(0, 229, 255, 0.4);
 }
 
 @media (max-width: 480px) {

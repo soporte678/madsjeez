@@ -2,7 +2,8 @@
 
 import Link from "next/link"
 import RainbowLogo from "@/components/brand/RainbowLogo"
-import { ExternalLink } from "lucide-react"
+import { ExternalLink, Mic } from "lucide-react"
+import { openAtlasVoiceWidget } from "@/lib/jarvis/voice-profile-storage"
 
 /** Barra superior del panel admin: solo marca (texto) + volver al marketplace. */
 export function AdminNavbar() {
@@ -20,13 +21,25 @@ export function AdminNavbar() {
           </span>
         </div>
 
-        <Link
-          href="/"
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-white/15 px-3 py-1.5 text-[13px] font-medium text-slate-200 transition-colors hover:border-white/25 hover:bg-white/5 hover:text-white"
-        >
-          <ExternalLink className="h-3.5 w-3.5" aria-hidden />
-          Ir al marketplace
-        </Link>
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={() => openAtlasVoiceWidget()}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-cyan-400/40 bg-cyan-500/10 px-3 py-1.5 text-[13px] font-semibold text-cyan-200 transition-colors hover:border-cyan-300/60 hover:bg-cyan-500/20 hover:text-white"
+            title="Abrir asistente por voz Atlas"
+          >
+            <Mic className="h-4 w-4" aria-hidden />
+            <span className="hidden sm:inline">Atlas Voz</span>
+            <span className="sm:hidden">Voz</span>
+          </button>
+          <Link
+            href="/"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-white/15 px-3 py-1.5 text-[13px] font-medium text-slate-200 transition-colors hover:border-white/25 hover:bg-white/5 hover:text-white"
+          >
+            <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+            Ir al marketplace
+          </Link>
+        </div>
       </div>
     </header>
   )

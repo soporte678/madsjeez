@@ -158,6 +158,7 @@ export function AdminLayoutClient({
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(
     menuGroups.reduce((acc, group) => ({ ...acc, [group.title]: true }), {})
   )
+  const [voiceWidgetOpen, setVoiceWidgetOpen] = useState(false);
   const [adminTheme, setAdminTheme] = useState<AdminTheme>("dark")
 
   useEffect(() => {
@@ -527,7 +528,13 @@ export function AdminLayoutClient({
         .custom-scrollbar::-webkit-scrollbar-thumb { border-radius: 10px; }
       `}</style>
 
-      {!isLoginPage ? <AtlasVoiceWidget variant="floating" /> : null}
+      {!isLoginPage ? (
+        <AtlasVoiceWidget
+          variant="floating"
+          open={voiceWidgetOpen}
+          onOpenChange={setVoiceWidgetOpen}
+        />
+      ) : null}
     </div>
   )
 }

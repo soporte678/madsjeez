@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Mic, X, ChevronDown, ChevronUp, Radio } from "lucide-react";
 import { useAtlasSpeech } from "@/lib/jarvis/use-atlas-speech";
 import { parseVoiceTranscript, speakAtlas, type VoiceRoute } from "@/lib/jarvis/voice-intent";
@@ -10,6 +11,12 @@ import {
   sendDesktopVoiceCommand,
   storeDesktopSecret,
 } from "@/lib/jarvis/voice-bridge";
+import {
+  ATLAS_VOICE_OPEN_EVENT,
+  getStoredVoiceProfile,
+  storeVoiceProfile,
+  type AtlasVoiceProfile,
+} from "@/lib/jarvis/voice-profile-storage";
 import "@/styles/atlas-voice-widget.css";
 
 type JarvisWidgetStatus = {
@@ -23,12 +30,21 @@ type JarvisWidgetStatus = {
 };
 
 type AtlasVoiceWidgetProps = {
-  /** floating = site-wide FAB; embedded = inline in Jarvis panel */
   variant?: "floating" | "embedded";
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 };
 
-export function AtlasVoiceWidget({ variant = "floating" }: AtlasVoiceWidgetProps) {
-  const [open, setOpen] = useState(variant === "embedded");
+export function AtlasVoiceWidget({
+  variant = "floating",
+  open: controlledOpen,
+  onOpenChange,
+}: AtlasVoiceWidgetProps) {
+  const [internalOpen, setInternalOpen] = useState(variant === "embedded");
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = onOpenChange ?? setInternalOpen;
+
+  const [mounted, setMounted] = useState(false);
   const [status, setStatus] = useState<JarvisWidgetStatus | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -36,6 +52,19 @@ export function AtlasVoiceWidget({ variant = "floating" }: AtlasVoiceWidgetProps
   const [desktopSecret, setDesktopSecret] = useState("");
   const [localDesktopOk, setLocalDesktopOk] = useState<boolean | null>(null);
   const [showSecret, setShowSecret] = useState(false);
+  const [voiceProfile, setVoiceProfile] = useState<AtlasVoiceProfile>("atlas");
+
+  useEffect(() => {
+    setMounted(true);
+    setVoiceProfile(getStoredVoiceProfile());
+  }, []);
+
+  useEffect(() => {
+    if (variant !== "floating") return;
+    const handler = () => setOpen(true);
+    window.addEventListener(ATLAS_VOICE_OPEN_EVENT, handler);
+    return () => window.removeEventListener(ATLAS_VOICE_OPEN_EVENT, handler);
+  }, [setOpen, variant]);
 
   const loadStatus = useCallback(async () => {
     try {
@@ -58,6 +87,11 @@ export function AtlasVoiceWidget({ variant = "floating" }: AtlasVoiceWidgetProps
   }, []);
 
   const requireWake = status?.voice?.wakeWordEnabled !== false;
+
+  const selectProfile = (profile: AtlasVoiceProfile) => {
+    setVoiceProfile(profile);
+    storeVoiceProfile(profile);
+  };
 
   const runRoute = useCallback(
     async (route: VoiceRoute) => {
@@ -82,7 +116,7 @@ export function AtlasVoiceWidget({ variant = "floating" }: AtlasVoiceWidgetProps
           if (result.ok && result.summary) {
             setMessage(result.summary);
             setMessageKind(result.status === "ok" ? "ok" : "warn");
-            speakAtlas(result.summary, status?.voice?.profile ?? "atlas");
+            speakAtlas(result.summary, voiceProfile);
           } else {
             setMessage(
               result.error ??
@@ -111,7 +145,7 @@ export function AtlasVoiceWidget({ variant = "floating" }: AtlasVoiceWidgetProps
           if (fallback.ok && fallback.summary) {
             setMessage(fallback.summary);
             setMessageKind("ok");
-            speakAtlas(fallback.summary, status?.voice?.profile ?? "atlas");
+            speakAtlas(fallback.summary, voiceProfile);
             return;
           }
           setMessage(json.summary ?? "Orchestrator web apagado (JARVIS_ENABLED=false).");
@@ -128,7 +162,7 @@ export function AtlasVoiceWidget({ variant = "floating" }: AtlasVoiceWidgetProps
         const spoken = json.voiceReportText ?? json.summary ?? "Listo.";
         setMessage(spoken);
         setMessageKind(json.status === "ok" || res.ok ? "ok" : "warn");
-        speakAtlas(spoken, status?.voice?.profile ?? "atlas");
+        speakAtlas(spoken, voiceProfile);
         void loadStatus();
       } catch (e) {
         setMessage(e instanceof Error ? e.message : "Error de red");
@@ -137,7 +171,7 @@ export function AtlasVoiceWidget({ variant = "floating" }: AtlasVoiceWidgetProps
         setBusy(false);
       }
     },
-    [desktopSecret, loadStatus, status?.desktop?.expectedPort, status?.enabled, status?.voice?.profile]
+    [desktopSecret, loadStatus, status?.desktop?.expectedPort, status?.enabled, voiceProfile]
   );
 
   const handleTranscript = useCallback(
@@ -184,25 +218,29 @@ export function AtlasVoiceWidget({ variant = "floating" }: AtlasVoiceWidgetProps
       ? "atlas-voice-widget atlas-voice-widget--floating"
       : "atlas-voice-widget atlas-voice-widget--embedded";
 
-  if (variant === "floating" && !open) {
-    return (
+  const profileToggle = (
+    <div className="atlas-voice-profile-row">
+      <span className="atlas-voice-profile-label">Voz</span>
       <button
         type="button"
-        className="atlas-voice-fab"
-        onClick={() => setOpen(true)}
-        aria-label="Abrir Atlas voz"
-        title="Atlas — voz"
+        className={`atlas-voice-profile-btn ${voiceProfile === "atlas" ? "active atlas" : ""}`}
+        onClick={() => selectProfile("atlas")}
+        title="Masculina calmada (estilo JARVIS)"
       >
-        <Mic size={22} />
-        <span
-          className={`atlas-voice-fab-dot ${webOn || desktopLinked ? "on" : "off"}`}
-          aria-hidden
-        />
+        Atlas
       </button>
-    );
-  }
+      <button
+        type="button"
+        className={`atlas-voice-profile-btn ${voiceProfile === "nova" ? "active nova" : ""}`}
+        onClick={() => selectProfile("nova")}
+        title="Femenina fluida (estilo Friday)"
+      >
+        Nova
+      </button>
+    </div>
+  );
 
-  return (
+  const panel = (
     <div className={rootClass} data-open={open}>
       {variant === "floating" && (
         <button
@@ -222,6 +260,8 @@ export function AtlasVoiceWidget({ variant = "floating" }: AtlasVoiceWidgetProps
           <span className="atlas-voice-sub">Decí «Atlas, …» · Chrome/Edge</span>
         </div>
       </div>
+
+      {profileToggle}
 
       <div className="atlas-voice-status-row">
         <span className={`atlas-voice-pill ${webOn ? "ok" : "warn"}`}>WEB {webOn ? "ON" : "OFF"}</span>
@@ -284,11 +324,42 @@ export function AtlasVoiceWidget({ variant = "floating" }: AtlasVoiceWidgetProps
             Probar localhost:8787
           </button>
           <p className="atlas-voice-hint">
-            Comandos locales (abrir Cursor, etc.) usan el agente en tu PC. En producción puede
-            requerir Chrome y permiso de red local.
+            Comandos locales (abrir Cursor, etc.) usan el agente en tu PC.
           </p>
         </div>
       )}
     </div>
+  );
+
+  const fab = (
+    <button
+      type="button"
+      className="atlas-voice-fab"
+      onClick={() => setOpen(true)}
+      aria-label="Abrir Atlas voz"
+      title="Atlas — asistente por voz"
+    >
+      <span className="atlas-voice-fab-pulse" aria-hidden />
+      <Mic size={24} />
+      <span className="atlas-voice-fab-label">VOZ</span>
+      <span
+        className={`atlas-voice-fab-dot ${webOn || desktopLinked ? "on" : "off"}`}
+        aria-hidden
+      />
+    </button>
+  );
+
+  if (variant === "embedded") {
+    return panel;
+  }
+
+  if (!mounted) return null;
+
+  return createPortal(
+    <>
+      {!open ? fab : null}
+      {open ? panel : null}
+    </>,
+    document.body
   );
 }
