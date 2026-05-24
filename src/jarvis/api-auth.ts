@@ -81,7 +81,7 @@ export function getJarvisPanelBootstrap() {
       enabled: config.voiceEnabled,
       profile: config.voiceProfile,
       pushToTalk: process.env.JARVIS_PUSH_TO_TALK?.trim().toLowerCase() !== "false",
-      wakeWordEnabled: process.env.JARVIS_WAKE_WORD_ENABLED?.trim().toLowerCase() === "true",
+      wakeWordEnabled: process.env.JARVIS_WAKE_WORD_ENABLED?.trim().toLowerCase() !== "false",
     },
     desktop: {
       expectedPort: parseInt(process.env.JARVIS_DESKTOP_PORT ?? "8787", 10),
