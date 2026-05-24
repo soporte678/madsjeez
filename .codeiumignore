@@ -1,0 +1,60 @@
+# ── Build & generated outputs ──────────────────────────────────────────────────
+node_modules/
+.next/
+dist/
+build/
+out/
+coverage/
+.cache/
+.turbo/
+.vercel/
+.railway/
+
+# ── Supabase local ──────────────────────────────────────────────────────────────
+supabase/.branches/
+supabase/.temp/
+
+# ── Env & secrets ───────────────────────────────────────────────────────────────
+.env
+.env.*
+
+# ── OS & editor noise ───────────────────────────────────────────────────────────
+.DS_Store
+*.log
+*.tmp
+*.bak
+
+# ── Media & uploads ─────────────────────────────────────────────────────────────
+public/uploads/
+public/videos/
+public/images/generated/
+public/generated/
+storage/
+uploads/
+
+# ── Binary/media formats ────────────────────────────────────────────────────────
+*.mp4
+*.mov
+*.avi
+*.webm
+*.mkv
+*.zip
+*.rar
+*.7z
+*.tar
+*.gz
+*.pdf
+*.psd
+*.ai
+*.fig
+
+# ── Database dumps ──────────────────────────────────────────────────────────────
+*.sqlite
+*.db
+*.dump
+*.sql.gz
+
+# ── Lock files (no value for context) ──────────────────────────────────────────
+package-lock.json
+pnpm-lock.yaml
+yarn.lock

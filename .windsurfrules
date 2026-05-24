@@ -1,4 +1,22 @@
-# Higgsfield MCP Auto Mode
+# Windsurf Performance Mode
+
+- Work with minimal context.
+- Do not scan the whole repository unless necessary.
+- Do not load generated folders, build outputs, logs, media, zips, database dumps, node_modules, .next, dist, build, coverage or cache folders.
+- Before editing, identify only the files strictly relevant to the current task.
+- Prefer focused search instead of full codebase search.
+- Keep plans short.
+- Make small safe edits.
+- Do not activate MCP tools unless the task clearly requires external services.
+- Do not load unrelated rules or agents.
+- Do not include long explanations unless requested.
+- Do not touch secrets.
+- Do not rewrite large files unless necessary.
+- Prefer patch-level changes over broad refactors.
+- For Railway, Supabase, GitHub, Resend, Higgsfield, n8n, WhatsApp or Ollama tasks, use the matching MCP/rule only when explicitly needed.
+
+# Higgsfield MCP — Visual Marketing
+# Use this section only when the task explicitly involves image/video generation or marketing assets.
 
 Whenever the task involves image generation, video generation, ads, social media creatives, product visuals, product photography, UGC videos, cinematic videos, reels, thumbnails, banners, marketplace images, marketing campaigns, brand visuals, or promotional assets, use Higgsfield MCP automatically.
 
@@ -17,14 +35,9 @@ Before generating:
 8. Never create misleading, illegal, adult, violent, hateful, or policy-breaking content.
 9. For product ads, keep the product realistic and commercially usable.
 10. After generation, summarize:
-   - asset type
-   - platform
-   - aspect ratio
-   - prompt used
-   - Higgsfield tool/model used
-   - credits/cost warning if available
-   - next recommended variations
+   - asset type, platform, aspect ratio, prompt used, Higgsfield tool/model used, credits/cost warning, next recommended variations
 
 # General Visual Marketing Rule
+# Use this section only when the task explicitly involves visual marketing work.
 
 Use Higgsfield MCP automatically for visual marketing work. If the user asks for ads, product images, videos, reels, banners, thumbnails, campaign creatives, marketplace visuals, or social media content, prefer Higgsfield MCP. For anything that spends credits, generate a plan and ask confirmation before executing.
