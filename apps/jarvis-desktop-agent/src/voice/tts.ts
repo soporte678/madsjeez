@@ -1,9 +1,11 @@
 import { spawn } from "child_process";
+import { createWriteStream } from "fs";
 import { unlink } from "fs/promises";
 import { tmpdir } from "os";
 import { join } from "path";
 import { randomBytes } from "crypto";
-import { ttsSave } from "edge-tts";
+import { pipeline } from "stream/promises";
+import { MsEdgeTTS, OUTPUT_FORMAT } from "msedge-tts";
 import { config } from "../config.js";
 import type { VoiceProfile } from "../types.js";
 
@@ -69,10 +71,21 @@ async function speakEdgeNeural(text: string, profile: VoiceProfile): Promise<voi
   const mp3 = join(tmpdir(), `atlas-tts-${id}.mp3`);
   const opts = resolveEdgeOptions(profile);
 
+  const client = new MsEdgeTTS();
+  await client.setMetadata(opts.voice, OUTPUT_FORMAT.AUDIO_24KHZ_96KBITRATE_MONO_MP3);
+
+  const { audioStream } = client.toStream(safe, {
+    rate: opts.rate,
+    pitch: opts.pitch,
+    volume: 100,
+  });
+
   try {
-    await ttsSave(safe, mp3, opts);
+    await pipeline(audioStream, createWriteStream(mp3));
+    client.close();
     await playMp3Windows(mp3);
   } finally {
+    client.close();
     await unlink(mp3).catch(() => undefined);
   }
 }
@@ -80,13 +93,17 @@ async function speakEdgeNeural(text: string, profile: VoiceProfile): Promise<voi
 /** Fallback: voces instaladas en Windows (menos fluidas). */
 async function speakWindowsLegacy(text: string, profile: VoiceProfile): Promise<void> {
   const safe = text.replace(/"/g, "'").replace(/`/g, "'").slice(0, 800);
-  const voiceName = profile === "nova" ? "Microsoft Sabina" : "Microsoft Pablo";
-  const rate = profile === "nova" ? 0 : -1;
+  const prefer = profile === "nova" ? "Sabina|Elena|Helena|Zira" : "Pablo|Raul|Jorge|David|Diego";
+  const rate = profile === "nova" ? 0 : -2;
   const ps = `
 Add-Type -AssemblyName System.Speech
 $s = New-Object System.Speech.Synthesis.SpeechSynthesizer
-foreach ($v in $s.GetInstalledVoices()) {
-  if ($v.VoiceInfo.Name -like "*${voiceName}*") { $s.SelectVoice($v.VoiceInfo.Name); break }
+$prefer = "${prefer}".Split("|")
+foreach ($p in $prefer) {
+  foreach ($v in $s.GetInstalledVoices()) {
+    if ($v.VoiceInfo.Name -match $p) { $s.SelectVoice($v.VoiceInfo.Name); break }
+  }
+  if ($s.Voice.Name) { break }
 }
 $s.Rate = ${rate}
 $s.Volume = 100
@@ -100,7 +117,7 @@ $s.Speak("${safe}")
 }
 
 /**
- * TTS fluido — Edge neural por defecto (Atlas ≈ asistente masculino calmado, Nova ≈ femenino profesional).
+ * TTS fluido — Edge neural por defecto (Atlas ≈ asistente masculino calmado, Nova ≈ femenino fluido).
  */
 export async function speakText(text: string, profile?: VoiceProfile): Promise<void> {
   const p = profile ?? config.voiceProfile;
