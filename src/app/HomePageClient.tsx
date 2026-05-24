@@ -169,7 +169,7 @@ export default function HomePageClient() {
 
       {/* HERO — un solo H1 con "marketplace"; carrusel = fondo + H2 */}
       <section
-        className="relative bg-black overflow-hidden h-[550px] md:h-[700px] flex items-center group pb-16 md:pb-24"
+        className="relative bg-black overflow-hidden h-[min(520px,88vh)] sm:h-[550px] md:h-[700px] flex items-center group pb-16 md:pb-24"
         aria-labelledby="home-marketplace-h1"
       >
         {heroBanners.map((banner, index) => {
@@ -227,7 +227,7 @@ export default function HomePageClient() {
                 <Link
                   href={banner.id === 5 ? "/seller/register" : "/search"}
                   prefetch={false}
-                  className="mt-8 group/btn bg-gradient-to-r from-[#f97316] to-[#ff9100] text-white text-[14px] font-black py-4 px-10 rounded-2xl shadow-xl shadow-orange-500/30 hover:opacity-90 transition-opacity duration-200 inline-flex items-center gap-4 uppercase tracking-wider"
+                  className="touch-target mt-8 group/btn bg-gradient-to-r from-[#f97316] to-[#ff9100] text-white text-[14px] font-black py-4 px-10 rounded-2xl shadow-xl shadow-orange-500/30 hover:opacity-90 transition-opacity duration-200 inline-flex items-center gap-4 uppercase tracking-wider min-h-[52px]"
                 >
                   {banner.btn1}
                   <div className="w-8 h-8 rounded-full bg-white text-[#f97316] flex items-center justify-center group-hover/btn:scale-110 group-hover/btn:rotate-12 transition-all">
@@ -309,11 +309,11 @@ export default function HomePageClient() {
       </section>
 
       {/* QUICK ACCESS CARDS */}
-      <section className="max-w-7xl mx-auto px-4 -mt-8 relative z-50 mb-16">
-        <div className="bg-white rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.12)] p-1 grid grid-cols-2 md:grid-cols-4 divide-x divide-slate-100 border border-slate-200/50">
+      <section className="max-w-7xl mx-auto px-4 -mt-6 sm:-mt-8 relative z-50 mb-16">
+        <div className="surface-elevated p-1 grid grid-cols-2 md:grid-cols-4 divide-x divide-y md:divide-y-0 divide-slate-100/90">
           {[
             { title: "Medios de pago", icon: CreditCard, color: "text-blue-600", desc: "Hasta 18 cuotas" },
-            { title: "Envío gratis", icon: Zap, color: "text-yellow-500", desc: "A partir de $30.000 en tu compra" },
+            { title: "Envío gratis", icon: Zap, color: "text-yellow-500", desc: "Desde $30.000" },
             { title: "Best Sellers", icon: TrendingUp, color: "text-emerald-500", desc: "Top del mes" },
             { title: "Protección", icon: ShieldCheck, color: "text-blue-600", desc: "Compra segura" },
           ].map((item, index) => (
@@ -321,14 +321,14 @@ export default function HomePageClient() {
               key={index} 
               href="/search"
               prefetch={false}
-              className="flex items-center gap-5 p-6 hover:bg-slate-50 transition-all cursor-pointer group"
+              className="flex flex-col sm:flex-row items-center sm:items-start gap-3 sm:gap-5 p-4 sm:p-6 hover:bg-slate-50/90 transition-all cursor-pointer group min-h-[88px] touch-target"
             >
-              <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center group-hover:scale-110 group-hover:shadow-lg transition-all duration-500">
-                <item.icon size={28} className={item.color} strokeWidth={1.5} />
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center group-hover:scale-105 group-hover:shadow-md transition-all duration-300 shrink-0">
+                <item.icon size={26} className={item.color} strokeWidth={1.5} />
               </div>
-              <div className="flex flex-col">
-                <span className="font-bold text-[16px] text-slate-800 leading-tight">{item.title}</span>
-                <span className="text-[13px] text-slate-500 font-medium mt-1">{item.desc}</span>
+              <div className="flex flex-col text-center sm:text-left">
+                <span className="font-bold text-[15px] sm:text-[16px] text-slate-800 leading-tight">{item.title}</span>
+                <span className="text-[12px] sm:text-[13px] text-slate-500 font-medium mt-0.5 sm:mt-1">{item.desc}</span>
               </div>
             </Link>
           ))}

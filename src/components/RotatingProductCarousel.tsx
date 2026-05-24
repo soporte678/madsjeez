@@ -50,7 +50,7 @@ function RotatingProductCarouselBase({ title, subtitle, offset = 0, categorySlug
       <div className="py-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-[22px] font-semibold text-foreground">{title}</h2>
+            <h2 className="marketplace-section-title text-[22px] font-bold text-foreground">{title}</h2>
             {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
           </div>
         </div>
@@ -78,7 +78,7 @@ function RotatingProductCarouselBase({ title, subtitle, offset = 0, categorySlug
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <div>
-            <h2 className="text-[22px] font-semibold text-foreground">{title}</h2>
+            <h2 className="marketplace-section-title text-[22px] font-bold text-foreground">{title}</h2>
             {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
           </div>
           {totalCount > 0 && (
@@ -122,9 +122,9 @@ function RotatingProductCarouselBase({ title, subtitle, offset = 0, categorySlug
           <Link
             key={`${product.id}-${index}`}
             href={`/product/${product.id}`}
-            className="min-w-[200px] max-w-[200px] bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 group cursor-pointer flex-shrink-0"
+            className="marketplace-product-card min-w-[168px] max-w-[168px] sm:min-w-[200px] sm:max-w-[200px] group cursor-pointer flex-shrink-0 flex flex-col"
           >
-            <div className="relative h-[200px] overflow-hidden rounded-t-lg bg-secondary">
+            <div className="relative h-[168px] sm:h-[200px] overflow-hidden bg-gradient-to-b from-slate-50 to-white">
               {product.image ? (
                 <Image
                   src={product.image}
@@ -132,8 +132,8 @@ function RotatingProductCarouselBase({ title, subtitle, offset = 0, categorySlug
                   fill
                   loading="lazy"
                   decoding="async"
-                  className="object-cover group-hover:opacity-90 transition-opacity duration-200"
-                  sizes="200px"
+                  className="object-contain p-2 group-hover:scale-[1.03] transition-transform duration-300"
+                  sizes="(max-width:640px) 168px, 200px"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-muted-foreground/50">
@@ -142,13 +142,13 @@ function RotatingProductCarouselBase({ title, subtitle, offset = 0, categorySlug
               )}
             </div>
 
-            <div className="p-3">
-              <h3 className="text-[13px] text-foreground font-normal leading-snug line-clamp-2 min-h-[40px] mb-2">
+            <div className="p-3 flex flex-col flex-1">
+              <h3 className="text-[13px] text-foreground font-medium leading-snug line-clamp-2 min-h-[40px] mb-2 group-hover:text-primary transition-colors">
                 {product.title}
               </h3>
 
-              <div className="flex items-baseline gap-2 mb-1">
-                <span className="text-[17px] font-medium text-foreground">
+              <div className="flex items-baseline gap-2 mb-1 mt-auto">
+                <span className="text-[17px] font-bold text-primary tracking-tight">
                   {formatPrice(product.price)}
                 </span>
                 {product.originalPrice && product.originalPrice > product.price && (

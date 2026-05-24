@@ -805,9 +805,9 @@ function ProductCard({
   return (
     <Link
       href={`/product/${product.id}`}
-      className="bg-white rounded-md shadow-[0_1px_2px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] transition-shadow overflow-hidden cursor-pointer group border border-[#eee] flex flex-col"
+      className="marketplace-product-card flex flex-col cursor-pointer group"
     >
-      <div className="aspect-square bg-white p-3 relative overflow-hidden border-b border-[#f5f5f5]">
+      <div className="aspect-square bg-gradient-to-b from-white to-slate-50 p-3 relative overflow-hidden">
         {product.primary_image ? (
           <img
             src={product.primary_image}
@@ -843,7 +843,7 @@ function ProductCard({
 
         <StarRating soldCount={sold} />
 
-        <h2 className="text-[13px] text-[#333] font-normal leading-snug line-clamp-2 min-h-[36px] mt-1.5 mb-2 group-hover:text-[#3483fa]">
+        <h2 className="text-[13px] text-foreground font-medium leading-snug line-clamp-2 min-h-[36px] mt-1.5 mb-2 group-hover:text-primary transition-colors">
           {product.title}
         </h2>
 
@@ -854,7 +854,7 @@ function ProductCard({
             </span>
           )}
           <div className="flex items-baseline gap-2 flex-wrap">
-            <span className="text-[22px] font-normal text-[#333] leading-none">
+            <span className="text-[22px] font-bold text-foreground leading-none tracking-tight">
               $ {product.price.toLocaleString("es-AR")}
             </span>
             {d != null && <span className="text-[11px] font-semibold text-[#00a650]">{d}% OFF</span>}

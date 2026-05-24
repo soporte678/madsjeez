@@ -337,7 +337,7 @@ export default function Navbar() {
                     ref={inputRef}
                     type="text" 
                     placeholder="Buscar productos, marcas y más..." 
-                    className="flex-1 bg-transparent text-[16px] font-light text-slate-5 placeholder:text-slate-400 outline-none"
+                    className="flex-1 bg-transparent text-[16px] font-light text-slate-100 placeholder:text-slate-400 outline-none"
                     value={searchQuery}
                     onChange={(e) => {
                       setSearchQuery(e.target.value);
@@ -646,7 +646,7 @@ export default function Navbar() {
           <div className="flex lg:hidden w-full mt-1 relative" ref={searchRef}>
             <form onSubmit={handleSearch} className="w-full">
               <div className={cn("search-glow flex h-10 w-full items-center rounded-xl border bg-[rgba(15,23,42,0.72)] px-3 transition-all duration-300 backdrop-blur-xl", isSearchOpen ? "border-[#60a5fa] shadow-lg shadow-sky-500/20" : "border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]")}>
-                <input type="text" placeholder="Buscar en MadsJeez..." className="flex-1 bg-transparent text-[14px] font-light text-slate-5 placeholder:text-slate-400 outline-none" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setIsSearchOpen(true); setSelectedIndex(-1); }} onFocus={() => setIsSearchOpen(true)} onKeyDown={handleKeyDown} autoComplete="off" />
+                <input type="text" placeholder="Buscar en MadsJeez..." className="flex-1 bg-transparent text-[14px] font-light text-slate-100 placeholder:text-slate-400 outline-none" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setIsSearchOpen(true); setSelectedIndex(-1); }} onFocus={() => setIsSearchOpen(true)} onKeyDown={handleKeyDown} autoComplete="off" />
                 {searchQuery && (
                   <button type="button" onClick={clearSearch} aria-label="Limpiar búsqueda" className="touch-target mr-1 rounded-full p-1 transition-colors hover:bg-white/10">
                     <X size={14} className="text-slate-400" />

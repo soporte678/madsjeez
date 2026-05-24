@@ -245,9 +245,24 @@
     });
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const ua = navigator.userAgent || "";
+    const isChrome = /Chrome\//.test(ua) && !/Edg\//.test(ua) && !/OPR\//.test(ua);
+    const isEdge = /Edg\//.test(ua);
+    const isFirefox = /Firefox\//.test(ua);
+    const isLocalhost = location.hostname === "127.0.0.1" || location.hostname === "localhost";
+
     if (!SpeechRecognition) {
-      setStatus("Usá Chrome o Edge para micrófono. Podés «Enviar texto» abajo.", "warn");
-      ptt.textContent = "Mic no disponible";
+      let hint = "El reconocimiento de voz no está en este navegador.";
+      if (isFirefox) {
+        hint = "Firefox no soporta voz aquí. Abrí esta misma URL en Google Chrome o Microsoft Edge.";
+      } else if (!isChrome && !isEdge) {
+        hint = "Usá Google Chrome o Microsoft Edge (no Firefox, no navegador embebido de apps).";
+      } else if (!isLocalhost) {
+        hint = "Abrí solo desde http://127.0.0.1:8787/voice (agente local).";
+      }
+      setStatus(hint + " Podés usar «Enviar texto» abajo.", "warn");
+      ptt.textContent = "Mic no disponible — usá Chrome/Edge";
+      ptt.disabled = true;
     } else {
       let recognition = null;
       let listening = false;
