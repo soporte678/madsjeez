@@ -183,6 +183,14 @@ function sortUnifiedWithRelevance(products: UnifiedProduct[], sort: string, quer
   });
 }
 
+/**
+ * GET /api/search/listings
+ *
+ * Búsqueda de productos con paginación y filtros.
+ * La parte de búsqueda de texto ahora usa pg_trgm en vez de ILIKE
+ * para la consulta Prisma (la consulta Supabase mantiene ILIKE
+ * porque PostgREST no soporta pg_trgm de forma nativa).
+ */
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
@@ -233,17 +241,65 @@ export async function GET(req: Request) {
       console.error("search/listings supabase:", sbErr);
     }
 
-    const prismaWhere: Prisma.ProductWhereInput = { isActive: true };
-    if (tokens.length > 0) {
-      prismaWhere.AND = tokens.map((token) => ({
-        OR: [
-          { title: { contains: token, mode: "insensitive" } },
-          { description: { contains: token, mode: "insensitive" } },
-          { sku: { contains: token, mode: "insensitive" } },
-          { meliItemId: { contains: token, mode: "insensitive" } },
-        ],
-      }));
+    // ════════════════════════════════════════════════════════════
+    // BÚSQUEDA PRISMA — ahora usa pg_trgm en vez de ILIKE
+    // ════════════════════════════════════════════════════════════
+    // 1. Obtener IDs de productos coincidentes via pg_trgm
+    let matchingIds: string[] = [];
+    if (q?.trim() && tokens.length > 0) {
+      const searchQuery = normalizeSearch(q.trim());
+      const categoryFilter =
+        categoryIds.length > 0
+          ? Prisma.sql`AND p.category_id IN (${Prisma.join(categoryIds)})`
+          : Prisma.empty;
+      const conditionFilter = cond ? Prisma.sql`AND p.condition = ${cond}` : Prisma.empty;
+      const minPriceFilter = minPrice
+        ? Prisma.sql`AND p.price >= ${parseFloat(minPrice)}`
+        : Prisma.empty;
+      const maxPriceFilter = maxPrice
+        ? Prisma.sql`AND p.price <= ${parseFloat(maxPrice)}`
+        : Prisma.empty;
+      const freeShipFilter =
+        freeShip === "true" ? Prisma.sql`AND p.free_shipping = true` : Prisma.empty;
+
+      const idRows = await prisma.$queryRaw<Array<{ id: string }>>`
+        SELECT p.id
+        FROM products p
+        WHERE (
+          p.title % ${searchQuery}
+          OR p.description % ${searchQuery}
+          OR COALESCE(p.sku, '') % ${searchQuery}
+          OR COALESCE(p.meli_item_id, '') % ${searchQuery}
+        )
+        AND p.is_active = true
+        ${categoryFilter}
+        ${conditionFilter}
+        ${minPriceFilter}
+        ${maxPriceFilter}
+        ${freeShipFilter}
+        ORDER BY
+          GREATEST(
+            similarity(p.title, ${searchQuery}),
+            similarity(p.description, ${searchQuery}),
+            similarity(COALESCE(p.sku, ''), ${searchQuery}),
+            similarity(COALESCE(p.meli_item_id, ''), ${searchQuery})
+          ) DESC,
+          p.sales DESC
+        LIMIT ${limit * 2}
+      `;
+      matchingIds = idRows.map((r) => r.id);
     }
+
+    // 2. Construir el WHERE de Prisma usando los IDs de pg_trgm
+    const prismaWhere: Prisma.ProductWhereInput = { isActive: true };
+    if (matchingIds.length > 0) {
+      prismaWhere.id = { in: matchingIds };
+    } else if (q?.trim() && tokens.length > 0) {
+      // pg_trgm no encontró nada pero había búsqueda → resultado vacío
+      prismaWhere.id = { in: [] };
+    }
+    // (si no había query, no se aplica filtro de texto → devuelve todos los activos)
+
     if (categoryIds.length === 1) prismaWhere.categoryId = categoryIds[0];
     if (categoryIds.length > 1) prismaWhere.categoryId = { in: categoryIds };
     if (cond) prismaWhere.condition = cond;
@@ -270,6 +326,7 @@ export async function GET(req: Request) {
               ? { createdAt: "desc" }
               : [{ isBoosted: "desc" }, { updatedAt: "desc" }],
     });
+    // ════════════════════════════════════════════════════════════
 
     const prismaUnified = prismaRows.map(mapPrismaProduct);
     const prismaByMeli = new Map<string, UnifiedProduct>();

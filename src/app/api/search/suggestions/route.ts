@@ -1,42 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import {
+  searchProductsMultiField,
+  searchCategories,
+  normalizeSearchQuery,
+  calculateRelevanceScore,
+} from "@/lib/fulltext-search";
 
-// Función para calcular distancia de Levenshtein (búsqueda fuzzy)
-function levenshteinDistance(a: string, b: string): number {
-  const matrix: number[][] = [];
-  
-  for (let i = 0; i <= b.length; i++) {
-    matrix[i] = [i];
-  }
-  
-  for (let j = 0; j <= a.length; j++) {
-    matrix[0][j] = j;
-  }
-  
-  for (let i = 1; i <= b.length; i++) {
-    for (let j = 1; j <= a.length; j++) {
-      if (b.charAt(i - 1) === a.charAt(j - 1)) {
-        matrix[i][j] = matrix[i - 1][j - 1];
-      } else {
-        matrix[i][j] = Math.min(
-          matrix[i - 1][j - 1] + 1,
-          matrix[i][j - 1] + 1,
-          matrix[i - 1][j] + 1
-        );
-      }
-    }
-  }
-  
-  return matrix[b.length][a.length];
-}
-
-// Función para calcular score de similitud (0-1)
-function similarityScore(a: string, b: string): number {
-  const distance = levenshteinDistance(a.toLowerCase(), b.toLowerCase());
-  const maxLength = Math.max(a.length, b.length);
-  return 1 - distance / maxLength;
-}
-
+/**
+ * GET /api/search/suggestions
+ *
+ * Búsqueda de sugerencias (autocomplete) usando pg_trgm en vez de ILIKE.
+ * Busca productos, categorías, SKUs, sugerencias populares y términos relacionados.
+ *
+ * Requiere índices GIN/GIST de pg_trgm para rendimiento óptimo.
+ */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -46,7 +23,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ suggestions: [] });
     }
 
-    const normalizedQuery = query.toLowerCase().trim();
+    const normalizedQuery = normalizeSearchQuery(query);
     const suggestions: Array<{
       id: string;
       title: string;
@@ -56,75 +33,67 @@ export async function GET(request: NextRequest) {
       score: number;
     }> = [];
 
-    // 1. BUSCAR PUBLICACIONES ACTIVAS (máximo 10 resultados)
-    const products = await prisma.product.findMany({
-      where: {
-        OR: [
-          { title: { contains: normalizedQuery, mode: "insensitive" } },
-          { description: { contains: normalizedQuery, mode: "insensitive" } },
-          { sku: { contains: normalizedQuery, mode: "insensitive" } },
-        ],
-        isActive: true,
-        stock: { gt: 0 },
-      },
-      take: 10,
-      select: {
-        id: true,
-        title: true,
-        images: {
-          orderBy: { order: "asc" },
-          take: 1,
-          select: { url: true },
-        },
-      },
+    // ───────────────────────────────────────────────────────────
+    // 1. BUSCAR PRODUCTOS ACTIVOS con pg_trgm (máximo 10)
+    // ───────────────────────────────────────────────────────────
+    const productResults = await searchProductsMultiField(normalizedQuery, {
+      limit: 10,
+      onlyActive: true,
+      onlyInStock: true,
     });
 
-    // Filtrar y scorear productos
-    products.forEach((product) => {
+    productResults.forEach((product) => {
       const productTitle = product.title.toLowerCase();
-      const nameScore = similarityScore(normalizedQuery, productTitle);
-      if (nameScore > 0.3 || productTitle.includes(normalizedQuery)) {
-        suggestions.push({
-          id: `p-${product.id}`,
-          title: product.title,
-          type: "product",
-          image: product.images?.[0]?.url || undefined,
-          url: `/product/${product.id}`,
-          score: nameScore + (productTitle.startsWith(normalizedQuery) ? 0.3 : 0),
-        });
-      }
+      const relevance = calculateRelevanceScore(normalizedQuery, productTitle, {
+        bonusExact: 1.0,
+        bonusPrefix: 0.7,
+        bonusContains: 0.4,
+      });
+      // Bonus adicional si el título comienza con el query (prefix match)
+      const prefixBonus = productTitle.startsWith(normalizedQuery) ? 0.3 : 0;
+
+      suggestions.push({
+        id: `p-${product.id}`,
+        title: product.title,
+        type: "product",
+        image: product.images?.[0]?.url || undefined,
+        url: `/product/${product.id}`,
+        score: relevance + prefixBonus,
+      });
     });
 
-    // 2. BUSCAR CATEGORÍAS
-    const categories = await prisma.category.findMany({
-      where: {
-        OR: [
-          { name: { contains: normalizedQuery, mode: "insensitive" } },
-          { slug: { contains: normalizedQuery, mode: "insensitive" } },
-        ],
-      },
-      take: 8,
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-      },
+    // ───────────────────────────────────────────────────────────
+    // 2. BUSCAR CATEGORÍAS con pg_trgm (máximo 8)
+    // ───────────────────────────────────────────────────────────
+    const categoryResults = await searchCategories(normalizedQuery, {
+      limit: 8,
     });
 
-    categories.forEach((category) => {
-      const score = similarityScore(normalizedQuery, category.name.toLowerCase());
-      if (score > 0.4 || category.name.toLowerCase().includes(normalizedQuery)) {
-        suggestions.push({
-          id: `c-${category.id}`,
-          title: category.name,
-          type: "category",
-          url: `/category/${category.slug}`,
-          score: score + 0.5, // Priorizar categorías
-        });
-      }
+    categoryResults.forEach((category) => {
+      const relevance = calculateRelevanceScore(
+        normalizedQuery,
+        category.name.toLowerCase(),
+        {
+          bonusExact: 1.0,
+          bonusPrefix: 0.7,
+          bonusContains: 0.4,
+        }
+      );
+
+      suggestions.push({
+        id: `c-${category.id}`,
+        title: category.name,
+        type: "category",
+        url: `/category/${category.slug}`,
+        score: relevance + 0.5, // Priorizar categorías
+      });
     });
 
-    // 3. BUSCAR COINCIDENCIAS POR SKU desde publicaciones activas
+    // ───────────────────────────────────────────────────────────
+    // 3. BUSCAR COINCIDENCIAS POR SKU
+    //    (Consulta directa Prisma — SKU suele ser exacto, no fuzzy)
+    // ───────────────────────────────────────────────────────────
+    const { prisma } = await import("@/lib/prisma");
     const skuGroups = await prisma.product.groupBy({
       by: ["sku"],
       where: {
@@ -141,7 +110,7 @@ export async function GET(request: NextRequest) {
       (b) =>
         b.sku &&
         (b.sku.toLowerCase().includes(normalizedQuery) ||
-          similarityScore(normalizedQuery, b.sku.toLowerCase()) > 0.5)
+          b.sku.toLowerCase() === normalizedQuery)
     );
 
     matchingSkus.slice(0, 3).forEach((brand) => {
@@ -154,7 +123,9 @@ export async function GET(request: NextRequest) {
       });
     });
 
-    // 4. AUTO-COMPLETAR SUGERENCIAS POPULARES
+    // ───────────────────────────────────────────────────────────
+    // 4. SUGERENCIAS POPULARES (hardcoded)
+    // ───────────────────────────────────────────────────────────
     const popularSearches = [
       "iPhone 15 Pro Max",
       "Samsung Galaxy S24",
@@ -167,10 +138,7 @@ export async function GET(request: NextRequest) {
     ];
 
     popularSearches.forEach((search) => {
-      if (
-        search.toLowerCase().includes(normalizedQuery) ||
-        similarityScore(normalizedQuery, search.toLowerCase()) > 0.5
-      ) {
+      if (search.toLowerCase().includes(normalizedQuery)) {
         suggestions.push({
           id: `pop-${search}`,
           title: search,
@@ -181,7 +149,9 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // 5. SUGERENCIAS DE BÚSQUEDA RELACIONADAS
+    // ───────────────────────────────────────────────────────────
+    // 5. TÉRMINOS RELACIONADOS
+    // ───────────────────────────────────────────────────────────
     const relatedTerms = generateRelatedTerms(normalizedQuery);
     relatedTerms.forEach((term) => {
       suggestions.push({
@@ -193,7 +163,9 @@ export async function GET(request: NextRequest) {
       });
     });
 
-    // Ordenar por score y eliminar duplicados
+    // ───────────────────────────────────────────────────────────
+    // Ordenar por score, eliminar duplicados y formatear respuesta
+    // ───────────────────────────────────────────────────────────
     const uniqueSuggestions = Array.from(
       new Map(suggestions.map((s) => [s.title.toLowerCase(), s])).values()
     )
@@ -221,22 +193,24 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// ──────────────────────────────────────────────────────────────
 // Función para generar términos relacionados
+// ──────────────────────────────────────────────────────────────
 function generateRelatedTerms(query: string): string[] {
   const related: string[] = [];
-  
+
   // Añadir variaciones comunes
   if (!query.includes("oferta")) related.push(`${query} oferta`);
   if (!query.includes("precio")) related.push(`${query} mejor precio`);
   if (!query.includes("nuevo")) related.push(`${query} nuevo`);
   if (!query.includes("usado")) related.push(`${query} usado`);
-  
+
   // Singular/plural básico
   if (query.endsWith("s")) {
     related.push(query.slice(0, -1));
   } else {
     related.push(`${query}s`);
   }
-  
+
   return related.slice(0, 3);
 }
