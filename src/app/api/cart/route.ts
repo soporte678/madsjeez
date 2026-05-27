@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma"
+import { Prisma } from "@prisma/client";;
 import type { Decimal } from "@prisma/client/runtime/library";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -163,7 +164,7 @@ export async function POST(request: Request) {
       }
       await prisma.cartItem.update({
         where: { id: existingItem.id },
-        data: { quantity: newQuantity, price: product.price },
+        data: { quantity: newQuantity, price: new Prisma.Decimal(product.price) },
       });
     } else {
       await prisma.cartItem.create({
