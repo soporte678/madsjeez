@@ -153,7 +153,7 @@ export async function GET(request: NextRequest) {
           productTitle: q.product.title,
           productImage: q.product.images[0]?.url || null,
           sellerName: q.product.seller?.name || 'Vendedor',
-          price: q.product.price,
+          price: Number(q.product.price),
           comparePrice: q.product.comparePrice || null,
           stock: q.product.stock,
           question: q.question,
@@ -162,7 +162,7 @@ export async function GET(request: NextRequest) {
           answerDate: q.answeredAt ? formatRelativeDate(q.answeredAt) : null,
           status: q.status,
           shipping: q.product.stock > 0 ? 'Envío gratis a todo el país' : null,
-          installments: q.product.price > 50000 ? 'Mismo precio en cuotas' : null,
+          installments: Number(q.product.price) > 50000 ? 'Mismo precio en cuotas' : null,
         }));
       }
     } catch (dbError) {
