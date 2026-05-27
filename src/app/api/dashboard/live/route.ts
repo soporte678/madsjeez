@@ -30,7 +30,7 @@ export async function GET(request: Request) {
       },
     })
 
-    const todayRevenue = todaySellerItems.reduce((acc: number, item: any) => acc + (item.price * item.quantity), 0)
+    const todayRevenue = todaySellerItems.reduce((acc: number, item: any) => acc + (Number(item.price) * item.quantity), 0)
     const todaySalesCount = todaySellerItems.length
 
     // Visitas de hoy (total de views de todos los productos del vendedor)
@@ -45,12 +45,12 @@ export async function GET(request: Request) {
       const existing = topProductMap.get(item.productId)
       if (existing) {
         existing.quantity += item.quantity
-        existing.revenue += item.price * item.quantity
+        existing.revenue += Number(item.price) * item.quantity
       } else {
         topProductMap.set(item.productId, {
           product: item.product,
           quantity: item.quantity,
-          revenue: item.price * item.quantity,
+          revenue: Number(item.price) * item.quantity,
         })
       }
     }
