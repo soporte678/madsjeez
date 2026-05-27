@@ -52,7 +52,7 @@ export async function GET(request: Request) {
 
     // Calcular métricas
     const totalSales = prodList.reduce((sum: number, product: ProdRow) => sum + (product.sales || 0), 0) || 0
-    const totalRevenue = prodList.reduce((sum: number, product: ProdRow) => sum + ((product.price || 0) * (product.sales || 0)), 0) || 0
+    const totalRevenue = prodList.reduce((sum: number, product: ProdRow) => sum + ((Number(product.price) || 0) * (product.sales || 0)), 0) || 0
     const totalViews = prodList.reduce((sum: number, product: ProdRow) => sum + (product.views || 0), 0) || 0
 
     const monthlyOrders = ordList.filter((order: OrdRow) => {
