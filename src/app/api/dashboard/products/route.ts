@@ -50,7 +50,7 @@ export async function GET(request: Request) {
       title: p.title,
       description: p.description,
       sku: p.sku,
-      price: p.price,
+      price: Number(p.price),
       originalPrice: p.originalPrice,
       stock: p.stock,
       isActive: p.isActive,
