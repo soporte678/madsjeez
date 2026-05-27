@@ -2271,3 +2271,20 @@ model ProductView {
   @@map("product_views")
 }
 
+// ============================================
+// PUSH NOTIFICATIONS (Web Push / VAPID)
+// ============================================
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  endpoint  String   @unique
+  userId    String?  @map("user_id")
+  auth      String?
+  p256dh    String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("push_subscriptions")
+}
+

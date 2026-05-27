@@ -1,10 +1,11 @@
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Outfit, Montserrat } from "next/font/google"
 import "./globals.css"
 import { Providers } from "@/components/providers"
 import { ChatProvider } from "@/components/ChatContext"
 import { DeferredAnalytics } from "@/components/seo/DeferredAnalytics"
 import { FloatingBotsLazy } from "@/components/FloatingBotsLazy"
+import { PWAProvider } from "@/components/pwa/PWAProvider"
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -58,6 +59,38 @@ export const metadata: Metadata = {
   verification: {
     google: "m8cmW9J8wkYGstv3h_D141-XvNFsthUmNFMucxqZ3lI",
   },
+  manifest: "/manifest.json",
+  themeColor: "#EB5204",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Madsjeez",
+  },
+  icons: {
+    icon: [
+      { url: "/icons/icon-192x192.png", sizes: "192x192" },
+      { url: "/icons/icon-512x512.png", sizes: "512x512" },
+    ],
+    apple: [
+      { url: "/icons/apple-touch-icon.png", sizes: "180x180" },
+    ],
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-status-bar-style": "black-translucent",
+    "msapplication-TileColor": "#EB5204",
+    "msapplication-config": "/browserconfig.xml",
+  },
+}
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+  themeColor: "#EB5204",
 }
 
 const GA_MEASUREMENT_ID = (
@@ -72,6 +105,14 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${outfit.variable} ${montserrat.variable} antialiased`}>
       <head>
+        {/* PWA Icons */}
+        <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+        <link rel="mask-icon" href="/icons/icon-192x192.svg" color="#EB5204" />
+        {/* PWA Theme Colors */}
+        <meta name="theme-color" content="#EB5204" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#EB5204" media="(prefers-color-scheme: dark)" />
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var t=localStorage.getItem('madsjeez-theme-tone');document.documentElement.setAttribute('data-theme',t==='soft'||t==='dark'?t:'light')}catch(e){}})();`,
@@ -99,6 +140,7 @@ export default function RootLayout({
             <FloatingBotsLazy />
           </Providers>
         </ChatProvider>
+        <PWAProvider />
       </body>
     </html>
   )
