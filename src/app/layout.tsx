@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next"
+import dynamic from "next/dynamic"
 import { Outfit, Montserrat } from "next/font/google"
 import "./globals.css"
 import { Providers } from "@/components/providers"
@@ -6,6 +7,16 @@ import { ChatProvider } from "@/components/ChatContext"
 import { DeferredAnalytics } from "@/components/seo/DeferredAnalytics"
 import { FloatingBotsLazy } from "@/components/FloatingBotsLazy"
 import { PWAProvider } from "@/components/pwa/PWAProvider"
+
+const JarvisChatWidget = dynamic(
+  () => import("@/components/jarvis").then((m) => m.JarvisChatWidget),
+  { ssr: false, loading: () => null }
+)
+
+const JarvisInitializer = dynamic(
+  () => import("@/components/jarvis").then((m) => m.JarvisInitializer),
+  { ssr: false, loading: () => null }
+)
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -134,10 +145,12 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col font-outfit">
         <DeferredAnalytics />
+        <JarvisInitializer />
         <ChatProvider>
           <Providers>
             {children}
             <FloatingBotsLazy />
+            <JarvisChatWidget />
           </Providers>
         </ChatProvider>
         <PWAProvider />

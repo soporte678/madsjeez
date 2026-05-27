@@ -20,6 +20,7 @@ import {
   Menu,
   X,
   LayoutGrid,
+  Brain,
 } from "lucide-react";
 import { UserMenu } from "@/components/dashboard/UserMenu";
 import NotificationsDropdown from "@/components/dashboard/NotificationsDropdown";
@@ -115,6 +116,12 @@ const MENU_GROUPS: MenuGroup[] = [
     label: "Mi perfil",
     icon: <User size={18} />,
     href: "/dashboard/perfil",
+  },
+  {
+    id: "jarvis-ia",
+    label: "JARVIS IA",
+    icon: <Brain size={18} />,
+    href: "/dashboard/jarvis",
   },
   {
     id: "configuracion-group",
