@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Brain,
-  Github,
+  GitBranch,
   TrainFront,
   Database,
   CheckCircle2,
@@ -308,7 +308,7 @@ const serviceConfig: Record<
 > = {
   github: {
     label: "GitHub",
-    icon: <Github size={20} />,
+    icon: <GitBranch size={20} />,
     envVars: ["GITHUB_TOKEN"],
   },
   railway: {
@@ -686,7 +686,7 @@ export default function JarvisControlCenterPage() {
             <Tabs value={opsTab} onValueChange={(v) => setOpsTab(v as ServiceName)}>
               <TabsList className="w-full">
                 <TabsTrigger value="github" className="flex-1 gap-1">
-                  <Github size={14} />
+                  <GitBranch size={14} />
                   GitHub
                 </TabsTrigger>
                 <TabsTrigger value="railway" className="flex-1 gap-1">
@@ -777,7 +777,7 @@ export default function JarvisControlCenterPage() {
                 <SelectContent>
                   <SelectItem value="github">
                     <div className="flex items-center gap-2">
-                      <Github size={14} />
+                      <GitBranch size={14} />
                       GitHub
                     </div>
                   </SelectItem>
@@ -896,7 +896,7 @@ export default function JarvisControlCenterPage() {
                     </td>
                     <td className="py-2.5 pr-4">
                       <div className="flex items-center gap-1.5">
-                        {log.service === "github" && <Github size={13} className="text-muted-foreground" />}
+                        {log.service === "github" && <GitBranch size={13} className="text-muted-foreground" />}
                         {log.service === "railway" && (
                           <TrainFront size={13} className="text-muted-foreground" />
                         )}

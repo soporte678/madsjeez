@@ -1,13 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import webpush from "web-push";
+
+// web-push se carga condicionalmente para evitar errores cuando no esta instalado
+let webpush: typeof import("web-push") | null = null;
+try {
+  webpush = require("web-push");
+} catch {
+  webpush = null;
+}
 
 // Configurar VAPID keys
 const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
 const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY || "";
 const vapidSubject = process.env.VAPID_SUBJECT || "mailto:soporte@madsjeez.com.ar";
 
-webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
+if (webpush) {
+  webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -33,9 +42,12 @@ export async function POST(req: NextRequest) {
     });
 
     // Enviar a todas las suscripciones
+    if (!webpush) {
+      return NextResponse.json({ error: "web-push no esta disponible" }, { status: 503 });
+    }
     const results = await Promise.allSettled(
       subscriptions.map((sub) =>
-        webpush.sendNotification(
+        webpush!.sendNotification(
           {
             endpoint: sub.endpoint,
             keys: {

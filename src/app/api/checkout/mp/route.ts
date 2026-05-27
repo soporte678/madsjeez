@@ -785,4 +785,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }
 }
-   

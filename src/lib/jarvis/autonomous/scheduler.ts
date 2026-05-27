@@ -56,14 +56,14 @@ const MS_PER_DAY = 24 * MS_PER_HOUR;
  * Converts a small set of cron-like expressions into millisecond intervals.
  *
  * Supported patterns:
- *   - `*/5 * * * *`  -> every 5 minutes
- *   - `*/15 * * * *` -> every 15 minutes
- *   - `*/30 * * * *` -> every 30 minutes
- *   - `0 * * * *`    -> every hour
- *   - `0 */4 * * *`  -> every 4 hours
- *   - `0 */6 * * *`  -> every 6 hours
- *   - `0 */12 * * *` -> every 12 hours
- *   - `0 0 * * *`    -> every day at midnight
+ *   - '*/5 * * * *'  -> every 5 minutes
+ *   - '*/15 * * * *' -> every 15 minutes
+ *   - '*/30 * * * *' -> every 30 minutes
+ *   - '0 * * * *'    -> every hour
+ *   - '0 */4 * * *'  -> every 4 hours
+ *   - '0 */6 * * *'  -> every 6 hours
+ *   - '0 */12 * * *' -> every 12 hours
+ *   - '0 0 * * *'    -> every day at midnight
  *
  * Any unsupported expression falls back to 1 hour so tasks still run.
  */

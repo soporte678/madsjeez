@@ -548,7 +548,7 @@ export async function getDatabaseSize(): Promise<string> {
 export async function getRowCount(tableName: string): Promise<number> {
   try {
     const { data, error } = await getClient().rpc("exec_sql", {
-      query_text: `SELECT COUNT(*) AS count FROM "${tableName.replace(/"/g, """)}"`,
+      query_text: `SELECT COUNT(*) AS count FROM "${tableName.replace(/"/g, '\\"')}"`,
       query_params: [],
     });
 

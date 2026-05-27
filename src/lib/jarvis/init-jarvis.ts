@@ -20,7 +20,7 @@
  * ╚══════════════════════════════════════════════════════════════════════════════╝
  */
 
-import { createServiceClient } from "@/lib/supabase/service";
+import { getSupabaseService } from "@/lib/supabase/service";
 import { logSecurityEvent } from "./governance/auditor";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -305,7 +305,7 @@ export async function checkSupabaseConnection(): Promise<boolean> {
   jLog("info", "Step 1 — Verificando conexion a Supabase...");
 
   try {
-    const client = createServiceClient();
+    const client = getSupabaseService();
     const { data, error } = await client.from(TABLE_CONFIG).select("id").limit(1);
 
     if (error && error.code !== "42P01" && error.code !== "PGRST116") {
@@ -337,7 +337,7 @@ export async function checkJarvisConfigTable(): Promise<boolean> {
   jLog("info", "Step 2 — Verificando existencia de tabla jarvis_config...");
 
   try {
-    const client = createServiceClient();
+    const client = getSupabaseService();
     // Intentamos un SELECT simple; si la tabla no existe, Supabase devuelve error 42P01
     const { error } = await client.from(TABLE_CONFIG).select("id").limit(1);
 
@@ -372,7 +372,7 @@ export async function checkJarvisConfigTable(): Promise<boolean> {
 export async function createJarvisConfigTable(): Promise<void> {
   jLog("info", "Step 3 — Creando tabla jarvis_config...");
 
-  const client = createServiceClient();
+  const client = getSupabaseService();
 
   const sql = `
     CREATE TABLE IF NOT EXISTS ${TABLE_CONFIG} (
@@ -462,7 +462,7 @@ async function tryRawSql(client: SupabaseClient, sql: string): Promise<boolean> 
 export async function seedDefaultConfig(): Promise<void> {
   jLog("info", "Step 4 — Insertando configuracion por defecto...");
 
-  const client = createServiceClient();
+  const client = getSupabaseService();
 
   // Primero verificamos si ya hay datos
   const { data: existingRows, error: countError } = await client
@@ -542,7 +542,7 @@ export async function seedDefaultConfig(): Promise<void> {
 export async function createConversationMemoryTable(): Promise<void> {
   jLog("info", "Step 5 — Creando tabla jarvis_conversation_memory...");
 
-  const client = createServiceClient();
+  const client = getSupabaseService();
 
   const sql = `
     CREATE TABLE IF NOT EXISTS ${TABLE_MEMORY} (
@@ -622,7 +622,7 @@ async function createConversationMemoryFallback(client: SupabaseClient): Promise
 export async function createAuditLogTable(): Promise<void> {
   jLog("info", "Step 6 — Creando tabla jarvis_audit_log...");
 
-  const client = createServiceClient();
+  const client = getSupabaseService();
 
   const sql = `
     CREATE TABLE IF NOT EXISTS ${TABLE_AUDIT} (
@@ -888,7 +888,7 @@ export async function initializeJarvis(): Promise<InitResult> {
  */
 export async function getJarvisConfig(key: string): Promise<string | null> {
   try {
-    const client = createServiceClient();
+    const client = getSupabaseService();
     const { data, error } = await client
       .from(TABLE_CONFIG)
       .select("value")
@@ -915,7 +915,7 @@ export async function getJarvisConfig(key: string): Promise<string | null> {
  * ```
  */
 export async function setJarvisConfig(key: string, value: string): Promise<void> {
-  const client = createServiceClient();
+  const client = getSupabaseService();
 
   // Verificamos si existe
   const { data: existing } = await client
@@ -962,7 +962,7 @@ export async function setJarvisConfig(key: string, value: string): Promise<void>
  */
 export async function getAllJarvisConfig(): Promise<Record<string, string>> {
   try {
-    const client = createServiceClient();
+    const client = getSupabaseService();
     const { data, error } = await client
       .from(TABLE_CONFIG)
       .select("key, value");
@@ -1016,7 +1016,7 @@ export async function getJarvisConfigMeta(key: string): Promise<{
   updated_at: string;
 } | null> {
   try {
-    const client = createServiceClient();
+    const client = getSupabaseService();
     const { data, error } = await client
       .from(TABLE_CONFIG)
       .select("key, value, category, description, is_encrypted, created_at, updated_at")
@@ -1044,7 +1044,7 @@ export async function getJarvisConfigMeta(key: string): Promise<{
  * @param key - Nombre de la configuracion a eliminar
  */
 export async function deleteJarvisConfig(key: string): Promise<void> {
-  const client = createServiceClient();
+  const client = getSupabaseService();
   const { error } = await client.from(TABLE_CONFIG).delete().eq("key", key);
 
   if (error) {
@@ -1067,7 +1067,7 @@ export async function getJarvisConfigByCategory(category: string): Promise<
   }>
 > {
   try {
-    const client = createServiceClient();
+    const client = getSupabaseService();
     const { data, error } = await client
       .from(TABLE_CONFIG)
       .select("key, value, description, is_encrypted")
@@ -1099,7 +1099,7 @@ export async function getJarvisHealthStatus(): Promise<{
   configCount: number;
   enabled: boolean;
 }> {
-  const client = createServiceClient();
+  const client = getSupabaseService();
   let configCount = 0;
 
   // Verificar conexion

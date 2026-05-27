@@ -18,7 +18,7 @@
  * - Retry success rate: > 99%
  */
 
-import { HttpsProxyAgent } from "https-proxy-agent");
+import { HttpsProxyAgent } from "https-proxy-agent";
 
 /* ------------------------------------------------------------------ */
 /* Types                                                              */

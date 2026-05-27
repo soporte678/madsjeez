@@ -21,7 +21,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { createServiceClient } from "@/lib/supabase/service";
+import { getSupabaseService } from "@/lib/supabase/service";
 import {
   getJarvisConfig,
   getAllJarvisConfig,
@@ -307,7 +307,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
     // Caso 4: Obtener toda la configuracion
     const allConfig = await getAllJarvisConfig();
-    const client = createServiceClient();
+    const client = getSupabaseService();
 
     // Obtener categorias disponibles
     const { data: categories } = await client
@@ -444,7 +444,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    const client = createServiceClient();
+    const client = getSupabaseService();
     const existing = await client
       .from(TABLE_CONFIG)
       .select("id")
@@ -709,7 +709,7 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
 
   try {
     // Verificar que existe
-    const client = createServiceClient();
+    const client = getSupabaseService();
     const { data: existing } = await client
       .from(TABLE_CONFIG)
       .select("key, value, category, description")

@@ -12,7 +12,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { createServiceClient } from "@/lib/supabase/service";
+import { getSupabaseService } from "@/lib/supabase/service";
 import { JARVIS_INIT_SQL, DEFAULT_CONFIG_ROWS, DEFAULT_AUTONOMOUS_TASKS } from "@/lib/jarvis/init-sql";
 
 // ============================================================================
@@ -148,7 +148,7 @@ async function seedTasks(supabase: any): Promise<{ inserted: number; errors: str
 
 export async function GET(): Promise<NextResponse> {
   try {
-    const supabase = await createServiceClient();
+    const supabase = getSupabaseService();
     const results: Record<string, boolean> = {};
 
     for (const table of JARVIS_TABLES) {
@@ -188,7 +188,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const errors: string[] = [];
 
   try {
-    const supabase = await createServiceClient();
+    const supabase = getSupabaseService();
 
     // ── Step 1: Verify Supabase connection ──────────────────────────────────
     const { error: connError } = await supabase.from("information_schema.tables").select("table_name").limit(1);
