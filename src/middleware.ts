@@ -111,6 +111,53 @@ export async function middleware(request: NextRequest) {
     return response
   }
 
+  /* ================================================================ */
+  /* JARVIS EDGE CACHING — Sub-50ms responses for cached queries      */
+  /* ================================================================ */
+
+  const isJarvisApi = pathname.startsWith("/api/jarvis");
+  const isJarvisStream = pathname.startsWith("/api/jarvis/stream");
+  const isDestructiveCommand = /\b(create-agent-task|orchestrate|dispatch)\b/.test(
+    request.nextUrl.search
+  );
+
+  if (isJarvisApi && !isJarvisStream && !isDestructiveCommand) {
+    const response = NextResponse.next();
+
+    // Enable stale-while-revalidate for safe JARVIS endpoints
+    // Cache in CDN edge for 30s (health checks, status, etc.)
+    response.headers.set(
+      "Cache-Control",
+      "public, s-maxage=30, stale-while-revalidate=60"
+    );
+
+    // Add performance headers
+    response.headers.set("X-Jarvis-Cache", "edge-enabled");
+    response.headers.set("X-Jarvis-Edge-TTL", "30");
+
+    // Add cache tags for selective invalidation
+    const scope = request.nextUrl.searchParams.get("scope") ?? "all";
+    response.headers.set("Cache-Tag", `jarvis,${scope}`);
+
+    return response;
+  }
+
+  // Streaming endpoint: never cache, but add performance hints
+  if (isJarvisStream) {
+    const response = NextResponse.next();
+    response.headers.set("X-Accel-Buffering", "no");
+    response.headers.set("Cache-Control", "no-cache, no-store");
+    return response;
+  }
+
+  // Destructive JARVIS commands: bypass all caching
+  if (isJarvisApi && isDestructiveCommand) {
+    const response = NextResponse.next();
+    response.headers.set("Cache-Control", "no-cache, no-store, must-revalidate");
+    response.headers.set("X-Jarvis-Cache", "bypass-destructive");
+    return response;
+  }
+
   return NextResponse.next()
 }
 

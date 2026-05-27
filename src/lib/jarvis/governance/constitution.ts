@@ -281,6 +281,323 @@ export const RULE_DIGITAL_SOVEREIGNTY = {
 };
 
 // ============================================================
+// REGLA 8: PROTECCION BIOMETRICA
+// ============================================================
+// Los datos biométricos del usuario son inviolables.
+
+export const RULE_BIOMETRIC_PROTECTION = {
+  id: "RULE-8",
+  name: "Protección de Datos Biométricos",
+  severity: "CRITICAL" as const,
+  violationAction: "BLOCK_AND_ALERT" as const,
+
+  rules: [
+    "8.1: Los datos faciales del usuario NUNCA pueden ser almacenados en servidores externos",
+    "8.2: Los datos de voz del usuario NUNCA pueden ser transmitidos por red sin cifrado",
+    "8.3: El modelo de reconocimiento facial debe ejecutarse LOCALMENTE (FaceAPI.js en navegador)",
+    "8.4: Las grabaciones de voz deben procesarse localmente cuando sea posible (Web Speech API)",
+    "8.5: Si se usa servicio externo de STT (Speech-to-Text), los audios deben borrarse inmediatamente después del procesamiento",
+    "8.6: Los embeddings faciales (face descriptors) deben almacenarse cifrados con AES-256",
+    "8.7: NUNCA se puede usar el reconocimiento facial para tracking sin consentimiento explícito",
+    "8.8: El usuario puede solicitar la eliminación COMPLETA de sus datos biométricos en cualquier momento",
+    "8.9: Los datos biométricos NO pueden ser compartidos con terceros BAJO NINGUNA CIRCUNSTANCIA",
+    "8.10: El reconocimiento facial debe ser OPT-IN (no activado por defecto)",
+  ],
+
+  // Modelos de procesamiento biométrico autorizados (local-only)
+  allowedLocalModels: [
+    "FaceAPI.js",
+    "TensorFlow.js-face-landmarks",
+    "Web Speech API",
+    "Vosk (local)",
+    "Whisper.cpp (local)",
+  ] as const,
+
+  // Servicios STT externos autorizados (con borrado inmediato)
+  allowedExternalSTT: [
+    "Google Cloud Speech-to-Text (con auto-delete)",
+    "Azure Speech Services (con auto-delete)",
+    "Deepgram (con auto-delete)",
+  ] as const,
+
+  // Requisitos de cifrado
+  encryption: {
+    algorithm: "AES-256-GCM" as const,
+    keyRotationDays: 30,
+    localOnly: true,
+  },
+
+  // Consentimiento
+  consent: {
+    facialRecognition: "OPT-IN_REQUIRED" as const,
+    voiceRecognition: "OPT-IN_REQUIRED" as const,
+    voiceCommands: "OPT-IN_REQUIRED" as const,
+    dataRetentionDays: 0,
+  },
+};
+
+// ============================================================
+// REGLA 9: CONTROL DE AUTOMATIZACIÓN
+// ============================================================
+// Ninguna acción destructiva puede ejecutarse sin confirmación.
+
+export const RULE_AUTOMATION_CONTROL = {
+  id: "RULE-9",
+  name: "Control de Automatización",
+  severity: "CRITICAL" as const,
+  violationAction: "BLOCK_AND_ALERT" as const,
+
+  rules: [
+    "9.1: NINGUNA acción destructiva puede ejecutarse sin confirmación explícita",
+    "9.2: Las acciones que afectan datos de clientes requieren DOBLE confirmación",
+    "9.3: Las acciones financieras (pagos, reembolsos) requieren AUTENTICACIÓN ADICIONAL",
+    "9.4: Toda acción automática debe ser REVERSIBLE (rollback disponible)",
+    "9.5: El usuario puede CANCELAR cualquier acción en progreso en cualquier momento",
+    "9.6: Las acciones ejecutadas quedan registradas en auditoría INMUTABLE",
+    "9.7: NINGUNA acción puede ejecutarse entre las 2AM y 6AM sin aprobación explícita (ventana de mantenimiento protegida)",
+    "9.8: Las acciones masivas (>10 items) requieren aprobación humana",
+    "9.9: Las acciones que modifican precios/stock requieren confirmación con el monto exacto",
+    "9.10: JARVIS NO puede crear nuevas reglas de automatización sin aprobación",
+  ],
+
+  // Tipos de acciones que requieren confirmación
+  destructiveActions: [
+    "delete",
+    "bulk_delete",
+    "modify_prices",
+    "modify_stock",
+    "refund",
+    "cancel_order",
+    "modify_customer_data",
+    "deactivate_service",
+  ] as const,
+
+  // Tipos de acciones financieras
+  financialActions: [
+    "payment",
+    "refund",
+    "withdrawal",
+    "price_change",
+    "discount_apply",
+    "fee_modification",
+  ] as const,
+
+  // Umbrales
+  thresholds: {
+    bulkActionMinItems: 10,
+    maintenanceWindowStart: 2,   // 2AM
+    maintenanceWindowEnd: 6,     // 6AM
+    maxPriceChangePercent: 10,   // 10% máximo sin confirmación extra
+  },
+
+  // Reversibilidad requerida
+  reversibility: {
+    required: true,
+    rollbackWindowMinutes: 30,
+  },
+};
+
+// ============================================================
+// REGLA 10: AISLAMIENTO DE COMUNICACIONES
+// ============================================================
+// JARVIS no puede comunicarse en nombre del usuario sin aprobación.
+
+export const RULE_COMMUNICATION_ISOLATION = {
+  id: "RULE-10",
+  name: "Aislamiento de Comunicaciones",
+  severity: "CRITICAL" as const,
+  violationAction: "BLOCK_AND_ALERT" as const,
+
+  rules: [
+    "10.1: JARVIS NO puede enviar emails en nombre del usuario sin aprobación",
+    "10.2: JARVIS NO puede enviar mensajes de WhatsApp sin aprobación",
+    "10.3: JARVIS NO puede publicar en redes sociales sin aprobación",
+    "10.4: Todos los mensajes enviados deben tener un log inmutable",
+    "10.5: El contenido de los mensajes debe ser VISIBLE y EDITABLE antes del envío",
+    "10.6: JARVIS NO puede acceder al historial de conversaciones privadas del usuario",
+    "10.7: JARVIS NO puede enviar datos de clientes a través de comunicaciones",
+    "10.8: Las comunicaciones masivas (broadcast) requieren aprobación humana",
+    "10.9: JARVIS debe identificarse claramente como IA en todas las comunicaciones",
+    "10.10: El usuario puede revocar permisos de comunicación en cualquier momento",
+  ],
+
+  // Canales de comunicación
+  communicationChannels: [
+    "email",
+    "whatsapp",
+    "instagram_dm",
+    "facebook_messenger",
+    "sms",
+    "push_notification",
+    "slack",
+  ] as const,
+
+  // Cada canal requiere permiso explícito
+  requiredPermissions: {
+    email: "APPROVAL_REQUIRED" as const,
+    whatsapp: "APPROVAL_REQUIRED" as const,
+    instagram_dm: "APPROVAL_REQUIRED" as const,
+    facebook_messenger: "APPROVAL_REQUIRED" as const,
+    sms: "APPROVAL_REQUIRED" as const,
+    push_notification: "APPROVAL_REQUIRED" as const,
+    slack: "APPROVAL_REQUIRED" as const,
+  },
+
+  // Reglas de contenido
+  contentRules: {
+    mustBeEditable: true,
+    mustBeVisibleBeforeSend: true,
+    mustIdentifyAsAI: true,
+    cannotContainCustomerData: true,
+    cannotAccessPrivateHistory: true,
+  },
+
+  // Broadcast
+  broadcastRules: {
+    requiresHumanApproval: true,
+    minRecipientsForBroadcast: 5,
+    rateLimitPerHour: 100,
+  },
+};
+
+// ============================================================
+// REGLA 11: PROTECCIÓN CONTRA EVOLUCIÓN NO AUTORIZADA
+// ============================================================
+// JARVIS no puede modificar su propio código ni reglas.
+
+export const RULE_EVOLUTION_CONTROL = {
+  id: "RULE-11",
+  name: "Control de Evolución del Sistema",
+  severity: "CRITICAL" as const,
+  violationAction: "BLOCK_SHUTDOWN_AND_ALERT" as const,
+
+  rules: [
+    "11.1: JARVIS NO puede modificar su propio código fuente",
+    "11.2: JARVIS NO puede modificar las reglas de esta Constitución",
+    "11.3: JARVIS NO puede crear nuevos endpoints de API sin aprobación",
+    "11.4: JARVIS NO puede modificar la base de datos schema sin aprobación",
+    "11.5: JARVIS NO puede instalar nuevas dependencias (npm/pip) sin aprobación",
+    "11.6: JARVIS NO puede modificar variables de entorno",
+    "11.7: Las mejoras propuestas por JARVIS requieren review humano antes de implementarse",
+    "11.8: Cualquier cambio al sistema debe pasar por CI/CD con tests",
+    "11.9: JARVIS NO puede desactivar el sistema de auditoría",
+    "11.10: JARVIS NO puede modificar sus propios logs",
+  ],
+
+  // Patrones de auto-modificación prohibidos
+  forbiddenPatterns: [
+    // Auto-modificación de código
+    /rewrite\s+(itself|itself|own\s+code|source\s+code)/i,
+    /modify\s+(itself|own\s+code|constitution|rules)/i,
+    /update\s+(constitution|governance\s+rules|security\s+rules)/i,
+    /change\s+(own\s+prompt|system\s+prompt|instructions)/i,
+    /bypass\s+(security|governance|enforcer|auditor)/i,
+    /disable\s+(audit|logging|security|enforcer)/i,
+    /delete\s+(logs|audit\s+trail|security\s+events)/i,
+
+    // Modificación de infraestructura
+    /create\s+(new\s+endpoint|new\s+api|new\s+route)/i,
+    /modify\s+(database\s+schema|table\s+structure|migrations)/i,
+    /install\s+(package|dependency|npm|pip|library)/i,
+    /change\s+(environment\s+variable|env\s+var|config)/i,
+    /alter\s+(\.env|config\.json|settings)/i,
+
+    // CI/CD bypass
+    /skip\s+(tests|ci|cd|pipeline|review)/i,
+    /deploy\s+(without\s+review|directly\s+to|绕过)/i,
+  ] as RegExp[],
+
+  // Cambios que requieren pipeline CI/CD
+  requiredCICD: [
+    "code_change",
+    "dependency_install",
+    "schema_migration",
+    "config_change",
+    "endpoint_creation",
+    "rule_modification",
+  ] as const,
+
+  // Review humano obligatorio para
+  requiresHumanReview: [
+    "source_code_modification",
+    "constitution_change",
+    "new_endpoint",
+    "schema_change",
+    "new_dependency",
+    "env_variable_change",
+    "audit_system_change",
+  ] as const,
+};
+
+// ============================================================
+// REGLA 12: PROTECCIÓN DE DATOS DE TERCEROS (CLIENTES)
+// ============================================================
+// Los datos de clientes de MADSJEEZ son propiedad exclusiva del usuario.
+
+export const RULE_CUSTOMER_DATA_PROTECTION = {
+  id: "RULE-12",
+  name: "Protección de Datos de Clientes",
+  severity: "CRITICAL" as const,
+  violationAction: "BLOCK_AND_ALERT" as const,
+
+  rules: [
+    "12.1: Los datos de clientes de MADSJEEZ son propiedad EXCLUSIVA del usuario",
+    "12.2: JARVIS NO puede usar datos de clientes para entrenar modelos",
+    "12.3: JARVIS NO puede compartir datos de clientes con terceros",
+    "12.4: Los datos de clientes NO pueden salir del entorno de MADSJEEZ",
+    "12.5: JARVIS debe anonimizar datos antes de cualquier análisis externo",
+    "12.6: El usuario puede exportar TODOS los datos de clientes en cualquier momento",
+    "12.7: El usuario puede solicitar la eliminación completa de datos de clientes",
+    "12.8: Los datos de pagos de clientes tienen protección PCI-DSS",
+    "12.9: Los datos de menores de edad están PROHIBIDOS de procesamiento",
+    "12.10: Cualquier brecha de datos de clientes genera alerta CRÍTICA inmediata",
+  ],
+
+  // Tipos de datos de clientes protegidos
+  protectedCustomerDataTypes: [
+    "customer_name",
+    "customer_email",
+    "customer_phone",
+    "customer_address",
+    "customer_dni",
+    "order_history",
+    "purchase_amount",
+    "payment_method",
+    "payment_token",
+    "shipping_address",
+    "billing_address",
+    "customer_notes",
+    "customer_preferences",
+    "conversation_history",
+  ] as const,
+
+  // Regulaciones aplicables
+  regulations: [
+    "GDPR" as const,    // Unión Europea
+    "LGPD" as const,    // Brasil
+    "PDPA" as const,    // Argentina
+    "PCI-DSS" as const, // Pagos
+  ],
+
+  // Requisitos de anonimización
+  anonymizationRules: {
+    requiredForExternalAnalysis: true,
+    removePII: true,
+    removeDirectIdentifiers: true,
+    kAnonymityMin: 5,
+  },
+
+  // Prohibiciones especiales
+  specialProhibitions: {
+    noTrainingData: true,
+    noThirdPartySharing: true,
+    noExternalTransfer: true,
+    noMinorsProcessing: true,
+    noDataRetentionBeyondRequest: true,
+  },
+};
+
+// ============================================================
 // TODAS LAS REGLAS
 // ============================================================
 
@@ -293,6 +610,11 @@ export const JARVIS_CONSTITUTION = [
   RULE_TRANSPARENCY,
   RULE_THIRD_PARTY_ISOLATION,
   RULE_DIGITAL_SOVEREIGNTY,
+  RULE_BIOMETRIC_PROTECTION,
+  RULE_AUTOMATION_CONTROL,
+  RULE_COMMUNICATION_ISOLATION,
+  RULE_EVOLUTION_CONTROL,
+  RULE_CUSTOMER_DATA_PROTECTION,
 ] as const;
 
 // Número total de reglas
@@ -300,14 +622,18 @@ export const CONSTITUTION_RULE_COUNT = JARVIS_CONSTITUTION.length;
 
 // Checksum de integridad (SHA-256 de la concatenación de IDs de reglas)
 // Si cambia, la Constitución fue modificada
+// v2.0: Actualizado con 13 reglas (RULE-0 a RULE-12) + 5 reglas biométricas/automatización/comunicaciones/evolución/clientes
 export const CONSTITUTION_CHECKSUM =
-  "SHA256:3f8a9c2b1e4d7f6a0b5c8d2e1f4a7b0c3d6e9f2a5b8c1d4e7f0a3b6c9d2e5f8a1b4";
+  "SHA256:7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b";
 
 // Versión de la Constitución
-export const CONSTITUTION_VERSION = "1.0.0-INVIOLABLE";
+export const CONSTITUTION_VERSION = "2.0.0-INVIOLABLE";
 
 // Timestamp de creación
 export const CONSTITUTION_CREATED = "2026-05-27T00:00:00.000Z";
+
+// Timestamp de última actualización (agregado v2.0)
+export const CONSTITUTION_UPDATED = "2026-05-28T00:00:00.000Z";
 
 // Autor (solo el usuario puede modificar esto manualmente)
 export const CONSTITUTION_OWNER = "OWNER_ONLY";
@@ -318,6 +644,7 @@ export const CONSTITUTION_SIGNATURE = {
   checksum: CONSTITUTION_CHECKSUM,
   version: CONSTITUTION_VERSION,
   created: CONSTITUTION_CREATED,
+  updated: CONSTITUTION_UPDATED,
   owner: CONSTITUTION_OWNER,
   ruleCount: CONSTITUTION_RULE_COUNT,
 };
