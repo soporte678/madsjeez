@@ -50,7 +50,7 @@ function envPercent(key: string, fallback: number): number {
  * Previene datos maliciosos o inválidos en los inputs del usuario.
  */
 const CheckoutBodySchema = z.object({
-  shipping: z.record(z.unknown()).optional(),
+  shipping: z.record(z.string(), z.unknown()).optional(),
   buyer_email: z.string().email().max(256).optional(),
   guest_email: z.string().email().max(256).nullable().optional(),
   guest_phone: z.string().max(64).nullable().optional(),
@@ -188,7 +188,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const subtotal = roundMoney(lines.reduce((s, i) => s + i.price * i.quantity, 0));
+    const subtotal = roundMoney(lines.reduce((s, i) => s + Number(i.price) * i.quantity, 0));
 
     try {
       const sellerZipnova = await prisma.sellerZipnovaOAuth.findUnique({
@@ -233,7 +233,7 @@ export async function POST(req: Request) {
       const shipRes = await resolveCartShippingCost({
         lines: lines.map((i) => ({
           quantity: i.quantity,
-          price: i.price,
+          price: Number(i.price),
           product: {
             id: i.product.id,
             title: i.product.title,
@@ -288,12 +288,12 @@ export async function POST(req: Request) {
           where: { code: body.flash.shippingTier },
           select: { price: true, isActive: true },
         });
-        if (dbOption?.isActive && dbOption.price !== flashShippingCost) {
+        if (dbOption?.isActive && Number(dbOption.price) !== flashShippingCost) {
           logger.warn(
             `checkout/mp flash price mismatch: client=${flashShippingCost}, db=${dbOption.price}, tier=${body.flash.shippingTier}. Using DB price.`
           );
-          flashShippingCost = dbOption.price;
-          body.flash.shippingPrice = dbOption.price;
+          flashShippingCost = Number(dbOption.price);
+          body.flash.shippingPrice = Number(dbOption.price);
         }
         if (dbOption && !dbOption.isActive) {
           return NextResponse.json(
@@ -498,7 +498,7 @@ export async function POST(req: Request) {
       subtotal > 0 ? roundMoney((commissionProductTotal / subtotal) * 100) : 0;
 
     for (const item of lines) {
-      const unit = item.price;
+      const unit = Number(item.price);
       const totalLine = roundMoney(unit * item.quantity);
       const lineCommission = roundMoney(totalLine * (blendedCommissionRate / 100));
 
