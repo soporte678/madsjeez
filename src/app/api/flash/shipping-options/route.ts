@@ -126,7 +126,7 @@ export async function GET(req: NextRequest) {
       code: opt.code,
       name: opt.name,
       description: opt.description,
-      price: opt.price,
+      price: Number(opt.price),
       priority: opt.priority,
       coverageType: opt.coverageType,
       radiusKm: opt.radiusKm,
