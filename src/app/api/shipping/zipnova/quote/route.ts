@@ -32,7 +32,7 @@ export async function POST(req: Request) {
 
     const lines = cart.items.map((i) => ({
       quantity: i.quantity,
-      price: i.price,
+      price: Number(i.price),
       product: {
         id: i.product.id,
         title: i.product.title,
