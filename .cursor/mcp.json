@@ -8,16 +8,14 @@
       "url": "https://mcp.supabase.com/mcp"
     },
     "github": {
-      "url": "https://api.githubcopilot.com/mcp/",
-      "headers": {
-        "Authorization": "Bearer YOUR_GITHUB_PAT"
-      }
+      "command": "powershell",
+      "args": ["-ExecutionPolicy", "Bypass", "-File", "scripts/mcp-github-wrapper.ps1"]
     },
     "resend": {
       "command": "npx",
       "args": ["-y", "resend-mcp"],
       "env": {
-        "RESEND_API_KEY": "YOUR_RESEND_API_KEY",
+        "RESEND_API_KEY": "",
         "SENDER_EMAIL_ADDRESS": "Madsjeez <noreply@madsjeez.com.ar>",
         "REPLY_TO_EMAIL_ADDRESSES": "soporte@madsjeez.com"
       }
