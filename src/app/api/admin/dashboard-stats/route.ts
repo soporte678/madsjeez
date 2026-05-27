@@ -54,8 +54,8 @@ export async function GET(request: NextRequest) {
       }),
     ]);
 
-    const ventasDia = ventasHoyRows.reduce((acc, o) => acc + (o.total || 0), 0);
-    const ingresosMes = revenueRows.reduce((acc, o) => acc + (o.total || 0), 0);
+    const ventasDia = ventasHoyRows.reduce((acc, o) => acc + Number(o.total || 0), 0);
+    const ingresosMes = revenueRows.reduce((acc, o) => acc + Number(o.total || 0), 0);
 
     return NextResponse.json({
       ventasDia,
