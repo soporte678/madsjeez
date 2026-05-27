@@ -60,7 +60,21 @@ export async function GET(
       order: {
         select: {
           orderNumber: true,
-          seller: { select: { storeName: true, city: true } },
+          items: {
+            take: 1,
+            select: {
+              product: {
+                select: {
+                  seller: {
+                    select: {
+                      sellerName: true,
+                      name: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
       },
     },
@@ -77,10 +91,21 @@ export async function GET(
       ? `${nameParts[0]} ${nameParts[nameParts.length - 1][0]}.`
       : nameParts[0]
 
+  // Flatten seller data for frontend compatibility
+  const seller = shipment.order?.items?.[0]?.product?.seller
+  const sellerStoreName = seller?.sellerName ?? seller?.name ?? null
+
   return NextResponse.json({
     shipment: {
       ...shipment,
       recipientName: partialName,
+      order: {
+        orderNumber: shipment.order?.orderNumber ?? "",
+        seller: {
+          storeName: sellerStoreName,
+          city: null,
+        },
+      },
     },
   })
 }

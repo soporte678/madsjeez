@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
     where.province = { contains: province, mode: "insensitive" }
   }
 
-  const shipments = await prisma.flashShipment.findMany({
+  const rawShipments = await prisma.flashShipment.findMany({
     where,
     select: {
       id: true,
@@ -41,11 +41,19 @@ export async function GET(req: NextRequest) {
       order: {
         select: {
           orderNumber: true,
-          seller: {
+          items: {
+            take: 1,
             select: {
-              storeName: true,
-              city: true,
-              province: true,
+              product: {
+                select: {
+                  seller: {
+                    select: {
+                      sellerName: true,
+                      name: true,
+                    },
+                  },
+                },
+              },
             },
           },
         },
@@ -53,6 +61,22 @@ export async function GET(req: NextRequest) {
     },
     orderBy: [{ priorityScore: "desc" }, { createdAt: "asc" }],
     take: 50,
+  })
+
+  // Flatten seller data for frontend compatibility
+  const shipments = rawShipments.map((s) => {
+    const seller = s.order?.items?.[0]?.product?.seller
+    return {
+      ...s,
+      order: {
+        orderNumber: s.order?.orderNumber ?? "",
+        seller: {
+          storeName: seller?.sellerName ?? seller?.name ?? null,
+          city: null,
+          province: null,
+        },
+      },
+    }
   })
 
   return NextResponse.json({ shipments })

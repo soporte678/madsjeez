@@ -20,7 +20,22 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const shipment = await prisma.flashShipment.findUnique({
     where: { id },
-    include: { order: { select: { sellerId: true } } },
+    include: {
+      order: {
+        include: {
+          items: {
+            take: 1,
+            select: {
+              product: {
+                select: {
+                  sellerId: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
   })
 
   if (!shipment) {
@@ -28,7 +43,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   // Solo el vendedor dueño del envío puede marcarlo como listo
-  if (shipment.order.sellerId !== session.user.id) {
+  const sellerId = shipment.order?.items?.[0]?.product?.sellerId
+  if (!sellerId || sellerId !== session.user.id) {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 })
   }
 

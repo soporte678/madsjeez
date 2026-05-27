@@ -15,6 +15,9 @@ export interface FlashAddressData {
   city: string
   province: string
   postalCode: string
+  shippingTier?: string
+  shippingPrice?: number
+  priorityScore?: number
 }
 
 export interface FlashShipmentWithRelations {
