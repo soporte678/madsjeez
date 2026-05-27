@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
       totalGrossSales = sellerOrders
         .filter((o: any) => ['PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED'].includes(o.status))
         .reduce((sum: number, o: any) => {
-          const orderTotal = o.items?.reduce((s: number, i: any) => s + ((i.price || 0) * (i.quantity || 1)), 0) || 0;
+          const orderTotal = o.items?.reduce((s: number, i: any) => s + ((Number(i.price) || 0) * (i.quantity || 1)), 0) || 0;
           return sum + orderTotal;
         }, 0);
 
@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
       salesLast7Days = sellerOrders
         .filter((o: any) => new Date(o.createdAt) >= sevenDaysAgo && ['PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED'].includes(o.status))
         .reduce((sum: number, o: any) => {
-          const orderTotal = o.items?.reduce((s: number, i: any) => s + ((i.price || 0) * (i.quantity || 1)), 0) || 0;
+          const orderTotal = o.items?.reduce((s: number, i: any) => s + ((Number(i.price) || 0) * (i.quantity || 1)), 0) || 0;
           return sum + orderTotal;
         }, 0);
 
@@ -101,7 +101,7 @@ export async function GET(request: NextRequest) {
           return d >= fourteenDaysAgo && d < sevenDaysAgo && ['PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED'].includes(o.status);
         })
         .reduce((sum: number, o: any) => {
-          const orderTotal = o.items?.reduce((s: number, i: any) => s + ((i.price || 0) * (i.quantity || 1)), 0) || 0;
+          const orderTotal = o.items?.reduce((s: number, i: any) => s + ((Number(i.price) || 0) * (i.quantity || 1)), 0) || 0;
           return sum + orderTotal;
         }, 0);
     } catch (e) {
@@ -234,7 +234,7 @@ export async function GET(request: NextRequest) {
       moneyToSettle = sellerOrders
         .filter((o: any) => o.status === 'DELIVERED' || o.status === 'COMPLETED')
         .reduce((sum: number, o: any) => {
-          const orderTotal = o.items?.reduce((s: number, i: any) => s + ((i.price || 0) * (i.quantity || 1)), 0) || 0;
+          const orderTotal = o.items?.reduce((s: number, i: any) => s + ((Number(i.price) || 0) * (i.quantity || 1)), 0) || 0;
           // Restar comisión del 15% aprox
           return sum + (orderTotal * 0.85);
         }, 0);
