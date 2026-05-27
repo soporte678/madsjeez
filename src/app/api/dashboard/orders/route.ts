@@ -62,11 +62,11 @@ export async function GET(request: Request) {
         items: o.items.map((it) => ({
           id: it.id,
           quantity: it.quantity,
-          price: it.price,
+          price: Number(it.price),
           product: {
             id: it.product.id,
             title: it.product.title,
-            price: it.price,
+            price: Number(it.price),
             images: it.product.images,
           },
         })),
@@ -129,11 +129,11 @@ export async function GET(request: Request) {
         items: o.items.map((it) => ({
           id: it.id,
           quantity: it.quantity,
-          price: it.price,
+          price: Number(it.price),
           product: {
             id: null as string | null,
             title: it.product.title,
-            price: it.price,
+            price: Number(it.price),
             images: it.product.images,
             seller: it.product.seller,
           },
