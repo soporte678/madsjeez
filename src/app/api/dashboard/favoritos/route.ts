@@ -132,13 +132,13 @@ export async function GET(request: NextRequest) {
           sellerName: f.product.seller?.name || null,
           verified: f.product.seller?.subscriptionTier === 'GOLD' || f.product.seller?.subscriptionTier === 'PLATINUM',
           oldPrice: f.product.comparePrice,
-          price: f.product.price,
-          discount: calculateDiscount(f.product.comparePrice, f.product.price),
-          installments: f.product.price > 50000
+          price: Number(f.product.price),
+          discount: calculateDiscount(Number(f.product.comparePrice), Number(f.product.price)),
+          installments: Number(f.product.price) > 50000
             ? `Mismo precio en cuotas`
             : null,
           shipping: f.product.stock > 0 ? 'Envío gratis' : null,
-          fullShipping: f.product.price > 100000,
+          fullShipping: Number(f.product.price) > 100000,
         }));
       }
     } catch (dbError) {
