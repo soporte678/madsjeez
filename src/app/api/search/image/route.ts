@@ -91,7 +91,7 @@ Si no podés identificar el producto, devolvé:
         .map((p: any) => ({
           id: p.id,
           title: p.title,
-          price: p.price,
+          price: Number(p.price),
           original_price: p.original_price,
           condition: p.condition,
           shipping_free: Boolean(p.free_shipping ?? p.shipping_free),
