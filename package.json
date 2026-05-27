@@ -32,7 +32,19 @@
     "ollama:tunnel": "node scripts/update-ollama-tunnel.mjs",
     "ollama:tunnel:watch": "node scripts/update-ollama-tunnel.mjs --watch",
     "jarvis:dispatch": "node scripts/jarvis-dispatch.mjs",
-    "jarvis:desktop": "npm run dev --prefix apps/jarvis-desktop-agent"
+    "jarvis:desktop": "npm run dev --prefix apps/jarvis-desktop-agent",
+    "mcp:check": "echo '=== MCP Config ===' && cat .cursor/mcp.json && echo '=== Servers ===' && npx -y @github/mcp-server --version 2>/dev/null || echo 'GitHub MCP: instalando...'",
+    "mcp:github": "powershell -ExecutionPolicy Bypass -File scripts/mcp-github-wrapper.ps1",
+    "mcp:github:check": "node -e \"const t=process.env.GITHUB_PERSONAL_ACCESS_TOKEN; console.log(t?'Token OK: '+t.slice(0,8)+'...':'Token NO configurado. Setea GITHUB_PERSONAL_ACCESS_TOKEN')\"",
+    "mcp:railway": "railway mcp run",
+    "mcp:railway:check": "railway whoami 2>/dev/null || echo 'Railway: ejecuta railway login primero'",
+    "railway:install": "npm install -g @railway/cli",
+    "railway:login": "railway login",
+    "railway:status": "railway status",
+    "railway:logs": "railway logs",
+    "railway:variables": "railway variables",
+    "railway:deploy": "railway up",
+    "railway:link": "railway link"
   },
   "dependencies": {
     "@google-analytics/data": "^6.0.0",
