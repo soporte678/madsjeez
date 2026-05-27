@@ -60,7 +60,7 @@ export async function POST(request: Request) {
 
     for (const row of products) {
       const title = (row.title || "").trim()
-      if (!title || row.price <= 0) { skipped++; continue }
+      if (!title || Number(row.price) <= 0) { skipped++; continue }
 
       if (existingTitles.has(title.toLowerCase())) {
         skipped++
