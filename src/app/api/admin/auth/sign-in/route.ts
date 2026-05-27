@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { getSupabaseService } from "@/lib/supabase/service";
+import { rateLimit } from "@/lib/rate-limit";
 import {
   ADMIN_SESSION_COOKIE,
   createAdminSession,
@@ -19,6 +20,16 @@ function applyPendingCookies(
  * Login admin: sesión Supabase en servidor (env en runtime) + chequeo admin con service role (sin RLS circular).
  */
 export async function POST(request: NextRequest) {
+  // Rate limiting: max 5 intentos por IP cada 10 minutos
+  const ip = request.headers.get("x-forwarded-for") || "unknown"
+  const { allowed, retryAfter } = rateLimit(`admin-signin:${ip}`, 5, 10 * 60 * 1000)
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Demasiados intentos. Intenta de nuevo en unos minutos." },
+      { status: 429, headers: { "Retry-After": String(retryAfter) } }
+    )
+  }
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
   if (!url || !anon) {

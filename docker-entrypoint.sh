@@ -3,7 +3,7 @@ set -e
 
 # Next.js standalone usa la variable HOSTNAME para el bind. En Docker/K8s/Railway
 # HOSTNAME suele ser el nombre del contenedor (p. ej. replica-xyz), no una interfaz
-# válida → el servidor no escucha en 0.0.0.0 y el healthcheck da "service unavailable".
+# valida -> el servidor no escucha en 0.0.0.0 y el healthcheck da "service unavailable".
 export HOSTNAME="0.0.0.0"
 
 PORT="${PORT:-3000}"
@@ -17,32 +17,50 @@ if [ ! -f "./server.js" ]; then
   exit 1
 fi
 
-# Migraciones: por defecto `node migrate.mjs` en **segundo plano** para que Next escuche
-# de inmediato y el healthcheck de Railway (`/railway-health.txt`) no falle mientras migrate
-# corre (puede tardar hasta ~300s con pooler o red lenta).
-#
-# Si necesitás que el proceso no sirva tráfico hasta tener schema al día: SKIP_DB_MIGRATIONS_ON_BOOT=true
-# y ejecutá migrate en un job aparte con URL directa :5432.
+# Graceful shutdown: capturar SIGTERM para cerrar conexiones limpiamente
+cleanup() {
+  echo "INFO: Señal de terminación recibida. Cerrando servidor..."
+  kill -TERM "$child" 2>/dev/null || true
+  wait "$child" 2>/dev/null || true
+  echo "INFO: Servidor cerrado correctamente."
+  exit 0
+}
+trap cleanup TERM INT
+
+# Migraciones: por defecto ejecutar ANTES de arrancar el servidor.
+# Si necesitas que el proceso no bloquee en migrate: SKIP_DB_MIGRATIONS_ON_BOOT=true
+# y ejecuta migrate en un job aparte con URL directa :5432.
+MIGRATE_EXIT_CODE=0
 if [ "$SKIP_DB_MIGRATIONS_ON_BOOT" = "true" ]; then
   echo "INFO: SKIP_DB_MIGRATIONS_ON_BOOT=true — sin migrate en boot"
 elif [ -n "$DATABASE_URL" ] && [ -f "./migrate.mjs" ]; then
-  echo "INFO: migrate en background (máx ~300s); Next arranca ya para healthchecks."
-  (
-    set +e
+  echo "INFO: Ejecutando migraciones (max 300s)..."
   if command -v timeout >/dev/null 2>&1; then
     timeout 300 node ./migrate.mjs
+    MIGRATE_EXIT_CODE=$?
   else
     node ./migrate.mjs
+    MIGRATE_EXIT_CODE=$?
   fi
-    mig=$?
-    if [ "$mig" != 0 ]; then
-      echo "WARN: migrate deploy terminó con código $mig (timeout=124). Revisá logs [migrate]: si ves db.*.supabase.co y P1001, quitá DIRECT_DATABASE_URL con host db.* o redeploy con migrate.mjs actual (session pooler :5432). O ejecutá migrate a mano con URI Session del panel Supabase."
-    else
-      echo "INFO: migrate deploy completó OK."
-    fi
-  ) &
+
+  if [ "$MIGRATE_EXIT_CODE" -eq 124 ]; then
+    echo "WARN: migrate timeout (124). El servidor arrancara con schema posiblemente desactualizado."
+    echo "      Considera usar SKIP_DB_MIGRATIONS_ON_BOOT=true y ejecutar migrate manualmente."
+  elif [ "$MIGRATE_EXIT_CODE" -ne 0 ]; then
+    echo "ERROR: migrate deploy fallo con codigo $MIGRATE_EXIT_CODE."
+    echo "       El servidor NO arrancara para prevenir corrupcion de datos."
+    echo "       Revisa logs: si ves db.*.supabase.co y P1001, quita DIRECT_DATABASE_URL con host db.*"
+    echo "       o redeploy con migrate.mjs actual (session pooler :5432)."
+    exit $MIGRATE_EXIT_CODE
+  else
+    echo "INFO: migrate deploy completo OK."
+  fi
 elif [ -n "$DATABASE_URL" ]; then
   echo "WARN: DATABASE_URL definida pero falta ./migrate.mjs; omitiendo migrate"
 fi
 
-exec node server.js
+# Si llegamos aqui, las migraciones fueron exitosas (o skippeadas). Arrancar servidor.
+echo "INFO: Iniciando servidor Next.js standalone..."
+node server.js &
+child=$!
+wait "$child"

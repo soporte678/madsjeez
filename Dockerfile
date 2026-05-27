@@ -34,6 +34,9 @@ WORKDIR /app
 # bookworm-slim ya trae libssl3 pero no el CLI — instalarlo resuelve los warnings.
 RUN apt-get update -y && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
 
+# Crear usuario no-root para seguridad
+RUN groupadd -r nodejs && useradd -r -g nodejs -s /bin/false nodeuser
+
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
@@ -54,6 +57,10 @@ COPY --from=builder /app/docs ./docs
 
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN chmod +x /app/docker-entrypoint.sh
+
+# Asegurar permisos correctos para el usuario no-root
+RUN chown -R nodeuser:nodejs /app
+USER nodeuser
 
 EXPOSE 3000
 

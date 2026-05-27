@@ -117,7 +117,7 @@ model User {
   totalSales        Int             @default(0) @map("total_sales")
   successfulSales   Int             @default(0) @map("successful_sales")
   canceledSales     Int             @default(0) @map("canceled_sales")
-  totalRevenue      Float           @default(0) @map("total_revenue")
+  totalRevenue      Decimal         @default(0) @db.Decimal(15, 2) @map("total_revenue")
   
   // Métricas de reclamos y disputas
   openClaims        Int             @default(0) @map("open_claims")
@@ -143,7 +143,7 @@ model User {
   subscriptionExpiry DateTime?        @map("subscription_expiry")
   
   // Métricas para suscriptores
-  monthlyRevenue     Float?   @map("monthly_revenue")
+  monthlyRevenue     Decimal? @map("monthly_revenue") @db.Decimal(15, 2)
   monthlyViews       Int?     @map("monthly_views")
   conversionRate     Float?   @map("conversion_rate")
 
@@ -204,6 +204,10 @@ model User {
   supportTickets    SupportTicket[]     @relation("UserTickets")
   supportMessages   SupportMessage[]    @relation("UserSupportMessages")
   
+  // Índices optimizados para consultas frecuentes
+  @@index([isSeller])                    // Para queries de vendedores
+  @@index([storeSlug])                   // Para páginas de tienda
+  @@index([reputationColor])             // Para filtros de reputación
   @@map("users")
 }
 
@@ -228,8 +232,8 @@ model Product {
   id          String   @id @default(cuid())
   title       String
   description String   @db.Text
-  price       Float
-  comparePrice Float?  @map("compare_price")
+  price       Decimal  @db.Decimal(12, 2)
+  comparePrice Decimal? @db.Decimal(12, 2)  @map("compare_price")
   stock       Int      @default(0)
   sku         String?
   condition   String   @default("new") // new, used, refurbished
@@ -245,9 +249,9 @@ model Product {
   sales       Int      @default(0)
   
   // Campos para publicaciones tipo Mercado Libre
-  originalPrice  Float?    @map("original_price")
+  originalPrice  Decimal? @db.Decimal(12, 2)    @map("original_price")
   freeShipping   Boolean   @default(false) @map("free_shipping")
-  shippingCost   Float     @default(0) @map("shipping_cost")
+  shippingCost   Decimal   @default(0) @db.Decimal(12, 2) @map("shipping_cost")
   qualityScore   Int       @default(0) @map("quality_score")
   hasVideo       Boolean   @default(false) @map("has_video")
   
@@ -292,6 +296,12 @@ model Product {
   @@index([isActive])
   @@index([isBoosted])
   @@index([meliOAuthAccountId])
+  // Índices optimizados para consultas frecuentes
+  @@index([isActive, stock, createdAt])  // Para listados públicos ordenados
+  @@index([sellerId, isActive])          // Para dashboards de vendedor
+  @@index([categoryId, isActive])        // Para páginas de categoría
+  @@index([title])                       // Para búsquedas (recomendado: cambiar a pg_trgm)
+  @@index([createdAt])                   // Para ordenamiento general
   @@map("products")
 }
 
@@ -341,6 +351,7 @@ model ProductImage {
   productId String  @map("product_id")
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   
+  @@index([productId, order])            // Para carga ordenada de imágenes
   @@map("product_images")
 }
 
@@ -370,10 +381,10 @@ model Order {
   status        OrderStatus @default(PENDING)
   
   // Totales
-  subtotal      Float
-  shippingCost  Float       @default(0) @map("shipping_cost")
-  tax           Float       @default(0)
-  total         Float
+  subtotal      Decimal @db.Decimal(12, 2)
+  shippingCost  Decimal     @default(0) @db.Decimal(12, 2) @map("shipping_cost")
+  tax           Decimal     @default(0) @db.Decimal(12, 2)
+  total         Decimal @db.Decimal(12, 2)
   
   // Dirección de envío
   shippingName      String @map("shipping_name")
@@ -402,13 +413,16 @@ model Order {
   updatedAt     DateTime    @updatedAt @map("updated_at")
   
   @@index([buyerId])
+  // Índices optimizados para consultas frecuentes
+  @@index([buyerId, status, createdAt])  // Para "mis compras"
+  @@index([status, createdAt])           // Para queries admin
   @@map("orders")
 }
 
 model OrderItem {
   id        String  @id @default(cuid())
   quantity  Int
-  price     Float   // Precio al momento de la compra
+  price     Decimal @db.Decimal(12, 2) // Precio al momento de la compra
   
   orderId   String  @map("order_id")
   order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
@@ -416,6 +430,8 @@ model OrderItem {
   productId String  @map("product_id")
   product   Product @relation(fields: [productId], references: [id])
   
+  @@index([orderId])                     // Para joins
+  @@index([productId])                   // Para analytics de productos
   @@map("order_items")
 }
 
@@ -435,7 +451,7 @@ model Cart {
 model CartItem {
   id        String   @id @default(cuid())
   quantity  Int      @default(1)
-  price     Float    // Precio al momento de agregar al carrito
+  price     Decimal  @db.Decimal(12, 2) // Precio al momento de agregar al carrito
 
   cartId    String   @map("cart_id")
   cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
@@ -453,7 +469,7 @@ model CartItem {
 model Payment {
   id            String   @id @default(cuid())
   stripeId      String   @unique @map("stripe_id")
-  amount        Float
+  amount        Decimal @db.Decimal(12, 2)
   currency      String   @default("clp")
   status        String
   
@@ -482,6 +498,8 @@ model Review {
 
   createdAt   DateTime @default(now()) @map("created_at")
 
+  @@index([productId, createdAt])        // Para reviews en página de producto
+  @@index([reviewerId])                  // Para reputación del vendedor
   @@map("reviews")
 }
 
@@ -505,11 +523,11 @@ model Subscription {
   id              String           @id @default(cuid())
   tier            SubscriptionTier
   status          String           @default("active") // active, cancelled, expired
-  price           Float            // Precio base mensual
+  price           Decimal          @db.Decimal(12, 2) // Precio base mensual
   
   // Ciclo de facturación (1, 6 o 12 meses)
   billingCycle    Int              @default(1) @map("billing_cycle")
-  totalAmount     Float            @map("total_amount") // Monto total con descuento aplicado
+  totalAmount     Decimal          @map("total_amount") @db.Decimal(12, 2) // Monto total con descuento aplicado
   discountPercent Float            @default(0) @map("discount_percent") // Porcentaje de descuento aplicado (0, 20, 30)
   
   // Período
@@ -536,7 +554,7 @@ model Subscription {
 
 model ProductBoost {
   id          String   @id @default(cuid())
-  cost        Float    // Costo calculado según reputación
+  cost        Decimal  @db.Decimal(12, 2) // Costo calculado según reputación
   duration    Int      // Días de duración
   startDate   DateTime @map("start_date")
   endDate     DateTime @map("end_date")
@@ -562,12 +580,12 @@ model SiteConfig {
   secondaryColor        String   @default("#3483FA") @map("secondary_color")
   
   // Precios de suscripción
-  pricePlata            Float    @default(9999) @map("price_plata")
-  priceGold             Float    @default(19999) @map("price_gold")
-  pricePlatinum         Float    @default(49999) @map("price_platinum")
+  pricePlata            Decimal  @default(9999) @db.Decimal(12, 2) @map("price_plata")
+  priceGold             Decimal  @default(19999) @db.Decimal(12, 2) @map("price_gold")
+  pricePlatinum         Decimal  @default(49999) @db.Decimal(12, 2) @map("price_platinum")
   
   // Costo base de impulso
-  boostBaseCost         Float    @default(9999) @map("boost_base_cost")
+  boostBaseCost         Decimal  @default(9999) @db.Decimal(12, 2) @map("boost_base_cost")
   
   // Comisiones
   commissionFree        Float    @default(0.15) @map("commission_free")
@@ -610,6 +628,9 @@ model Question {
   @@index([productId])
   @@index([buyerId])
   @@index([status])
+  // Índices optimizados para consultas frecuentes
+  @@index([productId, createdAt])        // Para preguntas en página de producto
+  @@index([answeredBy, status])          // Para panel de preguntas del vendedor (answeredBy = seller)
   @@map("questions")
 }
 
@@ -639,6 +660,8 @@ model Notification {
   @@index([type])
   @@index([isRead])
   @@index([createdAt])
+  // Índice compuesto optimizado
+  @@index([userId, isRead, createdAt])   // Para "mis notificaciones"
   @@map("notifications")
 }
 
@@ -685,7 +708,7 @@ model Claim {
   resolvedBy  String?     @map("resolved_by")
   
   // Refund amount if applicable
-  refundAmount Float?     @map("refund_amount")
+  refundAmount Decimal?   @map("refund_amount") @db.Decimal(12, 2)
   
   createdAt   DateTime    @default(now()) @map("created_at")
   updatedAt   DateTime    @updatedAt @map("updated_at")
@@ -819,8 +842,8 @@ model ProductVariation {
   attributes  Json
   
   // Pricing
-  price       Float
-  comparePrice Float?  @map("compare_price")
+  price       Decimal  @db.Decimal(12, 2)
+  comparePrice Decimal? @db.Decimal(12, 2)  @map("compare_price")
   
   // Inventory
   stock       Int      @default(0)
@@ -894,14 +917,14 @@ model Campaign {
   
   // Discount
   discountType String        @map("discount_type") // percentage, fixed
-  discountValue Float        @map("discount_value")
+  discountValue Decimal      @map("discount_value") @db.Decimal(12, 2)
   
   // For quantity discounts
   minQuantity Int?           @map("min_quantity")
   
   // Budget
-  maxBudget   Float?         @map("max_budget")
-  spentBudget Float          @default(0) @map("spent_budget")
+  maxBudget   Decimal?       @map("max_budget") @db.Decimal(12, 2)
+  spentBudget Decimal        @default(0) @map("spent_budget") @db.Decimal(12, 2)
   
   // Products in campaign
   products    CampaignProduct[]
@@ -931,7 +954,7 @@ model CampaignProduct {
   product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
   
   // Override campaign discount for this product
-  discountOverride Float? @map("discount_override")
+  discountOverride Decimal? @db.Decimal(12, 2) @map("discount_override")
   
   createdAt   DateTime  @default(now()) @map("created_at")
   
@@ -988,11 +1011,11 @@ model Coupon {
   
   // Discount
   discountType String  @map("discount_type") // percentage, fixed
-  discountValue Float  @map("discount_value")
+  discountValue Decimal @db.Decimal(12, 2) @map("discount_value")
   
   // Limits
-  minPurchase Float?   @map("min_purchase")
-  maxDiscount Float?   @map("max_discount") // For percentage coupons
+  minPurchase Decimal? @db.Decimal(12, 2) @map("min_purchase")
+  maxDiscount Decimal? @db.Decimal(12, 2) @map("max_discount") // For percentage coupons
   
   // Usage limits
   maxUses     Int?     @map("max_uses")
@@ -1007,6 +1030,8 @@ model Coupon {
   // Reputación y Métricas
   reputationScore Int     @default(0) @map("reputation_score")
   
+  @@index([code])                        // Búsqueda por código
+  @@index([expiresAt])                   // Para validación de vigencia
   @@map("coupons")
 }
 
@@ -1026,7 +1051,7 @@ model ReputationHistory {
   totalSales        Int    @map("total_sales")
   successfulSales   Int    @map("successful_sales")
   canceledSales     Int    @map("canceled_sales")
-  totalRevenue      Float  @map("total_revenue")
+  totalRevenue      Decimal @db.Decimal(15, 2) @map("total_revenue")
   
   // Reclamos y disputas
   openClaims        Int    @map("open_claims")
@@ -1063,7 +1088,7 @@ model MadsliderLevel {
   // Requisitos mínimos
   minSales          Int     @default(0) @map("min_sales")
   minDaysAsSeller   Int     @default(0) @map("min_days_as_seller")
-  minRevenue        Float   @default(0) @map("min_revenue")
+  minRevenue        Decimal @default(0) @db.Decimal(15, 2) @map("min_revenue")
   
   // Límites máximos para tasas negativas
   maxClaimRate      Float   @default(1.0) @map("max_claim_rate") // 0.1 = 10%
@@ -1119,7 +1144,7 @@ model MeliAdsCampaignSnapshot {
   name           String?
   status         String?
   strategy       String?
-  budget         Float?
+  budget         Decimal? @db.Decimal(12, 2)
   roasTarget     Float?   @map("roas_target")
   metrics        Json?
   metricsPrev    Json?    @map("metrics_prev")
@@ -1340,7 +1365,7 @@ model FlashShipment {
 
   // Tier de envío Flash (flash_local, flash_plus, flash_normal)
   shippingTier     String?              @map("shipping_tier")
-  shippingPrice    Float?               @map("shipping_price")
+  shippingPrice    Decimal?             @map("shipping_price") @db.Decimal(12, 2)
   priorityScore    Int                  @default(50) @map("priority_score")
 
   // Pago del envío al conductor
@@ -1453,10 +1478,10 @@ model FlashDriverEarning {
   shipmentId   String?            @unique @map("shipment_id")
   type         String             @default("DELIVERY")
   description  String
-  grossAmount  Float              @map("gross_amount")
-  platformFee  Float              @default(0) @map("platform_fee")
-  netAmount    Float              @map("net_amount")
-  tipAmount    Float              @default(0) @map("tip_amount")
+  grossAmount  Decimal            @map("gross_amount") @db.Decimal(12, 2)
+  platformFee  Decimal            @default(0) @map("platform_fee") @db.Decimal(12, 2)
+  netAmount    Decimal            @map("net_amount") @db.Decimal(12, 2)
+  tipAmount    Decimal            @default(0) @map("tip_amount") @db.Decimal(12, 2)
   extras       Json?
   status       FlashEarningStatus @default(PENDING)
   paidAt       DateTime?          @map("paid_at")
@@ -1488,7 +1513,7 @@ model FlashDriverBlock {
   zone              String
   startsAt          DateTime         @map("starts_at")
   endsAt            DateTime         @map("ends_at")
-  guaranteedPay     Float            @map("guaranteed_pay")
+  guaranteedPay     Decimal          @map("guaranteed_pay") @db.Decimal(12, 2)
   estimatedPackages Int              @map("estimated_packages")
   pickupPoint       String           @map("pickup_point")
   status            FlashBlockStatus @default(AVAILABLE)
@@ -1591,7 +1616,7 @@ model FlashShippingOption {
   code          String   @unique                    // flash_local | flash_plus | flash_normal
   name          String                               // "Flash Local — Entrega lo antes posible"
   description   String
-  price         Float                                // ARS
+  price         Decimal                              @db.Decimal(12, 2) // ARS
   priority      Int      @default(50)                // flash_plus=100, flash_local=70, flash_normal=50
   coverageType  String   @map("coverage_type")       // local_radius | priority_radius | flex_zone
   radiusKm      Float?   @map("radius_km")           // radio en km para local/plus
@@ -1626,7 +1651,7 @@ model FlashDriverSettlement {
   shipment          FlashShipment @relation("ShipmentSettlement", fields: [shipmentId], references: [id], onDelete: Cascade)
   driverId          String    @map("driver_id")
   driver            FlashDriver @relation(fields: [driverId], references: [id], onDelete: Cascade)
-  amount            Float
+  amount            Decimal @db.Decimal(12, 2)
   provider          String    @default("mercadopago")
   status            String    @default("pending") // pending | processing | settled | failed | refunded
   externalPaymentId String?   @map("external_payment_id")
@@ -2194,3 +2219,55 @@ model JarvisAiLog {
   @@index([tier, createdAt])
   @@map("jarvis_ai_logs")
 }
+
+// ============================================
+// MODELOS DE AUDITORÍA Y ANALYTICS
+// ============================================
+
+// Historial de precios de productos
+model PriceHistory {
+  id        String   @id @default(cuid())
+  productId String   @map("product_id")
+  oldPrice  Decimal  @map("old_price") @db.Decimal(12, 2)
+  newPrice  Decimal  @map("new_price") @db.Decimal(12, 2)
+  changedBy String?  @map("changed_by") // userId o 'system'
+  reason    String?  // motivo del cambio
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([productId, createdAt])
+  @@map("price_history")
+}
+
+// Auditoría de cambios críticos
+model AuditLog {
+  id         String   @id @default(cuid())
+  action     String   // 'CREATE', 'UPDATE', 'DELETE', 'LOGIN', etc.
+  entityType String   @map("entity_type") // 'Product', 'Order', 'User', etc.
+  entityId   String   @map("entity_id")
+  userId     String?  @map("user_id")
+  oldValues  Json?    @map("old_values")
+  newValues  Json?    @map("new_values")
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent") @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([entityType, entityId, createdAt])
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
+  @@map("audit_log")
+}
+
+// Vistas de productos (analytics)
+model ProductView {
+  id        String   @id @default(cuid())
+  productId String   @map("product_id")
+  userId    String?  @map("user_id") // null = usuario anónimo
+  ipAddress String?  @map("ip_address")
+  source    String?  // 'search', 'category', 'direct', 'recommendation'
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([productId, createdAt])
+  @@index([createdAt])
+  @@map("product_views")
+}
+

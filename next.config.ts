@@ -3,7 +3,8 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   output: "standalone",
   typescript: {
-    ignoreBuildErrors: true,
+    // ignoreBuildErrors eliminado — los errores de TypeScript deben corregirse, no silenciarse
+    // Si hay errores de build, fixear el código fuente, no silenciar aquí
   },
   turbopack: {
     root: __dirname,
@@ -46,6 +47,30 @@ const nextConfig: NextConfig = {
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
+          { key: "X-DNS-Prefetch-Control", value: "on" },
+          {
+            key: "Content-Security-Policy",
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://*.mercadopago.com https://*.google-analytics.com https://*.googletagmanager.com",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "img-src 'self' blob: data: https://*.supabase.co https://images.unsplash.com https://cdn-icons-png.flaticon.com https://placehold.co https://lh3.googleusercontent.com https://avatars.githubusercontent.com https://*.google-analytics.com",
+              "font-src 'self' https://fonts.gstatic.com",
+              "connect-src 'self' https://*.supabase.co https://*.mercadopago.com wss://*.supabase.co https://*.google-analytics.com https://*.googletagmanager.com",
+              "frame-src 'self' https://*.mercadopago.com https://*.stripe.com",
+              "media-src 'self'",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+              "frame-ancestors 'none'",
+              "upgrade-insecure-requests",
+            ].join("; "),
+          },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=(self), payment=(self), usb=(), magnetometer=(), gyroscope=()",
+          },
         ],
       },
       {
