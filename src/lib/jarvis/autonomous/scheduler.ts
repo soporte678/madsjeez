@@ -52,21 +52,17 @@ const MS_PER_MINUTE = 60 * 1000;
 const MS_PER_HOUR = 60 * MS_PER_MINUTE;
 const MS_PER_DAY = 24 * MS_PER_HOUR;
 
-/**
- * Converts a small set of cron-like expressions into millisecond intervals.
- *
- * Supported patterns:
- *   - '*/5 * * * *'  -> every 5 minutes
- *   - '*/15 * * * *' -> every 15 minutes
- *   - '*/30 * * * *' -> every 30 minutes
- *   - '0 * * * *'    -> every hour
- *   - '0 */4 * * *'  -> every 4 hours
- *   - '0 */6 * * *'  -> every 6 hours
- *   - '0 */12 * * *' -> every 12 hours
- *   - '0 0 * * *'    -> every day at midnight
- *
- * Any unsupported expression falls back to 1 hour so tasks still run.
- */
+// Converts a small set of cron-like expressions into millisecond intervals.
+// Supported patterns (cron-like):
+//   - every 5 minutes:  */5 * * * *
+//   - every 15 minutes: */15 * * * *
+//   - every 30 minutes: */30 * * * *
+//   - every hour:       0 * * * *
+//   - every 4 hours:    0 */4 * * *
+//   - every 6 hours:    0 */6 * * *
+//   - every 12 hours:   0 */12 * * *
+//   - every day:        0 0 * * *
+// Any unsupported expression falls back to 1 hour so tasks still run.
 function parseInterval(expression: string): number {
   switch (expression) {
     case "*/5 * * * *":
