@@ -1,8 +1,11 @@
 {
   "mcpServers": {
     "railway": {
-      "command": "railway",
-      "args": ["mcp", "run"]
+      "command": "powershell",
+      "args": ["-ExecutionPolicy", "Bypass", "-File", "scripts/mcp-railway-wrapper.ps1"],
+      "env": {
+        "RAILWAY_CLIENT_ID": "rlwy_oaci_cZ8RpvMGJQbwVKXfUKx8ZyDc"
+      }
     },
     "supabase": {
       "command": "npx",
