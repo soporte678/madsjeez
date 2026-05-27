@@ -39,7 +39,7 @@ export async function GET(req: Request) {
         title: r.title,
         sku: r.sku,
         stock: r.stock,
-        price: r.price,
+        price: Number(r.price),
         isActive: r.isActive,
         thumbnailUrl: r.images[0]?.url ?? null,
       })),
