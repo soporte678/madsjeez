@@ -3,6 +3,11 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSupabaseService } from "@/lib/supabase/service"
 import { hasValidProductImageUrl, primaryImageUrlFromRows } from "@/lib/productVisibility"
 
+/** Escapa caracteres wildcard de ILIKE para evitar SQL injection via wildcards */
+function escapeIlikeTerm(term: string): string {
+  return term.replace(/[%_\\]/g, "\\$&")
+}
+
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData()
@@ -70,7 +75,7 @@ Si no podés identificar el producto, devolvé:
     let products: any[] = []
 
     if (keywords.length > 0) {
-      const orConditions = keywords.map((k: string) => `title.ilike.%${k}%`).join(",")
+      const orConditions = keywords.map((k: string) => `title.ilike.%${escapeIlikeTerm(k)}%`).join(",")
 
       const { data } = await supabase
         .from("products")

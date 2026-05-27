@@ -3,6 +3,11 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSupabaseService } from "@/lib/supabase/service"
 import { hasValidProductImageUrl, primaryImageUrlFromRows } from "@/lib/productVisibility"
 
+/** Escapa caracteres wildcard de ILIKE para evitar SQL injection via wildcards */
+function escapeIlikeTerm(term: string): string {
+  return term.replace(/[%_\\]/g, "\\$&")
+}
+
 export async function POST(req: NextRequest) {
   try {
     let supabase
@@ -78,7 +83,7 @@ Responde SOLO con el JSON válido, sin markdown ni explicación.`
 
     // Build OR filter for keywords
     if (keywords.length > 0) {
-      const orConditions = keywords.map(k => `title.ilike.%${k}%`).join(",")
+      const orConditions = keywords.map((k: string) => `title.ilike.%${escapeIlikeTerm(k)}%`).join(",")
       dbQuery = dbQuery.or(orConditions)
     }
 

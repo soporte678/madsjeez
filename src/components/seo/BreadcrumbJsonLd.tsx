@@ -1,29 +1,32 @@
-import { SITE_URL } from "@/lib/seo/site";
+import React from "react";
 
-export type BreadcrumbItem = { name: string; path: string };
-
-function jsonLd(data: unknown) {
-  return JSON.stringify(data).replace(/</g, "\\u003c");
+interface BreadcrumbItem {
+  name: string;
+  url: string;
 }
 
-export function BreadcrumbJsonLd({ items }: { items: BreadcrumbItem[] }) {
-  if (items.length === 0) return null;
+interface BreadcrumbJsonLdProps {
+  items: BreadcrumbItem[];
+}
 
-  const schema = {
+export function BreadcrumbJsonLd({ items }: BreadcrumbJsonLdProps) {
+  const jsonLd = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: items.map((item, index) => ({
       "@type": "ListItem",
       position: index + 1,
       name: item.name,
-      item: `${SITE_URL}${item.path.startsWith("/") ? item.path : `/${item.path}`}`,
+      item: item.url,
     })),
   };
 
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: jsonLd(schema) }}
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
     />
   );
 }
+
+export default BreadcrumbJsonLd;

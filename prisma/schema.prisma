@@ -231,6 +231,7 @@ model Category {
 model Product {
   id          String   @id @default(cuid())
   title       String
+  slug        String?  @unique
   description String   @db.Text
   price       Decimal  @db.Decimal(12, 2)
   comparePrice Decimal? @db.Decimal(12, 2)  @map("compare_price")

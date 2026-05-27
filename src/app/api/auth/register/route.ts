@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 import { rateLimit } from "@/lib/rate-limit"
+import { logger } from "@/lib/logger"
 
 export async function POST(req: Request) {
   // Rate limiting: max 3 intentos por IP cada 15 minutos
@@ -62,7 +63,7 @@ export async function POST(req: Request) {
       }
     })
   } catch (error) {
-    console.error("Error en registro:", error)
+    logger.error("Error en registro:", error)
     return NextResponse.json(
       { error: "Error al crear usuario" },
       { status: 500 }

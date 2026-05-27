@@ -2,36 +2,43 @@ import { NextRequest, NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 import { adminJson, requireFlashAdmin } from "@/lib/flash/auth"
+import { logger } from "@/lib/logger"
 
 // GET — lista choferes (solo admin del panel /admin)
 export async function GET(req: NextRequest) {
-  const admin = await requireFlashAdmin(req)
-  if (admin instanceof NextResponse) return admin
+  try {
+    const admin = await requireFlashAdmin(req)
+    if (admin instanceof NextResponse) return admin
 
-  const { searchParams } = new URL(req.url)
-  const filter = searchParams.get("filter")
+    const { searchParams } = new URL(req.url)
+    const filter = searchParams.get("filter")
 
-  const where =
-    filter === "active"
-      ? { isActive: true }
-      : filter === "pending"
-        ? { isActive: false }
-        : {}
+    const where =
+      filter === "active"
+        ? { isActive: true }
+        : filter === "pending"
+          ? { isActive: false }
+          : {}
 
-  const drivers = await prisma.flashDriver.findMany({
-    where,
-    include: {
-      user: { select: { name: true, email: true, image: true } },
-      _count: { select: { shipments: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  })
+    const drivers = await prisma.flashDriver.findMany({
+      where,
+      include: {
+        user: { select: { name: true, email: true, image: true } },
+        _count: { select: { shipments: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    })
 
-  return adminJson(admin, { drivers })
+    return adminJson(admin, { drivers })
+  } catch (error) {
+    logger.error("flash/drivers GET error:", error)
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
+  }
 }
 
 // POST — registra un nuevo chofer (admin): email + contraseña provisional obligatoria
 export async function POST(req: NextRequest) {
+  try {
   const admin = await requireFlashAdmin(req)
   if (admin instanceof NextResponse) return admin
 
@@ -135,4 +142,8 @@ export async function POST(req: NextRequest) {
     },
     { status: 201 }
   )
+  } catch (error) {
+    logger.error("flash/drivers POST error:", error)
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
+  }
 }

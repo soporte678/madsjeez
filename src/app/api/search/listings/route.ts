@@ -134,7 +134,11 @@ function getSearchTokens(query: string | null): string[] {
 }
 
 function sanitizePostgrestTerm(term: string) {
-  return term.replace(/[,%()]/g, " ").trim();
+  // Remueve caracteres peligrosos y escapa wildcards SQL (% _ \) para ILIKE
+  return term
+    .replace(/[,%()]/g, " ")
+    .replace(/[%_\\]/g, "\\$&")
+    .trim();
 }
 
 function buildSupabaseSearchOr(query: string, tokens: string[]) {

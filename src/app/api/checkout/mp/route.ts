@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { supabaseService } from "@/lib/supabase/service";
+import { logger } from "@/lib/logger";
+import { z } from "zod";
 import {
   getProfileUuidByEmail,
   getProfileUuidForPrismaUserId,
@@ -44,6 +46,39 @@ function envPercent(key: string, fallback: number): number {
 }
 
 /**
+ * Schema de validación Zod para el body del checkout.
+ * Previene datos maliciosos o inválidos en los inputs del usuario.
+ */
+const CheckoutBodySchema = z.object({
+  shipping: z.record(z.unknown()).optional(),
+  buyer_email: z.string().email().max(256).optional(),
+  guest_email: z.string().email().max(256).nullable().optional(),
+  guest_phone: z.string().max(64).nullable().optional(),
+  guest_document: z.string().max(32).nullable().optional(),
+  flash: z
+    .object({
+      recipientName: z.string().min(1).max(200),
+      recipientDni: z.string().max(32),
+      recipientPhone: z.string().max(64),
+      street: z.string().min(1).max(300),
+      streetNumber: z.string().min(1).max(50),
+      floor: z.string().max(20).nullable().optional(),
+      apartment: z.string().max(20).nullable().optional(),
+      betweenStreet1: z.string().max(300).optional(),
+      betweenStreet2: z.string().max(300).optional(),
+      city: z.string().min(1).max(200),
+      province: z.string().min(1).max(200),
+      postalCode: z.string().max(20),
+      shippingTier: z.string().max(64).optional(),
+      shippingPrice: z.number().finite().nonnegative().optional(),
+      priorityScore: z.number().int().min(0).max(100).optional(),
+    })
+    .optional(),
+});
+
+type CheckoutBody = z.infer<typeof CheckoutBodySchema>;
+
+/**
  * Checkout Mercado Pago con split tipo marketplace:
  * - Comprador paga: subtotal productos + 50% del envío (buyerShippingShare).
  * - Split seller: neto = subtotal - comisión marketplace sobre producto - comisión afiliado - 50% envío.
@@ -60,7 +95,7 @@ export async function POST(req: Request) {
     const buyerPrismaId = (session.user as { id: string }).id;
     const buyerUuid = await getProfileUuidByEmail(session.user.email);
     if (!buyerUuid) {
-      console.error("checkout/mp buyer profile missing", {
+      logger.error("checkout/mp buyer profile missing", {
         email: session.user.email,
         buyerPrismaId,
       });
@@ -74,14 +109,22 @@ export async function POST(req: Request) {
       );
     }
 
-    const body = (await req.json()) as {
-      shipping?: Record<string, unknown>;
-      buyer_email?: string;
-      guest_email?: string | null;
-      guest_phone?: string | null;
-      guest_document?: string | null;
-      flash?: FlashAddressData & { shippingTier?: string; shippingPrice?: number; priorityScore?: number };
-    };
+    let rawBody: unknown;
+    try {
+      rawBody = await req.json();
+    } catch {
+      return NextResponse.json({ code: "INVALID_JSON", error: "Body inválido: se espera JSON" }, { status: 400 });
+    }
+
+    const parseResult = CheckoutBodySchema.safeParse(rawBody);
+    if (!parseResult.success) {
+      return NextResponse.json(
+        { code: "VALIDATION_ERROR", error: "Datos de entrada inválidos", details: parseResult.error.issues },
+        { status: 400 }
+      );
+    }
+
+    const body = parseResult.data as CheckoutBody;
     const shippingAddressRaw = body.shipping ?? {};
     const guestClaim = buildGuestClaim(session.user.email, {
       email: body.guest_email ?? body.buyer_email,
@@ -206,7 +249,7 @@ export async function POST(req: Request) {
         shippingAddressOut = { ...shippingAddressOut, zipnova: shipRes.zipnova };
       }
     } catch (zipErr) {
-      console.error("checkout/mp Zipnova quote:", zipErr);
+      logger.error("checkout/mp Zipnova quote:", zipErr);
       return NextResponse.json(
         {
           code: "ZIPNOVA_QUOTE_FAILED",
@@ -246,7 +289,7 @@ export async function POST(req: Request) {
           select: { price: true, isActive: true },
         });
         if (dbOption?.isActive && dbOption.price !== flashShippingCost) {
-          console.warn(
+          logger.warn(
             `checkout/mp flash price mismatch: client=${flashShippingCost}, db=${dbOption.price}, tier=${body.flash.shippingTier}. Using DB price.`
           );
           flashShippingCost = dbOption.price;
@@ -326,7 +369,7 @@ export async function POST(req: Request) {
         await restorePrismaStock(prisma, stockReservationLines);
         prismaStockReserved = false;
       } catch (restoreErr) {
-        console.error("checkout/mp restore Prisma stock:", restoreErr);
+        logger.error("checkout/mp restore Prisma stock:", restoreErr);
       }
     }
 
@@ -337,12 +380,12 @@ export async function POST(req: Request) {
           .update({ status: "cancelled", updated_at: new Date().toISOString() })
           .eq("id", orderIdToCleanup);
       } catch (cancelErr) {
-        console.error("checkout/mp cancel Supabase order:", cancelErr);
+        logger.error("checkout/mp cancel Supabase order:", cancelErr);
       }
       try {
         await supabaseService.from("orders").delete().eq("id", orderIdToCleanup);
       } catch (deleteErr) {
-        console.error("checkout/mp delete Supabase order:", deleteErr);
+        logger.error("checkout/mp delete Supabase order:", deleteErr);
       }
       await restoreReservedStockIfNeeded();
     }
@@ -426,7 +469,7 @@ export async function POST(req: Request) {
       lastCode = (orderInsert.error as { code?: string } | null)?.code;
     }
     if (lastCode === "PGRST204") {
-      console.warn(
+      logger.warn(
         "[checkout/mp] PGRST204 en orders tras NOTIFY: intentando ADD COLUMN seller_id / total_amount idempotente + NOTIFY (DDL)."
       );
       const ddlOk = await ensureSupabaseOrdersSellerIdColumn(prisma);
@@ -439,7 +482,7 @@ export async function POST(req: Request) {
     let persistedOrder = false;
 
     if (orderErr || !order?.id) {
-      console.error(
+      logger.error(
         "checkout mp insert order:",
         orderErr,
         "| Si persiste PGRST204 / enum OrderStatus: status debe coincidir con Postgres (PENDING). MP: reconectar Mercado Pago del vendedor si hay invalid_grant."
@@ -470,7 +513,7 @@ export async function POST(req: Request) {
           commission_amount: lineCommission,
         });
         if (liErr) {
-          console.error("order_items insert:", liErr);
+          logger.error("order_items insert:", liErr);
           await cleanupPersistedOrder(orderId);
           return NextResponse.json({ error: "No se pudieron guardar los ítems" }, { status: 500 });
         }
@@ -505,7 +548,7 @@ export async function POST(req: Request) {
     }
 
     if (!mpConnection?.mp_access_token) {
-      if (mpLookupErr) console.error("seller_mercadopago lookup:", mpLookupErr);
+      if (mpLookupErr) logger.error("seller_mercadopago lookup:", mpLookupErr);
       if (persistedOrder) await cleanupPersistedOrder(orderId);
       else await restoreReservedStockIfNeeded();
       return NextResponse.json(
@@ -576,7 +619,7 @@ export async function POST(req: Request) {
     };
 
     if (process.env.NODE_ENV === "production" && preference.notification_url.startsWith("http://")) {
-      console.warn(
+      logger.warn(
         "checkout/mp: notification_url es HTTP; Mercado Pago suele exigir HTTPS. Revisá NEXT_PUBLIC_APP_URL en Railway."
       );
     }
@@ -589,7 +632,7 @@ export async function POST(req: Request) {
     });
 
     if (!mpPref.ok) {
-      console.error("MP preference error:", mpPref.body);
+      logger.error("MP preference error:", mpPref.body);
       if (persistedOrder) await cleanupPersistedOrder(orderId);
       else await restoreReservedStockIfNeeded();
       const statusOut = mpPref.httpStatus >= 500 ? 502 : 400;
@@ -633,7 +676,7 @@ export async function POST(req: Request) {
           },
         });
       } catch (shadowErr) {
-        console.error("checkout/mp prisma shadow order (non-fatal):", shadowErr);
+        logger.error("checkout/mp prisma shadow order (non-fatal):", shadowErr);
       }
     }
 
@@ -656,7 +699,7 @@ export async function POST(req: Request) {
         created_at: new Date().toISOString(),
       });
       if (payErr) {
-        console.error("checkout mp payments insert (non-fatal):", payErr);
+        logger.error("checkout mp payments insert (non-fatal):", payErr);
       }
     }
 
@@ -674,7 +717,7 @@ export async function POST(req: Request) {
         });
 
         if (ledgerErr) {
-          console.error("affiliate_ledger insert (non-fatal):", ledgerErr);
+          logger.error("affiliate_ledger insert (non-fatal):", ledgerErr);
         }
       }
     }
@@ -720,7 +763,7 @@ export async function POST(req: Request) {
           });
         }
       } catch (flashErr) {
-        console.error("checkout/mp flash shipment create (non-fatal):", flashErr);
+        logger.error("checkout/mp flash shipment create (non-fatal):", flashErr);
       }
     }
 
@@ -738,7 +781,8 @@ export async function POST(req: Request) {
       },
     });
   } catch (e) {
-    console.error("checkout/mp:", e);
+    logger.error("checkout/mp:", e);
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }
 }
+   

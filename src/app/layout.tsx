@@ -34,9 +34,9 @@ const montserrat = Montserrat({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.madsjeez.com.ar"),
-  title: "MadsJeez - El Nuevo Standard en Compras Globales",
-  description: "Tecnología, Moda y Hogar con el respaldo del Commerce Group líder en la región. Vende y compra con la mejor plataforma.",
-  keywords: ["marketplace", "compras online", "Argentina", "tecnología", "moda", "hogar", "MadsJeez"],
+  title: "MadsJeez - Maquinaria, Herramientas y Repuestos | Argentina",
+  description: "Compra y vende maquinaria industrial, herramientas profesionales y repuestos. Stock real, envios a todo el pais. El marketplace de la construccion y la industria.",
+  keywords: ["marketplace", "compras online", "Argentina", "maquinaria", "herramientas", "repuestos", "construccion", "industria", "ferreteria", "MadsJeez"],
   alternates: {
     canonical: "https://www.madsjeez.com.ar",
   },
@@ -45,21 +45,21 @@ export const metadata: Metadata = {
     locale: "es_AR",
     url: "https://www.madsjeez.com.ar",
     siteName: "MadsJeez",
-    title: "MadsJeez - El Nuevo Standard en Compras Globales",
-    description: "Tecnología, Moda y Hogar con el respaldo del Commerce Group líder en la región.",
+    title: "MadsJeez - Maquinaria, Herramientas y Repuestos | Argentina",
+    description: "Compra y vende maquinaria industrial, herramientas profesionales y repuestos. Stock real, envios a todo el pais. El marketplace de la construccion y la industria.",
     images: [
       {
         url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "MadsJeez Marketplace",
+        alt: "MadsJeez Marketplace - Maquinaria y Herramientas",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "MadsJeez - El Nuevo Standard en Compras Globales",
-    description: "Tecnología, Moda y Hogar con el respaldo del Commerce Group líder en la región.",
+    title: "MadsJeez - Maquinaria, Herramientas y Repuestos | Argentina",
+    description: "Compra y vende maquinaria industrial, herramientas profesionales y repuestos. Stock real, envios a todo el pais.",
     images: ["/og-image.jpg"],
   },
   robots: {

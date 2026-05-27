@@ -4,6 +4,11 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { hasValidProductImageUrl, primaryImageUrlFromRows } from "@/lib/productVisibility"
 
+/** Escapa caracteres wildcard de ILIKE para evitar SQL injection via wildcards */
+function escapeIlikeTerm(term: string): string {
+  return term.replace(/[%_\\]/g, "\\$&")
+}
+
 // GET /api/products - Listar productos
 export async function GET(req: Request) {
   try {
@@ -88,7 +93,8 @@ export async function GET(req: Request) {
       query = query.eq('category.slug', category)
     }
     if (search) {
-      query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`)
+      const safeSearch = escapeIlikeTerm(search)
+      query = query.or(`title.ilike.%${safeSearch}%,description.ilike.%${safeSearch}%`)
     }
     if (seller) {
       query = query.eq('seller_id', seller)

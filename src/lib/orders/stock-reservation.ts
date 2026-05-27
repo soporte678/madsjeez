@@ -5,6 +5,16 @@ export type StockReservationLine = {
   quantity: number;
 };
 
+/** Valida que un productId sea un string no vacío y seguro */
+function isValidProductId(id: unknown): id is string {
+  return typeof id === "string" && id.length > 0 && id.length <= 128 && /^[a-zA-Z0-9_-]+$/.test(id);
+}
+
+/** Valida que una cantidad sea un entero positivo seguro */
+function isValidQuantity(q: unknown): q is number {
+  return typeof q === "number" && Number.isFinite(q) && q > 0 && q <= 1_000_000 && Number.isInteger(q);
+}
+
 export function hasActiveStockReservation(shippingAddress: unknown): boolean {
   if (!shippingAddress || typeof shippingAddress !== "object") return false;
   const o = shippingAddress as Record<string, unknown>;
@@ -33,11 +43,32 @@ export async function reservePrismaStock(
   prisma: PrismaClient,
   lines: StockReservationLine[]
 ): Promise<{ ok: true } | { ok: false; productId: string }> {
+  // Validar inputs antes de procesar
+  if (!Array.isArray(lines) || lines.length === 0) {
+    return { ok: false, productId: "INVALID_LINES" };
+  }
+  if (lines.length > 100) {
+    throw new Error("Too many stock reservation lines (max 100)");
+  }
+
   const normalized = normalizeLines(lines);
+  if (normalized.length === 0) {
+    return { ok: false, productId: "INVALID_LINES" };
+  }
 
   try {
     await prisma.$transaction(async (tx) => {
       for (const line of normalized) {
+        // Lock del registro con select previo para evitar race condition
+        const product = await tx.product.findUnique({
+          where: { id: line.productId },
+          select: { id: true, stock: true, isActive: true },
+        });
+
+        if (!product || !product.isActive || product.stock < line.quantity) {
+          throw new StockReservationError(line.productId);
+        }
+
         const updated = await tx.product.updateMany({
           where: {
             id: line.productId,
@@ -53,6 +84,10 @@ export async function reservePrismaStock(
           throw new StockReservationError(line.productId);
         }
       }
+    }, {
+      isolationLevel: "Serializable",
+      maxWait: 5000,
+      timeout: 10000,
     });
     return { ok: true };
   } catch (error) {
@@ -67,6 +102,7 @@ export async function restorePrismaStock(
   prisma: PrismaClient,
   lines: StockReservationLine[]
 ): Promise<void> {
+  if (!Array.isArray(lines) || lines.length === 0) return;
   const normalized = normalizeLines(lines);
   if (!normalized.length) return;
 
@@ -76,16 +112,23 @@ export async function restorePrismaStock(
         where: { id: line.productId },
         data: { stock: { increment: line.quantity } },
       })
-    )
+    ),
+    {
+      isolationLevel: "Serializable",
+      maxWait: 5000,
+      timeout: 10000,
+    }
   );
 }
 
 function normalizeLines(lines: StockReservationLine[]): StockReservationLine[] {
   const merged = new Map<string, number>();
   for (const line of lines) {
-    const quantity = Math.max(0, Math.floor(Number(line.quantity)));
-    if (!line.productId || quantity <= 0) continue;
-    merged.set(line.productId, (merged.get(line.productId) ?? 0) + quantity);
+    // Validación estricta de inputs
+    if (!isValidProductId(line.productId) || !isValidQuantity(line.quantity)) {
+      continue;
+    }
+    merged.set(line.productId, (merged.get(line.productId) ?? 0) + line.quantity);
   }
   return [...merged.entries()].map(([productId, quantity]) => ({ productId, quantity }));
 }

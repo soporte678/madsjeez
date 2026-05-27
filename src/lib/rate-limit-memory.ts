@@ -58,3 +58,15 @@ export function checkRateLimit(
   }
   return { ok: true };
 }
+
+// Limpieza periodica de entradas expiradas (cada 10 minutos)
+// Evita memory leak si el Map crece sin limite en periodos de baja actividad
+const CLEANUP_INTERVAL_MS = 10 * 60 * 1000;
+setInterval(() => {
+  const now = Date.now();
+  for (const [k, b] of store.entries()) {
+    if (b.resetAt <= now) {
+      store.delete(k);
+    }
+  }
+}, CLEANUP_INTERVAL_MS);

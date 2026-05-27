@@ -12,6 +12,7 @@ import {
 import { pushStockToMeliForProductIds } from "@/lib/meli/stock-sync";
 import { tryCreateZipnovaShipmentForPaidOrder } from "@/lib/zipnova/create-shipment";
 import crypto from "crypto";
+import { logger } from "@/lib/logger";
 
 const WEBHOOK_TS_SKEW_MS = 5 * 60 * 1000;
 
@@ -50,7 +51,7 @@ function parseXSignature(header: string): { ts: string; v1: string } | null {
 function buildSignatureManifest(dataIdRaw: string, requestId: string, ts: string): string | null {
   const rid = requestId.trim();
   if (!rid) {
-    console.warn("MercadoPago webhook: missing x-request-id; cannot verify signature");
+    logger.warn("MercadoPago webhook: missing x-request-id; cannot verify signature");
     return null;
   }
   const id = normalizeManifestResourceId(dataIdRaw.trim());
@@ -87,7 +88,7 @@ function manifestCandidates(opts: {
   }
 
   if (manifests.length === 0) {
-    console.warn("MercadoPago webhook: missing data.id (query and body); cannot verify signature");
+    logger.warn("MercadoPago webhook: missing data.id (query and body); cannot verify signature");
   }
   return manifests;
 }
@@ -138,7 +139,7 @@ async function fetchSupabaseOrderStockLines(orderId: string): Promise<StockReser
     .eq("order_id", orderId);
 
   if (error) {
-    console.warn("MercadoPago webhook: no se pudieron leer items para restaurar stock", error);
+    logger.warn("MercadoPago webhook: no se pudieron leer items para restaurar stock", error);
     return [];
   }
 
@@ -168,7 +169,7 @@ async function fetchMercadoPagoPaymentJson(
   }
 
   if (!tokens.length) {
-    console.error("No Mercado Pago access tokens available for payment fetch");
+    logger.error("No Mercado Pago access tokens available for payment fetch");
     return { ok: false, status: 503 };
   }
 
@@ -199,13 +200,13 @@ export async function POST(req: NextRequest) {
     try {
       notification = JSON.parse(body) as Record<string, unknown>;
     } catch {
-      console.warn("Invalid JSON body from MercadoPago webhook");
+      logger.warn("Invalid JSON body from MercadoPago webhook");
       return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
     }
 
     const webhookSecret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
     if (!webhookSecret) {
-      console.error("MERCADOPAGO_WEBHOOK_SECRET is not configured; rejecting webhook");
+      logger.error("MERCADOPAGO_WEBHOOK_SECRET is not configured; rejecting webhook");
       return NextResponse.json({ error: "Webhook not configured" }, { status: 503 });
     }
 
@@ -241,7 +242,7 @@ export async function POST(req: NextRequest) {
 
     if (!verified) {
       const primary = manifests[0];
-      console.warn("MercadoPago webhook signature mismatch", {
+      logger.warn("MercadoPago webhook signature mismatch", {
         triedManifests: manifests.length,
         manifestPreview: primary?.slice(0, 96),
         queryDataId: url.searchParams.get("data.id"),
@@ -252,7 +253,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (manifests.length > 1 && usedManifest && usedManifest !== manifests[0]) {
-      console.warn("MercadoPago webhook: firma válida con manifest alternativo (query sin data.id; usado body)");
+      logger.warn("MercadoPago webhook: firma válida con manifest alternativo (query sin data.id; usado body)");
     }
 
     const type = (notification.type ?? notification.topic) as string | undefined;
@@ -266,7 +267,7 @@ export async function POST(req: NextRequest) {
 
       const fetched = await fetchMercadoPagoPaymentJson(paymentId);
       if (!fetched.ok) {
-        console.error("Failed to fetch payment from MP:", paymentId, "last HTTP:", fetched.status);
+        logger.error("Failed to fetch payment from MP:", paymentId, "last HTTP:", fetched.status);
         return NextResponse.json({ received: true });
       }
 
@@ -356,7 +357,7 @@ export async function POST(req: NextRequest) {
       const { error: orderError } = await supabaseService.from("orders").update(orderUpdate).eq("id", orderId);
 
       if (orderError) {
-        console.error("Error updating order status:", orderError);
+        logger.error("Error updating order status:", orderError);
       }
 
       const paymentFullPatch = {
@@ -386,14 +387,14 @@ export async function POST(req: NextRequest) {
           .eq("order_id", orderId);
         paymentError = retry.error;
         if (paymentError) {
-          console.error("Error updating payment record:", paymentError);
+          logger.error("Error updating payment record:", paymentError);
         } else {
-          console.warn(
+          logger.warn(
             "payments: actualizado sin mp_payment_id/mp_status (columnas ausentes en Supabase; agregalas o NOTIFY pgrst)."
           );
         }
       } else if (paymentError) {
-        console.error("Error updating payment record:", paymentError);
+        logger.error("Error updating payment record:", paymentError);
       }
 
       const prismaSt = prismaStatusFromSupabaseWebhook(orderStatus);
@@ -406,10 +407,10 @@ export async function POST(req: NextRequest) {
             data: { status: prismaSt },
           });
           if (pr.count > 0) {
-            console.log(`Webhook: Prisma shadow order ${shadowNum} → ${prismaSt}`);
+            logger.info(`Webhook: Prisma shadow order ${shadowNum} → ${prismaSt}`);
           }
         } catch (e) {
-          console.warn("Prisma shadow order status update (non-fatal):", e);
+          logger.warn("Prisma shadow order status update (non-fatal):", e);
         }
       }
 
@@ -420,7 +421,7 @@ export async function POST(req: NextRequest) {
           .eq("order_id", orderId)
           .eq("status", "pending");
         if (ledgerErr) {
-          console.warn("affiliate_ledger refund update (non-fatal):", ledgerErr);
+          logger.warn("affiliate_ledger refund update (non-fatal):", ledgerErr);
         }
       }
 
@@ -433,12 +434,12 @@ export async function POST(req: NextRequest) {
         { onConflict: "payment_id" }
       );
 
-      console.log(`Webhook: order ${orderId} → ${orderStatus} (MP status: ${status})`);
+      logger.info(`Webhook: order ${orderId} → ${orderStatus} (MP status: ${status})`);
     }
 
     return NextResponse.json({ received: true });
   } catch (error) {
-    console.error("Webhook error:", error);
+    logger.error("Webhook error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
