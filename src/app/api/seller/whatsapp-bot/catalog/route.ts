@@ -99,7 +99,7 @@ function mapProductRow(
     id: hit.id,
     title: hit.title,
     sku: hit.sku,
-    price: hit.price,
+    price: Number(hit.price),
     stock: hit.stock,
     category: hit.category ?? p.category.name,
     description: p.description.slice(0, 300),
