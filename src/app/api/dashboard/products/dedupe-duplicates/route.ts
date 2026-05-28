@@ -40,7 +40,7 @@ export async function POST(req: Request) {
         id: p.id,
         title: p.title,
         sku: p.sku,
-        price: p.price,
+        price: Number(p.price),
         sales: p.sales,
         views: p.views,
         meliItemId: p.meliItemId,
