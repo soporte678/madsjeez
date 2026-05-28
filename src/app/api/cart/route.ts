@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma"
 import { Prisma } from "@prisma/client";;
-import type { Decimal } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
@@ -62,7 +61,7 @@ export async function GET() {
 
     // Totales alineados con checkout Mercado Pago (mismo vendedor / envío fijo si no hay free shipping)
     const subtotal = cart.items.reduce(
-      (sum: number, item: { price: number | Decimal; quantity: number }) => sum + Number(item.price) * item.quantity,
+      (sum: number, item: { price: number; quantity: number }) => sum + Number(item.price) * item.quantity,
       0
     );
     const shippingCost = cart.items.some(
