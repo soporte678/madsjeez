@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma"
 import { Prisma } from "@prisma/client";;
-import type { Decimal } from "@prisma/client/runtime/library";
+import type { Decimal } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
