@@ -31,7 +31,7 @@ async function dispatchCursor(objective, taskMd) {
     return;
   }
   try {
-    const { Agent } = await import("@cursor/sdk");
+    const { Agent } = await import("../src/lib/cursor-sdk-stub.js");
     const result = await Agent.prompt(`${objective}\n\n${taskMd.slice(0, 12000)}`, {
       apiKey,
       model: { id: process.env.JARVIS_CURSOR_MODEL || "composer-2.5" },
