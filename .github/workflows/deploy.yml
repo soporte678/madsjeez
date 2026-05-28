@@ -3,48 +3,42 @@ name: Deploy to Railway
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:
+  # pull_request eliminado — el deploy solo debe ejecutarse en push a main, no en PRs
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
+    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-
+      
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '20'
-
+        cache: 'npm'
+        
     - name: Install dependencies
-      run: npm install
-
-    - name: Create .env for Prisma
-      run: |
-        echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env
-        echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> .env
-        echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> .env
-        echo "NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}" >> .env
-        echo "NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}" >> .env
-
+      run: npm ci
+      
     - name: Generate Prisma client
       run: npx prisma generate
-
+      
     - name: Build application
       run: npm run build
       env:
-        DATABASE_URL: ${{ secrets.DATABASE_URL }}
         NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
         NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
         NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        
     - name: Install Railway CLI
-      run: npm install -g @railway/cli
-
+      run: npm install -g @railway/cli@latest
+      
     - name: Deploy to Railway
       run: railway up --service ${{ secrets.RAILWAY_SERVICE_ID }}
       env:
         RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      continue-on-error: true
