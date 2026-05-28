@@ -240,7 +240,7 @@ export async function GET(request: NextRequest) {
         }, 0);
 
       // Dinero disponible: ya liquidado (simulado - en realidad vendría de una tabla de payouts)
-      moneyAvailable = user?.totalRevenue ? Math.max(0, user.totalRevenue - moneyToSettle) : 0;
+      moneyAvailable = user?.totalRevenue ? Math.max(0, Number(user.totalRevenue) - moneyToSettle) : 0;
     } catch (e) {
       console.error('Error calculating money:', e);
     }
