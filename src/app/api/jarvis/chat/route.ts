@@ -54,7 +54,7 @@ const ChatRequestSchema = z.object({
   /** Instrucciones custom para el system prompt */
   customInstructions: z.string().max(2000).optional(),
   /** Contexto adicional */
-  context: z.record(z.unknown()).optional(),
+  context: z.record(z.string(), z.unknown()).optional(),
 });
 
 /** Tipo inferido del schema */
@@ -68,7 +68,7 @@ const ChatResponseSchema = z.object({
   toolCalls: z.array(z.object({
     id: z.string(),
     name: z.string(),
-    arguments: z.record(z.unknown()),
+    arguments: z.record(z.string(), z.unknown()),
     timestamp: z.string(),
   })).optional(),
   toolResults: z.array(z.object({
