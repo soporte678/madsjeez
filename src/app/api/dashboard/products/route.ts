@@ -51,14 +51,14 @@ export async function GET(request: Request) {
       description: p.description,
       sku: p.sku,
       price: Number(p.price),
-      originalPrice: p.originalPrice,
+      originalPrice: p.originalPrice != null ? Number(p.originalPrice) : null,
       stock: p.stock,
       isActive: p.isActive,
       views: p.views,
       sales: p.sales,
       condition: p.condition,
       freeShipping: p.freeShipping,
-      shippingCost: p.shippingCost,
+      shippingCost: Number(p.shippingCost),
       qualityScore: p.qualityScore,
       categoryId: p.categoryId,
       category: p.category ? { id: p.category.id, name: p.category.name } : null,
@@ -106,12 +106,12 @@ export async function GET(request: Request) {
       supabaseNoSales = n || 0
     }
 
-    const prismaTop = await prisma.product.findMany({
+    const prismaTop = (await prisma.product.findMany({
       where: { sellerId: userId },
       orderBy: { sales: "desc" },
       take: 5,
       select: { id: true, title: true, sales: true, price: true, views: true },
-    })
+    })).map((p) => ({ ...p, price: Number(p.price) }))
 
     let supabaseTop: { id: string; title: string; sales: number; price: number; views: number }[] = []
     if (supabaseUser?.id) {

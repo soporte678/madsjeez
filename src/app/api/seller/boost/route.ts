@@ -86,7 +86,7 @@ export async function POST(req: Request) {
     // Obtener costo base de configuración
     const config = await prisma.siteConfig.findFirst()
     const baseCost = config?.boostBaseCost || 9999
-    const cost = Math.round(baseCost * multiplier)
+    const cost = Math.round(Number(baseCost) * multiplier)
 
     // Crear payment intent
     const stripe = getStripeClient()
