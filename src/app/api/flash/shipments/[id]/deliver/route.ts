@@ -76,7 +76,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   })
 
   // Auto-crear liquidación pendiente para el conductor
-  if (shipment.shippingPrice && shipment.shippingPrice > 0) {
+  if (shipment.shippingPrice && Number(shipment.shippingPrice) > 0) {
     try {
       await prisma.flashDriverSettlement.create({
         data: {
