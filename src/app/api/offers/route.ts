@@ -56,7 +56,7 @@ export async function GET(req: Request) {
         page,
         limit,
         total: result.total,
-        totalPages: Math.max(1, Math.ceil(result.total / limit)),
+        totalPages: Math.max(1, Math.ceil(Number(result.total) / limit)),
       },
       search_segment: "offers",
     });
