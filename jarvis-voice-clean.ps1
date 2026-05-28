@@ -1,4 +1,4 @@
-# JARVIS Voice Activator v4 - Fixed
+# JARVIS Voice Activator v5 - Register-ObjectEvent
 Add-Type -AssemblyName System.Speech
 Add-Type -AssemblyName System.Windows.Forms
 
@@ -16,7 +16,7 @@ try {
     $recog.SetInputToDefaultAudioDevice()
     Write-Host "Microfono OK" -ForegroundColor Green
 
-    # Gramatica 1: Solo wake word (Hey JARVIS, JARVIS, OK JARVIS)
+    # Gramatica 1: Solo wake word
     $gb1 = New-Object System.Speech.Recognition.GrammarBuilder
     $w1 = New-Object System.Speech.Recognition.Choices
     $w1.Add("Hey JARVIS")
@@ -56,13 +56,15 @@ try {
     $menu = New-Object System.Windows.Forms.ContextMenuStrip
     $m1 = $menu.Items.Add("Abrir JARVIS")
     $m1.Add_Click({ Start-Process "http://localhost:3000" })
-    $m2 = $menu.Items.Add("Iniciar JARVIS")
-    $m2.Add_Click({ Start-Process "http://localhost:3000" })
-    $m3 = $menu.Items.Add("Detener JARVIS")
-    $m3.Add_Click({ Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force })
+    $m2 = $menu.Items.Add("Detener JARVIS")
+    $m2.Add_Click({ Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force })
     $menu.Items.Add("-") | Out-Null
-    $m4 = $menu.Items.Add("Salir")
-    $m4.Add_Click({ $tray.Visible = $false; [System.Windows.Forms.Application]::Exit() })
+    $m3 = $menu.Items.Add("Salir")
+    $m3.Add_Click({ 
+        $tray.Visible = $false
+        $recog.RecognizeAsyncStop()
+        [System.Windows.Forms.Application]::Exit() 
+    })
     $tray.ContextMenuStrip = $menu
 
     $tray.Add_Click({
@@ -71,21 +73,25 @@ try {
         }
     })
 
-    # Evento reconocimiento
-    $processing = $false
-    $recog.SpeechRecognized += {
-        param($sender, $e)
-        if ($processing) { return }
-        $processing = $true
+    # Variables para el evento (script scope)
+    $script:VoiceProcessing = $false
+    $script:VoiceSynth = $synth
+    $script:VoiceTray = $tray
 
-        $text = $e.Result.Text
-        $conf = $e.Result.Confidence
+    # Evento usando Register-ObjectEvent (forma nativa de PowerShell)
+    Register-ObjectEvent -InputObject $recog -EventName "SpeechRecognized" -Action {
+        if ($script:VoiceProcessing) { return }
+        $script:VoiceProcessing = $true
+
+        $text = $EventArgs.Result.Text
+        $conf = $EventArgs.Result.Confidence
 
         Write-Host "ESCUCHADO: '$text' (conf: $([math]::Round($conf*100))%)" -ForegroundColor Green
 
         if ($conf -gt 0.60) {
             if ($text -match "apaga|detener") {
-                Speak("Deteniendo JARVIS")
+                Write-Host "[JARVIS] Deteniendo JARVIS" -ForegroundColor Cyan
+                $script:VoiceSynth.Speak("Deteniendo JARVIS")
                 Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force
             }
             elseif ($text -match "estado") {
@@ -93,34 +99,40 @@ try {
                     $tcp = New-Object Net.Sockets.TcpClient
                     $tcp.Connect("127.0.0.1", 3000)
                     $tcp.Close()
-                    Speak("JARVIS esta online")
+                    Write-Host "[JARVIS] JARVIS esta online" -ForegroundColor Cyan
+                    $script:VoiceSynth.Speak("JARVIS esta online")
                 } catch {
-                    Speak("JARVIS esta apagado")
+                    Write-Host "[JARVIS] JARVIS esta apagado" -ForegroundColor Cyan
+                    $script:VoiceSynth.Speak("JARVIS esta apagado")
                 }
             }
             elseif ($text -match "abrir|inicia") {
-                Speak("Abriendo JARVIS")
+                Write-Host "[JARVIS] Abriendo JARVIS" -ForegroundColor Cyan
+                $script:VoiceSynth.Speak("Abriendo JARVIS")
                 Start-Process "http://localhost:3000"
             }
             elseif ($text -match "tienda|marketplace") {
-                Speak("Abriendo tienda")
+                Write-Host "[JARVIS] Abriendo tienda" -ForegroundColor Cyan
+                $script:VoiceSynth.Speak("Abriendo tienda")
                 Start-Process "http://localhost:3000"
             }
             else {
-                Speak("En que puedo ayudarte?")
+                Write-Host "[JARVIS] En que puedo ayudarte?" -ForegroundColor Cyan
+                $script:VoiceSynth.Speak("En que puedo ayudarte?")
                 Start-Process "http://localhost:3000/dashboard/jarvis"
             }
         }
 
         Start-Sleep 2
-        $processing = $false
-    }
+        $script:VoiceProcessing = $false
+    } | Out-Null
 
     $recog.RecognizeAsync([System.Speech.Recognition.RecognizeMode]::Multiple)
 
     Write-Host ""
     Write-Host "ESCUCHANDO... Di 'Hey JARVIS'" -ForegroundColor Green
     Write-Host "Icono azul en bandeja del sistema" -ForegroundColor Gray
+    Write-Host "Click derecho en icono para mas opciones" -ForegroundColor Gray
     Write-Host ""
 
     [System.Windows.Forms.Application]::Run()
