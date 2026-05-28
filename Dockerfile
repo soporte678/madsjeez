@@ -3,8 +3,8 @@
 # en deb.debian.org (incidente de infra). node:22-bookworm-slim ya trae libssl3 y ca-certificates.
 FROM node:22-bookworm-slim AS deps
 WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci --no-audit --no-fund
+COPY package.json ./
+RUN npm install --no-audit --no-fund
 
 FROM node:22-bookworm-slim AS builder
 WORKDIR /app
@@ -47,7 +47,6 @@ COPY --from=builder /app/.next/static ./.next/static
 # No instalar `prisma` encima del standalone (deja @prisma/engines a medias y rompe el postinstall). Copiamos el árbol completo del builder + deps hoisted de @prisma/config.
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder /app/package-lock.json ./package-lock.json
 RUN npm install c12@3.3.4 deepmerge-ts@7.1.5 effect@3.20.0 empathic@2.0.0 --omit=dev --no-audit --no-fund --legacy-peer-deps --no-save
 
 COPY --from=builder /app/prisma ./prisma
