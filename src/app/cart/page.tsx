@@ -267,7 +267,7 @@ export default function CartPage() {
   );
 
   const subtotal = cartItems.reduce(
-    (acc, item) => acc + item.product.price * item.quantity,
+    (acc, item) => acc + Number(item.product.price) * item.quantity,
     0
   );
   const shipping = cartItems.some((item) => !item.product.shipping_free)
@@ -365,7 +365,7 @@ export default function CartPage() {
 
                             <div className="text-right">
                               <p className="font-semibold">
-                                ${(item.product.price * item.quantity).toLocaleString()}
+                                ${(Number(item.product.price) * item.quantity).toLocaleString()}
                               </p>
                             </div>
                           </div>
