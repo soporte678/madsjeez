@@ -28,10 +28,10 @@ export async function GET(req: NextRequest) {
   }[] = []
 
   try {
-    options = await prisma.flashShippingOption.findMany({
+    options = (await prisma.flashShippingOption.findMany({
       where: { isActive: true },
       orderBy: { priority: "desc" },
-    })
+    })).map((o) => ({ ...o, price: Number(o.price) }))
   } catch {
     // Table may not exist yet — return defaults
     options = [
@@ -126,7 +126,7 @@ export async function GET(req: NextRequest) {
       code: opt.code,
       name: opt.name,
       description: opt.description,
-      price: Number(opt.price),
+      price: opt.price,
       priority: opt.priority,
       coverageType: opt.coverageType,
       radiusKm: opt.radiusKm,
