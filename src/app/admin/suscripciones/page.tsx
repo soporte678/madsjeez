@@ -105,7 +105,7 @@ export default function SuscripcionesPage() {
   )
 
   const mrr = subscriptions.filter(s => s.status === "active").reduce((acc, s) => {
-    return acc + (s.billing_cycle === "annual" ? s.amount / 12 : s.amount)
+    return acc + (s.billing_cycle === "annual" ? Number(s.amount) / 12 : s.amount)
   }, 0)
 
   return (
