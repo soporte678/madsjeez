@@ -29,7 +29,7 @@ async function dispatchCursorTask(prompt: string, objective: string): Promise<Di
   }
 
   try {
-    const mod = await import("@cursor/sdk");
+    const mod = await import("@/lib/cursor-sdk-stub");
     const Agent = mod.Agent as {
       prompt: (
         p: string,
