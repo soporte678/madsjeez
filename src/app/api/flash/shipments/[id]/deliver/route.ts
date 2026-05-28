@@ -82,7 +82,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         data: {
           shipmentId: id,
           driverId: driver.id,
-          amount: shipment.shippingPrice,
+          amount: Number(shipment.shippingPrice),
           provider: "mercadopago",
           status: "pending",
         },

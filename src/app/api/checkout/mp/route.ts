@@ -50,7 +50,7 @@ function envPercent(key: string, fallback: number): number {
  * Previene datos maliciosos o inválidos en los inputs del usuario.
  */
 const CheckoutBodySchema = z.object({
-  shipping: z.record(z.string(), z.unknown()).optional(),
+  shipping: z.record(z.unknown()).optional(),
   buyer_email: z.string().email().max(256).optional(),
   guest_email: z.string().email().max(256).nullable().optional(),
   guest_phone: z.string().max(64).nullable().optional(),
@@ -233,7 +233,7 @@ export async function POST(req: Request) {
       const shipRes = await resolveCartShippingCost({
         lines: lines.map((i) => ({
           quantity: i.quantity,
-          price: Number(i.price),
+          price: i.price,
           product: {
             id: i.product.id,
             title: i.product.title,
@@ -288,12 +288,12 @@ export async function POST(req: Request) {
           where: { code: body.flash.shippingTier },
           select: { price: true, isActive: true },
         });
-        if (dbOption?.isActive && Number(dbOption.price) !== flashShippingCost) {
+        if (dbOption?.isActive && dbOption.price !== flashShippingCost) {
           logger.warn(
             `checkout/mp flash price mismatch: client=${flashShippingCost}, db=${dbOption.price}, tier=${body.flash.shippingTier}. Using DB price.`
           );
-          flashShippingCost = Number(dbOption.price);
-          body.flash.shippingPrice = Number(dbOption.price);
+          flashShippingCost = dbOption.price;
+          body.flash.shippingPrice = dbOption.price;
         }
         if (dbOption && !dbOption.isActive) {
           return NextResponse.json(
@@ -584,7 +584,7 @@ export async function POST(req: Request) {
     }));
 
     // Flash shipping: comprador paga 100% (va al conductor)
-    if (body.flash?.shippingPrice && Number(body.flash.shippingPrice) > 0) {
+    if (body.flash?.shippingPrice && body.flash.shippingPrice > 0) {
       const flashTierLabel = body.flash.shippingTier === "flash_plus" ? "Flash Plus" :
                               body.flash.shippingTier === "flash_local" ? "Flash Local" : "Flash Normal";
       mpItems.push({
@@ -743,8 +743,8 @@ export async function POST(req: Request) {
               streetNumber: fd.streetNumber,
               floor: fd.floor ?? null,
               apartment: fd.apartment ?? null,
-              betweenStreet1: fd.betweenStreet1 || "",
-              betweenStreet2: fd.betweenStreet2 || "",
+              betweenStreet1: fd.betweenStreet1,
+              betweenStreet2: fd.betweenStreet2,
               city: fd.city,
               province: fd.province,
               postalCode: fd.postalCode,

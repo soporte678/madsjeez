@@ -131,9 +131,9 @@ export async function GET(request: NextRequest) {
           productImage: f.product.images[0]?.url || null,
           sellerName: f.product.seller?.name || null,
           verified: f.product.seller?.subscriptionTier === 'GOLD' || f.product.seller?.subscriptionTier === 'PLATINUM',
-          oldPrice: f.product.comparePrice,
+          oldPrice: f.product.comparePrice ? Number(f.product.comparePrice) : null,
           price: Number(f.product.price),
-          discount: calculateDiscount(Number(f.product.comparePrice), Number(f.product.price)),
+          discount: calculateDiscount(f.product.comparePrice ? Number(f.product.comparePrice) : null, Number(f.product.price)),
           installments: Number(f.product.price) > 50000
             ? `Mismo precio en cuotas`
             : null,

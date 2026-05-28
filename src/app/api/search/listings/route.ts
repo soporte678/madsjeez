@@ -73,8 +73,8 @@ function mapPrismaProduct(p: {
   return {
     id: p.id,
     title: p.title,
-    price: p.price,
-    original_price: p.originalPrice,
+    price: Number(p.price),
+    original_price: p.originalPrice != null ? Number(p.originalPrice) : null,
     condition: p.condition,
     shipping_free: p.freeShipping,
     sales: p.sales,
@@ -93,10 +93,10 @@ function sortUnified(products: UnifiedProduct[], sort: string): UnifiedProduct[]
   const arr = [...products];
   switch (sort) {
     case "price_asc":
-      arr.sort((a, b) => Number(a.price) - Number(b.price));
+      arr.sort((a, b) => a.price - b.price);
       break;
     case "price_desc":
-      arr.sort((a, b) => Number(b.price) - Number(a.price));
+      arr.sort((a, b) => b.price - a.price);
       break;
     case "newest":
       arr.sort((a, b) => {

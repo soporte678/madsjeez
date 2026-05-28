@@ -154,7 +154,7 @@ export async function GET(request: NextRequest) {
           productImage: q.product.images[0]?.url || null,
           sellerName: q.product.seller?.name || 'Vendedor',
           price: Number(q.product.price),
-          comparePrice: q.product.comparePrice || null,
+          comparePrice: q.product.comparePrice ? Number(q.product.comparePrice) : null,
           stock: q.product.stock,
           question: q.question,
           questionDate: formatRelativeDate(q.createdAt),

@@ -268,7 +268,7 @@ export async function GET(request: NextRequest) {
       });
 
       if (activeSubscription) {
-        activeSubscriptionAmount = activeSubscription.price || 0;
+        activeSubscriptionAmount = Number(activeSubscription.price) || 0;
         billingBalance += activeSubscriptionAmount;
       }
 
@@ -281,7 +281,7 @@ export async function GET(request: NextRequest) {
           },
           select: { cost: true },
         });
-        const boostCost = activeBoosts.reduce((sum: number, b) => sum + (b.cost || 0), 0);
+        const boostCost = activeBoosts.reduce((sum: number, b) => sum + (Number(b.cost) || 0), 0);
         billingBalance += boostCost;
       } catch (boostErr) {
         console.error('Error fetching boosts for billing:', boostErr);
@@ -484,4 +484,4 @@ export async function GET(request: NextRequest) {
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
-export const maxDuration = 10;
+export const maxDuratio
