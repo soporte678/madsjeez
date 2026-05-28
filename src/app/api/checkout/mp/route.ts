@@ -584,7 +584,7 @@ export async function POST(req: Request) {
     }));
 
     // Flash shipping: comprador paga 100% (va al conductor)
-    if (body.flash?.shippingPrice && body.flash.shippingPrice > 0) {
+    if (body.flash?.shippingPrice && Number(body.flash.shippingPrice) > 0) {
       const flashTierLabel = body.flash.shippingTier === "flash_plus" ? "Flash Plus" :
                               body.flash.shippingTier === "flash_local" ? "Flash Local" : "Flash Normal";
       mpItems.push({
