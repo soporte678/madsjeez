@@ -60,9 +60,9 @@ export async function GET() {
       .filter((e) => e.createdAt >= from && (!to || e.createdAt < to))
       .reduce(
         (acc, e) => {
-          acc.gross += e.grossAmount
-          acc.net += e.netAmount
-          acc.tips += e.tipAmount
+          acc.gross += Number(e.grossAmount)
+          acc.net += Number(e.netAmount)
+          acc.tips += Number(e.tipAmount)
           return acc
         },
         { gross: 0, net: 0, tips: 0 }
@@ -99,13 +99,13 @@ export async function GET() {
 
   const walletPending = earnings
     .filter((e) => e.status === "PENDING")
-    .reduce((s, e) => s + e.netAmount, 0)
+    .reduce((s, e) => s + Number(e.netAmount), 0)
   const walletProcessing = earnings
     .filter((e) => e.status === "PROCESSING")
-    .reduce((s, e) => s + e.netAmount, 0)
+    .reduce((s, e) => s + Number(e.netAmount), 0)
   const walletPaid = earnings
     .filter((e) => e.status === "PAID")
-    .reduce((s, e) => s + e.netAmount, 0)
+    .reduce((s, e) => s + Number(e.netAmount), 0)
 
   const shipmentsWithEstimate = activeShipments.map((s) => {
     const est = estimateShipmentEarning(s, rates, { km: 5 })
