@@ -88,7 +88,7 @@ try {
 
         Write-Host "ESCUCHADO: '$text' (conf: $([math]::Round($conf*100))%)" -ForegroundColor Green
 
-        if ($conf -gt 0.60) {
+        if ($conf -gt 0.25) {
             if ($text -match "apaga|detener") {
                 Write-Host "[JARVIS] Deteniendo JARVIS" -ForegroundColor Cyan
                 $script:VoiceSynth.Speak("Deteniendo JARVIS")
