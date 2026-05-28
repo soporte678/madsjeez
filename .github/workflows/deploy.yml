@@ -24,20 +24,20 @@ jobs:
     - name: Generate Prisma client
       run: npx prisma generate
       env:
-        DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-        NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
-        NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+        DATABASE_URL: "postgresql://postgres.doweovsukuskflgnxhhn:Aug2404181976%23@aws-0-sa-east-1.pooler.supabase.com:5432/postgres"
+        NEXT_PUBLIC_SUPABASE_URL: "https://doweovsukuskflgnxhhn.supabase.co"
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: "sb_publishable_DmXmnt4V6A3tpwCq73ZIuA_a0dtWb0h"
+        NEXTAUTH_URL: "https://madsjeez-production.up.railway.app"
+        NEXTAUTH_SECRET: "dummy-secret-for-build-only"
 
     - name: Build application
       run: npm run build
       env:
-        DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-        NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
-        NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+        DATABASE_URL: "postgresql://postgres.doweovsukuskflgnxhhn:Aug2404181976%23@aws-0-sa-east-1.pooler.supabase.com:5432/postgres"
+        NEXT_PUBLIC_SUPABASE_URL: "https://doweovsukuskflgnxhhn.supabase.co"
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: "sb_publishable_DmXmnt4V6A3tpwCq73ZIuA_a0dtWb0h"
+        NEXTAUTH_URL: "https://madsjeez-production.up.railway.app"
+        NEXTAUTH_SECRET: "dummy-secret-for-build-only"
 
     - name: Install Railway CLI
       run: npm install -g @railway/cli
