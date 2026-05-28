@@ -56,7 +56,7 @@ export default function AnalyticsPage() {
   }
 
   const conversionRate = m.products.views > 0 ? ((m.sales.count / m.products.views) * 100).toFixed(2) : "0"
-  const avgPricePerUnit = m.sales.count > 0 ? m.sales.total / m.sales.count : 0
+  const avgPricePerUnit = m.sales.count > 0 ? Number(m.sales.total) / m.sales.count : 0
 
   return (
     <div className="min-h-screen bg-gray-100 font-sans text-gray-800">
@@ -122,7 +122,7 @@ export default function AnalyticsPage() {
                 <MetricCard title="Precio promedio por venta" value={formatCurrency(avgPricePerUnit)} />
                 <MetricCard title="Reclamos abiertos" value={m.claims.open.toString()} borderRight={false} />
               </div>
-              {m.sales.total > 0 ? (
+              {Number(m.sales.total) > 0 ? (
                 <div className="p-6">
                   <SalesChart
                     labels={["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]}
@@ -297,7 +297,7 @@ export default function AnalyticsPage() {
                   <div className="mb-4">
                     <div className="flex justify-between text-xs mb-1"><span>Uso de stock</span><span>{m.products.total} productos</span></div>
                     <div className="w-full bg-gray-200 h-2 rounded-full">
-                      <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${Math.min((m.products.total / Math.max(m.products.total + 10, 1)) * 100, 100)}%` }}></div>
+                      <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${Math.min((Number(m.products.total) / Math.max(m.products.total + 10, 1)) * 100, 100)}%` }}></div>
                     </div>
                   </div>
                 </div>
