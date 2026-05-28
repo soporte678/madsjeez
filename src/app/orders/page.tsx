@@ -337,7 +337,7 @@ export default function OrdersPage() {
                       {order.items.map((item) => {
                         const img = item.product.images?.[0]?.url
                         const sellerName = item.product.seller?.name ?? "Vendedor"
-                        const lineTotal = item.price * item.quantity
+                        const lineTotal = Number(item.price) * item.quantity
                         return (
                           <div key={item.id} className="flex items-center gap-4">
                             <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
