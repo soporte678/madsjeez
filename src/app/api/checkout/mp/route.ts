@@ -233,7 +233,7 @@ export async function POST(req: Request) {
       const shipRes = await resolveCartShippingCost({
         lines: lines.map((i) => ({
           quantity: i.quantity,
-          price: i.price,
+          price: Number(i.price),
           product: {
             id: i.product.id,
             title: i.product.title,
@@ -288,12 +288,12 @@ export async function POST(req: Request) {
           where: { code: body.flash.shippingTier },
           select: { price: true, isActive: true },
         });
-        if (dbOption?.isActive && dbOption.price !== flashShippingCost) {
+        if (dbOption?.isActive && Number(dbOption.price) !== flashShippingCost) {
           logger.warn(
-            `checkout/mp flash price mismatch: client=${flashShippingCost}, db=${dbOption.price}, tier=${body.flash.shippingTier}. Using DB price.`
+            `checkout/mp flash price mismatch: client=${flashShippingCost}, db=${Number(dbOption.price)}, tier=${body.flash.shippingTier}. Using DB price.`
           );
-          flashShippingCost = dbOption.price;
-          body.flash.shippingPrice = dbOption.price;
+          flashShippingCost = Number(dbOption.price);
+          body.flash.shippingPrice = Number(dbOption.price);
         }
         if (dbOption && !dbOption.isActive) {
           return NextResponse.json(
