@@ -2,32 +2,65 @@
   "mcpServers": {
     "railway": {
       "command": "powershell",
-      "args": ["-ExecutionPolicy", "Bypass", "-File", "scripts/mcp-railway-wrapper.ps1"],
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "scripts/mcp-railway-wrapper.ps1"
+      ],
       "env": {
         "RAILWAY_CLIENT_ID": "rlwy_oaci_cZ8RpvMGJQbwVKXfUKx8ZyDc"
       }
     },
-    "supabase": {
-      "command": "npx",
-      "args": ["-y", "@supabase/mcp-server@latest"],
+    "github": {
+      "command": "node",
+      "args": [
+        "/home/kimi/.npm-global/lib/node_modules/@modelcontextprotocol/server-github/dist/index.js"
+      ],
       "env": {
-        "SUPABASE_ACCESS_TOKEN": "",
-        "SUPABASE_PROJECT_ID": "",
-        "SUPABASE_REGION": "us-east-1"
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${env.GITHUB_PERSONAL_ACCESS_TOKEN}"
       }
     },
-    "github": {
-      "command": "powershell",
-      "args": ["-ExecutionPolicy", "Bypass", "-File", "scripts/mcp-github-wrapper.ps1"]
+    "supabase": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--stdio"
+      ],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "${env.SUPABASE_ACCESS_TOKEN}",
+        "SUPABASE_PROJECT_REF": "doweovsukuskflgnxhhn"
+      }
     },
     "resend": {
       "command": "npx",
-      "args": ["-y", "resend-mcp"],
+      "args": [
+        "-y",
+        "resend-mcp"
+      ],
       "env": {
         "RESEND_API_KEY": "",
         "SENDER_EMAIL_ADDRESS": "Madsjeez <noreply@madsjeez.com.ar>",
         "REPLY_TO_EMAIL_ADDRESSES": "soporte@madsjeez.com"
       }
+    },
+    "chrome-devtools": {
+      "command": "node",
+      "args": [
+        "/home/kimi/.npm-global/lib/node_modules/chrome-devtools-mcp/build/src/bin/chrome-devtools-mcp.js",
+        "--headless",
+        "--executablePath",
+        "/home/kimi/.cache/ms-playwright/chromium-1194/chrome-linux/chrome"
+      ]
+    },
+    "playwright": {
+      "command": "node",
+      "args": [
+        "/home/kimi/.npm-global/lib/node_modules/@playwright/mcp/cli.js",
+        "--allowed-hosts",
+        "*"
+      ]
     }
   }
 }
