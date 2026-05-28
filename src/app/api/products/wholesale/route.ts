@@ -100,7 +100,7 @@ export async function POST(request: Request) {
     // Insert new prices (max 10)
     const pricesToInsert = (prices as WholesalePriceInput[])
       .slice(0, 10)
-      .filter((p) => p.min_quantity > 0 && p.price > 0)
+      .filter((p) => p.min_quantity > 0 && Number(p.price) > 0)
       .map((p) => ({
         product_id: productId,
         min_quantity: p.min_quantity,
