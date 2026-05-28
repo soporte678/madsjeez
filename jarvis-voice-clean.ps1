@@ -1,4 +1,4 @@
-# JARVIS Voice Activator v3 - Clean
+# JARVIS Voice Activator v4 - Fixed
 Add-Type -AssemblyName System.Speech
 Add-Type -AssemblyName System.Windows.Forms
 
@@ -16,23 +16,34 @@ try {
     $recog.SetInputToDefaultAudioDevice()
     Write-Host "Microfono OK" -ForegroundColor Green
 
-    # Gramatica
-    $gb = New-Object System.Speech.Recognition.GrammarBuilder
-    $w = New-Object System.Speech.Recognition.Choices
-    $w.Add("Hey JARVIS")
-    $w.Add("JARVIS")
-    $w.Add("OK JARVIS")
-    $gb.Append($w)
-    $c = New-Object System.Speech.Recognition.Choices
-    $c.Add("")
-    $c.Add(" inicia")
-    $c.Add(" abrir")
-    $c.Add(" apaga")
-    $c.Add(" estado")
-    $c.Add(" tienda")
-    $gb.Append($c)
-    $g = New-Object System.Speech.Recognition.Grammar $gb
-    $recog.LoadGrammar($g)
+    # Gramatica 1: Solo wake word (Hey JARVIS, JARVIS, OK JARVIS)
+    $gb1 = New-Object System.Speech.Recognition.GrammarBuilder
+    $w1 = New-Object System.Speech.Recognition.Choices
+    $w1.Add("Hey JARVIS")
+    $w1.Add("JARVIS")
+    $w1.Add("OK JARVIS")
+    $gb1.Append($w1)
+    $g1 = New-Object System.Speech.Recognition.Grammar $gb1
+    $recog.LoadGrammar($g1)
+
+    # Gramatica 2: Wake word + comando
+    $gb2 = New-Object System.Speech.Recognition.GrammarBuilder
+    $w2 = New-Object System.Speech.Recognition.Choices
+    $w2.Add("Hey JARVIS")
+    $w2.Add("JARVIS")
+    $w2.Add("OK JARVIS")
+    $gb2.Append($w2)
+    $c2 = New-Object System.Speech.Recognition.Choices
+    $c2.Add(" inicia")
+    $c2.Add(" abrir")
+    $c2.Add(" apaga")
+    $c2.Add(" detener")
+    $c2.Add(" estado")
+    $c2.Add(" tienda")
+    $c2.Add(" marketplace")
+    $gb2.Append($c2)
+    $g2 = New-Object System.Speech.Recognition.Grammar $gb2
+    $recog.LoadGrammar($g2)
 
     Speak("JARVIS activado. Di Hey JARVIS.")
 
@@ -73,7 +84,7 @@ try {
         Write-Host "ESCUCHADO: '$text' (conf: $([math]::Round($conf*100))%)" -ForegroundColor Green
 
         if ($conf -gt 0.60) {
-            if ($text -match "apaga") {
+            if ($text -match "apaga|detener") {
                 Speak("Deteniendo JARVIS")
                 Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force
             }
@@ -91,7 +102,7 @@ try {
                 Speak("Abriendo JARVIS")
                 Start-Process "http://localhost:3000"
             }
-            elseif ($text -match "tienda") {
+            elseif ($text -match "tienda|marketplace") {
                 Speak("Abriendo tienda")
                 Start-Process "http://localhost:3000"
             }
