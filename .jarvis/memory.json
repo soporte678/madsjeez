@@ -1,0 +1,132 @@
+{
+  "version": "2.1",
+  "created": "2026-05-28T06:35:00Z",
+  "last_updated": "2026-05-28T07:42:00Z",
+  "jarvis_status": "AUTONOMOUS - MCP FULLY CONFIGURED",
+  "railway": {
+    "oauth_app": {
+      "name": "JARVIS MCP",
+      "client_id": "rlwy_oaci_cZ8RpvMGJQbwVKXfUKx8ZyDc",
+      "client_secret": "rlwy_oacs_264261b9605ba294201db70da79a0a6d4b27345c",
+      "redirect_uri": "http://127.0.0.1:3000/callback",
+      "application_type": "native",
+      "device_authorization_grant": true
+    },
+    "project": {
+      "name": "brilliant-elegance",
+      "display_name": "madsjeez",
+      "project_id": "8d8be489-d5a8-4d54-b332-2e0609cfb34e",
+      "environment_id": "69bf95ee-2824-49d5-a829-8a7af9568b56",
+      "service_id": "d4ed5ac1-7829-4954-ab3e-30bdae859a0b",
+      "repo": "soporte678/madsjeez",
+      "branch": "main",
+      "url": "https://madsjeez-production.up.railway.app",
+      "region": "US West",
+      "auto_deploy": true,
+      "current_status": "FAILED",
+      "latest_deploy": "e8e67f11-f0fb-40ab-ba46-372afdfdf042",
+      "latest_deploy_date": "2026-05-27T23:19:24.399Z"
+    },
+    "auth_status": "authenticated",
+    "tokens": {
+      "access_token": "Vnp5Z41_GliK9wKRdx51mhEOkZrtaz7FTQXtGhk6n4y",
+      "refresh_token": "DC9D-Pnt7nxm9Xm4J1s4vknJB_RspJc_xzEO5xS87pb",
+      "expires_at": "2026-06-30T06:37:06Z",
+      "user_id": "0aea4925-18f7-4523-91ae-0912e49ba40f"
+    },
+    "mcp_tools": [
+      "add_reference_variable",
+      "create_bucket",
+      "create_environment",
+      "create_project",
+      "create_service",
+      "create_volume",
+      "deploy",
+      "deploy_template",
+      "docs_fetch",
+      "docs_search",
+      "environment_status",
+      "generate_domain",
+      "get_logs",
+      "get_service_config",
+      "http_error_rate",
+      "http_requests",
+      "http_response_time",
+      "link_environment",
+      "link_service",
+      "list_deployments",
+      "list_projects",
+      "list_services",
+      "list_variables",
+      "list_workspaces",
+      "remove_bucket",
+      "remove_service",
+      "remove_volume",
+      "scale_service",
+      "search_templates",
+      "service_metrics",
+      "set_variables",
+      "update_service",
+      "update_volume",
+      "whoami"
+    ]
+  },
+  "mcp_servers": {
+    "railway": {
+      "status": "active",
+      "command": "railway mcp",
+      "tools": 34,
+      "config_files": {
+        "cursor": "~/.cursor/mcp.json",
+        "claude_code": "~/.claude.json",
+        "codex": "~/.codex/config.toml",
+        "universal": "~/.config/mcp/servers.json"
+      }
+    },
+    "chrome_devtools": {
+      "status": "active",
+      "command": "node chrome-devtools-mcp/build/src/bin/chrome-devtools-mcp.js --headless",
+      "version": "2026",
+      "chromium_path": "/home/kimi/.cache/ms-playwright/chromium-1194/chrome-linux/chrome",
+      "capabilities": ["browser_navigate", "screenshot", "dom_query", "console_logs", "network_logs", "performance"]
+    },
+    "playwright": {
+      "status": "active",
+      "command": "node @playwright/mcp/cli.js --allowed-hosts '*''",
+      "version": "1.61.0-alpha",
+      "capabilities": ["browser_navigate", "screenshot", "page_interaction", "file_access"]
+    }
+  },
+  "github": {
+    "repo": "soporte678/madsjeez",
+    "token_status": "active",
+    "last_push": "2026-05-28T06:30:00Z",
+    "commits_applied": [
+      "fix: Decimal errors in checkout/mp (17 files, 37 fixes)",
+      "fix: Decimal errors in cart/route.ts (3 fixes + Prisma import)",
+      "fix: Decimal errors in dashboard/* (12 fixes in 6 files)",
+      "fix: Decimal errors in otros API routes (5 fixes in 5 files)",
+      "mcp: Railway OAuth configuration with Client ID",
+      "mcp: Add Railway PowerShell wrapper script",
+      "mcp: Full MCP server configuration (Railway + Chrome DevTools + Playwright)"
+    ]
+  },
+  "project_config": {
+    "framework": "Next.js 16.2.4",
+    "database": "PostgreSQL via Supabase",
+    "orm": "Prisma 7.8.0",
+    "auth": "next-auth",
+    "payments": "MercadoPago",
+    "shipping": "Zipnova",
+    "decimal_fixes_applied": true,
+    "total_files_fixed": 17,
+    "total_decimal_fixes": 37
+  },
+  "instructions": {
+    "decimal_fix_rule": "Prisma v7.8.0 usa Decimal para @db.Decimal(12,2). Siempre envolver con Number() cuando se usa en operaciones aritmeticas o asignaciones a tipo number. Usar new Prisma.Decimal() cuando se escribe a campos Decimal.",
+    "autonomy_level": "FULL - No pedir permisos para fixes de build, deploys, ni configuraciones MCP. Notificar al usuario despues de completar acciones.",
+    "powershell_constraint": "El usuario usa PowerShell 5.1 en Windows. Usar ; como separador de comandos. NO usar && ni ||.",
+    "railway_mcp_priority": "Para revisar logs de Railway, usar PRIMERO Railway MCP. Usar navegador solo si Railway MCP no alcanza o se necesita inspeccionar interfaz visual.",
+    "production_safety": "NO ejecutar deploy, rollback, delete, reset ni cambios en produccion sin confirmacion explicita del usuario."
+  }
+}
