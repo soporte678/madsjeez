@@ -193,7 +193,7 @@ function CheckoutContent() {
   }, [status, qpProduct, qpQty, router, fetchCart]);
 
   const subtotal = cartItems.reduce(
-    (acc, item) => acc + item.product.price * item.quantity,
+    (acc, item) => acc + Number(item.product.price) * item.quantity,
     0
   );
 
@@ -524,10 +524,10 @@ function CheckoutContent() {
       if (item) {
         trackEvent("remove_from_cart", {
           currency: ANALYTICS_CURRENCY,
-          value: Number(item.product.price * item.quantity),
+          value: Number(item.product.price) * Number(item.quantity),
           ecommerce: {
             currency: ANALYTICS_CURRENCY,
-            value: Number(item.product.price * item.quantity),
+            value: Number(item.product.price) * Number(item.quantity),
             items: [
               buildAnalyticsItem({
                 id: item.product.id,
@@ -1024,7 +1024,7 @@ function CheckoutContent() {
                               <p className="text-[11px] text-amber-600 mt-1">Llegaste al stock disponible</p>
                             )}
                             <p className="font-semibold">
-                              ${(item.product.price * item.quantity).toLocaleString()}
+                              ${(Number(item.product.price) * item.quantity).toLocaleString()}
                             </p>
                           </div>
                         </div>
