@@ -61,7 +61,7 @@ export async function GET() {
 
     // Totales alineados con checkout Mercado Pago (mismo vendedor / envío fijo si no hay free shipping)
     const subtotal = cart.items.reduce(
-      (sum: number, item: { price: number; quantity: number }) => sum + Number(item.price) * item.quantity,
+      (sum, item) => sum + Number(item.price) * item.quantity,
       0
     );
     const shippingCost = cart.items.some(
