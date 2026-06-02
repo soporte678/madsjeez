@@ -21,6 +21,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/coupons`,                     lastModified: new Date(), changeFrequency: "daily",   priority: 0.6 },
     { url: `${BASE_URL}/quienes-somos`,               lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },
     { url: `${BASE_URL}/help`,                        lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },
+    { url: `${BASE_URL}/tutoriales`,                  lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
+    ...['postularte-fundador','crear-cuenta','publicar-producto','configurar-pagos','gestionar-preguntas','generar-etiquetas','ver-metricas','usar-ads'].map((s) => ({
+      url: `${BASE_URL}/tutoriales/${s}`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly' as const,
+      priority: 0.6,
+    })),
     { url: `${BASE_URL}/legal/terminos`,              lastModified: new Date(), changeFrequency: "yearly",  priority: 0.3 },
     { url: `${BASE_URL}/legal/privacidad`,            lastModified: new Date(), changeFrequency: "yearly",  priority: 0.3 },
     { url: `${BASE_URL}/legal/cookies`,               lastModified: new Date(), changeFrequency: "yearly",  priority: 0.3 },
