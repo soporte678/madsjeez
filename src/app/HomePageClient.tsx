@@ -13,6 +13,9 @@ const Navbar = dynamic(() => import("@/components/Navbar"), {
 })
 const HomeSeoContent = dynamic(() => import("@/components/home/HomeSeoContent").then(m => m.HomeSeoContent), { loading: () => null })
 const FoundingSellersSection = dynamic(() => import("@/components/home/FoundingSellersSection").then(m => m.FoundingSellersSection), { loading: () => <div className="max-w-[1184px] mx-auto px-4 mb-20 h-[420px] animate-pulse rounded-3xl bg-slate-100" /> })
+const VsMercadoLibreSection = dynamic(() => import("@/components/home/VsMercadoLibreSection").then(m => m.VsMercadoLibreSection), { loading: () => <div className="max-w-[1184px] mx-auto px-4 mb-20 h-[500px] animate-pulse rounded-2xl bg-slate-100" /> })
+const HowItWorksSection = dynamic(() => import("@/components/home/HowItWorksSection").then(m => m.HowItWorksSection), { loading: () => <div className="max-w-[1184px] mx-auto px-4 mb-20 h-[500px] animate-pulse rounded-2xl bg-slate-100" /> })
+const SellersTestimonialsSection = dynamic(() => import("@/components/home/SellersTestimonialsSection").then(m => m.SellersTestimonialsSection), { loading: () => <div className="max-w-[1184px] mx-auto px-4 mb-20 h-[420px] animate-pulse rounded-2xl bg-slate-100" /> })
 const HomeSocialProof = dynamic(() => import("@/components/home/HomeSocialProof").then(m => m.HomeSocialProof), { loading: () => null })
 const SiteCompanyFooter = dynamic(() => import("@/components/seo/SiteCompanyFooter").then(m => m.SiteCompanyFooter), { loading: () => null })
 const SiteSocialFooter = dynamic(() => import("@/components/seo/SiteSocialFooter").then(m => m.SiteSocialFooter), { loading: () => null })
@@ -55,49 +58,82 @@ const PaidAdBannerSlot = dynamic(
   { loading: () => <div className="h-24 animate-pulse rounded-xl bg-slate-100" /> }
 )
 
-// Configuración de banners
+// Configuración de banners - 5 banners premium con imagen real y CTA verbo+objeto
 const heroBanners = [
   {
     id: 1,
-    badge: "Lanzamiento 2026",
-    titleLine1: "El Nuevo Standard",
-    titleLine2: "en compras",
-    titleHighlight: "Globales",
-    desc: "La plataforma para vender productos y gestionar tu negocio online en Argentina. Catálogo, ofertas y pagos con Mercado Pago.",
-    btn1: "Explorar Colección",
+    badge: "Marketplace argentino",
+    titleLine1: "Comprá lo que",
+    titleLine2: "querés",
+    titleHighlight: "hoy mismo",
+    desc: "Miles de productos con envío a todo el país y hasta 18 cuotas con Mercado Pago.",
+    btn1: "Explorar productos",
+    btnHref: "/search",
     Icon: ShoppingCart,
-    image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=75",
-    imageAlt: "Compradores en un local comercial moderno — marketplace Madsjeez Argentina",
-    bgGradient: "from-blue-600 via-slate-900 to-indigo-950",
+    image: "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&w=900&q=80",
+    imageAlt: "Paquetes y compras del marketplace Madsjeez Argentina",
+    bgGradient: "from-[#0b2f6b] via-slate-900 to-slate-950",
     accent: "blue"
   },
   {
     id: 2,
-    badge: "Ofertas Flash",
-    titleLine1: "Descuentos",
-    titleLine2: "que cortan la",
-    titleHighlight: "Respiración",
-    desc: "Hasta 50% de beneficio directo en marcas seleccionadas. Solo por 24 horas.",
-    btn1: "Cazar Ofertas",
+    badge: "Plan Fundador",
+    titleLine1: "Vendé sin",
+    titleLine2: "comisión",
+    titleHighlight: "6 meses",
+    desc: "Solo 100 cupos. Cero comisión, badge permanente y soporte humano por WhatsApp.",
+    btn1: "Postularme",
+    btnHref: "/seller/register",
+    Icon: TrendingUp,
+    image: "https://images.unsplash.com/photo-1556745753-b2904692b3cd?auto=format&fit=crop&w=900&q=80",
+    imageAlt: "Vendedora gestionando su tienda online desde una notebook",
+    bgGradient: "from-[#1a1a2e] via-slate-900 to-[#0b2f6b]",
+    accent: "amber"
+  },
+  {
+    id: 3,
+    badge: "Ofertas semanales",
+    titleLine1: "Hasta",
+    titleLine2: "50% off",
+    titleHighlight: "en tecnología",
+    desc: "Notebooks, celulares y audio con descuentos reales. Stock limitado, renovación lunes y jueves.",
+    btn1: "Ver ofertas",
+    btnHref: "/offers",
     Icon: Zap,
-    image: "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&w=800&q=75",
-    imageAlt: "Etiquetas de ofertas y descuentos en productos — ofertas flash Madsjeez",
-    bgGradient: "from-orange-900 via-slate-900 to-black",
-    accent: "orange"
+    image: "https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?auto=format&fit=crop&w=900&q=80",
+    imageAlt: "Notebook y dispositivos electrónicos en oferta",
+    bgGradient: "from-slate-950 via-[#0b2f6b] to-slate-900",
+    accent: "blue"
+  },
+  {
+    id: 4,
+    badge: "Envío gratis",
+    titleLine1: "Recibilo",
+    titleLine2: "en tu casa",
+    titleHighlight: "en 48 hs",
+    desc: "Compras desde $30.000 con envío bonificado a CABA, GBA y principales ciudades.",
+    btn1: "Comprar ahora",
+    btnHref: "/search",
+    Icon: Truck,
+    image: "https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?auto=format&fit=crop&w=900&q=80",
+    imageAlt: "Repartidor entregando paquete en domicilio",
+    bgGradient: "from-[#0b2f6b] via-slate-900 to-slate-950",
+    accent: "blue"
   },
   {
     id: 5,
-    badge: "Market Insights",
-    titleLine1: "Potenciamos",
-    titleLine2: "tu marca al",
-    titleHighlight: "Infinito",
-    desc: "Vende en la plataforma de mayor crecimiento. Dashboard avanzado y logística integrada.",
-    btn1: "Ser Vendedor Pro",
-    Icon: TrendingUp,
-    image: "https://images.unsplash.com/photo-1556761175-4b46a572b786?auto=format&fit=crop&w=800&q=75",
-    imageAlt: "Equipo de negocios en reunión — vender y escalar tu marca en Madsjeez",
-    bgGradient: "from-amber-600 via-slate-900 to-black",
-    accent: "amber"
+    badge: "Cuotas sin interés",
+    titleLine1: "Hasta",
+    titleLine2: "18 cuotas",
+    titleHighlight: "sin interés",
+    desc: "Pagá con Mercado Pago, transferencia o tarjeta. Crédito instantáneo en productos seleccionados.",
+    btn1: "Ver productos",
+    btnHref: "/deals",
+    Icon: CreditCard,
+    image: "https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?auto=format&fit=crop&w=900&q=80",
+    imageAlt: "Persona pagando online con tarjeta",
+    bgGradient: "from-slate-900 via-[#0b2f6b] to-slate-950",
+    accent: "blue"
   }
 ]
 
@@ -181,12 +217,12 @@ export default function HomePageClient() {
                 </p>
 
                 <Link
-                  href={banner.btn1 === "Ser Vendedor Pro" ? "/seller/register" : "/search"}
+                  href={banner.btnHref || "/search"}
                   prefetch={false}
-                  className="touch-target mt-8 group/btn bg-gradient-to-r from-[#f97316] to-[#ff9100] text-white text-[14px] font-black py-4 px-10 rounded-2xl shadow-xl shadow-orange-500/30 hover:opacity-90 transition-opacity duration-200 inline-flex items-center gap-4 uppercase tracking-wider min-h-[52px]"
+                  className="touch-target mt-8 group/btn bg-yellow-400 hover:bg-yellow-300 text-slate-900 text-[14px] font-black py-4 px-10 rounded-2xl shadow-xl shadow-yellow-500/25 transition-colors duration-200 inline-flex items-center gap-4 uppercase tracking-wider min-h-[52px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-yellow-300"
                 >
                   {banner.btn1}
-                  <div className="w-8 h-8 rounded-full bg-white text-[#f97316] flex items-center justify-center group-hover/btn:scale-110 group-hover/btn:rotate-12 transition-all">
+                  <div className="w-8 h-8 rounded-full bg-slate-900 text-yellow-300 flex items-center justify-center transition-transform group-hover/btn:translate-x-1">
                     <ChevronRight size={18} strokeWidth={3} />
                   </div>
                 </Link>
@@ -390,6 +426,15 @@ export default function HomePageClient() {
 
       {/* SELLERS FUNDADORES — programa de 100 cupos + referral */}
       <FoundingSellersSection />
+
+      {/* COMPARATIVA vs MercadoLibre - 7 puntos donde ganamos */}
+      <VsMercadoLibreSection />
+
+      {/* CÓMO FUNCIONA en 4 pasos */}
+      <HowItWorksSection />
+
+      {/* TESTIMONIOS reales de sellers AR */}
+      <SellersTestimonialsSection />
 
       <HomeSocialProof />
 
