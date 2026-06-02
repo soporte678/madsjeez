@@ -16,7 +16,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { name, email, password, isSeller, sellerName } = await req.json()
+    const { name, email, password } = await req.json()
 
     if (!name || !email || !password) {
       return NextResponse.json(
@@ -40,16 +40,15 @@ export async function POST(req: Request) {
     // Hashear contraseña
     const hashedPassword = await bcrypt.hash(password, 10)
 
-    // Crear usuario
+    // HIGH-7: nunca aceptar isSeller/role desde el body. El upgrade a SELLER requiere
+    // un flow autenticado separado (/api/seller/onboarding) con verificación.
     const user = await prisma.user.create({
       data: {
         name,
         email,
         password: hashedPassword,
-        isSeller: isSeller || false,
-        sellerName: isSeller ? sellerName : null,
-        sellerSince: isSeller ? new Date() : null,
-        role: isSeller ? "SELLER" : "USER",
+        isSeller: false,
+        role: "USER",
       }
     })
 

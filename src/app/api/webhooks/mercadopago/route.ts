@@ -294,6 +294,73 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ received: true, duplicate: true });
       }
 
+      // CRIT-3: si el external_reference corresponde a una Subscription (no a una Order),
+      // activamos la suscripción y elevamos el tier del usuario. Idempotente por mp_payment_id.
+      try {
+        const sub = await prisma.subscription.findUnique({ where: { id: orderId } });
+        if (sub) {
+          const approved = status === "approved";
+          const failed = status === "rejected" || status === "cancelled" || status === "charged_back";
+          const refunded = status === "refunded";
+
+          if (sub.mpPaymentId === String(paymentId) && sub.mpStatus === status) {
+            return NextResponse.json({ received: true, duplicate: true });
+          }
+
+          let nextStatus = sub.status;
+          if (approved) nextStatus = "active";
+          else if (refunded) nextStatus = "refunded";
+          else if (failed) nextStatus = "cancelled";
+
+          const now = new Date();
+          const newEnd = new Date(now);
+          newEnd.setMonth(newEnd.getMonth() + (sub.billingCycle || 1));
+
+          await prisma.subscription.update({
+            where: { id: sub.id },
+            data: {
+              status: nextStatus,
+              mpPaymentId: String(paymentId),
+              mpStatus: status,
+              ...(approved ? { startDate: now, endDate: newEnd } : {}),
+            },
+          });
+
+          if (approved) {
+            await prisma.user.update({
+              where: { id: sub.userId },
+              data: {
+                subscriptionTier: sub.tier,
+                subscriptionExpiry: newEnd,
+              },
+            });
+          } else if (refunded || failed) {
+            // Solo revertir tier si la sub activa era esta misma
+            const user = await prisma.user.findUnique({ where: { id: sub.userId } });
+            if (user && user.subscriptionTier === sub.tier) {
+              await prisma.user.update({
+                where: { id: sub.userId },
+                data: { subscriptionTier: "FREE", subscriptionExpiry: null },
+              });
+            }
+          }
+
+          await supabaseService.from("mp_webhook_processed").upsert(
+            {
+              payment_id: paymentId,
+              last_mp_status: status,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "payment_id" }
+          );
+
+          logger.info(`Webhook: subscription ${sub.id} → ${nextStatus} (MP status: ${status})`);
+          return NextResponse.json({ received: true, subscription: true });
+        }
+      } catch (e) {
+        logger.warn("Subscription webhook branch (non-fatal):", e);
+      }
+
       const statusMap: Record<string, string> = {
         approved: "paid",
         pending: "pending",
