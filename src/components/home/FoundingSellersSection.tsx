@@ -40,9 +40,9 @@ const benefits: Array<{
 }> = [
   {
     icon: Percent,
-    title: "0% comisión los primeros 6 meses",
+    title: "0% comisión sobre tus ventas. Siempre.",
     body:
-      "Mientras dura el programa fundador, te quedás con todo. Después, comisiones por debajo del promedio del mercado.",
+      "Madsjeez no cobra un peso de lo que vendés. Cobrás con tu MercadoPago y las cuotas las definís vos. Te quedás con el 100%.",
     highlight: true,
   },
   {
@@ -312,10 +312,10 @@ function ReferralBlock() {
           </div>
           <p className="mt-1.5 text-[13.5px] text-slate-700 leading-relaxed max-w-[58ch]">
             Cada fundador que invitás y se aprueba te da{" "}
-            <strong className="text-slate-900">1 mes adicional</strong> de 0%
-            comisión. Si traés 3 que cumplan los requisitos, te llevás{" "}
-            <strong className="text-slate-900">1 año extra</strong> dentro del
-            programa fundador.
+            <strong className="text-slate-900">1 mes gratis</strong> del plan
+            que tengas activo. Si traés 3 que cumplan los requisitos, te llevás{" "}
+            <strong className="text-slate-900">1 año entero</strong> de tu plan
+            sin pagar.
           </p>
 
           <div className="mt-3 flex flex-wrap items-center gap-2">

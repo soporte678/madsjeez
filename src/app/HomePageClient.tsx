@@ -78,10 +78,10 @@ const heroBanners = [
   {
     id: 2,
     badge: "Plan Fundador",
-    titleLine1: "Vendé sin",
-    titleLine2: "comisión",
+    titleLine1: "Plan PRO",
+    titleLine2: "gratis",
     titleHighlight: "6 meses",
-    desc: "Solo 100 cupos. Cero comisión, badge permanente y soporte humano por WhatsApp.",
+    desc: "Solo 100 cupos. Plan PRO sin costo, badge permanente y soporte humano por WhatsApp. Nunca cobramos comisión por venta.",
     btn1: "Postularme",
     btnHref: "/seller/register",
     Icon: TrendingUp,
@@ -583,7 +583,7 @@ export default function HomePageClient() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-[1100px] mx-auto items-center">
           {[
             {
-              name: "PLATA", price: "9.999", comm: "12%", icon: Box, featured: false,
+              name: "PLATA", price: "9.999", comm: "0% comisión", icon: Box, featured: false,
               benefits: [
                 'Exposición estándar en búsquedas',
                 'Hasta 100 publicaciones activas',
@@ -594,7 +594,7 @@ export default function HomePageClient() {
               ]
             },
             {
-              name: "GOLD", price: "19.999", comm: "8%", icon: Zap, featured: true,
+              name: "GOLD", price: "19.999", comm: "0% comisión", icon: Zap, featured: true,
               benefits: [
                 'Exposición alta en resultados',
                 'Publicaciones ilimitadas',
@@ -607,7 +607,7 @@ export default function HomePageClient() {
               ]
             },
             {
-              name: "PLATINUM", price: "49.999", comm: "5%", icon: Sparkles, featured: false,
+              name: "PLATINUM", price: "49.999", comm: "0% comisión", icon: Sparkles, featured: false,
               benefits: [
                 'Exposición máxima (Top Resultados)',
                 'Publicidad en Banners (Home y Categorías)',
@@ -615,7 +615,7 @@ export default function HomePageClient() {
                 'Meta API Enterprise: Instagram, Facebook, WhatsApp + Ads Manager',
                 'TikTok Ads + TikTok Shop + viralizador IA',
                 'Ejecutivo de cuenta dedicado',
-                'Comisión más baja garantizada',
+                'Cuotas con tu MercadoPago según tu config',
                 'Retiro de dinero inmediato'
               ]
             }
@@ -656,7 +656,7 @@ export default function HomePageClient() {
                     ? 'bg-[#00b4d8]/20 text-[#00b4d8] border border-[#00b4d8]/30'
                     : 'bg-[#f97316]/20 text-[#f97316] border border-[#f97316]/30'
                 }`}>
-                  {plan.comm} COMISIÓN
+                  {plan.comm}
                 </div>
               </div>
 

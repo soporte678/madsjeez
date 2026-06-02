@@ -39,16 +39,16 @@ export const TUTORIALES: Tutorial[] = [
   {
     slug: 'postularte-fundador',
     title: 'Postularte como Sellers Fundador',
-    subtitle: 'Quedate en los primeros 100 con 0 % comisión 6 meses',
+    subtitle: 'Quedate en los primeros 100 con plan PRO gratis 6 meses',
     audience: 'seller',
     duration: '4 min',
     level: 'fácil',
-    tags: ['fundadores', 'lanzamiento', 'comisión cero'],
+    tags: ['fundadores', 'lanzamiento', 'plan gratis'],
     icon: 'gift',
     summary:
       'Cómo aplicar al programa fundador, qué pide el formulario y qué pasa después con tu cuenta.',
     intro:
-      'El programa Sellers Fundadores cierra cuando se ocupan los 100 cupos. Postularte tarda menos de 5 minutos. Si pasás la verificación, te activamos comisión 0 % los primeros 6 meses + badge fundador permanente.',
+      'El programa Sellers Fundadores cierra cuando se ocupan los 100 cupos. Postularte tarda menos de 5 minutos. Si pasás la verificación, te activamos el plan PRO sin costo los primeros 6 meses + badge fundador permanente. Madsjeez nunca cobra comisión sobre tus ventas.',
     steps: [
       {
         title: 'Entrá al formulario',
@@ -210,7 +210,7 @@ export const TUTORIALES: Tutorial[] = [
     summary:
       'Vinculá Mercado Pago una sola vez y dejá que cobramos los pagos de tus ventas y los acreditemos en tu CVU.',
     intro:
-      'Madsjeez no toca tu plata: el pago va directo del comprador a tu cuenta de Mercado Pago. Nosotros solo cobramos la comisión cuando la operación se confirma. Esto significa cero retrasos por nuestra parte.',
+      'Madsjeez no toca tu plata: el pago va directo del comprador a tu cuenta de Mercado Pago. No tomamos comisión por venta — las cuotas y los costos de MP los configurás vos en tu cuenta. Cero retrasos por nuestra parte.',
     steps: [
       {
         title: 'Entrá a Configuración → Pagos',

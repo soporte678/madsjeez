@@ -79,8 +79,9 @@ export function HomeSeoContent() {
               opciones de publicidad dentro del marketplace (MADSJEEZ Ads).
             </p>
             <p className="mb-4">
-              Los planes de suscripción amplían exposición en búsquedas, automatizan marketing y
-              reducen comisiones según el nivel elegido. Si ya vendés en redes sociales, Madsjeez te
+              Los planes de suscripción amplían exposición en búsquedas y automatizan marketing.
+              Madsjeez no cobra comisión por venta: el seller recibe el 100% del importe en su
+              cuenta de Mercado Pago. Si ya vendés en redes sociales, Madsjeez te
               permite centralizar pedidos, mensajes y postventa sin depender de un solo canal.
             </p>
             <p>

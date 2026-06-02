@@ -29,7 +29,8 @@ interface Plan {
   icon: any
   color: string
   features: string[]
-  commission: string
+  /** Bullet destacado bajo el precio (antes era "comisión"). */
+  badge: string
   popular?: boolean
 }
 
@@ -41,7 +42,7 @@ const plans: Plan[] = [
     description: "Para vendedores que están empezando",
     icon: Zap,
     color: "#C0C0C0",
-    commission: "15%",
+    badge: "0% comisión por venta",
     features: [
       "Hasta 100 productos activos",
       "Publicaciones destacadas: 5",
@@ -59,7 +60,7 @@ const plans: Plan[] = [
     description: "Para vendedores en crecimiento",
     icon: Crown,
     color: "#ffa60a",
-    commission: "10%",
+    badge: "0% comisión por venta",
     popular: true,
     features: [
       "Hasta 500 productos activos",
@@ -80,7 +81,7 @@ const plans: Plan[] = [
     description: "Para empresas y sellers profesionales",
     icon: Gem,
     color: "#00b4d8",
-    commission: "5%",
+    badge: "0% comisión por venta",
     features: [
       "Productos ilimitados",
       "Publicaciones destacadas: ilimitadas",
@@ -311,7 +312,7 @@ export default function SubscriptionsPage() {
                       color: plan.color 
                     }}
                   >
-                    {plan.commission} COMISIÓN POR VENTA
+                    {plan.badge}
                   </div>
                 </div>
 

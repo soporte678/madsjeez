@@ -11,9 +11,9 @@ import { Check, X, ArrowRight } from "lucide-react";
 
 const rows = [
   {
-    feature: "Comisión para Sellers Fundadores",
-    madsjeez: { ok: true, label: "0% los primeros 6 meses" },
-    others: { ok: false, label: "Hasta 16% desde día uno" },
+    feature: "Comisión sobre tus ventas",
+    madsjeez: { ok: true, label: "0% siempre. Te quedás con todo." },
+    others: { ok: false, label: "Hasta 16% por venta" },
   },
   {
     feature: "Soporte humano en Argentina",
@@ -27,7 +27,7 @@ const rows = [
   },
   {
     feature: "Cobros con Mercado Pago",
-    madsjeez: { ok: true, label: "Hasta 18 cuotas, integración nativa" },
+    madsjeez: { ok: true, label: "Cuotas que vos definís en tu MP" },
     others: { ok: true, label: "Sí, con condiciones del marketplace" },
   },
   {
