@@ -57,7 +57,10 @@ export function LazyRotatingProductCarousel({ eager = false, ...props }: Props) 
   }, [eager, visible]);
 
   return (
-    <div ref={rootRef} className="min-h-[300px]">
+    // Sin min-h: si RotatingProductCarousel devuelve null por falta de productos,
+    // el wrapper colapsa en vez de dejar 300px de aire (causaba huecos enormes
+    // en home cuando la DB tiene pocos productos en multiples carruseles).
+    <div ref={rootRef}>
       {visible ? (
         <RotatingProductCarousel {...props} />
       ) : (

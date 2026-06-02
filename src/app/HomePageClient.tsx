@@ -479,30 +479,12 @@ export default function HomePageClient() {
         </div>
       </section>
 
-      {/* 1. CARRUSEL: Productos rotativos — catálogo completo en rotación automática */}
+      {/* CARRUSEL principal — catalogo destacado above the fold */}
       <section className="max-w-[1184px] mx-auto px-4">
         <LazyRotatingProductCarousel
           eager
           title="Productos destacados"
-          subtitle="Descubrí nuevos productos de nuestro catálogo"
-        />
-      </section>
-
-      {/* 2. CARRUSEL: Relacionado con tus visitas */}
-      <section className="max-w-[1184px] mx-auto px-4">
-        <LazyRotatingProductCarousel
-          title="Relacionado con tus visitas"
-          subtitle="Rotación automática en todo el catálogo"
-          offset={12}
-        />
-      </section>
-
-      {/* 3. CARRUSEL: Elegidos para vos */}
-      <section className="max-w-[1184px] mx-auto px-4">
-        <LazyRotatingProductCarousel
-          title="Elegidos para vos"
-          subtitle="Nuevas combinaciones cada pocos segundos"
-          offset={24}
+          subtitle="Descubri nuevos productos de nuestro catalogo"
         />
       </section>
 
@@ -510,32 +492,23 @@ export default function HomePageClient() {
         <PaidAdBannerSlot variant="leaderboard" slotKey="home-leaderboard-middle" />
       </section>
 
-      {/* 4. CARRUSEL: Herramientas (completa con otras categorías si faltan) */}
+      {/* CARRUSEL: Herramientas (categoria principal del marketplace) */}
       <section className="cv-auto max-w-[1184px] mx-auto px-4">
         <LazyRotatingProductCarousel
-          title="Herramientas y ferretería"
-          subtitle="Prioriza la categoría; si no hay stock, muestra el resto del catálogo"
+          title="Herramientas y ferreteria"
+          subtitle="Prioriza la categoria; si no hay stock, muestra el resto del catalogo"
           offset={36}
           categorySlug="herramientas"
         />
       </section>
 
-      {/* 5. CARRUSEL: Deportes */}
+      {/* CARRUSEL: Deportes */}
       <section className="cv-auto max-w-[1184px] mx-auto px-4">
         <LazyRotatingProductCarousel
           title="Deportes y fitness"
-          subtitle="Rotación continua con respaldo de otras categorías"
+          subtitle="Rotacion continua con respaldo de otras categorias"
           offset={48}
           categorySlug="deportes"
-        />
-      </section>
-
-      {/* 6. CARRUSEL: Más productos rotativos */}
-      <section className="cv-auto max-w-[1184px] mx-auto px-4">
-        <LazyRotatingProductCarousel
-          title="Más productos para vos"
-          subtitle="Nuestra selección se renueva automáticamente"
-          offset={60}
         />
       </section>
 
