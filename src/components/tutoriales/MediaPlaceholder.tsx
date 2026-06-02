@@ -82,16 +82,33 @@ export function MediaPlaceholder({ hint, media, aspect = 'video' }: Props) {
 /**
  * Hero del tutorial: media destacada arriba del contenido. Si no hay
  * media real, mostramos un mock más rico (gradient + icono grande).
+ *
+ * variant opcional: 'default' (legacy) | 'a' photoreal | 'b' isometric |
+ * 'c' clay | 'd' editorial — A/B testing con el público.
  */
+import { PhotorealVariant } from './hero-variants/PhotorealVariant';
+import { IsometricVariant } from './hero-variants/IsometricVariant';
+import { ClayVariant } from './hero-variants/ClayVariant';
+import { EditorialDarkVariant } from './hero-variants/EditorialDarkVariant';
+
+export type TutorialHeroVariant = 'default' | 'a' | 'b' | 'c' | 'd';
+
 export function TutorialHero({
   hint,
   icon,
   title,
+  variant = 'default',
 }: {
   hint: string;
   icon: React.ReactNode;
   title: string;
+  variant?: TutorialHeroVariant;
 }) {
+  if (variant === 'a') return <PhotorealVariant title={title} hint={hint} icon={icon} />;
+  if (variant === 'b') return <IsometricVariant title={title} hint={hint} icon={icon} />;
+  if (variant === 'c') return <ClayVariant title={title} hint={hint} icon={icon} />;
+  if (variant === 'd') return <EditorialDarkVariant title={title} hint={hint} />;
+
   return (
     <div className="relative aspect-[16/7] w-full overflow-hidden rounded-3xl bg-gradient-to-br from-[#0f2557] via-[#1a3b8c] to-[#3483FA] shadow-[0_24px_60px_-30px_rgba(15,23,42,0.5)]">
       <svg aria-hidden viewBox="0 0 1200 525" className="absolute inset-0 h-full w-full opacity-20" preserveAspectRatio="xMidYMid slice">

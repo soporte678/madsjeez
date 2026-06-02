@@ -6,7 +6,15 @@ import { TutorialIcon } from '@/components/tutoriales/TutorialIcon';
 import { MediaPlaceholder, TutorialHero } from '@/components/tutoriales/MediaPlaceholder';
 import { ArrowLeft, ArrowRight, Clock, Tag, CheckCircle2 } from 'lucide-react';
 
+import type { TutorialHeroVariant } from '@/components/tutoriales/MediaPlaceholder';
+
 type Params = { slug: string };
+type Search = { style?: string };
+
+function parseVariant(v?: string): TutorialHeroVariant {
+  if (v === 'a' || v === 'b' || v === 'c' || v === 'd') return v;
+  return 'default';
+}
 
 export async function generateStaticParams() {
   return TUTORIALES.map((t) => ({ slug: t.slug }));
@@ -40,10 +48,14 @@ const LEVEL_TONE: Record<string, string> = {
 
 export default async function TutorialDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<Params>;
+  searchParams?: Promise<Search>;
 }) {
   const { slug } = await params;
+  const sp = (await searchParams) ?? {};
+  const variant = parseVariant(sp.style);
   const t = getTutorial(slug);
   if (!t) return notFound();
   const related = getRelated(slug);
@@ -81,6 +93,7 @@ export default async function TutorialDetailPage({
           title={t.title}
           hint={t.subtitle}
           icon={<TutorialIcon name={t.icon} size={64} className="opacity-95" />}
+          variant={variant}
         />
       </section>
 
