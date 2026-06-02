@@ -5,15 +5,17 @@ import dynamic from "next/dynamic"
 import Image from "next/image"
 import Link from "next/link"
 import { COMPANY } from "@/lib/company"
+// SSR habilitado en componentes core para evitar BAILOUT_TO_CLIENT_SIDE_RENDERING
+// y que el primer paint llegue ya con contenido (Hero, FoundingSellers, SocialProof, footers).
+// Sólo dejamos ssr:false en widgets opcionales que dependen del browser API (auth, ads).
 const Navbar = dynamic(() => import("@/components/Navbar"), {
   loading: () => <div className="w-full h-[100px] bg-[linear-gradient(180deg,rgba(15,23,42,0.98)_0%,rgba(15,23,42,0.95)_100%)] sticky top-0 z-[100]" aria-hidden="true" />,
-  ssr: false,
 })
-const HomeSeoContent = dynamic(() => import("@/components/home/HomeSeoContent").then(m => m.HomeSeoContent), { ssr: false, loading: () => null })
-const FoundingSellersSection = dynamic(() => import("@/components/home/FoundingSellersSection").then(m => m.FoundingSellersSection), { ssr: false, loading: () => <div className="max-w-[1184px] mx-auto px-4 mb-20 h-[420px] animate-pulse rounded-3xl bg-slate-100" /> })
-const HomeSocialProof = dynamic(() => import("@/components/home/HomeSocialProof").then(m => m.HomeSocialProof), { ssr: false, loading: () => null })
-const SiteCompanyFooter = dynamic(() => import("@/components/seo/SiteCompanyFooter").then(m => m.SiteCompanyFooter), { ssr: false, loading: () => null })
-const SiteSocialFooter = dynamic(() => import("@/components/seo/SiteSocialFooter").then(m => m.SiteSocialFooter), { ssr: false, loading: () => null })
+const HomeSeoContent = dynamic(() => import("@/components/home/HomeSeoContent").then(m => m.HomeSeoContent), { loading: () => null })
+const FoundingSellersSection = dynamic(() => import("@/components/home/FoundingSellersSection").then(m => m.FoundingSellersSection), { loading: () => <div className="max-w-[1184px] mx-auto px-4 mb-20 h-[420px] animate-pulse rounded-3xl bg-slate-100" /> })
+const HomeSocialProof = dynamic(() => import("@/components/home/HomeSocialProof").then(m => m.HomeSocialProof), { loading: () => null })
+const SiteCompanyFooter = dynamic(() => import("@/components/seo/SiteCompanyFooter").then(m => m.SiteCompanyFooter), { loading: () => null })
+const SiteSocialFooter = dynamic(() => import("@/components/seo/SiteSocialFooter").then(m => m.SiteSocialFooter), { loading: () => null })
 import {
   ShoppingCart,
   ChevronRight,
