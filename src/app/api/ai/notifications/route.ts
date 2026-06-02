@@ -2,7 +2,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai"
 import { getServerSession } from "next-auth"
 import { NextRequest, NextResponse } from "next/server"
 import { authOptions } from "@/lib/auth"
-import { checkRateLimit, clientIpFromRequest } from "@/lib/rate-limit-memory"
+import { checkRateLimit, clientIpFromRequest } from "@/lib/rate-limit"
 import { getSupabaseService } from "@/lib/supabase/service"
 
 type ContextSlice = {

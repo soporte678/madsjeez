@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { InstallPrompt } from "./InstallPrompt";
 import { BottomNav } from "./BottomNav";
 import { IOSInstallBanner } from "./IOSInstallBanner";
+import { logger } from "@/lib/logger";
 
 function registerServiceWorker() {
   if (typeof window !== "undefined" && "serviceWorker" in navigator) {
@@ -11,7 +12,7 @@ function registerServiceWorker() {
       navigator.serviceWorker
         .register("/sw.js")
         .then((registration) => {
-          console.log("[PWA] SW registrado:", registration.scope);
+          logger.info("[PWA] SW registrado:", registration.scope);
 
           // Escuchar actualizaciones del service worker
           registration.addEventListener("updatefound", () => {
@@ -27,7 +28,7 @@ function registerServiceWorker() {
           });
         })
         .catch((err) => {
-          console.log("[PWA] SW registro fallo:", err);
+          logger.warn("[PWA] SW registro fallo:", err);
         });
     });
   }

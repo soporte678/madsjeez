@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { logger } from "@/lib/logger"
 
 const VERIFY_TOKEN = process.env.META_WEBHOOK_VERIFY_TOKEN
 
@@ -15,7 +16,7 @@ export async function GET(request: Request) {
   const challenge = searchParams.get("hub.challenge")
 
   if (mode === "subscribe" && token === VERIFY_TOKEN) {
-    console.log("Webhook verificado por Meta")
+    logger.info("Webhook verificado por Meta")
     return new NextResponse(challenge, { status: 200 })
   }
 
@@ -27,7 +28,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
 
-    console.log("Webhook recibido:", JSON.stringify(body, null, 2))
+    logger.info("Webhook recibido:", JSON.stringify(body, null, 2))
 
     const entry = body.entry?.[0]
     const changes = entry?.changes?.[0]
@@ -38,7 +39,7 @@ export async function POST(request: Request) {
       const from = message.from
       const text = message.text?.body
 
-      console.log(`Mensaje de WhatsApp: ${from} - ${text}`)
+      logger.info(`Mensaje de WhatsApp: ${from} - ${text}`)
     }
 
     if (value?.messaging?.length > 0) {
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
       const sender = messaging.sender?.id
       const message = messaging.message?.text
 
-      console.log(`Mensaje Messenger/IG: ${sender} - ${message}`)
+      logger.info(`Mensaje Messenger/IG: ${sender} - ${message}`)
     }
 
     return NextResponse.json({ success: true })

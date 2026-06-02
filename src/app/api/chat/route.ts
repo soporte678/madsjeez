@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { NextRequest, NextResponse } from "next/server"
 import { getSupabaseService } from "@/lib/supabase/service"
-import { simpleRateLimit } from "@/lib/simple-rate-limit"
+import { simpleRateLimit } from "@/lib/rate-limit"
 
 async function getMarketplaceContext(userMessage: string): Promise<string> {
   const supabase = getSupabaseService()

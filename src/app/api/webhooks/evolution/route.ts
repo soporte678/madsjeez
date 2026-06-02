@@ -6,7 +6,7 @@ import { processInboundWhatsappMessage } from "@/lib/whatsapp-bot/bot-engine";
 
 import { prisma } from "@/lib/prisma";
 
-import { simpleRateLimit } from "@/lib/simple-rate-limit";
+import { simpleRateLimit } from "@/lib/rate-limit";
 
 import { verifyEvolutionWebhookAuth, pickWebhookHeaders } from "@/lib/whatsapp-bot/webhook-auth";
 

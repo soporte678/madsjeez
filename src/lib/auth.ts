@@ -4,6 +4,7 @@ import GoogleProvider from "next-auth/providers/google"
 import bcrypt from "bcryptjs"
 import { prisma } from "./prisma"
 import { getProfileUuidByEmail } from "./supabase-profile-map"
+import { logger } from "./logger"
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET
@@ -164,7 +165,7 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async signIn({ user, account, profile }) {
-      console.log("signIn callback called", { provider: account?.provider, email: user.email })
+      logger.info("signIn callback called", { provider: account?.provider, email: user.email })
       
       // Si es login con Google, crear/actualizar usuario en la base de datos
       if (account?.provider === "google") {
@@ -174,7 +175,7 @@ export const authOptions: NextAuthOptions = {
           })
 
           if (!existingUser) {
-            console.log("Creating new user for:", user.email)
+            logger.info("Creating new user for:", user.email)
             // Crear nuevo usuario con Google
             const newUser = await prisma.user.create({
               data: {
@@ -188,9 +189,9 @@ export const authOptions: NextAuthOptions = {
                 reputationColor: "VERDE",
               }
             })
-            console.log("Usuario creado exitosamente:", newUser.id)
+            logger.info("Usuario creado exitosamente:", newUser.id)
           } else {
-            console.log("Usuario existente:", existingUser.id)
+            logger.info("Usuario existente:", existingUser.id)
             // Actualizar imagen si cambió
             if (user.image && existingUser.image !== user.image) {
               await prisma.user.update({

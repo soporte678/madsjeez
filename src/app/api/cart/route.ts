@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { rateLimit } from "@/lib/rate-limit";
 
 function isMissingColumnError(error: unknown): boolean {
   return (
@@ -122,6 +123,15 @@ export async function POST(request: Request) {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
+
+    // Rate limit: 5 req/min por usuario
+    const { allowed, retryAfter } = rateLimit(`cart:${session.user.id}`, 5, 60 * 1000);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "Demasiadas operaciones en el carrito. Esperá un momento." },
+        { status: 429, headers: { "Retry-After": String(retryAfter) } }
+      );
     }
 
     const body = await request.json();

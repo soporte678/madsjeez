@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { rateLimit } from "@/lib/rate-limit"
 
 // POST /api/claims/[id]/messages - Enviar mensaje en reclamo
 export async function POST(
@@ -15,6 +16,15 @@ export async function POST(
       return NextResponse.json(
         { error: "No autorizado" },
         { status: 401 }
+      )
+    }
+
+    // Rate limit: 5 req/min por usuario
+    const { allowed, retryAfter } = rateLimit(`claim-msg:${session.user.id}`, 5, 60 * 1000)
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "Demasiados mensajes en poco tiempo. Esperá un momento." },
+        { status: 429, headers: { "Retry-After": String(retryAfter) } }
       )
     }
 

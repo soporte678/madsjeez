@@ -1,3 +1,5 @@
+import { logger } from "./logger";
+
 // Registro del Service Worker para MADSJEEZ PWA
 // Se debe llamar desde un Client Component en el layout raiz
 // Ejemplo de uso en layout.tsx:
@@ -36,7 +38,7 @@ export function registerServiceWorker(): void {
     navigator.serviceWorker
       .register("/sw.js")
       .then((registration) => {
-        console.log("[MADSJEEZ PWA] Service Worker registrado:", registration.scope);
+        logger.info("[MADSJEEZ PWA] Service Worker registrado:", registration.scope);
 
         // ──────────────────────────────────────────────
         // DETECCION DE NUEVAS VERSIONES
@@ -54,7 +56,7 @@ export function registerServiceWorker(): void {
               newWorker.state === "installed" &&
               navigator.serviceWorker.controller
             ) {
-              console.log(
+              logger.info(
                 "[MADSJEEZ PWA] Nueva version disponible. " +
                   "Recarga la pagina para actualizar."
               );
@@ -114,7 +116,7 @@ export async function unregisterServiceWorker(): Promise<void> {
     for (const registration of registrations) {
       const result = await registration.unregister();
       if (result) {
-        console.log("[MADSJEEZ PWA] Service Worker desregistrado:", registration.scope);
+        logger.info("[MADSJEEZ PWA] Service Worker desregistrado:", registration.scope);
       }
     }
 
@@ -122,7 +124,7 @@ export async function unregisterServiceWorker(): Promise<void> {
     if ("caches" in window) {
       const cacheNames = await caches.keys();
       await Promise.all(cacheNames.map((name) => caches.delete(name)));
-      console.log("[MADSJEEZ PWA] Todos los caches limpiados:", cacheNames);
+      logger.info("[MADSJEEZ PWA] Todos los caches limpiados:", cacheNames);
     }
   } catch (error) {
     console.error("[MADSJEEZ PWA] Error desregistrando Service Worker:", error);

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { checkRateLimit } from "../rate-limit-memory";
+import { checkRateLimit } from "../rate-limit";
 
 describe("rate-limit-memory", () => {
   it("allows requests under the cap", () => {
