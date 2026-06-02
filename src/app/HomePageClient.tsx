@@ -16,7 +16,6 @@ const SiteCompanyFooter = dynamic(() => import("@/components/seo/SiteCompanyFoot
 const SiteSocialFooter = dynamic(() => import("@/components/seo/SiteSocialFooter").then(m => m.SiteSocialFooter), { ssr: false, loading: () => null })
 import {
   ShoppingCart,
-  Gamepad2,
   ChevronRight,
   Truck,
   Zap,
@@ -27,9 +26,7 @@ import {
 
 const Sparkles = dynamic(() => import("lucide-react").then(m => ({ default: m.Sparkles })))
 const Package = dynamic(() => import("lucide-react").then(m => ({ default: m.Package })))
-const Navigation = dynamic(() => import("lucide-react").then(m => ({ default: m.Navigation })))
 const Box = dynamic(() => import("lucide-react").then(m => ({ default: m.Box })))
-const Clock = dynamic(() => import("lucide-react").then(m => ({ default: m.Clock })))
 const Tv = dynamic(() => import("lucide-react").then(m => ({ default: m.Tv })))
 const Utensils = dynamic(() => import("lucide-react").then(m => ({ default: m.Utensils })))
 const Store = dynamic(() => import("lucide-react").then(m => ({ default: m.Store })))
@@ -87,35 +84,6 @@ const heroBanners = [
     accent: "orange"
   },
   {
-    id: 3,
-    badge: "Logística MADSJEEZ",
-    titleLine1: "Envío Flash",
-    titleLine2: "Cómpralo hoy,",
-    titleHighlight: "Recíbelo hoy",
-    desc: "Nuestra propia flota logística garantiza la entrega en menos de 24hs con seguimiento en tiempo real.",
-    btn1: "Saber más",
-    Icon: Truck,
-    image: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaeb55?auto=format&fit=crop&w=800&q=75",
-    imageAlt: "Camión de logística en ruta — envío express Madsjeez en 24 horas",
-    bgGradient: "from-emerald-800 via-slate-900 to-black",
-    accent: "emerald",
-    isLogistics: true
-  },
-  {
-    id: 4,
-    badge: "Ecosistema Gamer",
-    titleLine1: "Equipa tu",
-    titleLine2: "victoria con",
-    titleHighlight: "High Tech",
-    desc: "Hardware de última generación con cuotas fijas y garantía extendida oficial.",
-    btn1: "Ver Setup",
-    Icon: Gamepad2,
-    image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=75",
-    imageAlt: "Setup gamer con periféricos de alta gama — categoría gaming Madsjeez",
-    bgGradient: "from-purple-800 via-slate-900 to-indigo-950",
-    accent: "purple"
-  },
-  {
     id: 5,
     badge: "Market Insights",
     titleLine1: "Potenciamos",
@@ -128,20 +96,6 @@ const heroBanners = [
     imageAlt: "Equipo de negocios en reunión — vender y escalar tu marca en Madsjeez",
     bgGradient: "from-amber-600 via-slate-900 to-black",
     accent: "amber"
-  },
-  {
-    id: 6,
-    badge: "Seguridad Bancaria",
-    titleLine1: "Transacciones",
-    titleLine2: "con Blindaje Digital",
-    titleHighlight: "Protección Élite",
-    desc: "Comprá tranquilo. Tu dinero está protegido por protocolos de seguridad de alta gama.",
-    btn1: "Centro de Confianza",
-    Icon: ShieldCheck,
-    image: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=800&q=75",
-    imageAlt: "Pago seguro con tarjeta y protección digital — compra protegida Madsjeez",
-    bgGradient: "from-slate-700 via-slate-900 to-blue-950",
-    accent: "slate"
   }
 ]
 
@@ -210,7 +164,7 @@ export default function HomePageClient() {
                   Marketplace en Argentina - MadsJeez
                 </h1>
 
-                <h2 className="mt-2 text-4xl md:text-[3.5rem] font-black text-white tracking-tighter leading-[0.92] font-montserrat drop-shadow-[0_10px_30px_rgba(0,0,0,0.45)]">
+                <h2 className="mt-2 text-4xl md:text-[3.5rem] font-black text-white tracking-tighter leading-[0.92] font-outfit drop-shadow-[0_10px_30px_rgba(0,0,0,0.45)]">
                   {banner.titleLine1}{" "}
                   <span className="text-white/55 font-bold">
                     {banner.titleLine2}
@@ -225,7 +179,7 @@ export default function HomePageClient() {
                 </p>
 
                 <Link
-                  href={banner.id === 5 ? "/seller/register" : "/search"}
+                  href={banner.btn1 === "Ser Vendedor Pro" ? "/seller/register" : "/search"}
                   prefetch={false}
                   className="touch-target mt-8 group/btn bg-gradient-to-r from-[#f97316] to-[#ff9100] text-white text-[14px] font-black py-4 px-10 rounded-2xl shadow-xl shadow-orange-500/30 hover:opacity-90 transition-opacity duration-200 inline-flex items-center gap-4 uppercase tracking-wider min-h-[52px]"
                 >
@@ -249,42 +203,7 @@ export default function HomePageClient() {
                       alt={banner.imageAlt}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent" />
-
-                    {banner.isLogistics && (
-                      <div className="absolute top-[30%] left-[10%] w-64 p-6 bg-yellow-400 rounded-3xl shadow-[0_30px_60px_rgba(0,0,0,0.5)] border-b-[6px] border-yellow-600 flex flex-col items-center justify-center transform -rotate-12 floating-ui z-30">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="font-montserrat font-black text-slate-900 text-xl tracking-tighter uppercase">
-                            MADS<span className="text-blue-700">JEEZ</span>
-                          </span>
-                        </div>
-                        <div className="w-full h-px bg-slate-900/10 mb-3" />
-                        <div className="flex items-center gap-2 text-[12px] font-black text-slate-800 uppercase tracking-widest">
-                          <Truck size={16} className="text-blue-600" /> Express Logística
-                        </div>
-                      </div>
-                    )}
                   </div>
-
-                  {banner.isLogistics && (
-                    <>
-                      <div className="absolute -left-12 bottom-12 glass-panel px-6 py-4 rounded-3xl shadow-2xl flex items-center gap-4 floating-ui floating-ui-delay-1 z-40">
-                        <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400">
-                          <Navigation size={24} />
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-[10px] text-white/50 font-bold uppercase tracking-tighter">
-                            Entrega en Curso
-                          </span>
-                          <span className="text-white font-black text-sm">ZONA: SPEGAZZINI</span>
-                        </div>
-                      </div>
-                      <div className="absolute -right-6 top-8 glass-panel px-5 py-4 rounded-3xl shadow-2xl flex flex-col items-center gap-1 floating-ui floating-ui-delay-05 z-40">
-                        <Clock size={28} className="text-yellow-400 mb-1" />
-                        <span className="text-[18px] text-white font-black leading-none">Hoy</span>
-                        <span className="text-[9px] text-white/50 font-bold uppercase tracking-widest">En tu puerta</span>
-                      </div>
-                    </>
-                  )}
                 </div>
               </div>
             </div>
@@ -789,7 +708,7 @@ export default function HomePageClient() {
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-10">
             <div className="col-span-2">
               <div className="flex items-center gap-3 mb-8">
-                <span className="font-montserrat font-black text-2xl tracking-tighter uppercase text-white">MADS<span className="text-[#f97316]">JEEZ</span></span>
+                <span className="font-outfit font-black text-2xl tracking-tighter uppercase text-white">MADS<span className="text-[#f97316]">JEEZ</span></span>
               </div>
               <p className="text-slate-400 font-medium text-sm max-w-sm leading-relaxed mb-6">
                 Marketplace del Commerce Group en Argentina: catálogo, ofertas, MADSJEEZ Ads y

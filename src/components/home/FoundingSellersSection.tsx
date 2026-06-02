@@ -31,7 +31,6 @@ import {
 } from "lucide-react";
 
 const TOTAL_SLOTS = 100;
-const SLOTS_TAKEN = 47; // se reemplaza por valor real desde DB cuando exista
 
 const benefits: Array<{
   icon: typeof Crown;
@@ -67,8 +66,27 @@ const benefits: Array<{
 ];
 
 export function FoundingSellersSection() {
-  const slotsLeft = Math.max(TOTAL_SLOTS - SLOTS_TAKEN, 0);
-  const percentTaken = Math.min((SLOTS_TAKEN / TOTAL_SLOTS) * 100, 100);
+  const [taken, setTaken] = useState<number>(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch("/api/program/founders/count", { cache: "force-cache" });
+        if (!r.ok) return;
+        const j = (await r.json()) as { taken?: number };
+        if (!cancelled && typeof j.taken === "number") setTaken(j.taken);
+      } catch {
+        // fallback silencioso a 0
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const slotsLeft = Math.max(TOTAL_SLOTS - taken, 0);
+  const percentTaken = Math.min((taken / TOTAL_SLOTS) * 100, 100);
 
   return (
     <section
