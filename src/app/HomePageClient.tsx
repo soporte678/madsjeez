@@ -10,6 +10,7 @@ const Navbar = dynamic(() => import("@/components/Navbar"), {
   ssr: false,
 })
 const HomeSeoContent = dynamic(() => import("@/components/home/HomeSeoContent").then(m => m.HomeSeoContent), { ssr: false, loading: () => null })
+const FoundingSellersSection = dynamic(() => import("@/components/home/FoundingSellersSection").then(m => m.FoundingSellersSection), { ssr: false, loading: () => <div className="max-w-[1184px] mx-auto px-4 mb-20 h-[420px] animate-pulse rounded-3xl bg-slate-100" /> })
 const HomeSocialProof = dynamic(() => import("@/components/home/HomeSocialProof").then(m => m.HomeSocialProof), { ssr: false, loading: () => null })
 const SiteCompanyFooter = dynamic(() => import("@/components/seo/SiteCompanyFooter").then(m => m.SiteCompanyFooter), { ssr: false, loading: () => null })
 const SiteSocialFooter = dynamic(() => import("@/components/seo/SiteSocialFooter").then(m => m.SiteSocialFooter), { ssr: false, loading: () => null })
@@ -204,18 +205,17 @@ export default function HomePageClient() {
 
                 <h1
                   id="home-marketplace-h1"
-                  className="text-3xl md:text-5xl font-black text-white tracking-tight leading-[1.05] font-montserrat drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]"
+                  className="sr-only"
                 >
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-white to-yellow-500">
-                    Marketplace
-                  </span>{" "}
-                  en Argentina — MadsJeez
+                  Marketplace en Argentina - MadsJeez
                 </h1>
 
-                <h2 className="mt-4 text-4xl md:text-[3.25rem] font-black text-white/90 tracking-tighter leading-[0.88] uppercase font-montserrat">
-                  {banner.titleLine1} <br />
-                  <span className="text-white/40">{banner.titleLine2}</span> <br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-white to-yellow-500 inline-block mt-2">
+                <h2 className="mt-2 text-4xl md:text-[3.5rem] font-black text-white tracking-tighter leading-[0.92] font-montserrat drop-shadow-[0_10px_30px_rgba(0,0,0,0.45)]">
+                  {banner.titleLine1}{" "}
+                  <span className="text-white/55 font-bold">
+                    {banner.titleLine2}
+                  </span>{" "}
+                  <span className="text-yellow-300">
                     {banner.titleHighlight}
                   </span>
                 </h2>
@@ -466,6 +466,9 @@ export default function HomePageClient() {
           </div>
         </div>
       </section>
+
+      {/* SELLERS FUNDADORES — programa de 100 cupos + referral */}
+      <FoundingSellersSection />
 
       <HomeSocialProof />
 
