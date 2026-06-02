@@ -1,7 +1,13 @@
 import type { SubscriptionTier } from "@prisma/client";
 
 export const SELL_DEFAULT_MAX_IMAGES = 5;
-export const SELL_DEFAULT_COMMISSION_PCT = 10;
+/**
+ * Política Madsjeez: el marketplace NO cobra comisión sobre ventas.
+ * Este valor existe sólo por compatibilidad con campos legacy de DB
+ * (marketplace_settings.commission_*). Si querés modelar un cobro futuro,
+ * cambialo acá y en /admin/configuracion.
+ */
+export const SELL_DEFAULT_COMMISSION_PCT = 0;
 
 type CommissionConfig = {
   commissionFree: number;

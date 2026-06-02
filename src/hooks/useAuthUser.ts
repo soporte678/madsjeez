@@ -52,7 +52,7 @@ export function useAuthUser() {
           setSubscription({
             tier: {
               max_images_per_product: 5,
-              commission_rate: 10,
+              commission_rate: 0,
             },
           })
         }

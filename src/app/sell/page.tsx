@@ -105,7 +105,7 @@ export default function SellPage() {
         setSubscription({
           tier: {
             max_images_per_product: 5,
-            commission_rate: 10,
+            commission_rate: 0,
           },
         });
       }
@@ -516,14 +516,18 @@ export default function SellPage() {
                       <span>${parseFloat(price).toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span>Comisión ({subscription?.tier?.commission_rate || 10}%):</span>
-                      <span className="text-red-500">-${calculateCommission().toLocaleString()}</span>
+                      <span>Comisión Madsjeez:</span>
+                      <span className="text-emerald-600 font-semibold">$0 (0%)</span>
                     </div>
                     <Separator />
                     <div className="flex justify-between font-semibold">
-                      <span>Vas a recibir:</span>
-                      <span className="text-green-600">${calculateEarnings().toLocaleString()}</span>
+                      <span>Vas a recibir en tu MP:</span>
+                      <span className="text-green-600">${parseFloat(price || "0").toLocaleString()}</span>
                     </div>
+                    <p className="text-[11px] text-slate-500 leading-relaxed pt-1">
+                      Mercado Pago descuenta sus costos de procesamiento de pago
+                      según tu cuenta. Madsjeez no toca el importe.
+                    </p>
                     </div>
                   </div>
                 )}

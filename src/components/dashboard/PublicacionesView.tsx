@@ -12,7 +12,10 @@ interface P { id: string; title: string; description: string | null; sku: string
 interface S { active: number; paused: number; lowStock: number; noSales: number }
 
 const fmt = (v: number) => `$ ${v.toLocaleString("es-AR")}`
-const COMMISSION = 0.13
+// Política Madsjeez: 0% comisión sobre ventas. Se mantiene la constante
+// para no romper el cálculo legacy de "neto estimado" — sumá costos reales
+// (MP fee + envío seller) si querés un net real.
+const COMMISSION = 0
 
 const getRecommendation = (p: P) => {
   if (!p.isActive) return { badge: "PERDIENDO", badgeColor: "bg-destructive text-destructive-foreground", tip: "Reactivá tu publicación para no perder ventas.", action: "Reactivar" }

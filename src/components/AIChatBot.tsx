@@ -29,7 +29,7 @@ const modeConfig: Record<ChatMode, { welcome: string; title: string; quick: stri
     welcome: "¡Hola! Soy Mariana, tu consultora de e-commerce en MadsJeez 📈 ¿Querés vender más? Te ayudo con publicaciones, pricing, marketing y estrategias de conversión.",
     title: "Mariana - Asesora de Ventas",
     label: "Vendedores",
-    quick: ["¿Cómo publicar?", "¿Cuál es la comisión?", "¿Cómo mejorar reputación?", "Marketing IA"],
+    quick: ["¿Cómo publicar?", "¿Cómo cobro mis ventas?", "¿Cómo mejorar reputación?", "Marketing IA"],
   },
   support: {
     welcome: "¡Hola! Soy Laura, especialista en atención al cliente de MadsJeez 🛠️ ¿Tenés un problema con tu compra, envío, pago o cuenta? Voy a resolverlo.",

@@ -424,7 +424,7 @@ export default function ResumenView() {
                 <span className="w-2 h-2 rounded-full bg-destructive mt-1 flex-shrink-0"></span>
                 <p className="text-[12px] text-foreground">
                   <strong className="text-destructive">Tenés facturas pendientes</strong><br/>
-                  Incluye suscripción, boosts y comisiones por ventas.
+                  Incluye suscripción y boosts. Madsjeez no cobra comisión por venta.
                 </p>
               </div>
             ) : d.billing.balanceDue > 0 ? (

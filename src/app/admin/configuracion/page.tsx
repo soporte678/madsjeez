@@ -50,7 +50,7 @@ export default function ConfiguracionPage() {
     lockout_minutes: 30,
     allowed_ips: "",
     mercadopago_enabled: true,
-    commission_percent: 10,
+    commission_percent: 0,
     min_purchase: 100,
     hold_funds_new_sellers: true,
     andreani_enabled: true,
@@ -329,8 +329,13 @@ function PaymentSettings({ config, onChange }: SettingsProps) {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Comisión del Marketplace (%)</label>
-            <input type="number" value={config.commission_percent || 10} step="0.1" onChange={(e) => onChange("commission_percent", parseFloat(e.target.value))} className="w-full p-2.5 border rounded-lg text-sm" />
+            <label className="text-sm font-medium">
+              Comisión del Marketplace (%) <span className="text-emerald-600 font-bold">— actualmente 0%</span>
+            </label>
+            <input type="number" value={config.commission_percent ?? 0} step="0.1" onChange={(e) => onChange("commission_percent", parseFloat(e.target.value))} className="w-full p-2.5 border rounded-lg text-sm" />
+            <p className="text-[11px] text-slate-500">
+              Política Madsjeez: 0% comisión. Cambiá este valor solo si la política se actualiza.
+            </p>
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Monto mínimo de compra ($)</label>
