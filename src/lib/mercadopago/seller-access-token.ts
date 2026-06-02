@@ -77,6 +77,10 @@ export type SellerMpRow = {
   mp_access_token: string | null;
   mp_refresh_token: string | null;
   mp_token_expires_at: string | null;
+  /** Tope de cuotas que ve el comprador. NULL = default del seller en MP. */
+  installments_max?: number | null;
+  /** Array JSON de payment types aceptados. NULL = todos. */
+  accepted_payment_types_json?: string[] | null;
 };
 
 const MP_SELECT = "seller_id, mp_access_token, mp_refresh_token, mp_token_expires_at, is_active";

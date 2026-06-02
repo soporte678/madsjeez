@@ -52,15 +52,20 @@ export default function TerminosPage() {
                 <li>No publicarán productos prohibidos o ilegales.</li>
               </ul>
 
-              <h2 className="text-xl font-semibold mt-8 mb-4">5. Comisiones y Pagos</h2>
-              <p>MADSJEEZ cobra comisiones por las ventas realizadas a través de la Plataforma. 
-                Las tasas de comisión varían según el plan de suscripción:</p>
-              <ul className="list-disc pl-6 space-y-2">
-                <li>Plan Gratis: 10% de comisión</li>
-                <li>Plan Plata: 5% de comisión</li>
-                <li>Plan Gold: 3% de comisión</li>
-                <li>Plan Platinum: 1% de comisión</li>
-              </ul>
+              <h2 className="text-xl font-semibold mt-8 mb-4">5. Modelo de cobro y pagos</h2>
+              <p>MADSJEEZ <strong>no cobra comisión</strong> sobre las ventas realizadas a
+                través de la Plataforma. El Vendedor recibe el importe íntegro de cada operación
+                directamente en su cuenta de Mercado Pago, descontando únicamente los costos que
+                el propio Mercado Pago aplica por procesar el pago según el contrato del
+                Vendedor con esa plataforma.</p>
+              <p>MADSJEEZ se financia mediante <strong>planes de suscripción mensuales</strong>{" "}
+                (PLATA, GOLD, PLATINUM) que habilitan funcionalidades, exposición y
+                herramientas de marketing. Los planes y precios vigentes están publicados en{" "}
+                <a href="/subscriptions" className="text-blue-600 underline">/subscriptions</a>.</p>
+              <p>Las <strong>cuotas, medios de pago aceptados y promociones</strong> que ve el
+                comprador en el checkout son configuradas por cada Vendedor desde su panel
+                (sección Pagos), y se aplican vía la integración con su cuenta de Mercado Pago.
+                MADSJEEZ no decide ni absorbe los costos financieros de esas cuotas.</p>
 
               <h2 className="text-xl font-semibold mt-8 mb-4">6. Envíos y Entregas</h2>
               <p>Los vendedores son responsables de:</p>

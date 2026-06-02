@@ -262,7 +262,10 @@ export async function POST(req: Request) {
       );
     }
 
-    const marketplaceSalesFeePercent = envPercent("MARKETPLACE_SALES_FEE_PERCENT", 10);
+    // Política Madsjeez: marketplace NO cobra comisión sobre ventas.
+    // Sellers reciben el 100% (menos lo que MP cobra por procesar pago, que es
+    // de su cuenta). Env override solo para experimentos internos.
+    const marketplaceSalesFeePercent = envPercent("MARKETPLACE_SALES_FEE_PERCENT", 0);
     const affiliateDefaultPercent = envPercent("AFFILIATE_COMMISSION_PERCENT", 10);
 
     const cookieAffiliateRaw = parseCookieHeader(req.headers.get("cookie"), AFFILIATE_COOKIE_NAME);
@@ -524,7 +527,8 @@ export async function POST(req: Request) {
     let mpConnection: SellerMpRow | null = null;
     let mpLookupErr: unknown = null;
 
-    const mpSelect = "seller_id, mp_access_token, mp_refresh_token, mp_token_expires_at, is_active";
+    const mpSelect =
+      "seller_id, mp_access_token, mp_refresh_token, mp_token_expires_at, is_active, installments_max, accepted_payment_types_json";
 
     const byPrismaId = await supabaseService
       .from("seller_mercadopago")
@@ -604,6 +608,34 @@ export async function POST(req: Request) {
       });
     }
 
+    // payment_methods per-seller: cuotas y tipos los define el seller
+    // en su panel (columnas installments_max / accepted_payment_types_json).
+    // Si están NULL, no se pisa nada y MP usa el default del seller.
+    const sellerInstallmentsMax =
+      typeof mpConnection.installments_max === "number" &&
+      mpConnection.installments_max >= 1 &&
+      mpConnection.installments_max <= 24
+        ? mpConnection.installments_max
+        : null;
+
+    const allPaymentTypes = ["credit_card", "debit_card", "ticket", "bank_transfer", "atm"] as const;
+    const accepted = Array.isArray(mpConnection.accepted_payment_types_json)
+      ? mpConnection.accepted_payment_types_json.filter((t): t is string => typeof t === "string")
+      : null;
+    const excludedPaymentTypes =
+      accepted && accepted.length > 0
+        ? allPaymentTypes.filter((t) => !accepted.includes(t)).map((id) => ({ id }))
+        : undefined;
+
+    type PaymentMethodsConfig = {
+      installments?: number;
+      excluded_payment_types?: Array<{ id: string }>;
+    };
+    const paymentMethods: PaymentMethodsConfig = {};
+    if (sellerInstallmentsMax != null) paymentMethods.installments = sellerInstallmentsMax;
+    if (excludedPaymentTypes && excludedPaymentTypes.length > 0)
+      paymentMethods.excluded_payment_types = excludedPaymentTypes;
+
     const preference = {
       items: mpItems,
       marketplace_fee: roundMoney(split.marketplaceTotalRetention),
@@ -616,6 +648,7 @@ export async function POST(req: Request) {
         pending: `${appUrl}/checkout/pending?order_id=${orderId}`,
       },
       auto_return: "approved",
+      ...(Object.keys(paymentMethods).length > 0 ? { payment_methods: paymentMethods } : {}),
     };
 
     if (process.env.NODE_ENV === "production" && preference.notification_url.startsWith("http://")) {
