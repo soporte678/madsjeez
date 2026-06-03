@@ -190,6 +190,51 @@ export default function QuienesSomosPage() {
         </div>
       </section>
 
+      <section className="border-t border-slate-200 bg-slate-50 py-14">
+        <div className="max-w-5xl mx-auto px-4">
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500 mb-3">
+            El grupo
+          </p>
+          <h2 className="text-2xl md:text-3xl font-black tracking-tight text-slate-900 mb-4">
+            MadsJeez no es solo un marketplace.
+          </h2>
+          <p className="text-[15px] text-slate-700 leading-relaxed max-w-[68ch]">
+            MadsJeez Marketplace forma parte de un grupo de productos que
+            construimos desde Argentina para resolver problemas reales del
+            comercio digital. Trabajamos en herramientas para vendedores de{" "}
+            <a
+              href="https://www.appjeezpro.com"
+              target="_blank"
+              rel="noopener"
+              className="font-bold text-[#3483FA] hover:underline"
+            >
+              AppJeez Pro
+            </a>{" "}
+            (gestión multicuenta para sellers de MercadoLibre), una bolsa de
+            empleo barrial en{" "}
+            <a
+              href="https://www.trabajocerca.site"
+              target="_blank"
+              rel="noopener"
+              className="font-bold text-[#3483FA] hover:underline"
+            >
+              TrabajoCerca
+            </a>{" "}
+            y un estudio creativo en{" "}
+            <a
+              href="https://www.madsjeezdesign.com"
+              target="_blank"
+              rel="noopener"
+              className="font-bold text-[#3483FA] hover:underline"
+            >
+              MadsJeez Design
+            </a>
+            . Si te interesa cómo se conecta este ecosistema con el marketplace,
+            escribinos por WhatsApp.
+          </p>
+        </div>
+      </section>
+
       <footer className="border-t border-slate-200 bg-white py-12">
         <div className="max-w-5xl mx-auto px-4">
           <SiteCompanyFooter />

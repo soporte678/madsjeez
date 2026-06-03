@@ -19,6 +19,7 @@ const SellersTestimonialsSection = dynamic(() => import("@/components/home/Selle
 const HomeSocialProof = dynamic(() => import("@/components/home/HomeSocialProof").then(m => m.HomeSocialProof), { loading: () => null })
 const SiteCompanyFooter = dynamic(() => import("@/components/seo/SiteCompanyFooter").then(m => m.SiteCompanyFooter), { loading: () => null })
 const SiteSocialFooter = dynamic(() => import("@/components/seo/SiteSocialFooter").then(m => m.SiteSocialFooter), { loading: () => null })
+const SiteNetworkFooter = dynamic(() => import("@/components/seo/SiteNetworkFooter").then(m => m.SiteNetworkFooter), { loading: () => null })
 import {
   ShoppingCart,
   ChevronRight,
@@ -736,6 +737,7 @@ export default function HomePageClient() {
               </p>
               <SiteCompanyFooter />
               <SiteSocialFooter />
+              <SiteNetworkFooter />
             </div>
             {[
               { title: "Marketplace", links: ["Quiénes somos", "Ayuda", "Servicios VIP", "Contacto"] },
