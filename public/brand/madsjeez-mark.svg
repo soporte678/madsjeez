@@ -1,11 +1,24 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="MadsJeez">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" role="img" aria-label="MadsJeez">
   <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1a1a2e"/>
-      <stop offset="100%" stop-color="#16213e"/>
+    <linearGradient id="mj-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="55%" stop-color="#2563eb"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <linearGradient id="mj-grad-dark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1e40af"/>
+      <stop offset="100%" stop-color="#1e3a8a"/>
     </linearGradient>
   </defs>
-  <rect width="100" height="100" rx="22" fill="url(#bg)"/>
-  <path d="M 15 80 L 35 30 L 55 55" stroke="#f97316" fill="none" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M 85 80 L 65 30 L 45 65" stroke="#00b4d8" fill="none" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Pierna izquierda de la M -->
+  <path d="M 14 10 L 32 10 L 32 90 L 14 90 Z" fill="url(#mj-grad)"/>
+  <!-- Diagonal superior izquierda -->
+  <path d="M 14 10 L 32 10 L 56 56 L 44 64 Z" fill="url(#mj-grad)"/>
+  <!-- Diagonal superior derecha -->
+  <path d="M 86 10 L 68 10 L 44 56 L 56 64 Z" fill="url(#mj-grad)"/>
+  <!-- Pierna derecha de la M -->
+  <path d="M 68 10 L 86 10 L 86 90 L 68 90 Z" fill="url(#mj-grad)"/>
+  <!-- Gancho J integrado en la base derecha -->
+  <path d="M 56 56 L 68 56 L 68 76 L 56 76 Z" fill="url(#mj-grad-dark)"/>
+  <path d="M 46 64 L 56 64 L 56 76 L 46 76 Z" fill="url(#mj-grad-dark)"/>
 </svg>

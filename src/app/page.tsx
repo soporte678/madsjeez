@@ -12,7 +12,7 @@ const organizationJsonLd = {
   "@type": "Organization",
   name: "MadsJeez",
   url: "https://www.madsjeez.com.ar",
-  logo: "https://www.madsjeez.com.ar/brand/madsjeez-logo.png",
+  logo: "https://www.madsjeez.com.ar/brand/madsjeez-mark.svg",
   description:
     "Marketplace argentino de tecnología, moda y hogar. Comprá y vendé online con envíos a todo el país y pagos seguros.",
   sameAs: [

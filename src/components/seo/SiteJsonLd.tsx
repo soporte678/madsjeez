@@ -16,7 +16,7 @@ export function SiteJsonLd() {
     name: SITE_NAME,
     legalName: COMPANY.legalName,
     url: SITE_URL,
-    logo: `${SITE_URL}/brand/madsjeez-icon-512.png`,
+    logo: `${SITE_URL}/brand/madsjeez-mark.svg`,
     email: COMPANY.email,
     telephone: COMPANY.phoneDisplay,
     taxID: COMPANY.cuitFormatted,
