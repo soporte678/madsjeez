@@ -104,6 +104,8 @@ function CheckoutContent() {
   const [itemUpdatingId, setItemUpdatingId] = useState<string | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [step, setStep] = useState<1 | 2 | 3>(1);
+  /** Email para checkout cuando el usuario es invitado (no logueado). */
+  const [guestEmail, setGuestEmail] = useState("");
 
   const [shippingAddress, setShippingAddress] = useState<ShippingAddress>({
     street: "",
@@ -153,11 +155,44 @@ function CheckoutContent() {
   const qpQty = searchParams.get("quantity");
 
   useEffect(() => {
+    if (status === "loading") return;
+
+    // Guest checkout: cargamos cart de localStorage en vez de /api/cart.
     if (status === "unauthenticated") {
-      router.push("/auth/login?redirect=/checkout");
+      try {
+        const raw = localStorage.getItem("guestCart");
+        if (raw) {
+          const parsed = JSON.parse(raw) as Array<{
+            id: string;
+            productId: string;
+            quantity: number;
+            product: {
+              id: string;
+              title: string;
+              price: number;
+              shipping_free: boolean;
+              seller_id: string;
+              primary_image: string | null;
+              seller_name: string;
+            };
+          }>;
+          setCartItems(
+            parsed.map((line) => ({
+              id: line.id,
+              product_id: line.productId,
+              quantity: line.quantity,
+              product: line.product,
+            })),
+          );
+        } else {
+          setCartItems([]);
+        }
+      } catch {
+        setCartItems([]);
+      }
+      setLoading(false);
       return;
     }
-    if (status === "loading") return;
 
     if (qpProduct && qpQty) {
       const qty = Math.max(1, parseInt(qpQty, 10) || 1);
@@ -214,7 +249,7 @@ function CheckoutContent() {
     shippingAddress.number.trim().length > 0;
 
   useEffect(() => {
-    if (status !== "authenticated") return;
+    if (status === "loading") return;
 
     if (!needsPaidShipping) {
       quoteAbortRef.current?.abort();
@@ -395,11 +430,11 @@ function CheckoutContent() {
   }, [cartItems, loading, subtotal]);
 
   const shippingDraftKey = `madsjeez_checkout_shipping_${
-    session?.user?.email?.toLowerCase() || "anon"
+    (session?.user?.email || guestEmail || "anon").toLowerCase()
   }`;
 
   useEffect(() => {
-    if (status !== "authenticated") return;
+    if (status === "loading") return;
     try {
       const saved = localStorage.getItem(shippingDraftKey);
       if (!saved) return;
@@ -421,7 +456,7 @@ function CheckoutContent() {
   }, [shippingDraftKey, status]);
 
   useEffect(() => {
-    if (status !== "authenticated") return;
+    if (status === "loading") return;
     try {
       localStorage.setItem(shippingDraftKey, JSON.stringify(shippingAddress));
     } catch {
@@ -430,7 +465,18 @@ function CheckoutContent() {
   }, [shippingAddress, shippingDraftKey, status]);
 
   const handleSubmitOrder = async () => {
-    if (!session?.user || cartItems.length === 0) return;
+    if (cartItems.length === 0) return;
+
+    // Validar email cuando es checkout invitado
+    const isGuestSubmit = !session?.user;
+    if (isGuestSubmit) {
+      const e = guestEmail.trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) {
+        setCheckoutError("Ingresá un email válido para recibir tu compra.");
+        toast.error("Email requerido para checkout sin cuenta");
+        return;
+      }
+    }
 
     setCheckoutError(null);
     setProcessing(true);
@@ -442,7 +488,12 @@ function CheckoutContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           shipping: shippingAddress,
-          buyer_email: session.user.email ?? undefined,
+          buyer_email: (session?.user?.email ?? guestEmail) || undefined,
+          guest_email: isGuestSubmit ? guestEmail.trim().toLowerCase() : undefined,
+          guest_cart: isGuestSubmit ? cartItems.map((c) => ({
+            productId: c.product_id,
+            quantity: c.quantity,
+          })) : undefined,
           flash: shippingMethod === "flash" ? flashData : undefined,
         }),
       });
@@ -563,16 +614,13 @@ function CheckoutContent() {
     );
   }
 
-  if (status === "unauthenticated") {
-    return null;
-  }
-
-  const user = session!.user as { id?: string; email?: string | null };
+  const isGuest = status !== "authenticated";
+  const user = (session?.user ?? null) as { id?: string; email?: string | null } | null;
 
   if (cartItems.length === 0) {
     return (
       <div className="min-h-screen flex flex-col">
-        <Header user={user.id ? { id: user.id, email: user.email ?? undefined } : null} />
+        <Header user={user?.id ? { id: user.id, email: user.email ?? undefined } : null} />
         <main className="flex-1 bg-[#EBEBEB] flex items-center justify-center">
           <Card>
             <CardContent className="p-8 text-center">
@@ -635,7 +683,7 @@ function CheckoutContent() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header user={{ id: user.id!, email: user.email ?? undefined }} />
+      <Header user={user?.id ? { id: user.id, email: user.email ?? undefined } : null} />
 
       <main className="flex-1 bg-[#EBEBEB]">
         <div className="container mx-auto px-4 py-8">
@@ -728,6 +776,38 @@ function CheckoutContent() {
                       {/* Standard form */}
                       {shippingMethod === "standard" && (
                         <div className="space-y-4">
+                          {isGuest && (
+                            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-3">
+                              <div className="flex items-center gap-2">
+                                <Lock className="h-4 w-4 text-amber-700" />
+                                <p className="text-sm font-bold text-amber-900">
+                                  Comprá como invitado
+                                </p>
+                              </div>
+                              <p className="text-[12.5px] text-amber-900/85 leading-relaxed">
+                                Ingresá tu email para recibir el comprobante y el seguimiento del envío.
+                                Si querés, podés{" "}
+                                <Link
+                                  href={`/auth/login?redirect=/checkout`}
+                                  className="font-semibold underline"
+                                >
+                                  iniciar sesión
+                                </Link>{" "}
+                                para usar tus direcciones guardadas.
+                              </p>
+                              <div>
+                                <Label htmlFor="guestEmail">Tu email *</Label>
+                                <Input
+                                  id="guestEmail"
+                                  type="email"
+                                  value={guestEmail}
+                                  onChange={(e) => setGuestEmail(e.target.value)}
+                                  placeholder="nombre@ejemplo.com"
+                                  autoComplete="email"
+                                />
+                              </div>
+                            </div>
+                          )}
                           <div className="grid grid-cols-2 gap-4">
                             <div className="col-span-2">
                               <Label>Nombre del destinatario *</Label>

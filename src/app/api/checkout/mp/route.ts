@@ -55,6 +55,16 @@ const CheckoutBodySchema = z.object({
   guest_email: z.string().email().max(256).nullable().optional(),
   guest_phone: z.string().max(64).nullable().optional(),
   guest_document: z.string().max(32).nullable().optional(),
+  /** Líneas del carrito de invitado (cuando no hay sesión). */
+  guest_cart: z
+    .array(
+      z.object({
+        productId: z.string().min(1).max(64),
+        quantity: z.number().int().positive().max(99),
+      }),
+    )
+    .max(50)
+    .optional(),
   flash: z
     .object({
       recipientName: z.string().min(1).max(200),
@@ -88,27 +98,8 @@ type CheckoutBody = z.infer<typeof CheckoutBodySchema>;
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.email || !(session.user as { id?: string }).id) {
-      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-    }
 
-    const buyerPrismaId = (session.user as { id: string }).id;
-    const buyerUuid = await getProfileUuidByEmail(session.user.email);
-    if (!buyerUuid) {
-      logger.error("checkout/mp buyer profile missing", {
-        email: session.user.email,
-        buyerPrismaId,
-      });
-      return NextResponse.json(
-        {
-          code: "BUYER_PROFILE_MISSING",
-          error:
-            "Tu cuenta no tiene perfil en la tienda (Supabase). Usá el mismo email que en el registro o contactá soporte.",
-        },
-        { status: 400 }
-      );
-    }
-
+    // Parse body primero — necesario para detectar checkout invitado
     let rawBody: unknown;
     try {
       rawBody = await req.json();
@@ -125,9 +116,62 @@ export async function POST(req: Request) {
     }
 
     const body = parseResult.data as CheckoutBody;
+
+    // Resolución del comprador: con sesión o como invitado (guest checkout).
+    let buyerPrismaId: string;
+    let buyerEmail: string;
+    const isGuestCheckout = !session?.user?.email;
+
+    if (isGuestCheckout) {
+      const guestEmail = (body.guest_email || body.buyer_email || "").trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail)) {
+        return NextResponse.json(
+          { code: "GUEST_EMAIL_REQUIRED", error: "Ingresá un email válido para checkout sin cuenta." },
+          { status: 400 },
+        );
+      }
+      if (!body.guest_cart || body.guest_cart.length === 0) {
+        return NextResponse.json(
+          { code: "GUEST_CART_EMPTY", error: "Tu carrito está vacío." },
+          { status: 400 },
+        );
+      }
+      // Ensure guest user (sin password). Reuso por email.
+      const guestUser = await prisma.user.upsert({
+        where: { email: guestEmail },
+        update: {},
+        create: {
+          email: guestEmail,
+          name: guestEmail.split("@")[0],
+          isSeller: false,
+          role: "USER",
+        },
+      });
+      buyerPrismaId = guestUser.id;
+      buyerEmail = guestEmail;
+    } else {
+      if (!(session!.user as { id?: string }).id) {
+        return NextResponse.json({ error: "Sesión inválida" }, { status: 401 });
+      }
+      buyerPrismaId = (session!.user as { id: string }).id;
+      buyerEmail = session!.user!.email!;
+    }
+
+    const buyerUuid = await getProfileUuidByEmail(buyerEmail);
+    if (!buyerUuid) {
+      logger.error("checkout/mp buyer profile missing", { email: buyerEmail, buyerPrismaId });
+      return NextResponse.json(
+        {
+          code: "BUYER_PROFILE_MISSING",
+          error:
+            "Tu cuenta no tiene perfil en la tienda. Usá el mismo email que en el registro o contactá soporte.",
+        },
+        { status: 400 }
+      );
+    }
     const shippingAddressRaw = body.shipping ?? {};
-    const guestClaim = buildGuestClaim(session.user.email, {
-      email: body.guest_email ?? body.buyer_email,
+    const guestClaim = buildGuestClaim(buyerEmail, {
+      email: body.guest_email ?? body.buyer_email ?? buyerEmail,
       phone: body.guest_phone,
       document: body.guest_document,
     });
@@ -136,22 +180,62 @@ export async function POST(req: Request) {
       guestClaim
     );
 
-    const cart = await prisma.cart.findUnique({
-      where: { userId: buyerPrismaId },
-      include: {
-        items: {
-          include: {
-            product: true,
-          },
+    // Construir line items. Guest checkout: leer desde body.guest_cart.
+    // Logged-in: leer desde Prisma cart.
+    type CartLineItem = {
+      productId: string;
+      quantity: number;
+      unitPrice: number;
+      product: { id: string; title: string; sellerId: string; price: number; stock: number; freeShipping: boolean };
+    };
+    let lineItems: CartLineItem[] = [];
+    if (isGuestCheckout) {
+      const ids = (body.guest_cart ?? []).map((l) => l.productId);
+      const products = await prisma.product.findMany({
+        where: { id: { in: ids }, isActive: true },
+        select: { id: true, title: true, sellerId: true, price: true, stock: true, freeShipping: true },
+      });
+      const byId = new Map(products.map((p) => [p.id, p]));
+      for (const line of body.guest_cart ?? []) {
+        const p = byId.get(line.productId);
+        if (!p) continue;
+        const qty = Math.min(line.quantity, p.stock);
+        if (qty <= 0) continue;
+        lineItems.push({
+          productId: p.id,
+          quantity: qty,
+          unitPrice: Number(p.price),
+          product: { ...p, price: Number(p.price) },
+        });
+      }
+    } else {
+      const cart = await prisma.cart.findUnique({
+        where: { userId: buyerPrismaId },
+        include: { items: { include: { product: true } } },
+      });
+      if (!cart?.items.length) {
+        return NextResponse.json({ code: "EMPTY_CART", error: "El carrito está vacío" }, { status: 400 });
+      }
+      lineItems = cart.items.map((i) => ({
+        productId: i.productId,
+        quantity: i.quantity,
+        unitPrice: Number(i.product.price),
+        product: {
+          id: i.product.id,
+          title: i.product.title,
+          sellerId: i.product.sellerId,
+          price: Number(i.product.price),
+          stock: i.product.stock,
+          freeShipping: i.product.freeShipping,
         },
-      },
-    });
+      }));
+    }
 
-    if (!cart?.items.length) {
+    if (lineItems.length === 0) {
       return NextResponse.json({ code: "EMPTY_CART", error: "El carrito está vacío" }, { status: 400 });
     }
 
-    const sellerIds = new Set(cart.items.map((i) => i.product.sellerId));
+    const sellerIds = new Set(lineItems.map((i) => i.product.sellerId));
     if (sellerIds.size !== 1) {
       return NextResponse.json(
         {
@@ -176,8 +260,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const lines = cart.items;
-    const unavailable = lines.find((i) => !i.product.isActive || i.product.stock < i.quantity);
+    const lines = lineItems;
+    const unavailable = lines.find((i) => i.product.stock < i.quantity);
     if (unavailable) {
       return NextResponse.json(
         {
@@ -188,7 +272,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const subtotal = roundMoney(lines.reduce((s, i) => s + Number(i.price) * i.quantity, 0));
+    const subtotal = roundMoney(lines.reduce((s, i) => s + i.unitPrice * i.quantity, 0));
 
     try {
       const sellerZipnova = await prisma.sellerZipnovaOAuth.findUnique({
@@ -233,11 +317,11 @@ export async function POST(req: Request) {
       const shipRes = await resolveCartShippingCost({
         lines: lines.map((i) => ({
           quantity: i.quantity,
-          price: Number(i.price),
+          price: i.unitPrice,
           product: {
             id: i.product.id,
             title: i.product.title,
-            sku: i.product.sku,
+            sku: null,
             freeShipping: i.product.freeShipping,
           },
         })),
@@ -501,7 +585,7 @@ export async function POST(req: Request) {
       subtotal > 0 ? roundMoney((commissionProductTotal / subtotal) * 100) : 0;
 
     for (const item of lines) {
-      const unit = Number(item.price);
+      const unit = item.unitPrice;
       const totalLine = roundMoney(unit * item.quantity);
       const lineCommission = roundMoney(totalLine * (blendedCommissionRate / 100));
 
@@ -566,8 +650,9 @@ export async function POST(req: Request) {
     }
 
     const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, "");
-    const buyerEmail = String(body.buyer_email || session.user.email || "").trim();
-    if (!buyerEmail) {
+    // Acá `buyerEmail` ya está resuelto en el bloque de autorización (session o guest).
+    const payerEmail = String(body.buyer_email || buyerEmail || "").trim();
+    if (!payerEmail) {
       if (persistedOrder) await cleanupPersistedOrder(orderId);
       else await restoreReservedStockIfNeeded();
       return NextResponse.json(
@@ -583,7 +668,7 @@ export async function POST(req: Request) {
       id: row.productId,
       title: row.product.title.slice(0, 120),
       quantity: row.quantity,
-      unit_price: roundMoney(Number(row.price)),
+      unit_price: roundMoney(row.unitPrice),
       currency_id: "ARS",
     }));
 
@@ -639,7 +724,7 @@ export async function POST(req: Request) {
     const preference = {
       items: mpItems,
       marketplace_fee: roundMoney(split.marketplaceTotalRetention),
-      payer: { email: buyerEmail },
+      payer: { email: payerEmail },
       external_reference: orderId,
       notification_url: `${appUrl}/api/webhooks/mercadopago`,
       back_urls: {
