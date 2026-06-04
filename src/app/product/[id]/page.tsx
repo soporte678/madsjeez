@@ -299,18 +299,17 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   return (
     <div className="min-h-screen flex flex-col">
       <ProductJsonLd
-        id={product.id}
-        title={product.title}
-        description={product.description || ""}
-        price={Number(product.price)}
-        images={images}
-        condition={product.condition || "new"}
-        inStock={stockQty > 0}
-        categoryName={categoryName}
-        sellerName={sellerName}
-        sku={product.sku}
-        ratingValue={avgRating}
-        reviewCount={totalReviews}
+        product={{
+          id: product.id,
+          title: product.title,
+          description: product.description || "",
+          price: Number(product.price),
+          images,
+          category: categoryName,
+          availability: stockQty > 0 ? "InStock" : "OutOfStock",
+          rating: avgRating || undefined,
+          reviewCount: totalReviews || undefined,
+        }}
       />
       <BreadcrumbJsonLd
         items={[

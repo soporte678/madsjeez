@@ -517,8 +517,8 @@ export default function Navbar() {
 
             <div className="flex-1 flex items-center justify-end">
               <Link
-                href="/subscriptions"
-                aria-label="Suscribite a Mads Pro con envíos gratis"
+                href="/mads-pro"
+                aria-label="Suscribite a Mads Pro por $30.000/mes con envíos gratis ilimitados en productos desde $25.000"
                 className="mads-pro-shell relative flex h-[38px] w-[340px] cursor-pointer items-center overflow-hidden rounded-full px-1.5 transition-all duration-300 hover:-translate-y-[1px] hover:border-white/20 hover:shadow-[0_14px_36px_rgba(2,6,23,0.32)]"
               >
                  <div className="absolute left-6 w-[230px] flex items-center justify-center animate-wipe-out">
@@ -553,7 +553,7 @@ export default function Navbar() {
                        </div>
                        <div className="flex flex-col justify-center border-l border-white/12 py-0.5 pl-1.5 leading-[1.05]">
                           <span className="text-[8.5px] font-black uppercase tracking-wider text-slate-100">Envíos gratis</span>
-                          <span className="mt-[1px] text-[8.5px] font-black uppercase tracking-wider text-slate-100">en tus compras</span>
+                          <span className="mt-[1px] text-[8.5px] font-black uppercase tracking-wider text-yellow-300">Desde $25.000 · $30.000/mes</span>
                        </div>
                     </div>
                  </div>
