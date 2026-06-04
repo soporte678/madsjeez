@@ -57,12 +57,13 @@ export default function Navbar() {
   // Buscar sugerencias con debounce
   useEffect(() => {
     if (!searchQuery.trim()) {
-      // Mostrar historial y tendencias cuando no hay query
+      // Tendencias reales del marketplace (maquinaria/herramientas).
+      // Sacamos los placeholders iPhone/Nike que no aplican al catálogo.
       const trending: SearchSuggestion[] = [
-        { id: 't1', title: 'iPhone 15 Pro', type: 'trending', url: '/search?q=iPhone+15+Pro' },
-        { id: 't2', title: 'Zapatillas Nike', type: 'trending', url: '/search?q=Zapatillas+Nike' },
-        { id: 't3', title: 'Notebook Gamer', type: 'trending', url: '/search?q=Notebook+Gamer' },
-        { id: 't4', title: 'Aire Acondicionado', type: 'trending', url: '/search?q=Aire+Acondicionado' },
+        { id: 't1', title: 'Motosierra', type: 'trending', url: '/search?q=motosierra' },
+        { id: 't2', title: 'Carburador', type: 'trending', url: '/search?q=carburador' },
+        { id: 't3', title: 'Desmalezadora', type: 'trending', url: '/search?q=desmalezadora' },
+        { id: 't4', title: 'Grupo electrógeno', type: 'trending', url: '/search?q=grupo+electrogeno' },
       ];
       const historyItems: SearchSuggestion[] = searchHistory.slice(0, 5).map((h, i) => ({
         id: `h${i}`,
@@ -134,7 +135,10 @@ export default function Navbar() {
     localStorage.setItem('madsjeez_search_history', JSON.stringify(newHistory));
   };
 
-  // Navegación con teclado
+  // Navegación con teclado.
+  // Enter SIEMPRE busca lo que el usuario tipeó — solo navega a sugerencia
+  // si el usuario explícitamente usó flechas Y la sugerencia es del MISMO
+  // término. Evita que click accidental en sugerencia te lleve a otra cosa.
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -142,9 +146,14 @@ export default function Navbar() {
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       setSelectedIndex(prev => (prev > 0 ? prev - 1 : -1));
-    } else if (e.key === 'Enter' && selectedIndex >= 0) {
-      e.preventDefault();
-      handleSuggestionClick(suggestions[selectedIndex]);
+    } else if (e.key === 'Enter') {
+      // Si hay una sugerencia explícitamente seleccionada por flechas, usamos
+      // ESA. Si no, siempre buscamos por la query escrita.
+      if (selectedIndex >= 0 && suggestions[selectedIndex]) {
+        e.preventDefault();
+        handleSuggestionClick(suggestions[selectedIndex]);
+      }
+      // else: deja al form submit normal con searchQuery
     } else if (e.key === 'Escape') {
       setIsSearchOpen(false);
     }
