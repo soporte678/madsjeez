@@ -3,6 +3,7 @@
 import { Suspense, useState } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
+import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -20,9 +21,7 @@ export default function RegisterPage() {
 function RegisterForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  // mantenemos callbackUrl para que post-registro vuelva a la página origen
-  const _callbackUrl = searchParams.get("callbackUrl") || searchParams.get("redirect") || "/dashboard"
-  void _callbackUrl
+  const callbackUrl = searchParams.get("callbackUrl") || searchParams.get("redirect") || "/dashboard"
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [fullName, setFullName] = useState("")
@@ -31,14 +30,30 @@ function RegisterForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
     setError("")
 
+    // Validación client-side antes de pegar al API
+    const trimmedName = fullName.trim()
+    const trimmedEmail = email.trim().toLowerCase()
+    if (!trimmedName || trimmedName.length < 2) {
+      setError("Ingresá tu nombre completo")
+      return
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      setError("Email inválido")
+      return
+    }
+    if (password.length < 8) {
+      setError("La contraseña debe tener al menos 8 caracteres")
+      return
+    }
+
+    setLoading(true)
     try {
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, full_name: fullName }),
+        body: JSON.stringify({ email, password, name: fullName }),
       })
 
       const data = await response.json()
@@ -47,10 +62,23 @@ function RegisterForm() {
         throw new Error(data.error || "Error al registrarse")
       }
 
-      trackEvent("sign_up", {
-        method: "email",
+      trackEvent("sign_up", { method: "email" })
+
+      // Auto-login post-registro para que el usuario entre directo
+      // a su dashboard con el trial 14d activo, sin pasar por /auth/login.
+      const signRes = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+        callbackUrl,
       })
-      router.push("/auth/login?registered=true")
+      if (signRes?.error) {
+        // Si por algún motivo el auto-login falla, mandamos al login manual
+        router.push("/auth/login?registered=true")
+        return
+      }
+      router.push(callbackUrl)
+      router.refresh()
     } catch (err: any) {
       setError(err.message)
     } finally {

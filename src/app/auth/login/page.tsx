@@ -93,7 +93,7 @@ function LoginForm() {
             <div className="px-8 pb-8 pt-4 space-y-4">
               {registered && (
                 <div className="p-3 rounded-lg bg-emerald-50 text-emerald-800 text-sm border border-emerald-200">
-                  ¡Cuenta creada correctamente! Ya podés iniciar sesión.
+                  ¡Cuenta creada! Te activamos <strong>14 días gratis</strong> con todos los beneficios del plan ULTRA.
                 </div>
               )}
 
