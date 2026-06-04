@@ -246,7 +246,7 @@ export async function GET(req: Request) {
     }
 
     // ════════════════════════════════════════════════════════════
-    // BÚSQUEDA PRISMA — ahora usa pg_trgm en vez de ILIKE
+    // BÚSQUEDA PRISMA — pg_trgm + unaccent + threshold dinámico
     // ════════════════════════════════════════════════════════════
     // 1. Obtener IDs de productos coincidentes via pg_trgm
     let matchingIds: string[] = [];
@@ -266,14 +266,23 @@ export async function GET(req: Request) {
       const freeShipFilter =
         freeShip === "true" ? Prisma.sql`AND p.free_shipping = true` : Prisma.empty;
 
+      // Threshold bajo: 0.15 (default 0.3 mata typos cortos como "carburad").
+      // Por sesión. No afecta queries concurrentes (cada Prisma client es pool).
+      await prisma.$executeRaw`SELECT set_limit(0.15)`;
+
+      // unaccent normaliza acentos en ambos lados → "motosierra" matchea "motósierrá".
+      // ILIKE + unaccent baseline para garantizar matches obvios (palabra completa)
+      // que pg_trgm a veces salta por longitud del título.
       const idRows = await prisma.$queryRaw<Array<{ id: string }>>`
         SELECT p.id
         FROM products p
         WHERE (
-          p.title % ${searchQuery}
-          OR p.description % ${searchQuery}
-          OR COALESCE(p.sku, '') % ${searchQuery}
-          OR COALESCE(p.meli_item_id, '') % ${searchQuery}
+          unaccent(p.title) ILIKE '%' || unaccent(${searchQuery}) || '%'
+          OR unaccent(COALESCE(p.description, '')) ILIKE '%' || unaccent(${searchQuery}) || '%'
+          OR unaccent(p.title) % unaccent(${searchQuery})
+          OR unaccent(COALESCE(p.description, '')) % unaccent(${searchQuery})
+          OR COALESCE(p.sku, '') ILIKE '%' || ${searchQuery} || '%'
+          OR COALESCE(p.meli_item_id, '') ILIKE '%' || ${searchQuery} || '%'
         )
         AND p.is_active = true
         ${categoryFilter}
@@ -282,13 +291,16 @@ export async function GET(req: Request) {
         ${maxPriceFilter}
         ${freeShipFilter}
         ORDER BY
-          GREATEST(
-            similarity(p.title, ${searchQuery}),
-            similarity(p.description, ${searchQuery}),
-            similarity(COALESCE(p.sku, ''), ${searchQuery}),
-            similarity(COALESCE(p.meli_item_id, ''), ${searchQuery})
-          ) DESC,
-          p.sales DESC
+          -- Ranking: title match peso 3x, exact > fuzzy, ventas como tiebreaker
+          (CASE WHEN unaccent(p.title) ILIKE unaccent(${searchQuery}) || '%' THEN 100
+                WHEN unaccent(p.title) ILIKE '%' || unaccent(${searchQuery}) || '%' THEN 50
+                ELSE 0 END) +
+          (similarity(unaccent(p.title), unaccent(${searchQuery})) * 30) +
+          (similarity(unaccent(COALESCE(p.description, '')), unaccent(${searchQuery})) * 10) +
+          (CASE WHEN p.is_boosted THEN 5 ELSE 0 END) +
+          (LEAST(COALESCE(p.sales, 0), 200) / 20.0)
+        DESC,
+          p.sales DESC NULLS LAST
         LIMIT ${limit * 2}
       `;
       matchingIds = idRows.map((r) => r.id);
@@ -355,7 +367,48 @@ export async function GET(req: Request) {
     );
     merged = sortUnifiedWithRelevance(merged, sort, q, tokens).slice(0, limit);
 
-    return NextResponse.json({ products: merged });
+    // Fallback "Did you mean" + sugerencias top: si la búsqueda tiene query
+    // y 0 resultados, devolvemos los 12 productos más vendidos para que el
+    // usuario no termine en pantalla vacía (mejor UX que ML que muestra "nada").
+    let didYouMean: string[] = [];
+    let suggested: UnifiedProduct[] = [];
+    if (q?.trim() && merged.length === 0) {
+      try {
+        // 1) "Did you mean" via pg_trgm word_similarity sobre títulos
+        const dymRows = await prisma.$queryRaw<Array<{ word: string }>>`
+          SELECT DISTINCT lower(word) AS word
+          FROM (
+            SELECT regexp_split_to_table(unaccent(title), '\s+') AS word
+            FROM products
+            WHERE is_active = true
+          ) words
+          WHERE length(word) >= 3
+            AND word % unaccent(${q.trim()})
+          ORDER BY similarity(word, unaccent(${q.trim()})) DESC
+          LIMIT 5
+        `;
+        didYouMean = dymRows.map((r) => r.word).filter((w) => w !== q.trim().toLowerCase());
+
+        // 2) Top 12 más vendidos como fallback
+        const topRows = await prisma.product.findMany({
+          where: { isActive: true },
+          take: 12,
+          orderBy: [{ sales: "desc" }, { updatedAt: "desc" }],
+          include: {
+            seller: { select: { id: true, name: true, sellerName: true } },
+            category: { select: { name: true } },
+            images: { orderBy: { order: "asc" }, take: 1 },
+          },
+        });
+        suggested = topRows
+          .map(mapPrismaProduct)
+          .filter((p) => hasValidProductImageUrl(p.primary_image));
+      } catch (err) {
+        console.warn("search fallback failed:", err);
+      }
+    }
+
+    return NextResponse.json({ products: merged, didYouMean, suggested });
   } catch (e) {
     console.error("GET /api/search/listings:", e);
     return NextResponse.json({ error: "Error al cargar resultados" }, { status: 500 });

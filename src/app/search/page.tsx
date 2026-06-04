@@ -167,6 +167,8 @@ function SearchContent() {
 
   const [query, setQuery] = useState(searchParams.get("q") || "");
   const [products, setProducts] = useState<Product[]>([]);
+  const [didYouMean, setDidYouMean] = useState<string[]>([]);
+  const [suggested, setSuggested] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -252,6 +254,12 @@ function SearchContent() {
       }
       const list = (data.products || []) as Product[];
       setProducts(list.filter((p) => hasValidProductImageUrl(p.primary_image)));
+      setDidYouMean(Array.isArray(data.didYouMean) ? data.didYouMean : []);
+      setSuggested(
+        Array.isArray(data.suggested)
+          ? (data.suggested as Product[]).filter((p) => hasValidProductImageUrl(p.primary_image))
+          : []
+      );
     } catch {
       toast.error("Error al cargar resultados");
       setProducts([]);
@@ -770,17 +778,56 @@ function SearchContent() {
                 )}
               </>
             ) : (
-              <div className="bg-white rounded-lg p-12 text-center shadow-sm border border-[#eee]">
-                <Search className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-                <h2 className="text-xl font-semibold mb-2 text-[#333]">No encontramos resultados</h2>
-                <p className="text-gray-500 mb-6">Probá otros términos o revisá los filtros.</p>
-                <button
-                  type="button"
-                  onClick={clearFilters}
-                  className="bg-[#3483fa] text-white font-semibold px-6 py-3 rounded-md hover:bg-[#2968c8]"
-                >
-                  Limpiar filtros
-                </button>
+              <div className="space-y-4">
+                <div className="bg-white rounded-lg p-10 text-center shadow-sm border border-[#eee]">
+                  <Search className="h-14 w-14 mx-auto text-gray-300 mb-3" />
+                  <h2 className="text-lg font-semibold mb-1 text-[#333]">
+                    No encontramos &quot;{searchTerm}&quot;
+                  </h2>
+                  <p className="text-[13px] text-gray-500 mb-4">
+                    Probá con otra palabra o sacá filtros activos.
+                  </p>
+
+                  {didYouMean.length > 0 && (
+                    <div className="mb-4 flex flex-wrap items-center justify-center gap-2 text-[13px]">
+                      <span className="text-gray-500">Quizás quisiste decir:</span>
+                      {didYouMean.slice(0, 5).map((w) => (
+                        <button
+                          key={w}
+                          type="button"
+                          onClick={() => {
+                            setQuery(w);
+                            updateSearchParams({ q: w });
+                          }}
+                          className="bg-[#e8f0fd] text-[#3483fa] font-semibold px-3 py-1 rounded-full hover:bg-[#3483fa] hover:text-white transition-colors"
+                        >
+                          {w}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="bg-[#3483fa] text-white font-semibold px-5 py-2 rounded-md hover:bg-[#2968c8] text-[13px]"
+                  >
+                    Limpiar filtros
+                  </button>
+                </div>
+
+                {suggested.length > 0 && (
+                  <div className="bg-white rounded-lg p-4 shadow-sm border border-[#eee]">
+                    <h3 className="text-[14px] font-semibold text-[#333] mb-3">
+                      Lo más vendido hoy
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+                      {suggested.map((p) => (
+                        <ProductCard key={p.id} product={p} discount={discount} cuotas6={cuotas6} />
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
