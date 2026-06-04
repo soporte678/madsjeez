@@ -13,6 +13,94 @@ import { pushStockToMeliForProductIds } from "@/lib/meli/stock-sync";
 import { tryCreateZipnovaShipmentForPaidOrder } from "@/lib/zipnova/create-shipment";
 import crypto from "crypto";
 import { logger } from "@/lib/logger";
+import { sendMetaCapiEvent, isCapiConfigured } from "@/lib/meta/capi";
+
+const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || "https://www.madsjeez.com.ar").replace(/\/$/, "");
+
+type MpPayer = {
+  email?: string;
+  first_name?: string;
+  last_name?: string;
+  phone?: { area_code?: string; number?: string };
+  address?: { zip_code?: string; street_name?: string };
+};
+
+function extractMpPayer(payment: Record<string, unknown>): MpPayer {
+  const payer = (payment.payer as MpPayer | undefined) || {};
+  return payer;
+}
+
+function joinPhone(p: MpPayer["phone"]): string | null {
+  if (!p) return null;
+  const area = (p.area_code || "").trim();
+  const num = (p.number || "").trim();
+  if (!area && !num) return null;
+  return `${area}${num}`;
+}
+
+/**
+ * Fire Meta CAPI Purchase event when an order transitions to paid for the first time.
+ * Best-effort: never throws, never blocks the webhook response.
+ */
+async function firePurchaseCapiBestEffort(args: {
+  orderId: string;
+  paymentId: string;
+  payment: Record<string, unknown>;
+  prevOrder: { buyer_id?: string; total_amount?: number | string | null } | null;
+  itemLines: StockReservationLine[];
+}): Promise<void> {
+  if (!isCapiConfigured()) return;
+
+  try {
+    const { orderId, paymentId, payment, prevOrder, itemLines } = args;
+    const payer = extractMpPayer(payment);
+    const txAmount = Number(payment.transaction_amount ?? prevOrder?.total_amount ?? 0);
+    const currency = (typeof payment.currency_id === "string" ? payment.currency_id : "ARS") || "ARS";
+    const numItems = itemLines.reduce((s, l) => s + (Number.isFinite(l.quantity) ? l.quantity : 0), 0);
+    const contentIds = itemLines.map((l) => l.productId).filter(Boolean);
+
+    // Stable per-order eventId so retries from MP dedupe with same event
+    const eventId = `mp-purchase-${orderId}-${paymentId}`;
+
+    const result = await sendMetaCapiEvent({
+      eventName: "Purchase",
+      eventId,
+      eventSourceUrl: `${APP_URL}/checkout/success?order_id=${encodeURIComponent(orderId)}`,
+      actionSource: "website",
+      userData: {
+        email: payer.email,
+        phone: joinPhone(payer.phone),
+        externalId: typeof prevOrder?.buyer_id === "string" ? prevOrder.buyer_id : undefined,
+        firstName: payer.first_name,
+        lastName: payer.last_name,
+        zip: payer.address?.zip_code,
+        country: "ar",
+      },
+      customData: {
+        currency,
+        value: Number.isFinite(txAmount) ? Number(txAmount.toFixed(2)) : 0,
+        content_type: "product",
+        content_ids: contentIds,
+        contents: itemLines.map((l) => ({ id: l.productId, quantity: l.quantity })),
+        num_items: numItems,
+        order_id: orderId,
+      },
+    });
+
+    if (!result.ok) {
+      logger.warn("Meta CAPI Purchase event not sent", {
+        orderId,
+        paymentId,
+        eventId: result.eventId,
+        error: result.error,
+      });
+    } else {
+      logger.info(`Meta CAPI Purchase OK: order=${orderId} payment=${paymentId} eventId=${result.eventId}`);
+    }
+  } catch (e) {
+    logger.warn("firePurchaseCapiBestEffort exception (non-fatal):", e);
+  }
+}
 
 const WEBHOOK_TS_SKEW_MS = 5 * 60 * 1000;
 
@@ -312,6 +400,7 @@ export async function POST(req: NextRequest) {
         .maybeSingle();
 
       let shippingPatch: Record<string, unknown> | undefined;
+      let firePurchaseCapi = false;
       if (orderStatus === "paid") {
         const prevSt = typeof (prevOrder as { status?: string } | null)?.status === "string"
           ? String((prevOrder as { status: string }).status).toLowerCase()
@@ -333,6 +422,7 @@ export async function POST(req: NextRequest) {
             });
           }
           shippingPatch = merged;
+          firePurchaseCapi = true;
         }
       } else if (
         (orderStatus === "cancelled" || orderStatus === "refunded") &&
@@ -435,6 +525,17 @@ export async function POST(req: NextRequest) {
       );
 
       logger.info(`Webhook: order ${orderId} → ${orderStatus} (MP status: ${status})`);
+
+      if (firePurchaseCapi) {
+        const itemLines = await fetchSupabaseOrderStockLines(orderId);
+        await firePurchaseCapiBestEffort({
+          orderId,
+          paymentId,
+          payment,
+          prevOrder: prevOrder as { buyer_id?: string; total_amount?: number | string | null } | null,
+          itemLines,
+        });
+      }
     }
 
     return NextResponse.json({ received: true });

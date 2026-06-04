@@ -4,6 +4,7 @@ import "./globals.css"
 import { Providers } from "@/components/providers"
 import { ChatProvider } from "@/components/ChatContext"
 import { DeferredAnalytics } from "@/components/seo/DeferredAnalytics"
+import { MetaPixel } from "@/components/seo/MetaPixel"
 import { FloatingBotsLazy } from "@/components/FloatingBotsLazy"
 import { PWAProvider } from "@/components/pwa/PWAProvider"
 import { JarvisInitializerClient, JarvisChatWidgetClient } from "@/components/jarvis/JarvisClientComponents"
@@ -59,6 +60,9 @@ export const metadata: Metadata = {
   },
   verification: {
     google: "m8cmW9J8wkYGstv3h_D141-XvNFsthUmNFMucxqZ3lI",
+    other: process.env.META_DOMAIN_VERIFICATION
+      ? { "facebook-domain-verification": [process.env.META_DOMAIN_VERIFICATION] }
+      : undefined,
   },
   manifest: "/manifest.json",
   themeColor: "#EB5204",
@@ -135,6 +139,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col font-outfit">
         <DeferredAnalytics />
+        <MetaPixel />
         <JarvisInitializerClient />
         <ChatProvider>
           <Providers>
