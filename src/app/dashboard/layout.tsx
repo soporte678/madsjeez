@@ -91,8 +91,10 @@ const MENU_GROUPS: MenuGroup[] = [
     label: "Marketing",
     icon: <Megaphone size={18} />,
     subItems: [
-      { id: "marketing-ia", label: "Marketing IA (beta)", href: "/dashboard/marketing-ia" },
-      { id: "whatsapp-bot", label: "Bot de WhatsApp", href: "/dashboard/whatsapp-bot" },
+      // Marketing IA y Bot de WhatsApp ocultos por ahora (decisión producto).
+      // Las rutas siguen existiendo; solo los sacamos del sidebar.
+      // { id: "marketing-ia", label: "Marketing IA (beta)", href: "/dashboard/marketing-ia" },
+      // { id: "whatsapp-bot", label: "Bot de WhatsApp", href: "/dashboard/whatsapp-bot" },
       { id: "meli-ads-studio", label: "Mercado Libre Ads", href: "/dashboard/meli-ads-studio" },
       { id: "central-marketing", label: "Central de marketing", href: "/dashboard/central-marketing" },
       { id: "publicidad", label: "Publicidad", href: "/dashboard/publicidad" },
@@ -117,12 +119,13 @@ const MENU_GROUPS: MenuGroup[] = [
     icon: <User size={18} />,
     href: "/dashboard/perfil",
   },
-  {
-    id: "jarvis-ia",
-    label: "JARVIS IA",
-    icon: <Brain size={18} />,
-    href: "/dashboard/jarvis",
-  },
+  // JARVIS IA oculto del sidebar (decisión producto).
+  // {
+  //   id: "jarvis-ia",
+  //   label: "JARVIS IA",
+  //   icon: <Brain size={18} />,
+  //   href: "/dashboard/jarvis",
+  // },
   {
     id: "configuracion-group",
     label: "Configuracion",
