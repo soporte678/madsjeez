@@ -20,6 +20,7 @@ function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const registered = searchParams.get("registered")
+  const passwordReset = searchParams.get("reset") === "ok"
   const callbackUrl = "/"
   const authErrCode = searchParams.get("error")
 
@@ -97,6 +98,12 @@ function LoginForm() {
                 </div>
               )}
 
+              {passwordReset && (
+                <div className="p-3 rounded-lg bg-emerald-50 text-emerald-800 text-sm border border-emerald-200">
+                  Contraseña actualizada. Iniciá sesión con la nueva.
+                </div>
+              )}
+
               {urlAuthHint && (
                 <div className="p-3 rounded-lg bg-amber-50 text-amber-950 text-sm border border-amber-200 leading-snug">
                   {urlAuthHint}
@@ -154,6 +161,15 @@ function LoginForm() {
                   {loading ? "Iniciando sesión…" : "Iniciar sesión"}
                 </Button>
               </form>
+
+              <p className="text-center text-sm pt-1">
+                <Link
+                  href="/auth/forgot-password"
+                  className="text-slate-500 hover:text-[#3483fa] transition-colors"
+                >
+                  ¿Olvidaste tu contraseña?
+                </Link>
+              </p>
 
               <p className="text-center text-sm text-slate-600 pt-2">
                 ¿No tenés cuenta?{" "}
