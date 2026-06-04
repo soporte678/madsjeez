@@ -139,6 +139,13 @@ function buildStatusPayload() {
  * - Per-service health status
  * - Complete operations registry
  */
+
+// Skip static collection at build time — this route triggers a circular import
+// in the JARVIS governance module ("Cannot access 'I' before initialization")
+// when evaluated during `next build`. Forcing dynamic defers module evaluation
+// to request time, when env vars are present and the cycle resolves naturally.
+export const dynamic = "force-dynamic";
+
 export async function GET(): Promise<NextResponse> {
   try {
     const disabled = checkJarvisEnabled();
