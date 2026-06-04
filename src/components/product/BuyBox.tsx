@@ -16,6 +16,7 @@ import {
 interface BuyBoxProps {
   productId: string
   productTitle: string
+  productImage?: string | null
   basePrice: number
   originalPrice: number | null
   freeShipping: boolean
@@ -35,6 +36,7 @@ interface BuyBoxProps {
 function upsertGuestCartItem(params: {
   productId: string
   productTitle: string
+  productImage?: string | null
   unitPrice: number
   quantity: number
   freeShipping: boolean
@@ -59,7 +61,7 @@ function upsertGuestCartItem(params: {
       price: params.unitPrice,
       shipping_free: params.freeShipping,
       seller_id: params.sellerId,
-      primary_image: null,
+      primary_image: params.productImage ?? null,
       seller_name: params.sellerName,
     },
   }
@@ -86,6 +88,7 @@ type GuestCartLine = {
 export function BuyBox({
   productId,
   productTitle,
+  productImage,
   basePrice,
   originalPrice,
   freeShipping,
@@ -146,6 +149,7 @@ export function BuyBox({
         upsertGuestCartItem({
           productId,
           productTitle,
+          productImage,
           unitPrice,
           quantity,
           freeShipping,
@@ -216,6 +220,7 @@ export function BuyBox({
         upsertGuestCartItem({
           productId,
           productTitle,
+          productImage,
           unitPrice,
           quantity,
           freeShipping,

@@ -606,6 +606,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
               <BuyBox
                 productId={product.id}
                 productTitle={product.title}
+                productImage={images[0] ?? null}
                 basePrice={priceNumber}
                 originalPrice={originalPriceNumber}
                 freeShipping={product.free_shipping}
