@@ -26,12 +26,9 @@ export default function AppleIcon() {
               <stop offset="100%" stopColor="#2563eb" />
             </linearGradient>
           </defs>
-          <path d="M 14 10 L 32 10 L 32 90 L 14 90 Z" fill="url(#ga)" />
-          <path d="M 14 10 L 32 10 L 56 56 L 44 64 Z" fill="url(#ga)" />
-          <path d="M 86 10 L 68 10 L 44 56 L 56 64 Z" fill="url(#ga)" />
-          <path d="M 68 10 L 86 10 L 86 90 L 68 90 Z" fill="url(#ga)" />
-          <path d="M 56 56 L 68 56 L 68 76 L 56 76 Z" fill="#1d4ed8" />
-          <path d="M 46 64 L 56 64 L 56 76 L 46 76 Z" fill="#1d4ed8" />
+          <path d="M 12 14 L 30 14 L 52 54 L 30 38 L 30 86 L 12 86 Z" fill="url(#ga)" />
+          <path d="M 88 14 L 70 14 L 48 54 L 70 38 L 70 86 L 88 86 Z" fill="url(#ga)" />
+          <path d="M 70 50 L 70 68 L 50 68 L 60 52 Z" fill="#1d4ed8" />
         </svg>
       </div>
     ),
