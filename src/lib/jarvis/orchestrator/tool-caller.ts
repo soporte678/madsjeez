@@ -135,26 +135,26 @@ const MCP_TOOL_KEYWORDS: Record<string, string[]> = {
 /** Valida parametros de mcp_github */
 const GitHubToolSchema = z.object({
   operation: z.string().min(1),
-  params: z.record(z.unknown()).default({}),
+  params: z.record(z.string(), z.unknown()).default({}),
 });
 
 /** Valida parametros de mcp_railway */
 const RailwayToolSchema = z.object({
   operation: z.string().min(1),
-  params: z.record(z.unknown()).default({}),
+  params: z.record(z.string(), z.unknown()).default({}),
 });
 
 /** Valida parametros de mcp_supabase */
 const SupabaseToolSchema = z.object({
   operation: z.string().min(1),
-  params: z.record(z.unknown()).default({}),
+  params: z.record(z.string(), z.unknown()).default({}),
 });
 
 /** Valida parametros de marketplace_query */
 const MarketplaceQuerySchema = z.object({
   entity: z.enum(["products", "orders", "users", "sellers", "categories"]),
   action: z.enum(["count", "list", "find", "stats"]),
-  filters: z.record(z.unknown()).optional(),
+  filters: z.record(z.string(), z.unknown()).optional(),
 });
 
 /** Valida parametros de autonomous_task */

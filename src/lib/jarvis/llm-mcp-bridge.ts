@@ -142,7 +142,7 @@ const DEFAULT_MAX_TOKENS = 1024;
 /** Schema para validar una llamada a herramienta individual. */
 const ToolCallSchema = z.object({
   name: z.string().min(1, "El nombre de la herramienta no puede estar vacio"),
-  arguments: z.record(z.unknown()).default({}),
+  arguments: z.record(z.string(), z.unknown()).default({}),
   id: z.string().optional(),
 });
 

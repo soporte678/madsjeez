@@ -50,7 +50,7 @@ function envPercent(key: string, fallback: number): number {
  * Previene datos maliciosos o inválidos en los inputs del usuario.
  */
 const CheckoutBodySchema = z.object({
-  shipping: z.record(z.unknown()).optional(),
+  shipping: z.record(z.string(), z.unknown()).optional(),
   buyer_email: z.string().email().max(256).optional(),
   guest_email: z.string().email().max(256).nullable().optional(),
   guest_phone: z.string().max(64).nullable().optional(),
