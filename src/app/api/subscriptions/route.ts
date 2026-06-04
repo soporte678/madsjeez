@@ -17,11 +17,13 @@ const mpClient = mpToken ? new MercadoPagoConfig({
   options: { timeout: 5000 }
 }) : null
 
-// Planes y precios base
+// Planes y precios base (3 tiers).
+// FREE se activa en /api/subscriptions/activate-free (sin MP).
+// GOLD legacy aceptado para no romper suscriptores actuales — alias de PLATA.
 const PLAN_PRICES: Record<string, number> = {
-  PLATA: 9999,
-  GOLD: 19999,
-  PLATINUM: 49999
+  PLATA: 9999,     // PRO — 200 publicaciones
+  GOLD: 9999,      // legacy alias
+  PLATINUM: 19999, // ULTRA — ilimitadas
 }
 
 // Descuentos por período

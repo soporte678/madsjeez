@@ -584,39 +584,39 @@ export default function HomePageClient() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-[1100px] mx-auto items-center">
           {[
             {
-              name: "PLATA", price: "9.999", comm: "0% comisión", icon: Box, featured: false,
+              name: "BÁSICO", price: "0", comm: "50 publicaciones gratis", icon: Box, featured: false,
               benefits: [
-                'Exposición estándar en búsquedas',
-                'Hasta 100 publicaciones activas',
-                'Marketing IA: 10 posts/mes (Instagram + Facebook)',
-                'WhatsApp Business API: 500 mensajes/mes',
-                'Panel de métricas básicas',
-                'Acceso a MadsEnvíos'
+                '50 publicaciones activas',
+                '0% comisión por venta — siempre',
+                'Cobrás con tu Mercado Pago',
+                'Chat con compradores',
+                'Estadísticas básicas',
+                'Soporte por email'
               ]
             },
             {
-              name: "GOLD", price: "19.999", comm: "0% comisión", icon: Zap, featured: true,
+              name: "PRO", price: "9.999", comm: "200 publicaciones", icon: Zap, featured: true,
               benefits: [
-                'Exposición alta en resultados',
-                'Publicaciones ilimitadas',
+                '200 publicaciones activas',
+                '0% comisión por venta — siempre',
                 'Marketing IA ilimitado: posts, emails, banners, SEO',
                 'Meta API completa: Instagram + Facebook + WhatsApp',
                 'TikTok Shop integrado + posts automatizados',
                 'Soporte prioritario por WhatsApp',
                 'Panel de métricas avanzado',
-                'Descuentos en costos de envío'
+                'Badge PRO en tu perfil'
               ]
             },
             {
-              name: "PLATINUM", price: "49.999", comm: "0% comisión", icon: Sparkles, featured: false,
+              name: "ULTRA", price: "19.999", comm: "Publicaciones ilimitadas", icon: Sparkles, featured: false,
               benefits: [
+                'Publicaciones ILIMITADAS',
+                '0% comisión por venta — siempre',
                 'Exposición máxima (Top Resultados)',
-                'Publicidad en Banners (Home y Categorías)',
                 'IA Premium: generación de video, voz, chatbot personalizado',
-                'Meta API Enterprise: Instagram, Facebook, WhatsApp + Ads Manager',
-                'TikTok Ads + TikTok Shop + viralizador IA',
+                'Meta API Enterprise + TikTok Ads + viralizador IA',
                 'Ejecutivo de cuenta dedicado',
-                'Cuotas con tu MercadoPago según tu config',
+                'API completa + White label opcional',
                 'Retiro de dinero inmediato'
               ]
             }

@@ -59,8 +59,9 @@ export default function TerminosPage() {
                 el propio Mercado Pago aplica por procesar el pago según el contrato del
                 Vendedor con esa plataforma.</p>
               <p>MADSJEEZ se financia mediante <strong>planes de suscripción mensuales</strong>{" "}
-                (PLATA, GOLD, PLATINUM) que habilitan funcionalidades, exposición y
-                herramientas de marketing. Los planes y precios vigentes están publicados en{" "}
+                (BÁSICO gratis con 50 publicaciones, PRO con 200 publicaciones, ULTRA con
+                publicaciones ilimitadas) que habilitan funcionalidades, exposición y herramientas de
+                marketing. Los planes y precios vigentes están publicados en{" "}
                 <a href="/subscriptions" className="text-blue-600 underline">/subscriptions</a>.</p>
               <p>Las <strong>cuotas, medios de pago aceptados y promociones</strong> que ve el
                 comprador en el checkout son configuradas por cada Vendedor desde su panel

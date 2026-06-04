@@ -34,57 +34,59 @@ interface Plan {
   popular?: boolean
 }
 
+// 3 tiers claros con foco en publicaciones permitidas.
+// Política Madsjeez: 0% comisión por venta en todos los planes.
 const plans: Plan[] = [
   {
-    id: "PLATA",
-    name: "PLATA",
-    price: 9999,
-    description: "Para vendedores que están empezando",
+    id: "FREE",
+    name: "BÁSICO",
+    price: 0,
+    description: "Empezá a vender sin pagar nada",
     icon: Zap,
-    color: "#C0C0C0",
-    badge: "0% comisión por venta",
+    color: "#64748b",
+    badge: "50 publicaciones gratis",
     features: [
-      "Hasta 100 productos activos",
-      "Publicaciones destacadas: 5",
-      "Soporte por email",
+      "50 publicaciones activas",
+      "0% comisión por venta — siempre",
+      "Cobrás con tu Mercado Pago",
+      "Chat con compradores",
       "Estadísticas básicas",
-      "App móvil para gestión",
-      "Chat con clientes",
-      "Integración WhatsApp Business",
+      "Soporte por email",
     ]
   },
   {
-    id: "GOLD",
-    name: "GOLD",
-    price: 19999,
+    id: "PLATA",
+    name: "PRO",
+    price: 9999,
     description: "Para vendedores en crecimiento",
     icon: Crown,
-    color: "#ffa60a",
-    badge: "0% comisión por venta",
+    color: "#3483FA",
+    badge: "200 publicaciones",
     popular: true,
     features: [
-      "Hasta 500 productos activos",
-      "Publicaciones destacadas: 20",
-      "Soporte prioritario 24/7",
+      "200 publicaciones activas",
+      "0% comisión por venta — siempre",
+      "Soporte prioritario por WhatsApp",
       "Estadísticas avanzadas",
       "App móvil con IA integrada",
-      "Chat con IA integrada",
+      "Chat con IA para compradores",
       "Integración WhatsApp + Meta API",
       "TikTok Shop integrado",
       "Promociones automáticas",
+      "Badge PRO en tu perfil",
     ]
   },
   {
     id: "PLATINUM",
-    name: "PLATINUM",
-    price: 49999,
-    description: "Para empresas y sellers profesionales",
+    name: "ULTRA",
+    price: 19999,
+    description: "Sin límites para empresas y sellers profesionales",
     icon: Gem,
-    color: "#00b4d8",
-    badge: "0% comisión por venta",
+    color: "#facc15",
+    badge: "Publicaciones ilimitadas",
     features: [
-      "Productos ilimitados",
-      "Publicaciones destacadas: ilimitadas",
+      "Publicaciones ILIMITADAS",
+      "0% comisión por venta — siempre",
       "Ejecutivo de cuenta dedicado",
       "IA Premium: generación de contenido",
       "Meta API Enterprise completo",
@@ -93,6 +95,7 @@ const plans: Plan[] = [
       "API completa para integraciones",
       "White label opcional",
       "Soporte telefónico VIP",
+      "Badge ULTRA visible en tu tienda",
     ]
   }
 ]
@@ -154,12 +157,28 @@ export default function SubscriptionsPage() {
     }
 
     setIsLoading(true)
-    
+
     try {
       const plan = plans.find(p => p.id === selectedPlan)
       const billing = billingOptions.find(b => b.months === selectedBilling)
-      
+
       if (!plan || !billing) return
+
+      // Plan FREE no requiere pago — solo activar el tier.
+      if (plan.price === 0) {
+        const r = await fetch("/api/subscriptions/activate-free", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tier: selectedPlan }),
+        })
+        if (!r.ok) {
+          const j = await r.json().catch(() => ({}))
+          throw new Error(j.error || "No pudimos activar el plan gratis")
+        }
+        toast.success("Plan BÁSICO activado. Ya podés publicar hasta 50 productos.")
+        router.push("/dashboard?welcome=basic")
+        return
+      }
 
       const { finalPrice } = calculatePrice(plan.price, billing.months, billing.discount)
 
