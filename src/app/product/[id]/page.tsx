@@ -284,9 +284,13 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   const isNewSeller = sellerTotalSales === 0;
   const conditionLabel = product.condition === "new" ? "Nuevo" : product.condition === "used" ? "Usado" : "Reacondicionado";
   const salesCount = product.sales || 0;
-  const cuotas6 = Math.ceil(product.price / 6);
-  const discount = product.original_price
-    ? Math.round(((product.original_price - product.price) / product.original_price) * 100)
+  // Forzamos Number() porque Prisma puede devolver Decimal que rompe
+  // toLocaleString (muestra "99619" en lugar de "99.619" formato es-AR).
+  const priceNumber = Number(product.price) || 0;
+  const originalPriceNumber = product.original_price != null ? Number(product.original_price) : null;
+  const cuotas6 = Math.ceil(priceNumber / 6);
+  const discount = originalPriceNumber && originalPriceNumber > priceNumber
+    ? Math.round(((originalPriceNumber - priceNumber) / originalPriceNumber) * 100)
     : null;
 
   const images = product.product_images?.sort((a: any, b: any) => (a.order || 0) - (b.order || 0)).map((img: any) => img.url) || [];
@@ -303,7 +307,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
           id: product.id,
           title: product.title,
           description: product.description || "",
-          price: Number(product.price),
+          price: priceNumber,
           images,
           category: categoryName,
           availability: stockQty > 0 ? "InStock" : "OutOfStock",
@@ -377,10 +381,10 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                   <h1 className="text-[22px] font-normal text-gray-800 leading-tight mb-2 pr-8">{product.title}</h1>
 
                   <div className="flex flex-col mb-4">
-                    {product.original_price && product.original_price > product.price && (
-                      <span className="text-[15px] text-gray-400 line-through">$ {product.original_price.toLocaleString("es-AR")}</span>
+                    {originalPriceNumber && originalPriceNumber > priceNumber && (
+                      <span className="text-[15px] text-gray-400 line-through">$ {originalPriceNumber.toLocaleString("es-AR")}</span>
                     )}
-                    <span className="text-[36px] font-light text-gray-800 leading-none">$ {product.price.toLocaleString("es-AR")}</span>
+                    <span className="text-[36px] font-light text-gray-800 leading-none">$ {priceNumber.toLocaleString("es-AR")}</span>
                     {discount && <span className="text-[15px] font-medium text-emerald-500 mt-1">{discount}% OFF</span>}
                     <span className="text-[15px] font-medium text-emerald-500 mt-1">Mismo precio en 6 cuotas de $ {cuotas6.toLocaleString("es-AR")}</span>
                     <Link href="#" className="text-[13px] text-blue-500 hover:underline mt-1">Ver los medios de pago</Link>
@@ -602,10 +606,10 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
               <BuyBox
                 productId={product.id}
                 productTitle={product.title}
-                basePrice={product.price}
-                originalPrice={product.original_price}
+                basePrice={priceNumber}
+                originalPrice={originalPriceNumber}
                 freeShipping={product.free_shipping}
-                shippingCost={product.shipping_cost}
+                shippingCost={Number(product.shipping_cost) || 0}
                 stock={product.stock}
                 sellerId={product.seller_id}
                 sellerName={sellerName}
