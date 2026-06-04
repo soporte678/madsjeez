@@ -340,7 +340,7 @@ export async function POST(req: Request) {
       // Si no, usamos un costo fijo de envío estándar AR. El seller decide
       // si absorbe parte. Despues, en post-venta, se coordina con el seller.
       const anyPaid = lines.some((i) => !i.product.freeShipping);
-      shippingCostFull = anyPaid ? 2500 : 0;
+      shippingCostFull = anyPaid ? 9875 : 0;
       shippingAddressOut = {
         ...shippingAddressOut,
         shipping_mode: "manual",
