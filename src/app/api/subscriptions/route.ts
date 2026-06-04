@@ -5,17 +5,24 @@ import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { MercadoPagoConfig, Preference } from "mercadopago"
+import {
+  getMarketplaceAccessToken,
+  invalidateMarketplaceAccessToken,
+} from "@/lib/mercadopago/marketplace-token"
 
-// Configurar MercadoPago
-const mpToken = process.env.MP_ACCESS_TOKEN || process.env.MERCADOPAGO_ACCESS_TOKEN
-if (!mpToken) {
-  console.error("MERCADOPAGO_ACCESS_TOKEN is not configured")
+/** Construye el client MP con un token siempre fresco (auto-refresh). */
+async function getMpClient() {
+  try {
+    const accessToken = await getMarketplaceAccessToken()
+    return new MercadoPagoConfig({
+      accessToken,
+      options: { timeout: 5000 },
+    })
+  } catch (e) {
+    console.error("No pudimos obtener token MP:", e)
+    return null
+  }
 }
-
-const mpClient = mpToken ? new MercadoPagoConfig({ 
-  accessToken: mpToken,
-  options: { timeout: 5000 }
-}) : null
 
 // Planes y precios base (3 tiers).
 // FREE se activa en /api/subscriptions/activate-free (sin MP).
@@ -45,6 +52,7 @@ export async function POST(req: Request) {
       )
     }
 
+    let mpClient = await getMpClient()
     if (!mpClient) {
       return NextResponse.json(
         { error: "MercadoPago no está configurado" },
@@ -136,7 +144,28 @@ export async function POST(req: Request) {
       },
     }
 
-    const preferenceResponse = await preference.create({ body: preferenceData as any })
+    // Crear preference. Si MP responde 401 (token revocado/expirado),
+    // forzamos refresh y reintentamos UNA vez.
+    let preferenceResponse
+    try {
+      preferenceResponse = await preference.create({ body: preferenceData as any })
+    } catch (mpErr: any) {
+      const status = mpErr?.status || mpErr?.cause?.status
+      const msg = String(mpErr?.message || "").toLowerCase()
+      const looksUnauthorized = status === 401 || msg.includes("unauthorized") || msg.includes("invalid access token")
+      if (looksUnauthorized) {
+        invalidateMarketplaceAccessToken()
+        mpClient = await getMpClient()
+        if (mpClient) {
+          const retry = new Preference(mpClient)
+          preferenceResponse = await retry.create({ body: preferenceData as any })
+        } else {
+          throw mpErr
+        }
+      } else {
+        throw mpErr
+      }
+    }
 
     // Actualizar la suscripción con el ID de preferencia
     await prisma.subscription.update({
