@@ -789,7 +789,7 @@ export async function POST(req: Request) {
             items: {
               create: lines.map((row) => ({
                 quantity: row.quantity,
-                price: row.price,
+                price: row.unitPrice,
                 productId: row.productId,
               })),
             },
