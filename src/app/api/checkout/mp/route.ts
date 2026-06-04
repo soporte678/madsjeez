@@ -842,7 +842,20 @@ export async function POST(req: Request) {
       }
     }
 
-    await prisma.cartItem.deleteMany({ where: { cartId: cart.id } });
+    // Guest checkout no tiene Cart en Prisma; solo limpiamos cuando hubo session.
+    if (!isGuestCheckout) {
+      try {
+        const userCart = await prisma.cart.findUnique({
+          where: { userId: buyerPrismaId },
+          select: { id: true },
+        });
+        if (userCart) {
+          await prisma.cartItem.deleteMany({ where: { cartId: userCart.id } });
+        }
+      } catch (cartErr) {
+        logger.warn("checkout/mp clear cart (non-fatal):", cartErr);
+      }
+    }
 
     // Crear envío Flash si el comprador eligió ese método
     // orderId es el UUID de Supabase — la FK se satisface directo en la DB
