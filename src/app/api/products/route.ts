@@ -170,6 +170,40 @@ export async function POST(req: Request) {
       )
     }
 
+    // Enforce listing limits según tier efectivo (incluye trial 14 días).
+    const { prisma: prismaClient } = await import("@/lib/prisma");
+    const { getEffectiveTier, canPublishMore } = await import("@/lib/subscription/effective-tier");
+
+    const userRow = await prismaClient.user.findUnique({
+      where: { id: session.user.id },
+      select: { subscriptionTier: true, subscriptionExpiry: true },
+    });
+    const trialRow = await prismaClient.$queryRaw<Array<{ trial_ends_at: Date | null }>>`
+      SELECT trial_ends_at FROM users WHERE id = ${session.user.id}
+    `;
+    const effective = getEffectiveTier({
+      subscriptionTier: userRow?.subscriptionTier ?? "FREE",
+      subscriptionExpiry: userRow?.subscriptionExpiry ?? null,
+      trialEndsAt: trialRow[0]?.trial_ends_at ?? null,
+    });
+
+    const activeCount = await prismaClient.product.count({
+      where: { sellerId: session.user.id, isActive: true },
+    });
+    const check = canPublishMore(effective.tier, activeCount);
+    if (!check.allowed) {
+      return NextResponse.json(
+        {
+          error: `Llegaste al tope de ${check.max} publicaciones de tu plan. Suscribite a un plan mayor para publicar más.`,
+          tier: effective.tier,
+          activeCount,
+          max: check.max,
+          inTrial: effective.inTrial,
+        },
+        { status: 403 },
+      );
+    }
+
     const body = await req.json()
     const { title, description, price, comparePrice, stock, categoryId, condition, images, attributes } = body
 

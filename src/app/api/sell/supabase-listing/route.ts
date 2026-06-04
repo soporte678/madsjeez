@@ -6,6 +6,7 @@ import { getProfileUuidByEmail } from "@/lib/supabase-profile-map";
 import { supabaseService } from "@/lib/supabase/service";
 import type { SubscriptionTier } from "@prisma/client";
 import { sellMaxImagesForTier } from "@/lib/sell-subscription-limits";
+import { getEffectiveTier, canPublishMore } from "@/lib/subscription/effective-tier";
 
 export const dynamic = "force-dynamic";
 
@@ -37,12 +38,39 @@ export async function POST(req: Request) {
     );
   }
 
-  const sub = await prisma.subscription.findFirst({
-    where: { userId: session.user.id, status: "active" },
-    orderBy: { endDate: "desc" },
+  // Tier efectivo (incluye trial 14 días con beneficios ULTRA)
+  const userRow = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { subscriptionTier: true, subscriptionExpiry: true },
   });
-  const tier: SubscriptionTier = sub?.tier ?? "FREE";
+  const trialRow = await prisma.$queryRaw<Array<{ trial_ends_at: Date | null }>>`
+    SELECT trial_ends_at FROM users WHERE id = ${session.user.id}
+  `;
+  const effective = getEffectiveTier({
+    subscriptionTier: userRow?.subscriptionTier ?? "FREE",
+    subscriptionExpiry: userRow?.subscriptionExpiry ?? null,
+    trialEndsAt: trialRow[0]?.trial_ends_at ?? null,
+  });
+  const tier: SubscriptionTier = effective.tier;
   const maxImages = sellMaxImagesForTier(tier);
+
+  // Enforce límite de publicaciones según tier efectivo.
+  const activeCount = await prisma.product.count({
+    where: { sellerId: session.user.id, isActive: true },
+  });
+  const checkPub = canPublishMore(tier, activeCount);
+  if (!checkPub.allowed) {
+    return NextResponse.json(
+      {
+        error: `Llegaste al tope de ${checkPub.max} publicaciones de tu plan${effective.inTrial ? "" : ""}. Suscribite a un plan mayor para publicar más.`,
+        tier,
+        activeCount,
+        max: checkPub.max,
+        inTrial: effective.inTrial,
+      },
+      { status: 403 },
+    );
+  }
 
   let form: FormData;
   try {
