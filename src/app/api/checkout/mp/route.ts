@@ -901,7 +901,21 @@ export async function POST(req: Request) {
       },
     });
   } catch (e) {
-    logger.error("checkout/mp:", e);
-    return NextResponse.json({ error: "Error interno" }, { status: 500 });
+    const errMsg = e instanceof Error ? e.message : String(e);
+    const errStack = e instanceof Error ? e.stack : undefined;
+    const errName = e instanceof Error ? e.name : "Unknown";
+    logger.error("checkout/mp top-level:", {
+      name: errName,
+      message: errMsg,
+      stack: errStack?.split("\n").slice(0, 5).join("\n"),
+    });
+    return NextResponse.json(
+      {
+        error: "Error interno",
+        debug: process.env.NODE_ENV !== "production" ? errMsg : undefined,
+        code: errName,
+      },
+      { status: 500 },
+    );
   }
 }
