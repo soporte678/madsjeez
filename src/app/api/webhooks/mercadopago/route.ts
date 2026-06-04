@@ -492,6 +492,42 @@ export async function POST(req: NextRequest) {
         }
       }
 
+      // Email receipt al comprador (guest o logueado) cuando el pago es aprobado.
+      // No bloqueante: si Resend no está seteado o falla, no rompe el webhook.
+      if (orderStatus === "paid") {
+        try {
+          const { sendOrderReceiptEmail } = await import("@/lib/orders/order-receipt-email");
+          // Buscar la order en Prisma (shadow) para tener buyer email + items
+          if (shadowNum && buyerPid) {
+            const fullOrder = await prisma.order.findFirst({
+              where: { buyerId: buyerPid, orderNumber: shadowNum },
+              include: {
+                buyer: { select: { email: true, name: true, password: true } },
+                items: { include: { product: { select: { title: true } } } },
+              },
+            });
+            if (fullOrder?.buyer?.email) {
+              await sendOrderReceiptEmail({
+                orderId: fullOrder.id,
+                orderNumber: fullOrder.orderNumber,
+                buyerEmail: fullOrder.buyer.email,
+                buyerName: fullOrder.buyer.name ?? undefined,
+                total: Number(fullOrder.total),
+                items: fullOrder.items.map((it) => ({
+                  title: it.product.title,
+                  quantity: it.quantity,
+                  unitPrice: Number(it.price),
+                })),
+                // isGuest: si no tiene password seteada, es guest
+                isGuest: !fullOrder.buyer.password,
+              });
+            }
+          }
+        } catch (mailErr) {
+          logger.warn("order receipt email (non-fatal):", mailErr);
+        }
+      }
+
       await supabaseService.from("mp_webhook_processed").upsert(
         {
           payment_id: paymentId,

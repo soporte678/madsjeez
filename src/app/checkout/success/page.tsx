@@ -72,7 +72,8 @@ function SuccessContent() {
 
           <h1 className="text-2xl font-bold text-gray-900 mb-2">¡Pago aprobado!</h1>
           <p className="text-gray-500 mb-6">
-            Tu compra fue procesada correctamente. Te enviaremos una confirmación por email.
+            Te enviamos un email con el comprobante y un link único para ver tu orden cuando quieras.
+            Guardá el número de orden por las dudas.
           </p>
 
           {orderId && (
@@ -93,6 +94,11 @@ function SuccessContent() {
               <Button className="w-full bg-[#3483FA] hover:bg-[#2968c8]">
                 <Package className="w-4 h-4 mr-2" />
                 Ver mi compra en el dashboard
+              </Button>
+            </Link>
+            <Link href="/orders/lookup">
+              <Button variant="outline" className="w-full">
+                Buscar mi orden (sin cuenta)
               </Button>
             </Link>
             <Link href="/search">
