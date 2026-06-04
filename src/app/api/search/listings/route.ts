@@ -374,17 +374,24 @@ export async function GET(req: Request) {
     let suggested: UnifiedProduct[] = [];
     if (q?.trim() && merged.length === 0) {
       try {
-        // 1) "Did you mean" via pg_trgm word_similarity sobre títulos
-        const dymRows = await prisma.$queryRaw<Array<{ word: string }>>`
-          SELECT DISTINCT lower(word) AS word
+        // 1) "Did you mean" via pg_trgm sobre palabras del catálogo
+        await prisma.$executeRaw`SELECT set_limit(0.25)`;
+        const dymRows = await prisma.$queryRaw<Array<{ word: string; sim: number }>>`
+          SELECT word, MAX(sim) AS sim
           FROM (
-            SELECT regexp_split_to_table(unaccent(title), '\s+') AS word
-            FROM products
-            WHERE is_active = true
-          ) words
-          WHERE length(word) >= 3
-            AND word % unaccent(${q.trim()})
-          ORDER BY similarity(word, unaccent(${q.trim()})) DESC
+            SELECT
+              lower(word) AS word,
+              similarity(word, unaccent(${q.trim()})) AS sim
+            FROM (
+              SELECT regexp_split_to_table(unaccent(title), '\s+') AS word
+              FROM products
+              WHERE is_active = true
+            ) words
+            WHERE length(word) >= 3
+              AND word % unaccent(${q.trim()})
+          ) ranked
+          GROUP BY word
+          ORDER BY sim DESC
           LIMIT 5
         `;
         didYouMean = dymRows.map((r) => r.word).filter((w) => w !== q.trim().toLowerCase());
