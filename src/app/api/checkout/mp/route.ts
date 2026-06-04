@@ -274,33 +274,20 @@ export async function POST(req: Request) {
 
     const subtotal = roundMoney(lines.reduce((s, i) => s + i.unitPrice * i.quantity, 0));
 
+    // Zipnova es opcional. Si el seller no la tiene conectada, fallback a
+    // las opciones de envío del producto (freeShipping o shipping_cost
+    // manual). Asi no bloqueamos checkout cuando el seller maneja envios
+    // por su cuenta o solo envia gratis.
+    let sellerHasZipnova = false;
     try {
       const sellerZipnova = await prisma.sellerZipnovaOAuth.findUnique({
         where: { userId: sellerPrismaId },
         select: { userId: true },
       });
-      if (!sellerZipnova) {
-        return NextResponse.json(
-          {
-            code: "SELLER_ZIPNOVA_REQUIRED",
-            error:
-              "Este vendedor todavia no conecto Zipnova para gestionar envios. Pedile que conecte Zipnova desde su panel antes de comprar.",
-          },
-          { status: 409 }
-        );
-      }
+      sellerHasZipnova = !!sellerZipnova;
     } catch (e) {
-      if (isPrismaSchemaMissingError(e)) {
-        return NextResponse.json(
-          {
-            code: "SELLER_ZIPNOVA_SCHEMA_MISSING",
-            error:
-              "La tabla de conexion Zipnova todavia no esta aplicada en produccion. Ejecuta las migraciones antes de habilitar compras.",
-          },
-          { status: 503 }
-        );
-      }
-      throw e;
+      if (!isPrismaSchemaMissingError(e)) throw e;
+      // Si la tabla no existe (migracion pendiente) tratamos como "sin Zipnova".
     }
 
     const shippingForQuote = {
@@ -313,37 +300,52 @@ export async function POST(req: Request) {
 
     let shippingAddressOut: Record<string, unknown> = { ...shippingAddress };
     let shippingCostFull = 0;
-    try {
-      const shipRes = await resolveCartShippingCost({
-        lines: lines.map((i) => ({
-          quantity: i.quantity,
-          price: i.unitPrice,
-          product: {
-            id: i.product.id,
-            title: i.product.title,
-            sku: null,
-            freeShipping: i.product.freeShipping,
+
+    if (sellerHasZipnova) {
+      // Seller con Zipnova: cotiza via API.
+      try {
+        const shipRes = await resolveCartShippingCost({
+          lines: lines.map((i) => ({
+            quantity: i.quantity,
+            price: i.unitPrice,
+            product: {
+              id: i.product.id,
+              title: i.product.title,
+              sku: null,
+              freeShipping: i.product.freeShipping,
+            },
+          })),
+          shipping: shippingForQuote,
+          sellerUserId: sellerPrismaId,
+        });
+        shippingCostFull = shipRes.cost;
+        if (shipRes.zipnova) {
+          shippingAddressOut = { ...shippingAddressOut, zipnova: shipRes.zipnova };
+        }
+      } catch (zipErr) {
+        logger.error("checkout/mp Zipnova quote:", zipErr);
+        return NextResponse.json(
+          {
+            code: "ZIPNOVA_QUOTE_FAILED",
+            error:
+              zipErr instanceof Error
+                ? zipErr.message
+                : "No se pudo cotizar el envío. Revisá la dirección.",
           },
-        })),
-        shipping: shippingForQuote,
-        sellerUserId: sellerPrismaId,
-      });
-      shippingCostFull = shipRes.cost;
-      if (shipRes.zipnova) {
-        shippingAddressOut = { ...shippingAddressOut, zipnova: shipRes.zipnova };
+          { status: 502 }
+        );
       }
-    } catch (zipErr) {
-      logger.error("checkout/mp Zipnova quote:", zipErr);
-      return NextResponse.json(
-        {
-          code: "ZIPNOVA_QUOTE_FAILED",
-          error:
-            zipErr instanceof Error
-              ? zipErr.message
-              : "No se pudo cotizar el envío con Zipnova. Revisá la dirección o la configuración de envíos.",
-        },
-        { status: 502 }
-      );
+    } else {
+      // Fallback sin Zipnova: si todos los items son freeShipping → 0.
+      // Si no, usamos un costo fijo de envío estándar AR. El seller decide
+      // si absorbe parte. Despues, en post-venta, se coordina con el seller.
+      const anyPaid = lines.some((i) => !i.product.freeShipping);
+      shippingCostFull = anyPaid ? 2500 : 0;
+      shippingAddressOut = {
+        ...shippingAddressOut,
+        shipping_mode: "manual",
+        shipping_note: "Envío coordinado con el vendedor. Costo estimado.",
+      };
     }
 
     // Política Madsjeez: marketplace NO cobra comisión sobre ventas.
