@@ -12,6 +12,7 @@ import {
   buildAnalyticsItem,
   trackEvent,
 } from "@/lib/analytics"
+import { trackMetaEvent } from "@/components/seo/MetaPixel"
 
 interface BuyBoxProps {
   productId: string
@@ -176,6 +177,16 @@ export function BuyBox({
             }),
           ],
         },
+      })
+
+      // Meta Pixel AddToCart — funnel signal for Meta ASC optimization
+      trackMetaEvent("AddToCart", {
+        content_ids: [productId],
+        content_type: "product",
+        content_name: productTitle,
+        value: Number(unitPrice * quantity),
+        currency: ANALYTICS_CURRENCY,
+        num_items: quantity,
       })
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "Error al agregar")

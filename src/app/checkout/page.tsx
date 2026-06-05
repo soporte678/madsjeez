@@ -31,6 +31,7 @@ import {
   buildAnalyticsItem,
   trackEvent,
 } from "@/lib/analytics";
+import { trackMetaEvent } from "@/components/seo/MetaPixel";
 
 interface CartItem {
   id: string;
@@ -396,6 +397,15 @@ function CheckoutContent() {
           })
         ),
       },
+    });
+
+    // Meta Pixel InitiateCheckout — middle-funnel signal for Meta ASC optimization
+    trackMetaEvent("InitiateCheckout", {
+      content_ids: cartItems.map((item) => item.product.id),
+      content_type: "product",
+      value: Number(subtotal || 0),
+      currency: ANALYTICS_CURRENCY,
+      num_items: cartItems.reduce((sum, it) => sum + it.quantity, 0),
     });
   }, [cartItems, loading, status, subtotal]);
 
