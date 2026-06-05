@@ -340,10 +340,70 @@ export default function PedidoDetallePage() {
           )}
 
           {order.perspective === "seller" && (
-            <div className="space-y-3">
+            <div className="space-y-4">
+              {/* Datos completos del envío — el seller los necesita para despachar */}
+              <div className="rounded-lg border border-border bg-muted/30 p-4">
+                <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground mb-3">
+                  Datos para despachar
+                </h3>
+                <dl className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <dt className="text-[11px] font-bold uppercase text-muted-foreground/80">Destinatario</dt>
+                    <dd className="font-semibold text-foreground">{order.shippingName}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[11px] font-bold uppercase text-muted-foreground/80">Teléfono</dt>
+                    <dd className="font-mono text-foreground">{order.shippingPhone || "—"}</dd>
+                  </div>
+                  <div className="md:col-span-2">
+                    <dt className="text-[11px] font-bold uppercase text-muted-foreground/80">Dirección</dt>
+                    <dd className="text-foreground">{order.shippingAddress}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[11px] font-bold uppercase text-muted-foreground/80">Ciudad</dt>
+                    <dd className="text-foreground">{order.shippingCity}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[11px] font-bold uppercase text-muted-foreground/80">Provincia</dt>
+                    <dd className="font-semibold text-foreground">{order.shippingState}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[11px] font-bold uppercase text-muted-foreground/80">Código postal</dt>
+                    <dd className="font-mono text-foreground">{order.shippingZip}</dd>
+                  </div>
+                  {order.buyer?.email && (
+                    <div>
+                      <dt className="text-[11px] font-bold uppercase text-muted-foreground/80">Email comprador</dt>
+                      <dd className="text-foreground text-[13px] break-all">{order.buyer.email}</dd>
+                    </div>
+                  )}
+                </dl>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <a
+                  href={`/api/orders/${order.id}/label?autoprint=1`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-md bg-yellow-400 hover:bg-yellow-300 text-slate-900 px-4 py-2.5 text-sm font-bold transition-colors"
+                >
+                  🖨 Imprimir etiqueta de envío
+                </a>
+                {(order.shippingPhone ?? "").trim() && (
+                  <a
+                    href={`https://wa.me/${(order.shippingPhone ?? "").replace(/\D/g, "")}?text=${encodeURIComponent(`Hola! Soy del marketplace Madsjeez. Tu pedido ${order.orderNumber} ya está siendo preparado para enviarte.`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-md border border-emerald-300 bg-emerald-50 text-emerald-800 px-3 py-2.5 text-sm font-bold hover:bg-emerald-100 transition-colors"
+                  >
+                    💬 WhatsApp comprador
+                  </a>
+                )}
+              </div>
+
               {order.fulfillmentStageLabel && (
                 <p className="text-sm text-muted-foreground">
-                  Gestion actual: <span className="font-medium text-foreground">{order.fulfillmentStageLabel}</span>
+                  Gestión actual: <span className="font-medium text-foreground">{order.fulfillmentStageLabel}</span>
                   {order.delayLabel ? ` · ${order.delayLabel}` : ""}
                 </p>
               )}
@@ -355,7 +415,7 @@ export default function PedidoDetallePage() {
                     className="rounded-md border border-border bg-background px-3 py-2 text-sm"
                   >
                     <option value="pending_pickup">Pendiente de despacho</option>
-                    <option value="preparing">En proceso de preparacion</option>
+                    <option value="preparing">En proceso de preparación</option>
                     <option value="awaiting_stock">Por ingresar stock</option>
                     <option value="dispatched">Despachado</option>
                     <option value="sent">Enviado</option>
@@ -367,12 +427,12 @@ export default function PedidoDetallePage() {
                     disabled={sellerBusy}
                     className="rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
                   >
-                    {sellerBusy ? "Guardando..." : "Guardar gestion"}
+                    {sellerBusy ? "Guardando..." : "Guardar gestión"}
                   </button>
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  Las opciones operativas se activan cuando el pago esta confirmado y el pedido admite gestion.
+                  Las opciones operativas se activan cuando el pago está confirmado y el pedido admite gestión.
                 </p>
               )}
             </div>

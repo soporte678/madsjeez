@@ -337,14 +337,22 @@ export async function POST(req: Request) {
       }
     } else {
       // Fallback sin Zipnova: si todos los items son freeShipping → 0.
-      // Si no, usamos un costo fijo de envío estándar AR. El seller decide
-      // si absorbe parte. Despues, en post-venta, se coordina con el seller.
+      // Promoción Madsjeez: 2+ unidades con precio unitario ≥ $15.000 → envío
+      // gratis automático. El seller igual recibe la etiqueta y datos para
+      // despachar (no se omite logística, solo el cobro al comprador).
+      const totalUnits = lines.reduce((s, i) => s + i.quantity, 0);
+      const hasHighUnitOver15k = lines.some((i) => i.unitPrice >= 15000);
+      const qualifiesForFreeShipping = totalUnits >= 2 && hasHighUnitOver15k;
+
       const anyPaid = lines.some((i) => !i.product.freeShipping);
-      shippingCostFull = anyPaid ? 9875 : 0;
+      shippingCostFull = anyPaid && !qualifiesForFreeShipping ? 9875 : 0;
       shippingAddressOut = {
         ...shippingAddressOut,
         shipping_mode: "manual",
-        shipping_note: "Envío coordinado con el vendedor. Costo estimado.",
+        shipping_note: qualifiesForFreeShipping
+          ? "Envío GRATIS por promo 2+ unidades sobre $15k. Coordinar despacho con seller."
+          : "Envío coordinado con el vendedor. Costo estimado.",
+        free_shipping_promo_applied: qualifiesForFreeShipping,
       };
     }
 
