@@ -94,7 +94,7 @@ export function FoundingSellersSection() {
       aria-labelledby="founders-heading"
       className="relative max-w-[1184px] mx-auto px-4 mb-20 scroll-mt-24"
     >
-      <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-br from-slate-50 via-white to-blue-50/40 shadow-[0_1px_0_rgba(255,255,255,0.8)_inset,0_24px_60px_-30px_rgba(15,23,42,0.18)]">
+      <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-br from-slate-50 via-white to-blue-50/40 shadow-[0_1px_0_rgba(255,255,255,0.8)_inset,0_24px_60px_-30px_rgba(15,23,42,0.18)] dark:border-slate-700/60 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
         {/* halo de marca, sin AI-purple glow */}
         <div
           aria-hidden="true"
@@ -108,13 +108,13 @@ export function FoundingSellersSection() {
         <div className="relative grid grid-cols-1 lg:grid-cols-12 gap-10 px-6 py-10 md:px-12 md:py-14">
           {/* Headline + counter */}
           <div className="lg:col-span-5 flex flex-col">
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#3483FA] mb-3">
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#3483FA] dark:text-[#60a5fa] mb-3">
               Programa Sellers Fundadores
             </p>
 
             <h2
               id="founders-heading"
-              className="text-3xl md:text-[2.5rem] font-black tracking-tight leading-[1.05] text-slate-900"
+              className="text-3xl md:text-[2.5rem] font-black tracking-tight leading-[1.05] text-slate-900 dark:text-white"
             >
               100 vendedores eligen{" "}
               <span className="relative inline-block">
@@ -127,7 +127,7 @@ export function FoundingSellersSection() {
               el marketplace.
             </h2>
 
-            <p className="mt-5 text-[15px] md:text-base text-slate-600 leading-relaxed max-w-[52ch]">
+            <p className="mt-5 text-[15px] md:text-base text-slate-600 dark:text-slate-300 leading-relaxed max-w-[52ch]">
               Si entrás ahora, no sos uno más. Ayudás a definir cómo cobramos,
               cómo se ven las publicaciones, qué herramientas priorizamos. Y te
               llevás beneficios que ningún seller que llegue después puede tener.
@@ -150,7 +150,7 @@ export function FoundingSellersSection() {
               </Link>
               <a
                 href="#programa-referral"
-                className="inline-flex items-center gap-2 rounded-2xl border border-slate-300 hover:border-slate-900 text-slate-900 font-semibold px-5 py-3.5 text-sm transition-colors"
+                className="inline-flex items-center gap-2 rounded-2xl border border-slate-300 hover:border-slate-900 text-slate-900 dark:border-slate-600 dark:text-white dark:hover:border-white font-semibold px-5 py-3.5 text-sm transition-colors"
               >
                 Cómo funciona el referral
               </a>
@@ -165,23 +165,23 @@ export function FoundingSellersSection() {
                   key={b.title}
                   className={`relative rounded-2xl border p-5 transition-shadow hover:shadow-md ${
                     b.highlight
-                      ? "border-[#3483FA]/40 bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]"
-                      : "border-slate-200 bg-white/70"
+                      ? "border-[#3483FA]/40 bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] dark:border-[#3483FA]/50 dark:bg-slate-800"
+                      : "border-slate-200 bg-white/70 dark:border-slate-700 dark:bg-slate-800/70"
                   }`}
                 >
                   <div
                     className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${
                       b.highlight
                         ? "bg-[#3483FA] text-white"
-                        : "bg-slate-100 text-slate-900"
+                        : "bg-slate-100 text-slate-900 dark:bg-slate-700 dark:text-white"
                     }`}
                   >
                     <b.icon size={18} strokeWidth={2} />
                   </div>
-                  <h3 className="mt-3 text-[15px] font-bold text-slate-900 tracking-tight">
+                  <h3 className="mt-3 text-[15px] font-bold text-slate-900 dark:text-white tracking-tight">
                     {b.title}
                   </h3>
-                  <p className="mt-1.5 text-[13.5px] text-slate-600 leading-relaxed">
+                  <p className="mt-1.5 text-[13.5px] text-slate-600 dark:text-slate-300 leading-relaxed">
                     {b.body}
                   </p>
                 </li>
@@ -245,30 +245,30 @@ function SlotsCounter({
   }, [slotsLeft]);
 
   return (
-    <div ref={ref} className="mt-7 rounded-2xl border border-slate-200 bg-white/80 p-4">
+    <div ref={ref} className="mt-7 rounded-2xl border border-slate-200 bg-white/80 p-4 dark:border-slate-700 dark:bg-slate-800/80">
       <div className="flex items-baseline justify-between">
-        <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+        <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-300">
           Cupos disponibles
         </span>
-        <span className="text-xs font-bold uppercase tracking-wider text-[#3483FA]">
+        <span className="text-xs font-bold uppercase tracking-wider text-[#3483FA] dark:text-[#60a5fa]">
           {total - slotsLeft} / {total} tomados
         </span>
       </div>
       <div className="mt-2 flex items-baseline gap-2">
-        <span className="text-5xl font-black text-slate-900 tabular-nums tracking-tight">
+        <span className="text-5xl font-black text-slate-900 dark:text-white tabular-nums tracking-tight">
           {animated}
         </span>
-        <span className="text-sm font-semibold text-slate-500">
+        <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">
           quedan de {total}
         </span>
       </div>
-      <div className="mt-3 h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+      <div className="mt-3 h-2 w-full rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
         <div
           className="h-full rounded-full bg-gradient-to-r from-[#3483FA] to-[#1f6ee0] transition-[width] duration-1000 ease-out"
           style={{ width: `${percentTaken}%` }}
         />
       </div>
-      <p className="mt-2 text-[12.5px] text-slate-500">
+      <p className="mt-2 text-[12.5px] text-slate-500 dark:text-slate-400">
         Cuando se tomen los 100, el programa cierra y se vuelve permanente sólo
         para los que entraron.
       </p>
@@ -295,7 +295,7 @@ function ReferralBlock() {
   return (
     <div
       id="programa-referral"
-      className="mt-6 rounded-2xl border border-yellow-300/60 bg-yellow-50/70 p-5"
+      className="mt-6 rounded-2xl border border-yellow-300/60 bg-yellow-50/70 p-5 dark:border-yellow-500/40 dark:bg-yellow-500/10"
     >
       <div className="flex items-start gap-4">
         <div className="hidden sm:flex h-12 w-12 items-center justify-center rounded-2xl bg-yellow-400 text-slate-900 shrink-0">
@@ -303,29 +303,29 @@ function ReferralBlock() {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-base font-black text-slate-900 tracking-tight">
+            <h3 className="text-base font-black text-slate-900 dark:text-white tracking-tight">
               Invitá a otros sellers y sumá meses gratis.
             </h3>
             <span className="inline-flex items-center gap-1 rounded-full bg-yellow-400 text-slate-900 text-[10px] font-black uppercase tracking-wider px-2 py-1">
               <Users2 size={11} /> Referral
             </span>
           </div>
-          <p className="mt-1.5 text-[13.5px] text-slate-700 leading-relaxed max-w-[58ch]">
+          <p className="mt-1.5 text-[13.5px] text-slate-700 dark:text-slate-200 leading-relaxed max-w-[58ch]">
             Cada fundador que invitás y se aprueba te da{" "}
-            <strong className="text-slate-900">1 mes gratis</strong> del plan
+            <strong className="text-slate-900 dark:text-yellow-200">1 mes gratis</strong> del plan
             que tengas activo. Si traés 3 que cumplan los requisitos, te llevás{" "}
-            <strong className="text-slate-900">1 año entero</strong> de tu plan
+            <strong className="text-slate-900 dark:text-yellow-200">1 año entero</strong> de tu plan
             sin pagar.
           </p>
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <div className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900">
+            <div className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-900 dark:text-white">
               {referralCode}
             </div>
             <button
               type="button"
               onClick={() => void copy()}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-bold px-3 py-2 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-bold px-3 py-2 transition-colors dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
             >
               {copied ? (
                 <>
@@ -340,7 +340,7 @@ function ReferralBlock() {
             <Link
               href="/dashboard/referral"
               prefetch={false}
-              className="text-xs font-semibold text-[#3483FA] hover:underline"
+              className="text-xs font-semibold text-[#3483FA] dark:text-[#60a5fa] hover:underline"
             >
               Ver mis referidos
             </Link>

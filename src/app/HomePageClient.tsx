@@ -296,16 +296,16 @@ export default function HomePageClient() {
       {/* MADSJEEZ Ads: espacios patrocinados con campanas reales */}
       <section
         id="publicidad-madsjeez-ads"
-        className="max-w-[1184px] mx-auto px-4 mb-12 scroll-mt-24 rounded-2xl border-2 border-[#3483FA]/35 bg-gradient-to-b from-sky-50/95 via-white to-white py-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]"
+        className="max-w-[1184px] mx-auto px-4 mb-12 scroll-mt-24 rounded-2xl border-2 border-[#3483FA]/35 bg-gradient-to-b from-sky-50/95 via-white to-white py-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] dark:border-[#3483FA]/40 dark:from-slate-900 dark:via-slate-900 dark:to-slate-900"
         aria-label="Espacios publicitarios activos del marketplace"
       >
-        <p className="mb-2 text-center text-xs font-black uppercase tracking-[0.2em] text-[#2968c8]">
+        <p className="mb-2 text-center text-xs font-black uppercase tracking-[0.2em] text-[#2968c8] dark:text-[#60a5fa]">
           MADSJEEZ Ads
         </p>
-        <h2 className="mb-6 text-center text-lg font-black text-slate-900 md:text-xl">
+        <h2 className="mb-6 text-center text-lg font-black text-slate-900 md:text-xl dark:text-white">
           MADSJEEZ Ads — publicidad activa dentro del marketplace
         </h2>
-        <p className="mb-6 max-w-2xl mx-auto text-center text-sm text-slate-600 leading-relaxed">
+        <p className="mb-6 max-w-2xl mx-auto text-center text-sm text-slate-600 leading-relaxed dark:text-slate-300">
           Los bloques de abajo muestran campanas activas de vendedores reales dentro del marketplace. La rotacion y la prioridad responden a la inversion de cada campana.
         </p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -317,19 +317,19 @@ export default function HomePageClient() {
 
       {/* QUÉ ES MADSJEEZ — resumen para todos los perfiles */}
       <section className="max-w-[1184px] mx-auto px-4 mb-14" aria-labelledby="about-madsjeez-heading">
-        <div className="rounded-2xl border border-slate-200/80 bg-gradient-to-b from-slate-50 to-white shadow-sm overflow-hidden">
-          <div className="px-6 py-8 md:px-10 md:py-10 border-b border-slate-100 bg-white/80">
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#3483FA] mb-2">
+        <div className="rounded-2xl border border-slate-200/80 bg-gradient-to-b from-slate-50 to-white shadow-sm overflow-hidden dark:border-slate-700/70 dark:from-slate-900 dark:to-slate-900">
+          <div className="px-6 py-8 md:px-10 md:py-10 border-b border-slate-100 bg-white/80 dark:border-slate-800 dark:bg-slate-900/80">
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#3483FA] mb-2 dark:text-[#60a5fa]">
               Marketplace argentino
             </p>
             <h2
               id="about-madsjeez-heading"
-              className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight mb-4"
+              className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight mb-4 dark:text-white"
             >
               Qué es MADSJEEZ
             </h2>
             <div className="flex flex-col sm:flex-row gap-5 items-start max-w-3xl">
-              <div className="relative h-20 w-20 shrink-0 rounded-xl overflow-hidden border border-slate-200 shadow-md">
+              <div className="relative h-20 w-20 shrink-0 rounded-xl overflow-hidden border border-slate-200 shadow-md dark:border-slate-700">
                 <Image
                   src={COMPANY.founder.photoPortrait}
                   alt={`${COMPANY.founder.name}, ${COMPANY.founder.role} de MadsJeez Marketplace`}
@@ -338,11 +338,11 @@ export default function HomePageClient() {
                   className="object-cover object-top"
                 />
               </div>
-              <p className="text-slate-600 text-[15px] md:text-base leading-relaxed">
+              <p className="text-slate-600 text-[15px] md:text-base leading-relaxed dark:text-slate-300">
                 Operado desde {COMPANY.address.city} por{" "}
-                <strong className="text-slate-800">{COMPANY.founder.name}</strong>, {COMPANY.founder.role}.{" "}
+                <strong className="text-slate-800 dark:text-white">{COMPANY.founder.name}</strong>, {COMPANY.founder.role}.{" "}
                 {COMPANY.mission}{" "}
-                <Link href="/quienes-somos" className="text-[#1a56db] font-semibold hover:underline">
+                <Link href="/quienes-somos" className="text-[#1a56db] dark:text-[#60a5fa] font-semibold hover:underline">
                   Conocé nuestra historia y visión
                 </Link>
                 .
@@ -402,19 +402,19 @@ export default function HomePageClient() {
             ].map((card) => (
               <div
                 key={card.title}
-                className="flex flex-col rounded-xl border border-slate-100 bg-white p-5 shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:border-[#3483FA]/30 hover:shadow-md transition-all duration-300"
+                className="flex flex-col rounded-xl border border-slate-100 bg-white p-5 shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:border-[#3483FA]/30 hover:shadow-md transition-all duration-300 dark:border-slate-700 dark:bg-slate-800/80 dark:hover:border-[#3483FA]/50"
               >
                 <div className="flex items-start gap-3 mb-3">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#1a56db]/10 text-[#1a56db]">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#1a56db]/10 text-[#1a56db] dark:bg-[#1a56db]/30 dark:text-[#93c5fd]">
                     <card.Icon className="h-5 w-5" strokeWidth={2} />
                   </span>
-                  <h3 className="text-[16px] font-bold text-slate-900 leading-snug pt-1">{card.title}</h3>
+                  <h3 className="text-[16px] font-bold text-slate-900 leading-snug pt-1 dark:text-white">{card.title}</h3>
                 </div>
-                <p className="text-[13px] md:text-sm text-slate-600 leading-relaxed flex-1 mb-4">{card.text}</p>
+                <p className="text-[13px] md:text-sm text-slate-600 leading-relaxed flex-1 mb-4 dark:text-slate-300">{card.text}</p>
                 <Link
                   href={card.href}
                   prefetch={false}
-                  className="inline-flex items-center gap-1 text-[13px] font-semibold text-[#1a56db] hover:text-[#1e40af] mt-auto"
+                  className="inline-flex items-center gap-1 text-[13px] font-semibold text-[#1a56db] hover:text-[#1e40af] mt-auto dark:text-[#60a5fa] dark:hover:text-[#93c5fd]"
                 >
                   {card.cta}
                   <ChevronRight className="h-4 w-4" />

@@ -12,18 +12,18 @@ export function HomeSeoContent() {
       className="max-w-[1184px] mx-auto px-4 pb-16"
       aria-labelledby="home-seo-guide-heading"
     >
-      <article className="rounded-2xl border border-slate-200/80 bg-white shadow-sm overflow-hidden">
-        <div className="px-6 py-8 md:px-10 md:py-10 border-b border-slate-100">
-          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#1a56db] mb-2">
+      <article className="rounded-2xl border border-slate-200/80 bg-white shadow-sm overflow-hidden dark:border-slate-700/70 dark:bg-slate-900">
+        <div className="px-6 py-8 md:px-10 md:py-10 border-b border-slate-100 dark:border-slate-800">
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#1a56db] mb-2 dark:text-[#60a5fa]">
             Guía del marketplace
           </p>
           <h2
             id="home-seo-guide-heading"
-            className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight mb-4"
+            className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight mb-4 dark:text-white"
           >
             Cómo comprar y vender en Madsjeez
           </h2>
-          <p className="text-slate-600 text-[15px] md:text-base leading-relaxed max-w-3xl">
+          <p className="text-slate-600 text-[15px] md:text-base leading-relaxed max-w-3xl dark:text-slate-300">
             Madsjeez es un marketplace argentino donde encontrás productos de miles de vendedores
             verificados, con búsqueda por categoría, ofertas activas, envíos coordinados y pagos
             protegidos. Esta guía resume cómo aprovechar la plataforma si comprás por primera vez o
@@ -31,14 +31,14 @@ export function HomeSeoContent() {
           </p>
         </div>
 
-        <div className="p-6 md:p-10 grid gap-10 md:grid-cols-2 text-slate-600 text-[15px] leading-relaxed">
+        <div className="p-6 md:p-10 grid gap-10 md:grid-cols-2 text-slate-600 text-[15px] leading-relaxed dark:text-slate-300">
           <div>
-            <h3 className="text-lg font-bold text-slate-900 mb-3">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-3">
               Comprar con confianza — ver ofertas del catálogo
             </h3>
             <p className="mb-4">
               Desde la home podés explorar{" "}
-              <Link href="/search" className="text-[#1a56db] font-semibold hover:underline">
+              <Link href="/search" className="text-[#1a56db] dark:text-[#60a5fa] font-semibold hover:underline">
                 todo el catálogo
               </Link>
               , filtrar por categoría o palabra clave y comparar precios entre publicaciones. Cada
@@ -50,7 +50,7 @@ export function HomeSeoContent() {
             <p className="mb-4">
               Si tenés dudas antes de comprar, podés consultar al vendedor desde la ficha del
               producto o revisar opiniones de otros compradores. Las{" "}
-              <Link href="/offers" className="text-[#1a56db] font-semibold hover:underline">
+              <Link href="/offers" className="text-[#1a56db] dark:text-[#60a5fa] font-semibold hover:underline">
                 ofertas y promociones
               </Link>{" "}
               del marketplace se actualizan con campañas de vendedores y eventos estacionales, para
@@ -63,14 +63,14 @@ export function HomeSeoContent() {
           </div>
 
           <div>
-            <h3 className="text-lg font-bold text-slate-900 mb-3">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-3">
               Vender con MADSJEEZ Ads y el Commerce Group
             </h3>
             <p className="mb-4">
               Los comercios, ferreterías, tiendas de electrónica y emprendimientos pueden{" "}
               <Link
                 href="/seller/register"
-                className="text-[#1a56db] font-semibold hover:underline"
+                className="text-[#1a56db] dark:text-[#60a5fa] font-semibold hover:underline"
               >
                 registrarse como vendedores
               </Link>{" "}
@@ -88,7 +88,7 @@ export function HomeSeoContent() {
               La logística integrada y los acuerdos con transportistas ayudan a cumplir plazos de
               entrega prometidos, mientras el equipo de soporte acompaña reclamos y casos excepcionales
               desde el{" "}
-              <Link href="/help" className="text-[#1a56db] font-semibold hover:underline">
+              <Link href="/help" className="text-[#1a56db] dark:text-[#60a5fa] font-semibold hover:underline">
                 centro de ayuda
               </Link>
               .
@@ -96,7 +96,7 @@ export function HomeSeoContent() {
           </div>
 
           <div className="md:col-span-2">
-            <h3 className="text-lg font-bold text-slate-900 mb-3">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-3">
               Categorías y rubros disponibles
             </h3>
             <p className="mb-4">
@@ -117,7 +117,7 @@ export function HomeSeoContent() {
           </div>
 
           <div>
-            <h3 className="text-lg font-bold text-slate-900 mb-3">Pagos, envíos y protección</h3>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-3">Pagos, envíos y protección</h3>
             <p className="mb-4">
               Aceptamos los principales medios de pago digitales y, según el vendedor, cuotas con
               tarjeta de crédito. El importe queda registrado en la orden y podés descargar comprobantes
@@ -134,7 +134,7 @@ export function HomeSeoContent() {
           </div>
 
           <div>
-            <h3 className="text-lg font-bold text-slate-900 mb-3">Por qué elegir Madsjeez</h3>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-3">Por qué elegir Madsjeez</h3>
             <p className="mb-4">
               Unimos velocidad de compra, herramientas para vendedores y publicidad dentro del sitio
               en una sola experiencia pensada para Argentina. No somos un clon de otro marketplace:
@@ -147,7 +147,7 @@ export function HomeSeoContent() {
               recorré categorías y ofertas. Si tenés un negocio,{" "}
               <Link
                 href="/vender"
-                className="text-[#1a56db] font-semibold hover:underline"
+                className="text-[#1a56db] dark:text-[#60a5fa] font-semibold hover:underline"
               >
                 conocé cómo vender en Madsjeez
               </Link>{" "}
