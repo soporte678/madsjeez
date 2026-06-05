@@ -348,13 +348,12 @@ function CheckoutContent() {
       : shippingQuote != null
         ? shippingQuote.shipping_full
         : null;
-  /** Coherente con checkout MP (escrow): el comprador abona el 50% del envío (o lo que devuelva la API). */
+  /** El comprador abona el envío completo (precio único $7999 o el de Flash). */
   const buyerShippingShare =
     shippingMethod === "flash"
-      ? flashShippingCost // Flash: comprador paga 100% del envío (va al conductor)
+      ? flashShippingCost
       : shippingFull != null && shippingFull > 0
-        ? shippingQuote?.buyer_shipping_share ??
-          Math.round((shippingFull / 2) * 100) / 100
+        ? shippingFull
         : 0;
   const totalKnown =
     shippingMethod === "flash" && flashData
@@ -1250,26 +1249,6 @@ function CheckoutContent() {
                           . El costo del envío corresponde al conductor asignado.
                         </p>
                       )}
-                      {shippingMethod !== "flash" && shippingFull != null && shippingFull > 0 && (
-                        <div className="flex justify-between text-sm text-gray-600">
-                          <span>Pagás ahora (parte del envío)</span>
-                          <span>${buyerShippingShare.toLocaleString("es-AR")}</span>
-                        </div>
-                      )}
-                      {shippingMethod !== "flash" && shippingQuote?.used_zipnova && shippingFull != null && shippingFull > 0 && (
-                        <p className="text-[11px] text-gray-500">Cotización en vivo vía Zipnova.</p>
-                      )}
-                      {shippingMethod !== "flash" && !shippingQuote?.used_zipnova &&
-                        needsPaidShipping &&
-                        shippingFull != null &&
-                        shippingFull > 0 &&
-                        !shippingQuoteLoading &&
-                        !shippingQuoteError && (
-                          <p className="text-[11px] text-gray-500">
-                            Monto fijo de respaldo: falta Zipnova en el servidor o el vendedor no conectó Zipnova
-                            (OAuth) para cotizar por CP/zona.
-                          </p>
-                        )}
                     </div>
 
                     <Separator className="my-4" />
@@ -1282,13 +1261,6 @@ function CheckoutContent() {
                           : `$${subtotal.toLocaleString("es-AR")} + envío`}
                       </span>
                     </div>
-
-                    {shippingMethod !== "flash" && shippingFull != null && shippingFull > 0 && (
-                      <p className="mt-2 text-xs text-gray-500 leading-snug">
-                        El otro 50% del envío lo absorbe el vendedor desde su liquidación. Si viniste por un afiliado,
-                        su comisión queda retenida en escrow hasta cumplir la política de devoluciones.
-                      </p>
-                    )}
 
                     <div className="mt-4 flex items-center gap-2 text-sm text-gray-500">
                       <Shield className="h-4 w-4" />

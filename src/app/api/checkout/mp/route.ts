@@ -345,7 +345,7 @@ export async function POST(req: Request) {
       const qualifiesForFreeShipping = totalUnits >= 2 && hasHighUnitOver15k;
 
       const anyPaid = lines.some((i) => !i.product.freeShipping);
-      shippingCostFull = anyPaid && !qualifiesForFreeShipping ? 9875 : 0;
+      shippingCostFull = anyPaid && !qualifiesForFreeShipping ? 7999 : 0;
       shippingAddressOut = {
         ...shippingAddressOut,
         shipping_mode: "manual",

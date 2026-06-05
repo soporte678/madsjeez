@@ -45,7 +45,7 @@ export async function POST(req: Request) {
     const res = await resolveCartShippingCost({ lines, shipping, sellerUserId });
     return NextResponse.json({
       shipping_full: res.cost,
-      buyer_shipping_share: res.cost > 0 ? Math.round((res.cost / 2) * 100) / 100 : 0,
+      buyer_shipping_share: res.cost > 0 ? res.cost : 0,
       used_zipnova: res.usedZipnova,
       zipnova: res.zipnova,
     });

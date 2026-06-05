@@ -60,8 +60,10 @@ export function computeCheckoutEscrowSplit(input: EscrowSplitInput): EscrowSplit
   const P = roundMoney(Math.max(0, input.productSubtotal));
   const S = roundMoney(Math.max(0, input.shippingCostFull));
 
-  const buyerShippingShare = S > 0 ? roundMoney(S / 2) : 0;
-  const sellerShippingShare = S > 0 ? roundMoney(S - buyerShippingShare) : 0;
+  // El comprador abona el envío completo (precio único). El vendedor no
+  // absorbe nada del envío en este modelo.
+  const buyerShippingShare = S > 0 ? S : 0;
+  const sellerShippingShare = 0;
 
   const affPct = Math.max(0, Math.min(100, input.affiliateCommissionPercent));
   const mpPct = Math.max(0, Math.min(100, input.marketplaceSalesFeePercent));
