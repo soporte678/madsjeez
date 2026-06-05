@@ -4,9 +4,15 @@ import "./globals.css"
 import { Providers } from "@/components/providers"
 import { ChatProvider } from "@/components/ChatContext"
 import { DeferredAnalytics } from "@/components/seo/DeferredAnalytics"
+import { MetaPixel } from "@/components/seo/MetaPixel"
 import { FloatingBotsLazy } from "@/components/FloatingBotsLazy"
 import { PWAProvider } from "@/components/pwa/PWAProvider"
 import { JarvisInitializerClient, JarvisChatWidgetClient } from "@/components/jarvis/JarvisClientComponents"
+
+/** Hardcoded fallback — same rationale as MetaPixel. Public meta tag. */
+const META_DOMAIN_VERIFICATION = (
+  process.env.META_DOMAIN_VERIFICATION || ""
+).trim();
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -106,6 +112,10 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${outfit.variable} ${montserrat.variable} antialiased`}>
       <head>
+        {/* Meta domain verification — Business Manager */}
+        {META_DOMAIN_VERIFICATION ? (
+          <meta name="facebook-domain-verification" content={META_DOMAIN_VERIFICATION} />
+        ) : null}
         {/* PWA Icons */}
         <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png" />
         <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png" />
@@ -134,6 +144,7 @@ export default function RootLayout({
         ) : null}
       </head>
       <body className="min-h-full flex flex-col font-outfit">
+        <MetaPixel />
         <DeferredAnalytics />
         <JarvisInitializerClient />
         <ChatProvider>
