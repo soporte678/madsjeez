@@ -167,22 +167,22 @@ export function ProductQuestions({ productId, sellerId }: ProductQuestionsProps)
   }
 
   return (
-    <div className="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/95 p-6 shadow-[0_18px_48px_rgba(15,23,42,0.10)] backdrop-blur-sm dark:border-slate-700/80 dark:bg-slate-900/95">
+    <div className="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/95 p-6 shadow-[0_18px_48px_rgba(15,23,42,0.10)] backdrop-blur-sm dark:border-slate-600/60 dark:bg-slate-900">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <h3 className="flex items-center gap-2 text-lg font-black text-slate-900 dark:text-slate-100">
-          <MessageCircle className="h-5 w-5 text-[#3483fa] dark:text-[#93c5fd]" />
+        <h3 className="flex items-center gap-2 text-lg font-black text-slate-900 dark:text-white">
+          <MessageCircle className="h-5 w-5 text-[#3483fa] dark:text-[#60a5fa]" />
         Preguntas y Respuestas
         {questions.length > 0 && (
-            <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">({questions.length})</span>
+            <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">({questions.length})</span>
         )}
         </h3>
-        <div className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400">
+        <div className="rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/15 dark:text-emerald-200">
           Flujo real conectado
         </div>
       </div>
 
       {session?.user && !isSeller && (
-        <div className="mb-6 rounded-[24px] border border-slate-200/80 bg-slate-50/90 p-4 dark:border-slate-700/80 dark:bg-slate-950/70">
+        <div className="mb-6 rounded-[24px] border border-slate-200/80 bg-slate-50/90 p-4 dark:border-slate-600/60 dark:bg-slate-800/80">
           <div className="flex gap-3">
             <Avatar className="w-10 h-10">
               <AvatarImage src={session.user.image || undefined} />
@@ -193,7 +193,7 @@ export function ProductQuestions({ productId, sellerId }: ProductQuestionsProps)
                 placeholder="Escribe tu pregunta sobre este producto..."
                 value={newQuestion}
                 onChange={(e) => setNewQuestion(e.target.value)}
-                className="min-h-[96px] resize-none rounded-2xl border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus-visible:ring-[#3483fa] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
+                className="min-h-[96px] resize-none rounded-2xl border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus-visible:ring-[#3483fa] dark:border-slate-600 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-400"
                 maxLength={1000}
               />
               
@@ -220,10 +220,10 @@ export function ProductQuestions({ productId, sellerId }: ProductQuestionsProps)
               
               <div className="flex justify-between items-center mt-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
                     {newQuestion.length}/1000 caracteres
                   </span>
-                  
+
                   {imagePreviews.length < 2 && (
                     <>
                       <input
@@ -237,27 +237,27 @@ export function ProductQuestions({ productId, sellerId }: ProductQuestionsProps)
                       <button
                         onClick={() => fileInputRef.current?.click()}
                         type="button"
-                        className="inline-flex items-center gap-1 text-xs font-semibold text-[#3483fa] hover:text-[#2968c8] dark:text-[#93c5fd] dark:hover:text-[#bfdbfe]"
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-[#3483fa] hover:text-[#2968c8] dark:text-[#60a5fa] dark:hover:text-[#93c5fd]"
                       >
                         <ImagePlus className="w-4 h-4" />
                         Adjuntar foto
                       </button>
                     </>
                   )}
-                  
+
                   {uploadingImages && (
-                    <span className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+                    <span className="flex items-center gap-1 text-xs text-slate-600 dark:text-slate-300">
                       <Loader2 className="w-3 h-3 animate-spin" />
                       Subiendo...
                     </span>
                   )}
                 </div>
-                
+
                 <Button
                   onClick={handleAskQuestion}
                   disabled={!newQuestion.trim() || isSubmitting || uploadingImages}
                   size="sm"
-                  className="rounded-xl bg-[#3483fa] px-4 text-white hover:bg-[#2968c8] dark:bg-[#3b82f6] dark:hover:bg-[#2563eb]"
+                  className="rounded-xl bg-[#3483fa] px-4 font-semibold text-white shadow-sm hover:bg-[#2968c8] disabled:opacity-60 dark:bg-[#3b82f6] dark:hover:bg-[#2563eb]"
                 >
                   {isSubmitting || uploadingImages ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -270,8 +270,8 @@ export function ProductQuestions({ productId, sellerId }: ProductQuestionsProps)
                 </Button>
               </div>
               
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                Maximo 2 imagenes (5MB cada una). Solo visibles para el vendedor.
+              <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
+                Máximo 2 imágenes (5MB cada una). Solo visibles para el vendedor.
               </p>
             </div>
           </div>
@@ -300,10 +300,10 @@ export function ProductQuestions({ productId, sellerId }: ProductQuestionsProps)
             <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
           </div>
         ) : questions.length === 0 ? (
-          <div className="rounded-[24px] border border-dashed border-slate-300 py-10 text-center text-slate-500 dark:border-slate-700 dark:text-slate-400">
-            <HelpCircle className="mx-auto mb-3 h-12 w-12 text-slate-300 dark:text-slate-600" />
-            <p className="font-semibold text-slate-800 dark:text-slate-100">Aun no hay preguntas</p>
-            <p className="text-sm">Se el primero en preguntar sobre este producto</p>
+          <div className="rounded-[24px] border border-dashed border-slate-300 py-10 text-center text-slate-600 dark:border-slate-600 dark:text-slate-300">
+            <HelpCircle className="mx-auto mb-3 h-12 w-12 text-slate-300 dark:text-slate-500" />
+            <p className="font-semibold text-slate-900 dark:text-white">Aún no hay preguntas</p>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Sé el primero en preguntar sobre este producto</p>
           </div>
         ) : (
           questions.map((q: any) => (
