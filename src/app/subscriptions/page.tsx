@@ -57,7 +57,7 @@ const plans: Plan[] = [
   {
     id: "PLATA",
     name: "PRO",
-    price: 9999,
+    price: 29999,
     description: "Para vendedores en crecimiento",
     icon: Crown,
     color: "#3483FA",
@@ -79,7 +79,7 @@ const plans: Plan[] = [
   {
     id: "PLATINUM",
     name: "ULTRA",
-    price: 19999,
+    price: 49999,
     description: "Sin límites para empresas y sellers profesionales",
     icon: Gem,
     color: "#facc15",

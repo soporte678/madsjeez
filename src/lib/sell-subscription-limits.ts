@@ -31,9 +31,9 @@ export function sellMaxImagesForTier(tier: SubscriptionTier): number {
  * Tope de publicaciones activas que el seller puede tener al mismo tiempo.
  * Política Madsjeez:
  *   FREE     →  50  publicaciones (BÁSICO gratis)
- *   PLATA    → 200  publicaciones (PRO $9.999/mes)
+ *   PLATA    → 200  publicaciones (PRO $29.999/mes)
  *   GOLD     → 200  publicaciones (legacy alias = PRO)
- *   PLATINUM → Infinity (ULTRA $19.999/mes — ilimitadas)
+ *   PLATINUM → Infinity (ULTRA $49.999/mes — ilimitadas)
  */
 const MAX_LISTINGS_BY_TIER: Record<SubscriptionTier, number> = {
   FREE: 50,

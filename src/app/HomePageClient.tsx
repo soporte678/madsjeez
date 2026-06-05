@@ -458,15 +458,15 @@ export default function HomePageClient() {
               <span className="font-bold text-[15px] text-white">VIVI MADSJEEZ COMO UN EXPERTO</span>
             </div>
             <Link href="/subscriptions" className="bg-gradient-to-r from-[#f97316] to-[#ff9100] text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-orange-500/30 hover:opacity-90 transition-opacity duration-200">
-              Suscribirme desde $ 3.490
+              Suscribirme desde $ 29.999/mes
             </Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6">
             {[
-              { Icon: Package, color: 'text-fuchsia-300', bg: 'from-fuchsia-500/15 to-pink-500/10', text: 'Envios gratis en productos desde $ 16.000' },
+              { Icon: Package, color: 'text-fuchsia-300', bg: 'from-fuchsia-500/15 to-pink-500/10', text: 'Envíos GRATIS en TODOS tus pedidos' },
               { Icon: Tv, color: 'text-sky-300', bg: 'from-sky-500/15 to-blue-500/10', text: 'Las mejores plataformas de entretenimiento' },
               { Icon: CreditCard, color: 'text-violet-300', bg: 'from-violet-500/15 to-fuchsia-500/10', text: 'Hasta 3 cuotas extra en tus compras' },
-              { Icon: Utensils, color: 'text-orange-300', bg: 'from-orange-500/15 to-amber-500/10', text: 'Envios gratis en pedidos de restaurantes' },
+              { Icon: Utensils, color: 'text-orange-300', bg: 'from-orange-500/15 to-amber-500/10', text: 'Envíos gratis en pedidos de restaurantes' },
             ].map((item, idx) => (
               <div key={idx} className="group flex flex-col items-center text-center cursor-pointer rounded-[22px] border border-white/8 bg-white/[0.02] px-4 py-5 transition-all duration-300 hover:-translate-y-1 hover:border-white/15 hover:bg-white/[0.04]">
                 <div className="w-24 h-24 mb-4 relative flex justify-center items-center">
