@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+/*
+ * Dark mode hook: el proyecto usa `data-theme="dark"` en <html> (ver layout.tsx),
+ * no la convención por defecto de Tailwind `class="dark"`. Sin este custom variant,
+ * TODOS los utilitarios `dark:*` que escribimos en JSX no se aplican nunca.
+ * Esto es lo que rompía la coherencia visual en modo oscuro a través del marketplace.
+ */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 :root {
   /*
    * Paleta unificada — experiencia más sobria y profesional (comercio / SaaS).
