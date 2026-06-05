@@ -575,13 +575,16 @@ export default function ProfileView({ userData }: ProfileViewProps) {
         </div>
         
         <h1 className="mt-4 text-[22px] font-bold text-gray-800 tracking-tight">
-          {user.name}
+          {(profile?.sellerName?.trim() || user.name) as string}
         </h1>
+        {profile?.sellerName?.trim() && (
+          <p className="text-[13px] text-gray-500 font-medium">{user.name}</p>
+        )}
         <p className="text-sm text-gray-500 font-medium">
           {user.email}
         </p>
         <span className="mt-2 bg-primary/10 text-primary text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider">
-          Negocio
+          {profile?.isSeller ? "Negocio" : "Personal"}
         </span>
       </div>
 

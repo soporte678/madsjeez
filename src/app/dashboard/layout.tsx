@@ -181,6 +181,7 @@ export default function DashboardLayout({
     name: string;
     email: string;
     image: string | null;
+    sellerName?: string | null;
   } | null>(null);
 
   /* -- Fetch usuario ------------------------------------------------- */
@@ -217,8 +218,14 @@ export default function DashboardLayout({
     [pathname]
   );
 
+  // Si el usuario configuro un nombre de tienda (sellerName), ese es el
+  // identificador publico que mostramos en chips, headers y menus. Si no,
+  // caemos al name personal. Email queda como subtexto.
   const userData = {
-    name: currentUser?.name || "MadsJeez | Repues...",
+    name:
+      currentUser?.sellerName?.trim() ||
+      currentUser?.name ||
+      "Mi cuenta",
     email: currentUser?.email || "",
     image: currentUser?.image || null,
   };
