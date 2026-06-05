@@ -6,6 +6,7 @@ import {
   buildAnalyticsItem,
   trackEvent,
 } from "@/lib/analytics";
+import { trackMetaEvent } from "@/components/seo/MetaPixel";
 
 interface ProductViewTrackerProps {
   productId: string;
@@ -45,6 +46,16 @@ export function ProductViewTracker({
           }),
         ],
       },
+    });
+
+    // Meta Pixel — ViewContent for ASC campaigns retargeting + optimization
+    trackMetaEvent("ViewContent", {
+      content_ids: [productId],
+      content_type: "product",
+      content_name: title,
+      content_category: categoryName || undefined,
+      value: Number(price || 0),
+      currency: ANALYTICS_CURRENCY,
     });
   }, [categoryName, price, productId, sellerName, title]);
 

@@ -6,6 +6,7 @@ import {
   buildAnalyticsItem,
   trackEvent,
 } from "@/lib/analytics";
+import { trackMetaEvent } from "@/components/seo/MetaPixel";
 
 interface PurchaseTrackerProps {
   orderId: string;
@@ -60,6 +61,20 @@ export function PurchaseTracker({
         ),
       },
     });
+
+    // Meta Pixel — Purchase (paired with CAPI server-side via event_id for dedup)
+    trackMetaEvent(
+      "Purchase",
+      {
+        value: Number(total || 0),
+        currency: ANALYTICS_CURRENCY,
+        content_ids: items.map((it) => it.product.id || it.id),
+        content_type: "product",
+        num_items: items.reduce((sum, it) => sum + it.quantity, 0),
+      },
+      // Same event_id used in MP webhook CAPI fire → Meta dedupes client+server
+      `purchase-${orderId}`,
+    );
 
     if (typeof window !== "undefined") {
       sessionStorage.setItem(key, "1");

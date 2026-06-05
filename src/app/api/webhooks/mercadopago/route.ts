@@ -11,6 +11,7 @@ import {
 } from "@/lib/orders/stock-reservation";
 import { pushStockToMeliForProductIds } from "@/lib/meli/stock-sync";
 import { tryCreateZipnovaShipmentForPaidOrder } from "@/lib/zipnova/create-shipment";
+import { sendMetaCapiEvent, isCapiConfigured } from "@/lib/meta/capi";
 import crypto from "crypto";
 import { logger } from "@/lib/logger";
 
@@ -536,6 +537,32 @@ export async function POST(req: NextRequest) {
         },
         { onConflict: "payment_id" }
       );
+
+      // Meta CAPI Purchase — only when transitioning to "paid" for the first time.
+      // event_id paired with client-side PurchaseTracker fbq() so Meta dedupes.
+      // Never blocks webhook response — wrapped in try/catch and awaited fire-and-forget.
+      const prevSt = typeof (prevOrder as { status?: string } | null)?.status === "string"
+        ? String((prevOrder as { status: string }).status).toLowerCase()
+        : "";
+      if (orderStatus === "paid" && prevSt !== "paid" && isCapiConfigured()) {
+        try {
+          const totalForCapi = Number((prevOrder as { total_amount?: number | string | null } | null)?.total_amount ?? 0);
+          await sendMetaCapiEvent({
+            eventName: "Purchase",
+            eventId: `purchase-${orderId}`,
+            actionSource: "website",
+            eventSourceUrl: `https://www.madsjeez.com.ar/order/${orderId}`,
+            customData: {
+              currency: "ARS",
+              value: totalForCapi,
+              order_id: orderId,
+            },
+          });
+          logger.info(`CAPI Purchase fired for order ${orderId} (${totalForCapi} ARS)`);
+        } catch (capiErr) {
+          logger.warn("CAPI Purchase (non-fatal):", capiErr);
+        }
+      }
 
       logger.info(`Webhook: order ${orderId} → ${orderStatus} (MP status: ${status})`);
     }
