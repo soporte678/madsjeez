@@ -1,5 +1,6 @@
 import { CreditCard } from "lucide-react";
 import { SellerMpSettingsForm } from "./SellerMpSettingsForm";
+import { PaypalConnectForm } from "./PaypalConnectForm";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,13 @@ export default function TarifasPagosPage() {
       </div>
 
       <SellerMpSettingsForm />
+
+      <div className="mt-2">
+        <h2 className="text-[15px] font-bold uppercase tracking-[0.18em] text-foreground/60 mb-3">
+          Métodos adicionales
+        </h2>
+        <PaypalConnectForm />
+      </div>
     </div>
   );
 }
