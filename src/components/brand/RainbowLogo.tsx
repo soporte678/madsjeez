@@ -45,9 +45,18 @@ function MadsjeezMark({ className }: { className?: string }) {
           <stop offset="100%" stopColor="#1e3a8a" />
         </linearGradient>
       </defs>
-      <path d="M 12 14 L 30 14 L 52 54 L 30 38 L 30 86 L 12 86 Z" fill="url(#mj-grad-rl)" />
-      <path d="M 88 14 L 70 14 L 48 54 L 70 38 L 70 86 L 88 86 Z" fill="url(#mj-grad-rl)" />
-      <path d="M 70 50 L 70 68 L 50 68 L 60 52 Z" fill="url(#mj-grad-rl-dark)" />
+      {/* M letter — single path. Outer rect 14→86 horizontally, 14→86 vertically.
+          Two legs (14-30 left, 70-86 right) connected by an inner V meeting at center (50, 56). */}
+      <path
+        d="M 14 14 L 30 14 L 50 56 L 70 14 L 86 14 L 86 86 L 70 86 L 70 42 L 56 70 L 44 70 L 30 42 L 30 86 L 14 86 Z"
+        fill="url(#mj-grad-rl)"
+      />
+      {/* Subtle inner shadow on the V to add depth */}
+      <path
+        d="M 44 70 L 56 70 L 50 56 Z"
+        fill="url(#mj-grad-rl-dark)"
+        opacity="0.55"
+      />
     </svg>
   );
 }
