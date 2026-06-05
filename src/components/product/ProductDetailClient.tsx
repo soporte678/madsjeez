@@ -1,12 +1,17 @@
 "use client"
 
 import { useState, useRef, useCallback, useEffect } from "react"
-import { Heart, Package, X, ZoomIn, ZoomOut, ChevronLeft, ChevronRight } from "lucide-react"
+import { Heart, Package, X, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, Play } from "lucide-react"
 import { buildProductImageAlt } from "@/lib/seo/product-image-alt"
 
 interface ProductDetailClientProps {
   images: string[]
   title: string
+}
+
+/** Detect video by extension. Storage paths use .mp4 / .webm / .mov. */
+function isVideoUrl(url: string): boolean {
+  return /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url || "")
 }
 
 export function ProductDetailClient({ images, title }: ProductDetailClientProps) {
@@ -99,13 +104,28 @@ export function ProductDetailClient({ images, title }: ProductDetailClientProps)
                   : "border-gray-200 hover:border-gray-400"
               }`}
             >
-              <img
-                src={img}
-                alt={buildProductImageAlt({ title, index: idx })}
-                className="w-full h-full object-contain rounded-sm"
-                loading={idx === 0 ? "eager" : "lazy"}
-                decoding="async"
-              />
+              {isVideoUrl(img) ? (
+                <div className="relative w-full h-full">
+                  <video
+                    src={img}
+                    className="w-full h-full object-contain rounded-sm"
+                    muted
+                    preload="metadata"
+                    playsInline
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-sm">
+                    <Play size={16} className="text-white drop-shadow" fill="white" />
+                  </div>
+                </div>
+              ) : (
+                <img
+                  src={img}
+                  alt={buildProductImageAlt({ title, index: idx })}
+                  className="w-full h-full object-contain rounded-sm"
+                  loading={idx === 0 ? "eager" : "lazy"}
+                  decoding="async"
+                />
+              )}
             </div>
           ))}
         </div>
@@ -113,15 +133,28 @@ export function ProductDetailClient({ images, title }: ProductDetailClientProps)
         {/* Main Image */}
         <div
           className="flex-1 flex items-center justify-center relative aspect-square max-h-[500px] overflow-hidden"
-          onClick={() => openZoom()}
+          onClick={() => { if (!isVideoUrl(images[activeImage])) openZoom() }}
         >
-          <img
-            src={images[activeImage]}
-            alt={buildProductImageAlt({ title, index: activeImage })}
-            className="max-w-full max-h-full object-contain cursor-zoom-in"
-            fetchPriority="high"
-            decoding="async"
-          />
+          {isVideoUrl(images[activeImage]) ? (
+            <video
+              src={images[activeImage]}
+              className="max-w-full max-h-full object-contain"
+              controls
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="metadata"
+            />
+          ) : (
+            <img
+              src={images[activeImage]}
+              alt={buildProductImageAlt({ title, index: activeImage })}
+              className="max-w-full max-h-full object-contain cursor-zoom-in"
+              fetchPriority="high"
+              decoding="async"
+            />
+          )}
           <button className="absolute top-2 right-2 text-[#3483fa] hover:text-blue-700 transition-colors z-10"
             onClick={(e) => { e.stopPropagation() }}
           >
@@ -191,24 +224,37 @@ export function ProductDetailClient({ images, title }: ProductDetailClientProps)
             onMouseLeave={handleMouseUp}
             style={{ cursor: zoomScale > 1 ? (dragging ? "grabbing" : "grab") : "zoom-in" }}
           >
-            <img
-              src={images[activeImage]}
-              alt={title}
-              className="max-w-[90vw] max-h-[90vh] object-contain transition-transform duration-150"
-              style={{
-                transform: `scale(${zoomScale}) translate(${zoomPos.x / zoomScale}px, ${zoomPos.y / zoomScale}px)`,
-              }}
-              draggable={false}
-              onClick={(e) => {
-                e.stopPropagation()
-                if (zoomScale < 3) {
-                  setZoomScale((s) => s + 1)
-                } else {
-                  setZoomScale(1)
-                  setZoomPos({ x: 0, y: 0 })
-                }
-              }}
-            />
+            {isVideoUrl(images[activeImage]) ? (
+              <video
+                src={images[activeImage]}
+                className="max-w-[90vw] max-h-[90vh] object-contain"
+                controls
+                autoPlay
+                loop
+                playsInline
+                preload="metadata"
+                onClick={(e) => e.stopPropagation()}
+              />
+            ) : (
+              <img
+                src={images[activeImage]}
+                alt={title}
+                className="max-w-[90vw] max-h-[90vh] object-contain transition-transform duration-150"
+                style={{
+                  transform: `scale(${zoomScale}) translate(${zoomPos.x / zoomScale}px, ${zoomPos.y / zoomScale}px)`,
+                }}
+                draggable={false}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  if (zoomScale < 3) {
+                    setZoomScale((s) => s + 1)
+                  } else {
+                    setZoomScale(1)
+                    setZoomPos({ x: 0, y: 0 })
+                  }
+                }}
+              />
+            )}
           </div>
 
           {/* Thumbnail strip */}
@@ -229,7 +275,16 @@ export function ProductDetailClient({ images, title }: ProductDetailClientProps)
                       : "border-transparent opacity-60 hover:opacity-100"
                   }`}
                 >
-                  <img src={img} alt="" className="w-full h-full object-contain rounded-sm" />
+                  {isVideoUrl(img) ? (
+                    <div className="relative w-full h-full">
+                      <video src={img} className="w-full h-full object-contain rounded-sm" muted preload="metadata" playsInline />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-sm">
+                        <Play size={14} className="text-white drop-shadow" fill="white" />
+                      </div>
+                    </div>
+                  ) : (
+                    <img src={img} alt="" className="w-full h-full object-contain rounded-sm" />
+                  )}
                 </button>
               ))}
             </div>
