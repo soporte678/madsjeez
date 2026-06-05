@@ -29,14 +29,39 @@ interface ProfileViewProps {
 }
 
 export default function ProfileView({ userData }: ProfileViewProps) {
-  const user = userData || {
-    name: "MadsJeez II Repuestos Para Maquinas",
-    email: "amanecer.dannu556@gmail.com",
-    avatar: null
-  };
+  // Cargamos SIEMPRE el perfil desde la DB (fuente de verdad). El prop
+  // userData solo se usa como hint inicial. Esto evita ver datos viejos
+  // de la sesión cuando el usuario acaba de cambiar nombre / sellerName.
+  const [profile, setProfile] = useState<{
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+    sellerName?: string | null;
+    storeSlug?: string | null;
+    isSeller?: boolean;
+  } | null>(userData ? { ...userData, image: userData.image ?? userData.avatar ?? null } : null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/user/me', { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled) setProfile(data);
+      } catch {
+        // mantenemos lo que vino del prop
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const user = profile || { name: 'Usuario', email: '', avatar: null, image: null };
 
   // Use image if avatar is not provided (from Google auth session)
-  const profileImage = user.avatar || user.image || null;
+  const profileImage = (user as { avatar?: string | null }).avatar || user.image || null;
 
   // Estado para MercadoPago
   const [mpStatus, setMpStatus] = useState<{

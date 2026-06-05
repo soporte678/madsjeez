@@ -28,19 +28,27 @@ interface ProfileSection {
 
 const STORAGE_KEY = 'madsjeez_profile_data';
 
+/**
+ * Defaults vacíos. Las dos fuentes de verdad son:
+ *   - DB (via /api/user/me) para name, sellerName, email
+ *   - localStorage para los campos fiscales locales (CUIL, IIBB, etc.) hasta
+ *     que tengan tabla propia
+ *
+ * NUNCA hardcodear datos de usuarios reales aquí.
+ */
 const defaultProfileData = {
-  name: 'EZEQUIEL ZIEGLER',
-  cuil: '20449505957',
-  maritalStatus: 'Unión convivencial',
-  displayName: 'MadsJeez III Repuestos Para Maquinas',
-  taxCondition: 'Monotributista',
-  taxAddress: '92 (m. D.) 1101, Chivilcoy, Buenos Aires',
+  name: '',
+  cuil: '',
+  maritalStatus: '',
+  displayName: '',
+  taxCondition: '',
+  taxAddress: '',
   iibb: null as string | null,
   exemptionDocs: null as string | null,
   exclusionCert: null as string | null,
-  email: 'vianferreteria@gmail.com',
-  phone: '+541125307958',
-  username: 'MADSJEEZ_III',
+  email: '',
+  phone: '',
+  username: '',
 };
 
 export default function ProfileInfoView({ onBack, userData }: ProfileInfoViewProps) {
@@ -48,7 +56,7 @@ export default function ProfileInfoView({ onBack, userData }: ProfileInfoViewPro
   const [editValue, setEditValue] = useState('');
   const [data, setData] = useState(defaultProfileData);
 
-  // Load persisted data
+  // 1) Cargamos fiscales/locales desde localStorage (CUIL, IIBB, dirección fiscal, etc.)
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -61,15 +69,58 @@ export default function ProfileInfoView({ onBack, userData }: ProfileInfoViewPro
     }
   }, []);
 
-  // Override with userData if available
+  // 2) Cargamos perfil real desde la DB (name, email, sellerName -> displayName).
+  //    Esta es la fuente de verdad y sobrescribe cualquier valor stale del paso 1.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/user/me', { cache: 'no-store' });
+        if (!res.ok) return;
+        const u = await res.json();
+        if (cancelled) return;
+        setData(prev => ({
+          ...prev,
+          name: u.name || prev.name,
+          email: u.email || prev.email,
+          displayName: u.sellerName || prev.displayName,
+        }));
+      } catch {
+        // si falla, dejamos lo que vino de localStorage / props
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // 3) Hint adicional desde props (sesión cliente) - solo si DB todavía no respondió
   useEffect(() => {
     if (userData?.name) {
-      setData(prev => ({ ...prev, name: userData.name! }));
+      setData(prev => (prev.name ? prev : { ...prev, name: userData.name! }));
     }
     if (userData?.email) {
-      setData(prev => ({ ...prev, email: userData.email! }));
+      setData(prev => (prev.email ? prev : { ...prev, email: userData.email! }));
     }
   }, [userData]);
+
+  /** Sincroniza al backend los campos que viven en User (name + sellerName). */
+  const syncToDb = useCallback(async (patch: { name?: string; sellerName?: string }) => {
+    try {
+      const res = await fetch('/api/user/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        toast.error(err.error || 'No se pudo guardar en el servidor');
+        return false;
+      }
+      return true;
+    } catch {
+      toast.error('Error de red al guardar');
+      return false;
+    }
+  }, []);
 
   const saveToStorage = useCallback((newData: typeof defaultProfileData) => {
     setData(newData);
@@ -81,10 +132,23 @@ export default function ProfileInfoView({ onBack, userData }: ProfileInfoViewPro
     setEditValue(currentValue || '');
   };
 
-  const handleSave = (fieldId: string) => {
+  const handleSave = async (fieldId: string) => {
     const newData = { ...data, [fieldId]: editValue || null };
     saveToStorage(newData);
     setEditingField(null);
+
+    // Campos que viven en User (DB) -> sincronizar para que persistan
+    // en header, store panel, opciones de envío, etc.
+    if (fieldId === 'name') {
+      const ok = await syncToDb({ name: editValue || '' });
+      if (ok) toast.success('Nombre actualizado en toda la cuenta');
+      return;
+    }
+    if (fieldId === 'displayName') {
+      const ok = await syncToDb({ sellerName: editValue || '' });
+      if (ok) toast.success('Nombre de tienda actualizado en toda la cuenta');
+      return;
+    }
     toast.success('Guardado correctamente');
   };
 
