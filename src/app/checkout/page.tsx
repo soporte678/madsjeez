@@ -464,6 +464,54 @@ function CheckoutContent() {
     }
   }, [shippingAddress, shippingDraftKey, status]);
 
+  /** Lanza el flujo de PayPal (alternativa a Mercado Pago). */
+  const handleSubmitOrderPaypal = async () => {
+    if (cartItems.length === 0) return;
+    const isGuestSubmit = !session?.user;
+    if (isGuestSubmit) {
+      const e = guestEmail.trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) {
+        setCheckoutError("Ingresá un email válido para recibir tu compra.");
+        toast.error("Email requerido para checkout sin cuenta");
+        return;
+      }
+    }
+    setCheckoutError(null);
+    setProcessing(true);
+    try {
+      const res = await fetch("/api/checkout/paypal", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          shipping: shippingAddress,
+          guest_email: isGuestSubmit ? guestEmail.trim().toLowerCase() : undefined,
+          guest_cart: isGuestSubmit
+            ? cartItems.map((c) => ({ productId: c.product_id, quantity: c.quantity }))
+            : undefined,
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        approve_url?: string;
+        error?: string;
+        code?: string;
+      };
+      if (!res.ok || !data.approve_url) {
+        const base = data.error ?? "No pudimos iniciar el pago con PayPal";
+        setCheckoutError(base);
+        toast.error(base);
+        return;
+      }
+      window.location.href = data.approve_url;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Error inesperado";
+      setCheckoutError(msg);
+      toast.error(msg);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const handleSubmitOrder = async () => {
     if (cartItems.length === 0) return;
 
@@ -1013,12 +1061,12 @@ function CheckoutContent() {
                         </div>
                       )}
 
-                      <div className="flex gap-3">
-                        <Button variant="outline" onClick={() => setStep(2)}>
-                          Volver
-                        </Button>
+                      <div className="flex flex-col gap-3">
+                        <p className="text-[12.5px] text-muted-foreground font-semibold">
+                          Elegí cómo pagar:
+                        </p>
                         <Button
-                          className="flex-1 bg-primary hover:bg-primary-hover"
+                          className="w-full bg-primary hover:bg-primary-hover"
                           onClick={handleSubmitOrder}
                           disabled={
                             processing ||
@@ -1035,9 +1083,37 @@ function CheckoutContent() {
                           ) : (
                             <>
                               <Lock className="h-4 w-4 mr-2" />
-                              Pagar con Mercado Pago
+                              Pagar con Mercado Pago (ARS)
                             </>
                           )}
+                        </Button>
+                        <Button
+                          className="w-full bg-[#0070ba] hover:bg-[#003087] text-white"
+                          onClick={handleSubmitOrderPaypal}
+                          disabled={
+                            processing ||
+                            multiSeller ||
+                            quoteUnresolved ||
+                            Boolean(shippingQuoteError)
+                          }
+                        >
+                          {processing ? (
+                            <>
+                              <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full mr-2" />
+                              Procesando...
+                            </>
+                          ) : (
+                            <>
+                              <span className="font-black mr-2 text-base tracking-tighter">PP</span>
+                              PayPal o tarjeta (USD)
+                            </>
+                          )}
+                        </Button>
+                        <p className="text-[11px] text-muted-foreground text-center">
+                          Con PayPal podés pagar con tarjeta sin tener cuenta, como invitado.
+                        </p>
+                        <Button variant="outline" className="w-full" onClick={() => setStep(2)}>
+                          Volver
                         </Button>
                       </div>
                     </CardContent>
