@@ -67,7 +67,7 @@ export const metadata: Metadata = {
     google: "m8cmW9J8wkYGstv3h_D141-XvNFsthUmNFMucxqZ3lI",
   },
   manifest: "/manifest.json",
-  themeColor: "#EB5204",
+  // themeColor movido a `export const viewport` (Next.js 16 lo requiere ahí)
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",

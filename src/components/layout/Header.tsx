@@ -17,7 +17,7 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCartStore } from "@/stores/cartStore";
 import RainbowLogo from "@/components/brand/RainbowLogo";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -45,6 +45,23 @@ const NAV_MORE = [
 
 export function Header() {
   const { data: session } = useSession();
+
+  // El nombre/email del JWT de NextAuth se cachea hasta el siguiente login.
+  // Para que los cambios de perfil aparezcan inmediatamente en el header,
+  // pedimos los datos frescos a /api/user/me (lee de DB).
+  const [liveProfile, setLiveProfile] = useState<{ name?: string | null; image?: string | null } | null>(null);
+  useEffect(() => {
+    if (!session?.user) return;
+    let cancelled = false;
+    fetch("/api/user/me", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!cancelled && data?.email) setLiveProfile({ name: data.name, image: data.image });
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [session?.user?.id]);
+  const headerUserName = liveProfile?.name || session?.user?.name || "Mi cuenta";
   const { getTotalItems } = useCartStore();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -175,7 +192,7 @@ export function Header() {
                 >
                   <User className="w-5 h-5" />
                   <span className="hidden md:inline max-w-[140px] truncate">
-                    {session.user.name || "Mi cuenta"}
+                    {headerUserName}
                   </span>
                   <ChevronDown className="w-4 h-4 hidden md:inline" />
                 </button>
