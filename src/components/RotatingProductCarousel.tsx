@@ -11,12 +11,16 @@ export interface RotatingProductCarouselProps {
   subtitle?: string
   offset?: number
   categorySlug?: string
+  /** Slug de provincia AR (ej. "buenos-aires") para filtrar por zona del seller */
+  provinceSlug?: string
+  /** Slug de localidad para filtrar por zona del seller */
+  localitySlug?: string
 }
 
 const fmt = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", minimumFractionDigits: 0 })
 
-function RotatingProductCarouselBase({ title, subtitle, offset = 0, categorySlug }: RotatingProductCarouselProps) {
-  const { products, loading, totalCount } = useRotatingProducts({ offset, categorySlug })
+function RotatingProductCarouselBase({ title, subtitle, offset = 0, categorySlug, provinceSlug, localitySlug }: RotatingProductCarouselProps) {
+  const { products, loading, totalCount } = useRotatingProducts({ offset, categorySlug, provinceSlug, localitySlug })
   const scrollRef = useRef<HTMLDivElement>(null)
   const canScrollLeftRef = useRef<HTMLButtonElement>(null)
   const canScrollRightRef = useRef<HTMLButtonElement>(null)

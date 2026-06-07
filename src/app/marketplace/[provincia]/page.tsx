@@ -82,9 +82,17 @@ export default async function MarketplaceProvinciaPage({ params }: Props) {
       <section className="max-w-[1184px] mx-auto px-4">
         <LazyRotatingProductCarousel
           eager
-          title={`Productos para ${prov.name}`}
-          subtitle="Catálogo activo en MadsJeez Marketplace"
+          title={`Vendedores en ${prov.name}`}
+          subtitle={`Productos publicados por sellers de ${prov.name}`}
           offset={prov.slug.length % 48}
+          provinceSlug={prov.slug}
+        />
+      </section>
+      <section className="max-w-[1184px] mx-auto px-4 mt-6">
+        <LazyRotatingProductCarousel
+          title="Más del catálogo nacional"
+          subtitle="Productos de toda Argentina, también disponibles en tu zona"
+          offset={prov.slug.length % 36}
         />
       </section>
 

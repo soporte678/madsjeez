@@ -78,9 +78,19 @@ export default async function MarketplaceLocalidadPage({ params }: Props) {
       <section className="max-w-[1184px] mx-auto px-4">
         <LazyRotatingProductCarousel
           eager
-          title={`Ofertas para ${loc.name}`}
-          subtitle={`Envíos disponibles en ${loc.provinceName}`}
+          title={`Vendedores en ${loc.name}`}
+          subtitle={`Productos publicados por sellers de ${loc.name}, ${loc.provinceName}`}
           offset={offset}
+          provinceSlug={loc.provinceSlug}
+          localitySlug={loc.slug}
+        />
+      </section>
+      <section className="max-w-[1184px] mx-auto px-4 mt-6">
+        <LazyRotatingProductCarousel
+          title={`Más vendedores en ${loc.provinceName}`}
+          subtitle="Productos cercanos a tu zona"
+          offset={offset + 12}
+          provinceSlug={loc.provinceSlug}
         />
       </section>
 

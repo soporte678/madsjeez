@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import RainbowLogo from "@/components/brand/RainbowLogo";
+import { ZoneSelector } from "@/components/navbar/ZoneSelector";
 import { 
   Search, Bell, ShoppingCart, MapPin, User, ChevronDown, X, Mic, Camera,
   Sparkles, TrendingUp, History, ArrowRight, Zap, Menu
@@ -567,17 +568,9 @@ export default function Navbar() {
 
           <div className="hidden lg:flex items-center justify-between h-10 mt-1">
             <div className="flex items-center">
-              <button
-                type="button"
-                aria-label="Dirección de envío: Capital Federal, Av. Corrientes 1234"
-                className="flex items-center gap-1 cursor-pointer w-[160px] flex-shrink-0 group text-left"
-              >
-                <MapPin size={18} className="text-slate-300 transition-colors group-hover:text-slate-100" aria-hidden />
-                <div className="flex flex-col leading-none">
-                  <span className="nav-link-muted whitespace-nowrap text-[10px]">Enviar a Capital Federal</span>
-                  <span className="truncate text-[12px] font-medium text-slate-100 transition-colors group-hover:text-white">Av. Corrientes 1234, CABA</span>
-                </div>
-              </button>
+              <div className="w-[260px] flex-shrink-0">
+                <ZoneSelector compact />
+              </div>
 
               <nav className="flex flex-1 min-w-0 items-center gap-x-3 lg:gap-x-4 text-[13px] font-light ml-4 md:ml-8 overflow-x-auto scrollbar-hide pb-0.5 md:pb-0">
                 <Link href="/categories" className="flex items-center gap-0.5 nav-link whitespace-nowrap shrink-0">
@@ -740,12 +733,8 @@ export default function Navbar() {
                 </div>
               )}
             </div>
-            <div className="mb-6 p-3 flex items-start gap-2.5 rounded-xl bg-slate-800/40 border border-white/5">
-              <MapPin size={18} className="text-slate-400 mt-0.5" />
-              <div className="flex flex-col leading-tight">
-                <span className="text-[10px] text-slate-400 font-medium">Enviar a Capital Federal</span>
-                <span className="text-xs font-black text-slate-200 mt-0.5">Av. Corrientes 1234, CABA</span>
-              </div>
+            <div className="mb-6">
+              <ZoneSelector />
             </div>
             <nav className="flex flex-col gap-1 mb-8">
               <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-2 pl-2">Navegación</span>

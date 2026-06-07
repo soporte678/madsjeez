@@ -21,6 +21,8 @@ export async function GET(request: NextRequest) {
     const limit = Number(searchParams.get("limit") || "12");
     const offset = Number(searchParams.get("offset") || "0");
     const categorySlug = searchParams.get("categorySlug");
+    const provinceSlug = searchParams.get("province");
+    const localitySlug = searchParams.get("locality");
 
     if (mode === "page") {
       const pageSize = Number(searchParams.get("pageSize") || "300");
@@ -44,10 +46,16 @@ export async function GET(request: NextRequest) {
       const result = await getCarouselProductPool({
         poolCap,
         categorySlug,
+        provinceSlug,
+        localitySlug,
       });
       return NextResponse.json(result, {
         headers: {
-          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+          // Si hay filtro geo, no compartir cache entre zonas
+          "Cache-Control":
+            provinceSlug || localitySlug
+              ? "private, max-age=60"
+              : "public, s-maxage=300, stale-while-revalidate=600",
         },
       });
     }
@@ -56,6 +64,8 @@ export async function GET(request: NextRequest) {
       limit,
       offset,
       categorySlug,
+      provinceSlug,
+      localitySlug,
     });
 
     return NextResponse.json({

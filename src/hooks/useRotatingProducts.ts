@@ -34,11 +34,15 @@ type UseRotatingProductsOptions = {
   offset?: number;
   categorySlug?: string | null;
   visibleCount?: number;
+  provinceSlug?: string | null;
+  localitySlug?: string | null;
 };
 
 export function useRotatingProducts(options: UseRotatingProductsOptions = {}) {
   const offset = options.offset ?? 0;
   const categorySlug = options.categorySlug?.trim() || null;
+  const provinceSlug = options.provinceSlug?.trim() || null;
+  const localitySlug = options.localitySlug?.trim() || null;
   const visibleCount = options.visibleCount ?? CAROUSEL_SIZE;
 
   const [pool, setPool] = useState<CatalogCarouselProduct[]>([]);
@@ -66,7 +70,8 @@ export function useRotatingProducts(options: UseRotatingProductsOptions = {}) {
     try {
       setLoading(true);
 
-      if (!categorySlug) {
+      // Si no hay ningún filtro (categoria ni geo), usamos el pool compartido cacheado
+      if (!categorySlug && !provinceSlug && !localitySlug) {
         const { products, total } = await fetchSharedHomeCarouselPool();
         poolRef.current = products;
         setPool(products);
@@ -75,9 +80,15 @@ export function useRotatingProducts(options: UseRotatingProductsOptions = {}) {
         return;
       }
 
-      const res = await fetch(
-        `/api/products/carousel?mode=pool&poolCap=${CATEGORY_POOL_CAP}&categorySlug=${encodeURIComponent(categorySlug)}`
-      );
+      const params = new URLSearchParams({
+        mode: "pool",
+        poolCap: String(CATEGORY_POOL_CAP),
+      });
+      if (categorySlug) params.set("categorySlug", categorySlug);
+      if (provinceSlug) params.set("province", provinceSlug);
+      if (localitySlug) params.set("locality", localitySlug);
+
+      const res = await fetch(`/api/products/carousel?${params.toString()}`);
       const data = await res.json();
       const list = (data.products || []) as CatalogCarouselProduct[];
       poolRef.current = list;
@@ -93,11 +104,11 @@ export function useRotatingProducts(options: UseRotatingProductsOptions = {}) {
     } finally {
       setLoading(false);
     }
-  }, [applyVisible, categorySlug]);
+  }, [applyVisible, categorySlug, provinceSlug, localitySlug]);
 
   useEffect(() => {
     void loadPool();
-  }, [categorySlug, offset]);
+  }, [categorySlug, provinceSlug, localitySlug, offset]);
 
   useEffect(() => {
     const id = setInterval(() => void loadPool(), POOL_REFETCH_MS);

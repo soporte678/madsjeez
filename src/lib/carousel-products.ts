@@ -81,6 +81,8 @@ type GetCarouselOptions = {
   categorySlug?: string | null;
   /** Máximo de productos en el pool antes de paginar/recortar (0 = sin tope). */
   poolCap?: number;
+  provinceSlug?: string | null;
+  localitySlug?: string | null;
 };
 
 const baseWhere = {
@@ -89,7 +91,24 @@ const baseWhere = {
   images: { some: {} },
 } as const;
 
-async function buildProductPool(categorySlug: string | null, poolCap: number) {
+async function buildProductPool(
+  categorySlug: string | null,
+  poolCap: number,
+  geo?: { provinceSlug?: string | null; localitySlug?: string | null }
+) {
+  // Filtro adicional por zona del seller (provincia/localidad).
+  const sellerWhere =
+    geo?.provinceSlug || geo?.localitySlug
+      ? {
+          seller: {
+            is: {
+              ...(geo.provinceSlug ? { sellerProvinceSlug: geo.provinceSlug } : {}),
+              ...(geo.localitySlug ? { sellerLocalitySlug: geo.localitySlug } : {}),
+            },
+          },
+        }
+      : {};
+
   let primaryRows: CarouselProductRow[] = [];
   if (categorySlug) {
     const cat = await prisma.category.findFirst({
@@ -98,12 +117,20 @@ async function buildProductPool(categorySlug: string | null, poolCap: number) {
     });
     if (cat) {
       primaryRows = await prisma.product.findMany({
-        where: { ...baseWhere, categoryId: cat.id },
+        where: { ...baseWhere, categoryId: cat.id, ...sellerWhere },
         include: productInclude,
         orderBy: { updatedAt: "desc" },
         take: poolCap,
       });
     }
+  } else if (geo?.provinceSlug || geo?.localitySlug) {
+    // Geo-only: traer productos cuyo seller matchea provincia/localidad
+    primaryRows = await prisma.product.findMany({
+      where: { ...baseWhere, ...sellerWhere },
+      include: productInclude,
+      orderBy: { updatedAt: "desc" },
+      take: poolCap,
+    });
   }
 
   const primaryMapped = primaryRows
@@ -159,7 +186,10 @@ export async function getCarouselProducts(options: GetCarouselOptions = {}) {
     return { products: [] as CarouselProductDto[], total: 0, poolSize: 0 };
   }
 
-  const { pool, primaryCount } = await buildProductPool(categorySlug, poolCap);
+  const { pool, primaryCount } = await buildProductPool(categorySlug, poolCap, {
+    provinceSlug: options.provinceSlug?.trim() || null,
+    localitySlug: options.localitySlug?.trim() || null,
+  });
   const seed = carouselTimeSeed();
   const shuffled = shuffleWithSeed(pool, seed);
   const slice = shuffled.slice(offset, offset + limit);
@@ -183,14 +213,21 @@ export async function getCarouselProducts(options: GetCarouselOptions = {}) {
 export async function getCarouselProductPool(options: {
   poolCap?: number;
   categorySlug?: string | null;
+  provinceSlug?: string | null;
+  localitySlug?: string | null;
 }) {
   const poolCap = options.poolCap ?? 2500;
   const categorySlug = options.categorySlug?.trim() || null;
+  const provinceSlug = options.provinceSlug?.trim() || null;
+  const localitySlug = options.localitySlug?.trim() || null;
   const totalActive = await prisma.product.count({ where: baseWhere });
   if (totalActive === 0) {
     return { products: [] as CarouselProductDto[], total: 0, poolSize: 0 };
   }
-  const { pool, primaryCount } = await buildProductPool(categorySlug, poolCap);
+  const { pool, primaryCount } = await buildProductPool(categorySlug, poolCap, {
+    provinceSlug,
+    localitySlug,
+  });
   const shuffled = shuffleWithSeed(pool, carouselTimeSeed());
   return {
     products: shuffled,
