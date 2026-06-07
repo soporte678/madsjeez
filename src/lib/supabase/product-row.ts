@@ -18,4 +18,4 @@ export function readViews(row: Record<string, unknown>): number {
 
 /** Fragmento select para PostgREST (evitar columnas legacy inexistentes). */
 export const PRODUCT_LIST_SELECT =
-  'id, title, price, original_price, condition, free_shipping, shipping_cost, stock, sales, views, meli_item_id, seller_id, category_id, is_active, created_at, updated_at, product_images(url), categories:category_id(name), seller:seller_id(id, name, "sellerName", seller_province, seller_province_slug, seller_locality, seller_locality_slug, seller_partido)';
+  "id, title, price, original_price, condition, free_shipping, shipping_cost, stock, sales, views, meli_item_id, seller_id, category_id, is_active, created_at, updated_at, product_images(url), categories:category_id(name), seller:seller_id(id, name, sellerName, seller_province, seller_province_slug, seller_locality, seller_locality_slug, seller_partido)";
