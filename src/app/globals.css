@@ -748,6 +748,35 @@ body {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35) !important;
 }
 
+/* Cobertura extra de surfaces / borders / text que no estaban incluidos —
+   evita "manchas blancas" en landing y otras páginas al usar slate-200/300
+   y bordes color medio. */
+:root[data-theme="dark"] .bg-slate-200,
+:root[data-theme="dark"] .bg-slate-300,
+:root[data-theme="dark"] .bg-zinc-50,
+:root[data-theme="dark"] .bg-zinc-100,
+:root[data-theme="dark"] .bg-zinc-200,
+:root[data-theme="dark"] .bg-neutral-50,
+:root[data-theme="dark"] .bg-neutral-100,
+:root[data-theme="dark"] .bg-stone-50,
+:root[data-theme="dark"] .bg-stone-100 {
+  background-color: #1a2438 !important;
+}
+
+:root[data-theme="dark"] .text-slate-400,
+:root[data-theme="dark"] .text-slate-500 {
+  color: #cbd5e1 !important;
+}
+
+:root[data-theme="dark"] .border-slate-400,
+:root[data-theme="dark"] .border-slate-500,
+:root[data-theme="dark"] .border-slate-600,
+:root[data-theme="dark"] .border-zinc-100,
+:root[data-theme="dark"] .border-zinc-200,
+:root[data-theme="dark"] .border-neutral-200 {
+  border-color: var(--border) !important;
+}
+
 /* ============================================
    SOFT MODE GLOBAL TINT OVERRIDES
    ============================================ */
@@ -800,6 +829,34 @@ body {
 :root[data-theme="soft"] .hover\:bg-slate-50:hover,
 :root[data-theme="soft"] .hover\:bg-slate-100:hover {
   background-color: #f1e9ff !important;
+}
+
+/* Extender cobertura soft a más utilidades y al text-slate-400/500 */
+:root[data-theme="soft"] .bg-zinc-50,
+:root[data-theme="soft"] .bg-zinc-100,
+:root[data-theme="soft"] .bg-neutral-50,
+:root[data-theme="soft"] .bg-neutral-100,
+:root[data-theme="soft"] .bg-stone-50,
+:root[data-theme="soft"] .bg-stone-100 {
+  background-color: var(--card) !important;
+}
+
+:root[data-theme="soft"] .text-slate-400 {
+  color: #8b78a8 !important;
+}
+
+:root[data-theme="soft"] .border-zinc-100,
+:root[data-theme="soft"] .border-zinc-200,
+:root[data-theme="soft"] .border-neutral-200 {
+  border-color: var(--border) !important;
+}
+
+/* Sombras suaves en tema 'soft' */
+:root[data-theme="soft"] .shadow-sm,
+:root[data-theme="soft"] .shadow,
+:root[data-theme="soft"] .shadow-md,
+:root[data-theme="soft"] .shadow-lg {
+  box-shadow: 0 8px 24px rgba(74, 59, 99, 0.10) !important;
 }
 
 /* ============================================

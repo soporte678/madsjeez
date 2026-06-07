@@ -12,10 +12,10 @@ const Navbar = dynamic(() => import("@/components/Navbar"), {
   loading: () => <div className="w-full h-[100px] bg-[linear-gradient(180deg,rgba(15,23,42,0.98)_0%,rgba(15,23,42,0.95)_100%)] sticky top-0 z-[100]" aria-hidden="true" />,
 })
 const HomeSeoContent = dynamic(() => import("@/components/home/HomeSeoContent").then(m => m.HomeSeoContent), { loading: () => null })
-const FoundingSellersSection = dynamic(() => import("@/components/home/FoundingSellersSection").then(m => m.FoundingSellersSection), { loading: () => <div className="max-w-[1184px] mx-auto px-4 mb-20 h-[420px] animate-pulse rounded-3xl bg-slate-100" /> })
-const VsMercadoLibreSection = dynamic(() => import("@/components/home/VsMercadoLibreSection").then(m => m.VsMercadoLibreSection), { loading: () => <div className="max-w-[1184px] mx-auto px-4 mb-20 h-[500px] animate-pulse rounded-2xl bg-slate-100" /> })
-const HowItWorksSection = dynamic(() => import("@/components/home/HowItWorksSection").then(m => m.HowItWorksSection), { loading: () => <div className="max-w-[1184px] mx-auto px-4 mb-20 h-[500px] animate-pulse rounded-2xl bg-slate-100" /> })
-const SellersTestimonialsSection = dynamic(() => import("@/components/home/SellersTestimonialsSection").then(m => m.SellersTestimonialsSection), { loading: () => <div className="max-w-[1184px] mx-auto px-4 mb-20 h-[420px] animate-pulse rounded-2xl bg-slate-100" /> })
+const FoundingSellersSection = dynamic(() => import("@/components/home/FoundingSellersSection").then(m => m.FoundingSellersSection), { loading: () => <div className="max-w-[1184px] mx-auto px-4 mb-20 h-[420px] animate-pulse rounded-3xl bg-muted/60" /> })
+const VsMercadoLibreSection = dynamic(() => import("@/components/home/VsMercadoLibreSection").then(m => m.VsMercadoLibreSection), { loading: () => <div className="max-w-[1184px] mx-auto px-4 mb-20 h-[500px] animate-pulse rounded-2xl bg-muted/60" /> })
+const HowItWorksSection = dynamic(() => import("@/components/home/HowItWorksSection").then(m => m.HowItWorksSection), { loading: () => <div className="max-w-[1184px] mx-auto px-4 mb-20 h-[500px] animate-pulse rounded-2xl bg-muted/60" /> })
+const SellersTestimonialsSection = dynamic(() => import("@/components/home/SellersTestimonialsSection").then(m => m.SellersTestimonialsSection), { loading: () => <div className="max-w-[1184px] mx-auto px-4 mb-20 h-[420px] animate-pulse rounded-2xl bg-muted/60" /> })
 const HomeSocialProof = dynamic(() => import("@/components/home/HomeSocialProof").then(m => m.HomeSocialProof), { loading: () => null })
 const SiteCompanyFooter = dynamic(() => import("@/components/seo/SiteCompanyFooter").then(m => m.SiteCompanyFooter), { loading: () => null })
 const SiteSocialFooter = dynamic(() => import("@/components/seo/SiteSocialFooter").then(m => m.SiteSocialFooter), { loading: () => null })
@@ -47,16 +47,16 @@ const AIRecommendations = dynamic(() => import("@/components/AIRecommendations")
 })
 const CategoryCarousel = dynamic(
   () => import("@/components/CategoryCarousel").then((m) => m.CategoryCarousel),
-  { loading: () => <div className="h-64 animate-pulse rounded-2xl bg-slate-100" /> }
+  { loading: () => <div className="h-64 animate-pulse rounded-2xl bg-muted/60" /> }
 )
 const LazyRotatingProductCarousel = dynamic(
   () =>
     import("@/components/LazyRotatingProductCarousel").then((m) => m.LazyRotatingProductCarousel),
-  { loading: () => <div className="h-48 animate-pulse rounded-xl bg-slate-100 mb-8" /> }
+  { loading: () => <div className="h-48 animate-pulse rounded-xl bg-muted/60 mb-8" /> }
 )
 const PaidAdBannerSlot = dynamic(
   () => import("@/components/ads/PaidAdBannerSlot").then((m) => m.PaidAdBannerSlot),
-  { loading: () => <div className="h-24 animate-pulse rounded-xl bg-slate-100" /> }
+  { loading: () => <div className="h-24 animate-pulse rounded-xl bg-muted/60" /> }
 )
 
 // Configuración de banners - 5 banners premium con imagen real y CTA verbo+objeto
