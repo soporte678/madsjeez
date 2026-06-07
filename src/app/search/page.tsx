@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { hasValidProductImageUrl } from "@/lib/productVisibility";
+import { GeoFilter } from "@/components/search/GeoFilter";
 
 interface Product {
   id: string;
@@ -556,6 +557,18 @@ function SearchContent() {
                     setCondition(next);
                     updateSearchParams({ condition: next || null });
                   }}
+                />
+
+                {/* Filtro geo: provincia + localidad del vendedor */}
+                <GeoFilter
+                  province={searchParams.get("province") || ""}
+                  locality={searchParams.get("locality") || ""}
+                  onChange={(province, locality) =>
+                    updateSearchParams({
+                      province: province || null,
+                      locality: locality || null,
+                    })
+                  }
                 />
               </div>
 

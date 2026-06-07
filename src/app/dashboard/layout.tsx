@@ -75,7 +75,8 @@ const MENU_GROUPS: MenuGroup[] = [
       { id: "ventas-novedades", label: "Novedades", href: "/dashboard/ventas-novedades" },
       { id: "publicaciones", label: "Publicaciones", href: "/dashboard/publicaciones" },
       { id: "mi-tienda", label: "Mi tienda publica", href: "/dashboard/mi-tienda" },
-      { id: "meli-sync", label: "Mercado Libre", href: "/dashboard/meli-sync" },
+      // Mercado Libre sync oculto temporalmente — pendiente decisión producto.
+      // { id: "meli-sync", label: "Mercado Libre", href: "/dashboard/meli-sync" },
       { id: "preguntas-ventas", label: "Preguntas", href: "/dashboard/preguntas" },
       { id: "ventas-lista", label: "Ventas", href: "/dashboard/ventas-lista" },
       { id: "posventa", label: "Posventa", href: "/dashboard/posventa" },
@@ -91,17 +92,21 @@ const MENU_GROUPS: MenuGroup[] = [
     label: "Marketing",
     icon: <Megaphone size={18} />,
     subItems: [
-      // Marketing IA y Bot de WhatsApp ocultos por ahora (decisión producto).
-      // Las rutas siguen existiendo; solo los sacamos del sidebar.
+      // Ocultos del sidebar (no van a produccion aun):
+      //   - marketing-ia (IA)
+      //   - whatsapp-bot (IA)
+      //   - meli-ads-studio (Mercado Libre Ads)
+      //   - canal-difusion (Facebook / Instagram broadcast)
+      // Las rutas siguen existiendo; solo se quitan de la navegacion.
       // { id: "marketing-ia", label: "Marketing IA (beta)", href: "/dashboard/marketing-ia" },
       // { id: "whatsapp-bot", label: "Bot de WhatsApp", href: "/dashboard/whatsapp-bot" },
-      { id: "meli-ads-studio", label: "Mercado Libre Ads", href: "/dashboard/meli-ads-studio" },
+      // { id: "meli-ads-studio", label: "Mercado Libre Ads", href: "/dashboard/meli-ads-studio" },
       { id: "central-marketing", label: "Central de marketing", href: "/dashboard/central-marketing" },
       { id: "publicidad", label: "Publicidad", href: "/dashboard/publicidad" },
       { id: "promociones", label: "Promociones", href: "/dashboard/promociones" },
       { id: "clips", label: "Clips", href: "/dashboard/clips" },
       { id: "mi-pagina", label: "Mi pagina", href: "/dashboard/mi-pagina" },
-      { id: "canal-difusion", label: "Canal de difusion", href: "/dashboard/canal-difusion" },
+      // { id: "canal-difusion", label: "Canal de difusion", href: "/dashboard/canal-difusion" },
     ],
   },
   {

@@ -451,22 +451,7 @@ export default function ProfileView({ userData }: ProfileViewProps) {
       status: mpStatus.connected ? null : 'warning',
       isMercadoPago: true
     },
-    {
-      id: 'meli-marketplace',
-      title: "Mercado Libre",
-      description: meliStatus.loading
-        ? "Cargando..."
-        : meliStatus.connected
-          ? `Conectado · usuario ML ${meliStatus.meliUserId ?? "—"}`
-          : "Importá tus publicaciones de Mercado Libre y sincronizá campañas con MADSJEEZ.",
-      icon: (
-        <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-[10px] font-black">
-          ML
-        </div>
-      ),
-      status: meliStatus.connected ? null : 'warning',
-      isMercadoLibre: true,
-    },
+    // Card "Mercado Libre" oculta temporalmente — no va a produccion aun.
   ];
 
   // Renderizar sub-sección si está activa

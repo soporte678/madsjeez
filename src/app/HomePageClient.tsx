@@ -714,12 +714,13 @@ export default function HomePageClient() {
         </div>
       </section>
 
-      {/* AI RECOMMENDATIONS */}
-      <section className="bg-white py-8 border-b border-slate-100">
+      {/* AI Recommendations oculto temporalmente — la IA no va a produccion aun.
+          La seccion se restablece quitando los comentarios. */}
+      {/* <section className="bg-white py-8 border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-4">
           <AIRecommendations />
         </div>
-      </section>
+      </section> */}
 
       <HomeSeoContent />
 

@@ -72,18 +72,20 @@ export async function GET(req: Request) {
     const seller = searchParams.get("seller")
     const minPrice = searchParams.get("minPrice")
     const maxPrice = searchParams.get("maxPrice")
+    const province = searchParams.get("province")        // slug provincia AR (ej: buenos-aires)
+    const locality = searchParams.get("locality")        // slug localidad (ej: rosario)
     const sort = searchParams.get("sort") || "relevance"
     const page = parseInt(searchParams.get("page") || "1")
     const limit = parseInt(searchParams.get("limit") || "20")
 
-    
+
     // Construir query de Supabase
     let query = supabase
       .from('products')
       .select(`
         *,
         product_images(url, order, is_primary),
-        seller:users(id, name, seller_name, reputation_color),
+        seller:users!inner(id, name, seller_name, reputation_color, seller_province, seller_province_slug, seller_locality, seller_locality_slug, seller_partido),
         category:categories(id, name, slug),
         reviews(count)
       `, { count: 'exact' })
@@ -104,6 +106,13 @@ export async function GET(req: Request) {
     }
     if (maxPrice) {
       query = query.lte('price', parseFloat(maxPrice))
+    }
+    // Filtros geo (zona del vendedor). Usan los slugs ya persistidos.
+    if (province) {
+      query = query.eq('seller.seller_province_slug', province)
+    }
+    if (locality) {
+      query = query.eq('seller.seller_locality_slug', locality)
     }
 
     // Aplicar ordenamiento

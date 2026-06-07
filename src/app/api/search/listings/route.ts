@@ -205,6 +205,8 @@ export async function GET(req: Request) {
     const minPrice = searchParams.get("min_price");
     const maxPrice = searchParams.get("max_price");
     const freeShip = searchParams.get("free_shipping");
+    const province = searchParams.get("province");
+    const locality = searchParams.get("locality");
     const limit = Math.min(parseInt(searchParams.get("limit") || "48", 10) || 48, 96);
     const tokens = getSearchTokens(q);
     const categoryIds = await resolveCategoryIds(cat);
@@ -224,6 +226,10 @@ export async function GET(req: Request) {
     if (minPrice) sbQuery = sbQuery.gte("price", parseInt(minPrice, 10));
     if (maxPrice) sbQuery = sbQuery.lte("price", parseInt(maxPrice, 10));
     if (freeShip === "true") sbQuery = sbQuery.eq("free_shipping", true);
+    // Filtros geo por zona del seller (slug provincia / localidad).
+    // Requiere que la join `seller` venga inner; PRODUCT_LIST_SELECT ya la incluye.
+    if (province) sbQuery = sbQuery.eq("seller.seller_province_slug", province);
+    if (locality) sbQuery = sbQuery.eq("seller.seller_locality_slug", locality);
 
     switch (sort) {
       case "price_asc":
