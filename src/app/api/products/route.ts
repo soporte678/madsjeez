@@ -79,13 +79,19 @@ export async function GET(req: Request) {
     const limit = parseInt(searchParams.get("limit") || "20")
 
 
-    // Construir query de Supabase
+    // Si hay filtro geo, forzamos inner join al seller para que el eq() de
+    // PostgREST funcione contra la tabla relacionada. Si no, left join normal.
+    const sellerJoin =
+      province || locality
+        ? `seller:users!inner(id, name, "sellerName", reputation_color, seller_province, seller_province_slug, seller_locality, seller_locality_slug, seller_partido)`
+        : `seller:users(id, name, "sellerName", reputation_color, seller_province, seller_province_slug, seller_locality, seller_locality_slug, seller_partido)`;
+
     let query = supabase
       .from('products')
       .select(`
         *,
         product_images(url, order, is_primary),
-        seller:users!inner(id, name, seller_name, reputation_color, seller_province, seller_province_slug, seller_locality, seller_locality_slug, seller_partido),
+        ${sellerJoin},
         category:categories(id, name, slug),
         reviews(count)
       `, { count: 'exact' })

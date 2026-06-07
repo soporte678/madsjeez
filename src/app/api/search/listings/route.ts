@@ -211,9 +211,15 @@ export async function GET(req: Request) {
     const tokens = getSearchTokens(q);
     const categoryIds = await resolveCategoryIds(cat);
 
+    // Si hay filtro geo, swap a inner join sobre seller para que el eq() funcione.
+    const select =
+      province || locality
+        ? PRODUCT_LIST_SELECT.replace("seller:seller_id(", "seller:seller_id!inner(")
+        : PRODUCT_LIST_SELECT;
+
     let sbQuery = supabaseService
       .from("products")
-      .select(PRODUCT_LIST_SELECT)
+      .select(select)
       .eq("is_active", true);
 
     if (q?.trim()) {
