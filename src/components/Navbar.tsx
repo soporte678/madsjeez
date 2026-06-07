@@ -327,8 +327,9 @@ export default function Navbar() {
             <div className="w-[160px] flex-shrink-0">
               <RainbowLogo
                 href="/"
-                textSizeClassName="text-[20px] font-montserrat"
-                iconSizeClassName="h-9 w-9"
+                textSizeClassName="text-[22px]"
+                iconSizeClassName="h-10 w-10"
+                variant="onDark"
               />
             </div>
 
@@ -629,8 +630,8 @@ export default function Navbar() {
                 <button type="button" onClick={() => setIsMobileMenuOpen(true)} aria-label="Abrir menú de navegación" className="touch-target text-slate-300 hover:text-white transition-colors">
                   <Menu size={24} />
                 </button>
-                <div className="w-[120px] flex-shrink-0">
-                  <RainbowLogo href="/" textSizeClassName="text-[18px] font-montserrat animate-assemble" iconSizeClassName="h-7 w-7" />
+                <div className="w-[140px] flex-shrink-0">
+                  <RainbowLogo href="/" textSizeClassName="text-[19px]" iconSizeClassName="h-8 w-8" variant="onDark" />
                 </div>
              </div>
              <div className="flex items-center gap-3 text-slate-300">
@@ -703,7 +704,7 @@ export default function Navbar() {
           <div className="drawer-overlay fixed inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)}></div>
           <div className="drawer-content relative flex w-[300px] max-w-[85vw] h-full flex-col bg-[linear-gradient(180deg,rgba(15,23,42,0.98)_0%,rgba(17,24,39,0.96)_100%)] text-slate-100 shadow-2xl border-r border-white/10 p-6 overflow-y-auto">
             <div className="flex items-center justify-between mb-8 pb-4 border-b border-white/10">
-              <RainbowLogo href="/" textSizeClassName="text-[18px] font-montserrat" iconSizeClassName="h-7 w-7" onClick={() => setIsMobileMenuOpen(false)} />
+              <RainbowLogo href="/" textSizeClassName="text-[19px]" iconSizeClassName="h-8 w-8" variant="onDark" onClick={() => setIsMobileMenuOpen(false)} />
               <button type="button" onClick={() => setIsMobileMenuOpen(false)} aria-label="Cerrar menú de navegación" className="touch-target rounded-full p-1.5 text-slate-400 hover:text-white hover:bg-white/10 transition-colors">
                 <X size={20} />
               </button>
