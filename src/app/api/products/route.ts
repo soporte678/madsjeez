@@ -25,7 +25,7 @@ export async function GET(req: Request) {
           original_price,
           compare_price,
           product_images(url, order, is_primary),
-          seller:users(id, full_name, seller_name)
+          seller:seller_id(id, name, sellerName)
         `)
         .eq("is_active", true)
         .order("created_at", { ascending: false })
@@ -59,7 +59,7 @@ export async function GET(req: Request) {
             images: sorted.map((im: { url: string }) => ({ url: String(im.url).trim() })),
             seller: {
               id: p.seller?.id,
-              full_name: p.seller?.seller_name || p.seller?.full_name || "Vendedor",
+              full_name: p.seller?.sellerName || p.seller?.name || "Vendedor",
             },
           }
         })
@@ -82,7 +82,7 @@ export async function GET(req: Request) {
       .select(`
         *,
         product_images(url, order, is_primary),
-        seller:users(id, name, sellerName, reputation_color),
+        seller:seller_id(id, name, sellerName, reputation_color),
         category:categories(id, name, slug),
         reviews(count)
       `, { count: 'exact' })
