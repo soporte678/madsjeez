@@ -407,7 +407,12 @@ model Order {
   shippingState     String @map("shipping_state")
   shippingZip       String @map("shipping_zip")
   shippingPhone     String @map("shipping_phone")
-  
+
+  /// "mercadopago" | "paypal" | "bank_transfer" | null (legacy)
+  paymentMethod     String? @map("payment_method")
+  /// Referencia externa o número de comprobante para bank_transfer
+  paymentReference  String? @map("payment_reference")
+
   // Relaciones
   buyerId       String      @map("buyer_id")
   buyer         User        @relation(fields: [buyerId], references: [id])

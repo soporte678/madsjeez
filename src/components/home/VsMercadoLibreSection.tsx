@@ -31,14 +31,14 @@ const rows = [
     others: { ok: true, label: "Sí, con condiciones del marketplace" },
   },
   {
-    feature: "Marketing IA incluido",
-    madsjeez: { ok: true, label: "Posts, banners y SEO automáticos" },
-    others: { ok: false, label: "Pagás aparte cada herramienta" },
+    feature: "Métodos de pago",
+    madsjeez: { ok: true, label: "Mercado Pago + PayPal + transferencia bancaria" },
+    others: { ok: false, label: "Solo el método del marketplace" },
   },
   {
-    feature: "Retiro de dinero",
-    madsjeez: { ok: true, label: "Hasta 24 hs en Plan Platinum" },
-    others: { ok: false, label: "14 días promedio" },
+    feature: "Retiro del producto en el local",
+    madsjeez: { ok: true, label: "Sin envío si el comprador va al local" },
+    others: { ok: false, label: "Siempre cobra envío" },
   },
   {
     feature: "Exposición en el home",

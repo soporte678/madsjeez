@@ -595,11 +595,11 @@ export default function HomePageClient() {
               ]
             },
             {
-              name: "PRO", price: "9.999", comm: "200 publicaciones", icon: Zap, featured: true,
+              name: "PRO", price: "29.999", comm: "200 publicaciones", icon: Zap, featured: true,
               benefits: [
                 '200 publicaciones activas',
                 '0% comisión por venta — siempre',
-                'Marketing IA ilimitado: posts, emails, banners, SEO',
+                'Envíos GRATIS en TODOS tus pedidos',
                 'Meta API completa: Instagram + Facebook + WhatsApp',
                 'TikTok Shop integrado + posts automatizados',
                 'Soporte prioritario por WhatsApp',
@@ -613,11 +613,9 @@ export default function HomePageClient() {
                 'Publicaciones ILIMITADAS',
                 '0% comisión por venta — siempre',
                 'Exposición máxima (Top Resultados)',
-                'IA Premium: generación de video, voz, chatbot personalizado',
-                'Meta API Enterprise + TikTok Ads + viralizador IA',
+                'Meta API Enterprise + TikTok Ads',
                 'Ejecutivo de cuenta dedicado',
                 'API completa + White label opcional',
-                'Retiro de dinero inmediato'
               ]
             }
           ].map((plan) => (

@@ -120,7 +120,7 @@ function CheckoutContent() {
   });
 
   /** Cotización servidor (Zipnova o monto legacy); null = aún no cotizado o dirección incompleta. */
-  const [shippingMethod, setShippingMethod] = useState<"standard" | "flash">("standard");
+  const [shippingMethod, setShippingMethod] = useState<"standard" | "flash" | "pickup">("standard");
   const [flashData, setFlashData] = useState<(FlashAddressData & { shippingTier: string; shippingPrice: number; priorityScore: number }) | null>(null);
 
   const [shippingQuote, setShippingQuote] = useState<{
@@ -344,28 +344,36 @@ function CheckoutContent() {
 
   const shippingFull = shippingMethod === "flash"
     ? flashShippingCost
-    : !needsPaidShipping
-      ? 0
-      : shippingQuote != null
-        ? shippingQuote.shipping_full
-        : null;
+    : shippingMethod === "pickup"
+      ? 0  // Retiro en local: sin costo de envío
+      : !needsPaidShipping
+        ? 0
+        : shippingQuote != null
+          ? shippingQuote.shipping_full
+          : null;
   /** El comprador abona el envío completo (precio único $7999 o el de Flash). */
   const buyerShippingShare =
     shippingMethod === "flash"
       ? flashShippingCost
-      : shippingFull != null && shippingFull > 0
-        ? shippingFull
-        : 0;
+      : shippingMethod === "pickup"
+        ? 0
+        : shippingFull != null && shippingFull > 0
+          ? shippingFull
+          : 0;
   const totalKnown =
     shippingMethod === "flash" && flashData
       ? subtotal + flashShippingCost
-      : shippingFull != null
-        ? subtotal + (shippingFull > 0 ? buyerShippingShare : 0)
-        : null;
+      : shippingMethod === "pickup"
+        ? subtotal
+        : shippingFull != null
+          ? subtotal + (shippingFull > 0 ? buyerShippingShare : 0)
+          : null;
   const quoteUnresolved =
     shippingMethod === "flash"
-      ? false // Flash has fixed price, no quote needed
-      : needsPaidShipping && (shippingQuote === null || shippingQuoteLoading);
+      ? false
+      : shippingMethod === "pickup"
+        ? false  // Pickup no requiere cotización
+        : needsPaidShipping && (shippingQuote === null || shippingQuoteLoading);
 
   const sellerIds = new Set(cartItems.map((i) => i.product.seller_id));
   const multiSeller = sellerIds.size > 1;
@@ -472,6 +480,60 @@ function CheckoutContent() {
       // ignore storage quota/availability errors
     }
   }, [shippingAddress, shippingDraftKey, status]);
+
+  /**
+   * Genera una orden con método "bank_transfer". El pago queda pendiente
+   * hasta que el comprador suba el comprobante. El comprador recibe email
+   * con CBU/alias del vendedor.
+   */
+  const handleSubmitOrderBankTransfer = async () => {
+    if (cartItems.length === 0) return;
+    const isGuestSubmit = !session?.user;
+    if (isGuestSubmit) {
+      const e = guestEmail.trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) {
+        setCheckoutError("Ingresá un email válido para recibir tu compra.");
+        toast.error("Email requerido para checkout sin cuenta");
+        return;
+      }
+    }
+    setCheckoutError(null);
+    setProcessing(true);
+    try {
+      const res = await fetch("/api/checkout/bank-transfer", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          shipping: shippingAddress,
+          shipping_method: shippingMethod,
+          guest_email: isGuestSubmit ? guestEmail.trim().toLowerCase() : undefined,
+          guest_cart: isGuestSubmit
+            ? cartItems.map((c) => ({ productId: c.product_id, quantity: c.quantity }))
+            : undefined,
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        order_id?: string;
+        order_number?: string;
+        instructions_url?: string;
+        error?: string;
+      };
+      if (!res.ok || !data.order_id) {
+        const base = data.error ?? "No pudimos generar el pedido por transferencia";
+        setCheckoutError(base);
+        toast.error(base);
+        return;
+      }
+      window.location.href = data.instructions_url || `/track/${data.order_number || data.order_id}`;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Error de red";
+      setCheckoutError(msg);
+      toast.error(msg);
+    } finally {
+      setProcessing(false);
+    }
+  };
 
   /** Lanza el flujo de PayPal (alternativa a Mercado Pago). */
   const handleSubmitOrderPaypal = async () => {
@@ -786,24 +848,22 @@ function CheckoutContent() {
                       </h2>
 
                       {/* Shipping method selector */}
-                      <div className="grid grid-cols-2 gap-3 mb-6">
+                      <div className="grid grid-cols-3 gap-3 mb-6">
                         <button
                           onClick={() => setShippingMethod("standard")}
-                          className={`flex items-center gap-3 border rounded-xl p-4 text-left transition-colors ${
+                          className={`flex flex-col items-start gap-1 border rounded-xl p-4 text-left transition-colors ${
                             shippingMethod === "standard"
                               ? "border-primary bg-primary/5"
                               : "border-gray-200 hover:border-gray-300"
                           }`}
                         >
                           <Package className="h-5 w-5 text-gray-500 shrink-0" />
-                          <div>
-                            <p className="font-semibold text-sm">Envío estándar</p>
-                            <p className="text-xs text-gray-500">3–7 días hábiles</p>
-                          </div>
+                          <p className="font-semibold text-sm">Envío estándar</p>
+                          <p className="text-xs text-gray-500">3–7 días hábiles</p>
                         </button>
                         <button
                           onClick={() => setShippingMethod("flash")}
-                          className={`flex items-center gap-3 border rounded-xl p-4 text-left transition-colors ${
+                          className={`flex flex-col items-start gap-1 border rounded-xl p-4 text-left transition-colors ${
                             shippingMethod === "flash"
                               ? "border-yellow-400 bg-yellow-50"
                               : "border-gray-200 hover:border-yellow-200"
@@ -812,10 +872,20 @@ function CheckoutContent() {
                           <div className="bg-yellow-400 rounded-full p-1 shrink-0">
                             <Zap className="h-4 w-4 text-black fill-black" />
                           </div>
-                          <div>
-                            <p className="font-black text-sm">⚡ Flash</p>
-                            <p className="text-xs text-gray-500">Menos de 24 hs</p>
-                          </div>
+                          <p className="font-black text-sm">⚡ Flash</p>
+                          <p className="text-xs text-gray-500">Menos de 24 hs</p>
+                        </button>
+                        <button
+                          onClick={() => setShippingMethod("pickup")}
+                          className={`flex flex-col items-start gap-1 border rounded-xl p-4 text-left transition-colors ${
+                            shippingMethod === "pickup"
+                              ? "border-emerald-500 bg-emerald-50"
+                              : "border-gray-200 hover:border-emerald-200"
+                          }`}
+                        >
+                          <MapPin className="h-5 w-5 text-emerald-600 shrink-0" />
+                          <p className="font-semibold text-sm">Retiro en local</p>
+                          <p className="text-xs text-gray-500">Sin costo de envío</p>
                         </button>
                       </div>
 
@@ -828,6 +898,54 @@ function CheckoutContent() {
                           }}
                           onBack={() => { setShippingMethod("standard"); setFlashData(null); }}
                         />
+                      )}
+
+                      {/* Pickup en local */}
+                      {shippingMethod === "pickup" && (
+                        <div className="space-y-4">
+                          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                            <h3 className="text-sm font-bold text-emerald-900 flex items-center gap-2 mb-2">
+                              <MapPin className="h-4 w-4" />
+                              Retiro en el local del vendedor
+                            </h3>
+                            <p className="text-[13px] text-emerald-900/90 leading-relaxed">
+                              Sin costo de envío. Coordiná con el vendedor el horario de retiro.
+                              Una vez confirmado el pago, recibís un mensaje con la dirección exacta
+                              y un código de retiro para mostrar al llegar.
+                            </p>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <Label htmlFor="pickup-recipient" className="text-[12px] font-semibold text-gray-700">Nombre de quien retira</Label>
+                              <Input
+                                id="pickup-recipient"
+                                value={shippingAddress.recipient}
+                                onChange={(e) => setShippingAddress(p => ({ ...p, recipient: e.target.value }))}
+                                placeholder="Nombre y apellido"
+                                className="mt-1"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="pickup-phone" className="text-[12px] font-semibold text-gray-700">Teléfono de contacto</Label>
+                              <Input
+                                id="pickup-phone"
+                                value={shippingAddress.phone}
+                                onChange={(e) => setShippingAddress(p => ({ ...p, phone: e.target.value }))}
+                                placeholder="+54 9 ..."
+                                inputMode="tel"
+                                className="mt-1"
+                              />
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleAdvanceToPayment()}
+                            disabled={!shippingAddress.recipient.trim() || !shippingAddress.phone.trim()}
+                            className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold py-3 px-4 text-sm transition-colors"
+                          >
+                            Confirmar retiro y elegir pago
+                          </button>
+                        </div>
                       )}
 
                       {/* Standard form */}
@@ -1121,6 +1239,20 @@ function CheckoutContent() {
                         <p className="text-[11px] text-muted-foreground text-center">
                           Con PayPal podés pagar con tarjeta sin tener cuenta, como invitado.
                         </p>
+
+                        <button
+                          type="button"
+                          onClick={() => handleSubmitOrderBankTransfer()}
+                          disabled={processing || multiSeller || quoteUnresolved || Boolean(shippingQuoteError)}
+                          className="w-full rounded-md border-2 border-slate-300 hover:border-slate-400 bg-white text-slate-900 font-bold py-2.5 px-4 text-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                          <CreditCard className="h-4 w-4" />
+                          Transferencia bancaria (ARS)
+                        </button>
+                        <p className="text-[11px] text-muted-foreground text-center">
+                          Recibís el CBU y alias del vendedor por email. El pedido se confirma al subir el comprobante.
+                        </p>
+
                         <Button variant="outline" className="w-full" onClick={() => setStep(2)}>
                           Volver
                         </Button>
