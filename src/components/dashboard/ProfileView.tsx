@@ -18,6 +18,7 @@ import ProfilePrivacyView from './profile/ProfilePrivacyView';
 import ProfileCommunicationsView from './profile/ProfileCommunicationsView';
 import MeliIntegrationView from '@/components/dashboard/MeliIntegrationView';
 import { StorePublicPanel } from '@/components/dashboard/StorePublicPanel';
+import { SellerLocationPanel } from '@/components/dashboard/profile/SellerLocationPanel';
 
 interface ProfileViewProps {
   userData?: {
@@ -589,6 +590,7 @@ export default function ProfileView({ userData }: ProfileViewProps) {
       </div>
 
       <StorePublicPanel />
+      <SellerLocationPanel />
 
       {/* --- BANNER DE ALERTA: LLAVE DE ACCESO --- */}
       {!accessKeyState.loading && accessKeyState.showBanner && (

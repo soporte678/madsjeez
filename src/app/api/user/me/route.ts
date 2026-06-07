@@ -30,6 +30,12 @@ export async function GET() {
         sellerDescription: true,
         storeSlug: true,
         role: true,
+        sellerProvince: true,
+        sellerProvinceSlug: true,
+        sellerLocality: true,
+        sellerLocalitySlug: true,
+        sellerPartido: true,
+        sellerPostalCode: true,
       },
     });
 
@@ -47,6 +53,12 @@ export async function GET() {
       sellerDescription: u.sellerDescription,
       storeSlug: u.storeSlug,
       role: u.role,
+      sellerProvince: u.sellerProvince,
+      sellerProvinceSlug: u.sellerProvinceSlug,
+      sellerLocality: u.sellerLocality,
+      sellerLocalitySlug: u.sellerLocalitySlug,
+      sellerPartido: u.sellerPartido,
+      sellerPostalCode: u.sellerPostalCode,
       hasAccessKey: session.user.hasAccessKey || false,
     });
   } catch (error) {
@@ -75,6 +87,12 @@ export async function PATCH(req: NextRequest) {
       sellerName?: string;
       sellerDescription?: string;
       image?: string | null;
+      sellerProvince?: string;
+      sellerProvinceSlug?: string;
+      sellerLocality?: string;
+      sellerLocalitySlug?: string;
+      sellerPartido?: string;
+      sellerPostalCode?: string;
     };
     try {
       body = await req.json();
@@ -102,6 +120,22 @@ export async function PATCH(req: NextRequest) {
     }
     if (body.image !== undefined) {
       data.image = body.image;
+    }
+
+    // Zona de operación del seller
+    const geoFields: Array<keyof typeof body> = [
+      'sellerProvince',
+      'sellerProvinceSlug',
+      'sellerLocality',
+      'sellerLocalitySlug',
+      'sellerPartido',
+      'sellerPostalCode',
+    ];
+    for (const f of geoFields) {
+      if (typeof body[f] === 'string') {
+        const v = (body[f] as string).trim();
+        data[f] = v.length === 0 ? null : v.slice(0, 120);
+      }
     }
 
     if (Object.keys(data).length === 0) {

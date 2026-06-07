@@ -108,7 +108,17 @@ model User {
   sellerSince       DateTime? @map("seller_since")
   /// URL pública /tienda/[storeSlug]
   storeSlug         String?   @unique @map("store_slug")
-  
+
+  /// Zona de operación del vendedor (uso para filtros geo y "comprar cerca tuyo")
+  sellerProvince      String?  @map("seller_province")
+  sellerProvinceSlug  String?  @map("seller_province_slug")
+  sellerLocality      String?  @map("seller_locality")
+  sellerLocalitySlug  String?  @map("seller_locality_slug")
+  sellerPartido       String?  @map("seller_partido")
+  sellerPostalCode    String?  @map("seller_postal_code")
+  sellerLat           Decimal? @db.Decimal(10, 7) @map("seller_lat")
+  sellerLng           Decimal? @db.Decimal(10, 7) @map("seller_lng")
+
   // Sistema de reputación
   reputationColor   ReputationColor @default(VERDE) @map("reputation_color")
   reputationLevel   String          @default("VENDEDOR NUEVO") @map("reputation_level") // Madslider level
@@ -209,6 +219,8 @@ model User {
   @@index([isSeller])                    // Para queries de vendedores
   @@index([storeSlug])                   // Para páginas de tienda
   @@index([reputationColor])             // Para filtros de reputación
+  @@index([sellerProvinceSlug])          // Geo: filtro por provincia del seller
+  @@index([sellerLocalitySlug])          // Geo: filtro por localidad del seller
   @@map("users")
 }
 

@@ -621,6 +621,9 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                 salesCount={salesCount}
                 discount={discount}
                 cuotas6={cuotas6}
+                sellerProvince={product.seller?.seller_province ?? null}
+                sellerLocality={product.seller?.seller_locality ?? null}
+                sellerPartido={product.seller?.seller_partido ?? null}
               />
             </div>
           </div>

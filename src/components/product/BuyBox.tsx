@@ -32,6 +32,9 @@ interface BuyBoxProps {
   salesCount: number
   discount: number | null
   cuotas6: number
+  sellerProvince?: string | null
+  sellerLocality?: string | null
+  sellerPartido?: string | null
 }
 
 function upsertGuestCartItem(params: {
@@ -104,6 +107,9 @@ export function BuyBox({
   salesCount: _salesCount,
   discount,
   cuotas6,
+  sellerProvince,
+  sellerLocality,
+  sellerPartido,
 }: BuyBoxProps) {
   const router = useRouter()
   const { status } = useSession()
@@ -356,6 +362,17 @@ export function BuyBox({
             </div>
             {isNewSeller && (
               <span className="text-[11px] text-gray-400 mt-1 block">Vendedor nuevo</span>
+            )}
+            {(sellerLocality || sellerProvince) && (
+              <p className="mt-1.5 inline-flex items-center gap-1 text-[12px] text-gray-600 font-medium">
+                <MapPin size={13} className="text-emerald-600 flex-shrink-0" />
+                <span>
+                  {sellerPartido ? `${sellerPartido} · ` : ""}
+                  {sellerLocality || ""}
+                  {sellerLocality && sellerProvince ? ", " : ""}
+                  {sellerProvince || ""}
+                </span>
+              </p>
             )}
           </div>
           <Link 

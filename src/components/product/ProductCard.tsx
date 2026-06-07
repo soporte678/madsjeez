@@ -1,6 +1,6 @@
 import Link from "next/link"
 import Image from "next/image"
-import { Package } from "lucide-react"
+import { Package, MapPin } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 
 interface Product {
@@ -11,6 +11,8 @@ interface Product {
   seller?: {
     id: string
     full_name: string
+    sellerProvince?: string | null
+    sellerLocality?: string | null
   }
 }
 
@@ -49,6 +51,16 @@ export function ProductCard({ product }: ProductCardProps) {
           <Badge variant="secondary" className="mt-0.5 text-[11px] w-fit font-medium">
             {product.seller.full_name}
           </Badge>
+        )}
+        {(product.seller?.sellerLocality || product.seller?.sellerProvince) && (
+          <p className="text-[11px] text-muted-foreground inline-flex items-center gap-1 leading-tight">
+            <MapPin className="h-3 w-3 flex-shrink-0" />
+            <span className="truncate">
+              {product.seller.sellerLocality
+                ? `${product.seller.sellerLocality}${product.seller.sellerProvince ? `, ${product.seller.sellerProvince}` : ""}`
+                : product.seller.sellerProvince}
+            </span>
+          </p>
         )}
       </div>
     </Link>
