@@ -15,6 +15,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
+import { StoreConnections } from "@/components/dashboard/StoreConnections";
 
 type NormalizedRow = {
   externalId: string | null;
@@ -180,6 +181,19 @@ export default function ImportarPage() {
           <ExternalLink className="w-3.5 h-3.5" />
         </Link>
       </div>
+
+      {/* Conexión directa OAuth/API (solo en stage upload para no distraer del preview) */}
+      {stage === "upload" && <StoreConnections />}
+
+      {stage === "upload" && (
+        <div className="flex items-center gap-3 mb-6">
+          <div className="h-px flex-1 bg-border" />
+          <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+            O importá por archivo
+          </span>
+          <div className="h-px flex-1 bg-border" />
+        </div>
+      )}
 
       {/* STAGE: UPLOAD */}
       {stage === "upload" && (
