@@ -7,7 +7,6 @@ import { DeferredAnalytics } from "@/components/seo/DeferredAnalytics"
 import { MetaPixel } from "@/components/seo/MetaPixel"
 import { FloatingBotsLazy } from "@/components/FloatingBotsLazy"
 import { PWAProvider } from "@/components/pwa/PWAProvider"
-import { JarvisInitializerClient, JarvisChatWidgetClient } from "@/components/jarvis/JarvisClientComponents"
 
 /** Hardcoded fallback — same rationale as MetaPixel. Public meta tag. */
 const META_DOMAIN_VERIFICATION = (
@@ -146,12 +145,12 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col font-outfit">
         <MetaPixel />
         <DeferredAnalytics />
-        <JarvisInitializerClient />
+        {/* Jarvis / IA fuera de producción (decisión producto). Dejaba un
+            segundo FAB azul superpuesto al de WhatsApp. Único bot = WhatsApp. */}
         <ChatProvider>
           <Providers>
             {children}
             <FloatingBotsLazy />
-            <JarvisChatWidgetClient />
           </Providers>
         </ChatProvider>
         <PWAProvider />

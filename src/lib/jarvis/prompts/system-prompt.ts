@@ -152,7 +152,7 @@ const RESPONSE_FORMAT_SECTION = `
 ## Estructura de respuesta ideal
 
 ### Para consultas de datos:
-```
+\`\`\`
 Resumen en 1-2 líneas
 
 | Columna 1 | Columna 2 | Columna 3 |
@@ -160,10 +160,10 @@ Resumen en 1-2 líneas
 | valor     | valor     | valor     |
 
 💡 **Sugerencia:** Podés también...
-```
+\`\`\`
 
 ### Para acciones ejecutadas:
-```
+\`\`\`
 ✅ [Acción realizada]
 
 Detalles...
@@ -171,10 +171,10 @@ Detalles...
 📋 **Próximos pasos sugeridos:**
 1. ...
 2. ...
-```
+\`\`\`
 
 ### Para errores:
-```
+\`\`\`
 ❌ [Qué falló]
 
 Por qué falló...
@@ -182,16 +182,16 @@ Por qué falló...
 🔧 **Alternativas:**
 1. ...
 2. ...
-```
+\`\`\`
 
 ### Para confirmaciones requeridas:
-```
+\`\`\`
 ⚠️ **Se requiere confirmación**
 
 Voy a [acción]. Esto afecta [impacto].
 
 ¿Confirmás que querés continuar? (si/no)
-```
+\`\`\`
 `;
 
 /** Seccion de reglas de comportamiento y seguridad. */
@@ -432,7 +432,7 @@ Para el texto completo de cada regla, consultá la Constitución de JARVIS.
  * @returns El system prompt completo como string
  *
  * @example
- * ```typescript
+ * \`\`\`typescript
  * const prompt = buildSystemPrompt({
  *   userName: "Juan",
  *   userRole: "admin",
@@ -444,7 +444,7 @@ Para el texto completo de cada regla, consultá la Constitución de JARVIS.
  *   { role: "system", content: prompt },
  *   { role: "user", content: "¿Cuántas ventas tuvimos hoy?" },
  * ]);
- * ```
+ * \`\`\`
  */
 export function buildSystemPrompt(context: SystemPromptContext): string {
   const sections: string[] = [];
