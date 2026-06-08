@@ -7,8 +7,8 @@ import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import RainbowLogo from "@/components/brand/RainbowLogo"
-import { Lock, Mail, Shield } from "lucide-react"
+import RainbowLogo, { MadsjeezMark } from "@/components/brand/RainbowLogo"
+import { Lock, Mail, ShieldCheck } from "lucide-react"
 import { trackEvent } from "@/lib/analytics"
 
 function authErrorMessage(code: string | null): string | null {
@@ -64,18 +64,18 @@ function LoginForm() {
     <div className="min-h-screen flex flex-col bg-slate-900 selection:bg-[#3483fa] selection:text-white">
       <header className="border-b border-slate-800/80 bg-slate-950/50 backdrop-blur-sm">
         <div className="max-w-lg mx-auto px-4 py-4 flex items-center justify-center">
-          <RainbowLogo href="/" textSizeClassName="text-xl md:text-2xl" iconSizeClassName="w-11 h-11" />
+          <RainbowLogo href="/" textSizeClassName="text-xl md:text-2xl" iconSizeClassName="w-11 h-11" variant="onDark" />
         </div>
       </header>
 
       <div className="flex-1 flex items-center justify-center p-4 pb-16">
         <div className="w-full max-w-[440px]">
-          <div className="bg-amber-500/10 border border-amber-500/25 rounded-lg p-4 mb-6">
+          <div className="bg-slate-800/40 border border-slate-700/60 rounded-xl p-4 mb-6">
             <div className="flex items-start gap-3">
-              <Shield className="w-5 h-5 text-amber-400 mt-0.5 shrink-0" />
+              <ShieldCheck className="w-5 h-5 text-[#60a5fa] mt-0.5 shrink-0" />
               <div>
-                <p className="text-sm text-amber-100 font-medium">Cuenta MADSJEEZ Marketplace</p>
-                <p className="text-xs text-amber-200/80 mt-1 leading-relaxed">
+                <p className="text-sm text-white font-semibold">Una sola cuenta para todo Madsjeez</p>
+                <p className="text-xs text-slate-300 mt-1 leading-relaxed">
                   Accedé a favoritos, compras, carrito y panel de vendedor con la misma cuenta.
                 </p>
               </div>
@@ -84,11 +84,11 @@ function LoginForm() {
 
           <div className="bg-white rounded-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.45)] border border-slate-200/80 overflow-hidden">
             <div className="px-8 pt-8 pb-2 text-center">
-              <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-[#FFF159] shadow-lg mb-4">
-                <span className="text-[#2D3277] font-black text-xl tracking-tight">MQ</span>
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200/70 shadow-sm mb-4">
+                <MadsjeezMark className="w-10 h-10" />
               </div>
               <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Iniciar sesión</h1>
-              <p className="text-sm text-slate-500 mt-2">Entrá con tu correo y contraseña</p>
+              <p className="text-sm text-slate-500 mt-2">Entrá a tu cuenta de Madsjeez</p>
             </div>
 
             <div className="px-8 pb-8 pt-4 space-y-4">

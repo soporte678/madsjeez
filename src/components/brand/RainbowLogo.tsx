@@ -41,10 +41,10 @@ type RainbowLogoProps = {
 
 function MadsjeezMark({
   className,
-  uid,
+  uid = "std",
 }: {
   className?: string;
-  uid: string;
+  uid?: string;
 }) {
   const gradMain = `mj-grad-main-${uid}`;
   const gradEdge = `mj-grad-edge-${uid}`;
