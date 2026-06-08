@@ -15,7 +15,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import type { NormalizedRow } from "@/lib/import/platforms";
+import { stripAccents, type NormalizedRow } from "@/lib/import/platforms";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -93,10 +93,7 @@ export async function POST(req: Request) {
         categoryId = catMap.get(key)!;
       } else {
         const slug =
-          row.category
-            .toLowerCase()
-            .normalize("NFD")
-            .replace(/[̀-ͯ]/g, "")
+          stripAccents(row.category.toLowerCase())
             .replace(/\s+/g, "-")
             .replace(/[^a-z0-9-]/g, "")
             .substring(0, 70) || `cat-${skuCounter}`;

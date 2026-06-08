@@ -61,7 +61,14 @@ export async function POST(req: Request) {
   let rawRows: Record<string, unknown>[] = [];
   let headers: string[] = [];
   try {
-    const wb = XLSX.read(buf, { type: "buffer", raw: false });
+    // Para CSV, XLSX interpreta los bytes como Latin-1 por defecto y rompe los
+    // acentos (UTF-8 "í" -> "Ã­"). Si el archivo parece texto (CSV), lo
+    // decodificamos explícitamente como UTF-8 y lo leemos como string. Los
+    // .xlsx reales son binarios (zip) y se leen como buffer normal.
+    const looksBinary = buf.length >= 2 && buf[0] === 0x50 && buf[1] === 0x4b; // 'PK' = zip/xlsx
+    const wb = looksBinary
+      ? XLSX.read(buf, { type: "buffer", raw: false })
+      : XLSX.read(new TextDecoder("utf-8").decode(buf), { type: "string", raw: false });
     const sheet = wb.Sheets[wb.SheetNames[0]];
     if (!sheet) {
       return NextResponse.json({ error: "El archivo no tiene hojas" }, { status: 400 });

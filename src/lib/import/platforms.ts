@@ -79,12 +79,22 @@ export const PLATFORMS: Record<PlatformId, PlatformMeta> = {
 /* Helpers de parseo                                                   */
 /* ------------------------------------------------------------------ */
 
+export function stripAccents(s: string): string {
+  // Descomponemos (NFD) y filtramos las marcas combinantes por código de
+  // carácter (U+0300–U+036F). Funciona tanto si la fuente viene compuesta
+  // (NFC) como descompuesta (NFD), sin depender de regex con chars invisibles.
+  const nfd = s.normalize("NFD");
+  let out = "";
+  for (const ch of nfd) {
+    const code = ch.codePointAt(0) ?? 0;
+    if (code >= 0x300 && code <= 0x36f) continue; // marca combinante → saltar
+    out += ch;
+  }
+  return out;
+}
+
 function norm(s: unknown): string {
-  return String(s ?? "")
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, ""); // saca tildes
+  return stripAccents(String(s ?? "").trim().toLowerCase());
 }
 
 function toNumber(v: unknown): number {
