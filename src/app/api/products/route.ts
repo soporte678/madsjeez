@@ -24,7 +24,7 @@ export async function GET(req: Request) {
           price,
           original_price,
           compare_price,
-          product_images(url, order, is_primary),
+          product_images(url, order),
           seller:seller_id(id, name, sellerName)
         `)
         .eq("is_active", true)
@@ -45,11 +45,9 @@ export async function GET(req: Request) {
           const rows = (p.product_images || []).filter((im: { url?: string }) =>
             hasValidProductImageUrl(im.url)
           )
-          const sorted = [...rows].sort((a: any, b: any) => {
-            if (a.is_primary && !b.is_primary) return -1
-            if (!a.is_primary && b.is_primary) return 1
-            return (a.order ?? 0) - (b.order ?? 0)
-          })
+          const sorted = [...rows].sort(
+            (a: any, b: any) => (a.order ?? 0) - (b.order ?? 0),
+          )
           const listPrice = p.compare_price ?? p.original_price
           return {
             id: p.id,
@@ -81,7 +79,7 @@ export async function GET(req: Request) {
       .from('products')
       .select(`
         *,
-        product_images(url, order, is_primary),
+        product_images(url, order),
         seller:seller_id(id, name, sellerName, reputation_color),
         category:categories(id, name, slug),
         reviews(count)

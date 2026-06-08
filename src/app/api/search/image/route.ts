@@ -81,7 +81,7 @@ Si no podés identificar el producto, devolvé:
         .from("products")
         .select(`
           id, title, price, original_price, condition, free_shipping, stock,
-          product_images(url, is_primary)
+          product_images(url, order)
         `)
         .eq("is_active", true)
         .or(orConditions)

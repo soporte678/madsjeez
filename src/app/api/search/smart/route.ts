@@ -77,7 +77,7 @@ Responde SOLO con el JSON válido, sin markdown ni explicación.`
       .from("products")
       .select(`
         id, title, price, original_price, condition, free_shipping, stock,
-        product_images(url, is_primary)
+        product_images(url, order)
       `)
       .eq("is_active", true)
 
