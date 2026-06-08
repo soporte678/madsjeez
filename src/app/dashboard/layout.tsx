@@ -74,6 +74,7 @@ const MENU_GROUPS: MenuGroup[] = [
       { id: "resumen", label: "Resumen", href: "/dashboard/resumen" },
       { id: "ventas-novedades", label: "Novedades", href: "/dashboard/ventas-novedades" },
       { id: "publicaciones", label: "Publicaciones", href: "/dashboard/publicaciones" },
+      { id: "importar", label: "Importar productos", href: "/dashboard/importar" },
       { id: "mi-tienda", label: "Mi tienda publica", href: "/dashboard/mi-tienda" },
       // Mercado Libre sync oculto temporalmente — pendiente decisión producto.
       // { id: "meli-sync", label: "Mercado Libre", href: "/dashboard/meli-sync" },

@@ -1047,6 +1047,67 @@ export const TUTORIALES: Tutorial[] = [
     ctaHref: 'https://www.mercadopago.com.ar',
     related: ['configurar-cuotas-mercadopago', 'ver-metricas'],
   },
+  {
+    slug: 'importar-catalogo',
+    title: 'Importar tu catálogo desde otra tienda',
+    subtitle: 'Tienda Nube, Shopify, Empretienda y WooCommerce en minutos',
+    audience: 'seller',
+    duration: '6 min',
+    level: 'fácil',
+    tags: ['importación', 'catálogo', 'migración', 'tiendanube', 'shopify'],
+    icon: 'list-checks',
+    summary:
+      'Cómo exportar tus productos de tu tienda actual y subirlos a Madsjeez con un solo archivo, imágenes incluidas.',
+    intro:
+      'Madsjeez detecta automáticamente de qué plataforma viene tu archivo y mapea las columnas por vos. No hay límite de cantidad de productos. Los duplicados (mismo título) se saltean solos, así podés reimportar sin miedo. Las imágenes se traen desde el link público de tu tienda original.',
+    steps: [
+      {
+        title: 'Exportá el catálogo de tu tienda actual',
+        body:
+          'Tienda Nube: Productos → Exportar (te llega un CSV por email). Shopify: Products → Export → Plain CSV → All products. Empretienda: Productos → Exportar productos. WooCommerce: Productos → Exportar → todas las columnas → Generar CSV. Guardá el archivo .csv o .xlsx en tu compu.',
+        visualHint:
+          'Collage de los 4 paneles (Tienda Nube, Shopify, Empretienda, Woo) con el botón Exportar resaltado en cada uno.',
+      },
+      {
+        title: 'Entrá a Importar productos',
+        body:
+          'En tu panel Madsjeez, andá a Ventas → Importar productos. Vas a ver una zona para arrastrar el archivo.',
+        visualHint:
+          'Sidebar del dashboard con "Importar productos" resaltado bajo el grupo Ventas.',
+      },
+      {
+        title: 'Subí el archivo',
+        body:
+          'Arrastrá tu CSV/Excel o tocá "Elegir archivo". Apenas lo subís, Madsjeez lo analiza y te dice qué plataforma detectó (Tienda Nube, Shopify, etc.). Si la detección no es correcta, podés forzar la plataforma con los botones de arriba.',
+        visualHint:
+          'Dropzone con un archivo siendo arrastrado y un badge verde "Plataforma detectada: Tienda Nube".',
+      },
+      {
+        title: 'Revisá la vista previa',
+        body:
+          'Vas a ver cuántos productos válidos se detectaron, cuántos traen imagen y cuántos tienen precio. Abajo hay una tabla con los primeros 8 productos: título, categoría, stock, precio y foto. Confirmá que se ve bien.',
+        visualHint:
+          'Tarjetas de stats (productos válidos / con imágenes / con precio) + tabla preview con miniaturas.',
+      },
+      {
+        title: 'Importá todo',
+        body:
+          'Tocá "Importar X productos". En unos segundos quedan publicados en tu catálogo con sus imágenes. Te mostramos cuántos se importaron, cuántas imágenes se trajeron y cuántos se saltearon por duplicados.',
+        visualHint:
+          'Pantalla de éxito con contadores grandes: Importados, Imágenes, Saltados + botón "Ver mis publicaciones".',
+      },
+      {
+        title: 'Revisá precios y envíos',
+        body:
+          'Después de importar, repasá tus publicaciones. Madsjeez respeta el precio del archivo, pero el envío y las promos las configurás acá según tus reglas. Ajustá categorías si alguna quedó como "General".',
+        visualHint:
+          'Listado de publicaciones recién importadas con un chip "Importado" y acceso a editar.',
+      },
+    ],
+    ctaLabel: 'Importar mi catálogo',
+    ctaHref: '/dashboard/importar',
+    related: ['publicar-producto', 'crear-cuenta', 'configurar-pagos'],
+  },
 ];
 
 export function getTutorial(slug: string): Tutorial | undefined {
