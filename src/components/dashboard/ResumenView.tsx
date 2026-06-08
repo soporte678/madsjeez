@@ -142,13 +142,25 @@ export default function ResumenView() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
     fetch('/api/dashboard/summary')
       .then(r => r.json())
       .then(d => {
-        setData(d);
+        if (cancelled) return;
+        // Solo aceptamos respuestas con el shape esperado. Si la API devuelve
+        // { error: "Unauthorized" } u otro objeto incompleto, lo tratamos como
+        // sin-datos para no crashear en d.sales/d.money (pantalla blanca).
+        if (d && !d.error && d.sales && d.money) {
+          setData(d as SummaryData);
+        } else {
+          setData(null);
+        }
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
   }, []);
 
   if (loading) {
@@ -159,7 +171,27 @@ export default function ResumenView() {
     );
   }
 
-  if (!data) return null;
+  if (!data) {
+    return (
+      <div className="max-w-[1200px] w-full py-16 flex flex-col items-center justify-center text-center">
+        <AlertCircle className="w-10 h-10 text-muted-foreground mb-4" />
+        <h2 className="text-lg font-semibold text-foreground mb-1">
+          No pudimos cargar tu resumen
+        </h2>
+        <p className="text-sm text-muted-foreground mb-5 max-w-md">
+          Puede ser que tu sesión haya expirado o haya un problema temporal.
+          Reintentá en unos segundos.
+        </p>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity"
+        >
+          Reintentar
+        </button>
+      </div>
+    );
+  }
 
   const d = data;
 
