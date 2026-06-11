@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { createClient } from "@/lib/supabase/server";
+import { supabaseService } from "@/lib/supabase/service";
 import { GUIAS_COMPRA } from "@/data/guias-compra";
 
 const BASE_URL = "https://www.madsjeez.com.ar";
@@ -45,7 +45,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   try {
-    const supabase = await createClient();
+    // Service role: el sitemap es server-only y necesita leer users (store_slug),
+    // que con el cliente anónimo queda bloqueado por RLS (por eso salían 0 tiendas).
+    const supabase = supabaseService;
 
     /* -- Productos activos + categorías + sellers ------------------- */
     const [{ data: products }, { data: categories }, { data: stockRows }, { data: sellers }, { data: stores }] =
