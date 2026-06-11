@@ -72,8 +72,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     /* -- Sellers/stores viven en `users` (Prisma). Bloqueados por RLS al
           cliente anónimo, así que usamos service role en un try aislado para
           que su falla no tumbe productos/categorías. ------------------ */
-    let sellers: { id: string; updated_at: string | null }[] | null = null;
-    let stores: { store_slug: string | null; updated_at: string | null }[] | null = null;
+    type SellerRow = { id: string; updated_at: string | null };
+    type StoreRow = { store_slug: string | null; updated_at: string | null };
+    let sellers: SellerRow[] = [];
+    let stores: StoreRow[] = [];
     try {
       const [{ data: s1 }, { data: s2 }] = await Promise.all([
         supabaseService.from("users").select("id, updated_at").eq("isSeller", true).limit(2000),
@@ -84,8 +86,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           .not("store_slug", "is", null)
           .limit(2000),
       ]);
-      sellers = s1 as typeof sellers;
-      stores = s2 as typeof stores;
+      sellers = (s1 as SellerRow[] | null) ?? [];
+      stores = (s2 as StoreRow[] | null) ?? [];
     } catch {
       /* sin sellers/stores en el sitemap si falla service role */
     }
@@ -117,15 +119,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.7,
       }));
 
-    const sellerRoutes: MetadataRoute.Sitemap = (sellers ?? []).map((s) => ({
+    const sellerRoutes: MetadataRoute.Sitemap = sellers.map((s) => ({
       url: `${BASE_URL}/seller/${s.id}`,
       lastModified: s.updated_at ? new Date(s.updated_at) : new Date(),
       changeFrequency: "weekly" as const,
       priority: 0.6,
     }));
 
-    const storeRoutes: MetadataRoute.Sitemap = (stores ?? [])
-      .filter((s): s is { store_slug: string; updated_at: string | null } => Boolean(s.store_slug))
+    const storeRoutes: MetadataRoute.Sitemap = stores
+      .filter((s) => Boolean(s.store_slug))
       .map((s) => ({
         url: `${BASE_URL}/tienda/${s.store_slug}`,
         lastModified: s.updated_at ? new Date(s.updated_at) : new Date(),
