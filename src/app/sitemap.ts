@@ -56,10 +56,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           .eq("is_active", true)
           .order("updated_at", { ascending: false })
           .limit(5000),
+        // categories: la tabla NO tiene is_active ni updated_at (solo created_at).
         supabase
           .from("categories")
-          .select("id, slug, updated_at")
-          .eq("is_active", true),
+          .select("id, slug, created_at"),
         // Para gating de indexación: contamos productos en stock por categoría.
         supabase
           .from("products")
@@ -67,15 +67,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           .eq("is_active", true)
           .gt("stock", 0)
           .limit(10000),
+        // Sellers/stores viven en `users` (Prisma), no en `profiles`.
         supabase
-          .from("profiles")
+          .from("users")
           .select("id, updated_at")
-          .eq("is_seller", true)
+          .eq("isSeller", true)
           .limit(2000),
         supabase
-          .from("profiles")
+          .from("users")
           .select("store_slug, updated_at")
-          .eq("is_seller", true)
+          .eq("isSeller", true)
           .not("store_slug", "is", null)
           .limit(2000),
       ]);
@@ -100,7 +101,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .filter((c) => (countByCat.get((c as { id: string }).id) ?? 0) >= MIN_INDEX)
       .map((c) => ({
         url: `${BASE_URL}/category/${c.slug}`,
-        lastModified: c.updated_at ? new Date(c.updated_at) : new Date(),
+        lastModified: (c as { created_at?: string }).created_at
+          ? new Date((c as { created_at: string }).created_at)
+          : new Date(),
         changeFrequency: "daily" as const,
         priority: 0.7,
       }));

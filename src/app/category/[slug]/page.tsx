@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { Header } from "@/components/Header";
@@ -85,6 +85,23 @@ async function getCategory(slug: string): Promise<CategoryView | null> {
       parentId: true,
     },
   });
+}
+
+/**
+ * Si la categoría fue consolidada en otra (redirect_to_slug, columna fuera de
+ * Prisma), devolvemos el slug canónico para hacer 301. Concentra autoridad en
+ * una sola URL en vez de repartirla entre duplicadas del import MeLi.
+ */
+async function getCategoryRedirect(slug: string): Promise<string | null> {
+  try {
+    const rows = await prisma.$queryRaw<{ redirect_to_slug: string | null }[]>`
+      SELECT redirect_to_slug FROM categories WHERE slug = ${slug} LIMIT 1
+    `;
+    const target = rows[0]?.redirect_to_slug;
+    return target && target !== slug ? target : null;
+  } catch {
+    return null;
+  }
 }
 
 async function getCategoryProducts(categoryIds: string[]) {
@@ -210,6 +227,13 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+
+  // 301 a la categoría canónica si esta fue consolidada (duplicada del import MeLi).
+  const redirectTo = await getCategoryRedirect(slug);
+  if (redirectTo) {
+    permanentRedirect(`/category/${redirectTo}`);
+  }
+
   const category = await getCategory(slug);
 
   if (!category) {
