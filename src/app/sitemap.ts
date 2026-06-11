@@ -38,30 +38,38 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     const supabase = await createClient();
 
-    /* -- Productos activos ------------------------------------------ */
-    const [{ data: products }, { data: categories }, { data: sellers }, { data: stores }] = await Promise.all([
-      supabase
-        .from("products")
-        .select("id, updated_at")
-        .eq("is_active", true)
-        .order("updated_at", { ascending: false })
-        .limit(5000),
-      supabase
-        .from("categories")
-        .select("slug, updated_at")
-        .eq("is_active", true),
-      supabase
-        .from("profiles")
-        .select("id, updated_at")
-        .eq("is_seller", true)
-        .limit(2000),
-      supabase
-        .from("profiles")
-        .select("store_slug, updated_at")
-        .eq("is_seller", true)
-        .not("store_slug", "is", null)
-        .limit(2000),
-    ]);
+    /* -- Productos activos + categorías + sellers ------------------- */
+    const [{ data: products }, { data: categories }, { data: stockRows }, { data: sellers }, { data: stores }] =
+      await Promise.all([
+        supabase
+          .from("products")
+          .select("id, updated_at")
+          .eq("is_active", true)
+          .order("updated_at", { ascending: false })
+          .limit(5000),
+        supabase
+          .from("categories")
+          .select("id, slug, updated_at")
+          .eq("is_active", true),
+        // Para gating de indexación: contamos productos en stock por categoría.
+        supabase
+          .from("products")
+          .select("category_id")
+          .eq("is_active", true)
+          .gt("stock", 0)
+          .limit(10000),
+        supabase
+          .from("profiles")
+          .select("id, updated_at")
+          .eq("is_seller", true)
+          .limit(2000),
+        supabase
+          .from("profiles")
+          .select("store_slug, updated_at")
+          .eq("is_seller", true)
+          .not("store_slug", "is", null)
+          .limit(2000),
+      ]);
 
     const productRoutes: MetadataRoute.Sitemap = (products ?? []).map((p) => ({
       url: `${BASE_URL}/product/${p.id}`,
@@ -70,12 +78,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
     }));
 
-    const categoryRoutes: MetadataRoute.Sitemap = (categories ?? []).map((c) => ({
-      url: `${BASE_URL}/category/${c.slug}`,
-      lastModified: c.updated_at ? new Date(c.updated_at) : new Date(),
-      changeFrequency: "daily" as const,
-      priority: 0.7,
-    }));
+    // Tally de productos en stock por categoría → solo indexamos las que
+    // tienen ≥5 (mismo umbral que el gate de la página de categoría).
+    const MIN_INDEX = 5;
+    const countByCat = new Map<string, number>();
+    for (const r of stockRows ?? []) {
+      const cid = (r as { category_id: string | null }).category_id;
+      if (cid) countByCat.set(cid, (countByCat.get(cid) ?? 0) + 1);
+    }
+
+    const categoryRoutes: MetadataRoute.Sitemap = (categories ?? [])
+      .filter((c) => (countByCat.get((c as { id: string }).id) ?? 0) >= MIN_INDEX)
+      .map((c) => ({
+        url: `${BASE_URL}/category/${c.slug}`,
+        lastModified: c.updated_at ? new Date(c.updated_at) : new Date(),
+        changeFrequency: "daily" as const,
+        priority: 0.7,
+      }));
 
     const sellerRoutes: MetadataRoute.Sitemap = (sellers ?? []).map((s) => ({
       url: `${BASE_URL}/seller/${s.id}`,

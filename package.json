@@ -8,6 +8,7 @@
     "build": "prisma generate && next build",
     "start": "next start -H 0.0.0.0 -p ${PORT:-3000}",
     "lint": "eslint",
+    "seo:export-inventory": "node scripts/seo-export-inventory.mjs",
     "migrate:deploy": "prisma migrate deploy",
     "test": "vitest run",
     "migrate:resolve:access-key-applied": "prisma migrate resolve --applied 20260504174800_add_access_key",

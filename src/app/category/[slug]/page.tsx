@@ -21,6 +21,7 @@ import {
   Target,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { countInStockProducts, categoryIndexStatus, robotsFor } from "@/lib/seo/indexability";
 import { seedCategoriesIfEmpty } from "@/lib/seed-categories";
 import { buildCategorySeo } from "@/lib/categorySeo";
 
@@ -170,10 +171,18 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const canonicalPath = `/category/${category.slug}`;
   const canonicalUrl = `${SITE_URL}${canonicalPath}`;
 
+  // Gate de indexación: solo indexamos categorías con inventario real
+  // (≥5 productos en stock, contando subcategorías). Evita index bloat de
+  // las ~378 categorías vacías del catálogo.
+  const categoryIds = [category.id, ...subcategories.map((s) => s.id)];
+  const inStock = await countInStockProducts(categoryIds);
+  const indexStatus = categoryIndexStatus(inStock);
+
   return {
     title: seo.seoTitle,
     description: seo.seoDescription,
     keywords: seo.keywords,
+    robots: robotsFor(indexStatus),
     alternates: { canonical: canonicalPath },
     openGraph: {
       title: seo.seoTitle,
