@@ -22,10 +22,18 @@ import {
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { countInStockProducts, categoryIndexStatus, robotsFor } from "@/lib/seo/indexability";
+import { getGuiasForCategory } from "@/data/guias-compra";
 import { seedCategoriesIfEmpty } from "@/lib/seed-categories";
 import { buildCategorySeo } from "@/lib/categorySeo";
 
 const SITE_URL = "https://www.madsjeez.com.ar";
+
+/**
+ * ISR: regeneramos la página de categoría cada 30 min. Mejora crawl budget y
+ * TTFB sin servir contenido viejo. La categoría no muta datos en el render
+ * (a diferencia del producto, que incrementa vistas), así que es seguro.
+ */
+export const revalidate = 1800;
 
 function getDarkAccent(accent: string) {
   const accentMap: Record<string, string> = {
@@ -213,6 +221,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
     getParentCategory(category.parentId),
   ]);
   const relatedCategories = await getRelatedCategories(category);
+  const relatedGuias = getGuiasForCategory(category.slug);
   const categoryIds = [category.id, ...subcategories.map((subcategory) => subcategory.id)];
   const products = await getCategoryProducts(categoryIds);
   const searchHref = `/search?category=${encodeURIComponent(category.id)}`;
@@ -498,6 +507,29 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
                 </div>
               </CardContent>
             </Card>
+
+            {relatedGuias.length > 0 && (
+              <Card className="rounded-3xl border-0 bg-white shadow-sm">
+                <CardContent className="p-6">
+                  <h2 className="text-2xl font-black text-slate-950">Guias de compra utiles</h2>
+                  <p className="mt-2 text-sm text-slate-600">
+                    Antes de comprar, mira como elegir el repuesto o la prenda correcta.
+                  </p>
+                  <div className="mt-5 grid gap-2">
+                    {relatedGuias.map((g) => (
+                      <Link
+                        key={g.slug}
+                        href={`/guias/${g.slug}`}
+                        className="group flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 hover:border-slate-300 hover:bg-white"
+                      >
+                        <span>{g.title}</span>
+                        <ArrowRight className="h-4 w-4 flex-shrink-0 text-slate-400 group-hover:text-slate-700" />
+                      </Link>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             <Card className="rounded-3xl border-0 bg-white shadow-sm">
               <CardContent className="p-6">

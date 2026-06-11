@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { createClient } from "@/lib/supabase/server";
+import { GUIAS_COMPRA } from "@/data/guias-compra";
 
 const BASE_URL = "https://www.madsjeez.com.ar";
 
@@ -25,6 +26,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...['postularte-fundador','crear-cuenta','publicar-producto','configurar-pagos','gestionar-preguntas','generar-etiquetas','ver-metricas','usar-ads'].map((s) => ({
       url: `${BASE_URL}/tutoriales/${s}`,
       lastModified: new Date(),
+      changeFrequency: 'monthly' as const,
+      priority: 0.6,
+    })),
+    // Guías de compra (contenido editorial real, ancladas a categorías con inventario)
+    { url: `${BASE_URL}/guias`,                       lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
+    ...GUIAS_COMPRA.map((g) => ({
+      url: `${BASE_URL}/guias/${g.slug}`,
+      lastModified: new Date(g.updatedAt),
       changeFrequency: 'monthly' as const,
       priority: 0.6,
     })),
