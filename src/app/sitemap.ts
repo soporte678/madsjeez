@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { createClient } from "@/lib/supabase/server";
 import { supabaseService } from "@/lib/supabase/service";
 import { GUIAS_COMPRA } from "@/data/guias-compra";
 
@@ -45,43 +46,49 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   try {
-    // Service role: el sitemap es server-only y necesita leer users (store_slug),
-    // que con el cliente anónimo queda bloqueado por RLS (por eso salían 0 tiendas).
-    const supabase = supabaseService;
+    // Cliente anónimo para datos públicos (products/categories tienen RLS de
+    // lectura pública y funcionan acá).
+    const supabase = await createClient();
 
-    /* -- Productos activos + categorías + sellers ------------------- */
-    const [{ data: products }, { data: categories }, { data: stockRows }, { data: sellers }, { data: stores }] =
-      await Promise.all([
-        supabase
-          .from("products")
-          .select("id, updated_at")
-          .eq("is_active", true)
-          .order("updated_at", { ascending: false })
-          .limit(5000),
-        // categories: la tabla NO tiene is_active ni updated_at (solo created_at).
-        supabase
-          .from("categories")
-          .select("id, slug, created_at"),
-        // Para gating de indexación: contamos productos en stock por categoría.
-        supabase
-          .from("products")
-          .select("category_id")
-          .eq("is_active", true)
-          .gt("stock", 0)
-          .limit(10000),
-        // Sellers/stores viven en `users` (Prisma), no en `profiles`.
-        supabase
-          .from("users")
-          .select("id, updated_at")
-          .eq("isSeller", true)
-          .limit(2000),
-        supabase
+    /* -- Productos activos + categorías ------------------------------ */
+    const [{ data: products }, { data: categories }, { data: stockRows }] = await Promise.all([
+      supabase
+        .from("products")
+        .select("id, updated_at")
+        .eq("is_active", true)
+        .order("updated_at", { ascending: false })
+        .limit(5000),
+      // categories: la tabla NO tiene is_active ni updated_at (solo created_at).
+      supabase.from("categories").select("id, slug, created_at"),
+      // Para gating de indexación: contamos productos en stock por categoría.
+      supabase
+        .from("products")
+        .select("category_id")
+        .eq("is_active", true)
+        .gt("stock", 0)
+        .limit(10000),
+    ]);
+
+    /* -- Sellers/stores viven en `users` (Prisma). Bloqueados por RLS al
+          cliente anónimo, así que usamos service role en un try aislado para
+          que su falla no tumbe productos/categorías. ------------------ */
+    let sellers: { id: string; updated_at: string | null }[] | null = null;
+    let stores: { store_slug: string | null; updated_at: string | null }[] | null = null;
+    try {
+      const [{ data: s1 }, { data: s2 }] = await Promise.all([
+        supabaseService.from("users").select("id, updated_at").eq("isSeller", true).limit(2000),
+        supabaseService
           .from("users")
           .select("store_slug, updated_at")
           .eq("isSeller", true)
           .not("store_slug", "is", null)
           .limit(2000),
       ]);
+      sellers = s1 as typeof sellers;
+      stores = s2 as typeof stores;
+    } catch {
+      /* sin sellers/stores en el sitemap si falla service role */
+    }
 
     const productRoutes: MetadataRoute.Sitemap = (products ?? []).map((p) => ({
       url: `${BASE_URL}/product/${p.id}`,
