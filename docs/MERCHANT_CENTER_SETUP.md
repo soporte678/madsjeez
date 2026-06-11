@@ -4,7 +4,7 @@ El feed de productos ya está implementado y se genera solo desde la base de
 datos. Solo falta darlo de alta en Merchant Center.
 
 ## Feed
-- **URL:** `https://www.madsjeez.com.ar/api/feed/google-merchant.xml`
+- **URL:** `https://www.madsjeez.com.ar/api/feed/google-merchant`
 - **Formato:** RSS 2.0 con namespace `g:` (formato oficial de Google).
 - **Contenido:** solo productos activos con stock, precio e imagen válida.
   Precio/stock salen de la misma DB que la página y el JSON-LD (consistentes).
@@ -21,7 +21,7 @@ datos. Solo falta darlo de alta en Merchant Center.
    Programar obtención**:
    - Nombre: `Madsjeez feed principal`
    - País de venta: Argentina · Idioma: Español
-   - URL del archivo: `https://www.madsjeez.com.ar/api/feed/google-merchant.xml`
+   - URL del archivo: `https://www.madsjeez.com.ar/api/feed/google-merchant`
    - Frecuencia: diaria (el feed se regenera con cache de 30 min).
 5. Configurar **envío** y **impuestos** a nivel cuenta (Argentina).
 

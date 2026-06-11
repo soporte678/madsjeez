@@ -46,6 +46,6 @@ export async function GET(req: NextRequest) {
       sinImagen: { count: noImage.length, sample: noImage.slice(0, 20) },
       sinPrecio: { count: noPrice.length, sample: noPrice.slice(0, 20) },
     },
-    feedUrl: "https://www.madsjeez.com.ar/api/feed/google-merchant.xml",
+    feedUrl: "https://www.madsjeez.com.ar/api/feed/google-merchant",
   });
 }
