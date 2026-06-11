@@ -1,8 +1,11 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { NextRequest, NextResponse } from "next/server"
+import { guardAiRoute } from "@/lib/ai/guard"
 
 export async function POST(req: NextRequest) {
   try {
+    const _g = await guardAiRoute(req, { requireAuth: true, max: 20 });
+    if (!_g.ok) return _g.response;
     const apiKey = process.env.GEMINI_API_KEY
     if (!apiKey) return NextResponse.json({ error: "GEMINI_API_KEY not configured" }, { status: 500 })
 

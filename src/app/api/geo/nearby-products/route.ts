@@ -7,6 +7,7 @@
 
 import { NextResponse } from "next/server";
 import { supabaseService } from "@/lib/supabase/service";
+import { checkRateLimit, clientIpFromRequest } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,13 @@ function num(v: string | null, def: number): number {
 }
 
 export async function GET(req: Request) {
+  const rl = checkRateLimit(`geo:${clientIpFromRequest(req)}`, { max: 40, windowMs: 60_000 });
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "Demasiadas solicitudes" },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } },
+    );
+  }
   const { searchParams } = new URL(req.url);
   const lat = Number(searchParams.get("lat"));
   const lng = Number(searchParams.get("lng"));

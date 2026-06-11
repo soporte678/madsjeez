@@ -2,8 +2,13 @@ import { GoogleGenerativeAI } from "@google/generative-ai"
 import { NextRequest, NextResponse } from "next/server"
 import { getSupabaseService } from "@/lib/supabase/service"
 import { hasValidProductImageUrl, primaryImageUrlFromRows } from "@/lib/productVisibility"
+import { guardAiRoute } from "@/lib/ai/guard"
 
 export async function POST(req: NextRequest) {
+  // Buyer-facing (homepage): no exige auth, pero rate-limit por IP para frenar abuso de costo.
+  const _g = await guardAiRoute(req, { requireAuth: false, max: 30 });
+  if (!_g.ok) return _g.response;
+
   const fallback = (reason: string) =>
     NextResponse.json({
       section_title: "Productos populares",

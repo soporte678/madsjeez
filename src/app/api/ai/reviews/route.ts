@@ -1,9 +1,12 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { NextRequest, NextResponse } from "next/server"
+import { guardAiRoute } from "@/lib/ai/guard"
 import { getSupabaseService } from "@/lib/supabase/service"
 
 export async function POST(req: NextRequest) {
   try {
+    const _g = await guardAiRoute(req, { requireAuth: true, max: 20 });
+    if (!_g.ok) return _g.response;
     let supabase
     try {
       supabase = getSupabaseService()

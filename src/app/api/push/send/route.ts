@@ -20,11 +20,26 @@ if (webpush && vapidPublicKey && vapidPrivateKey) {
 
 export async function POST(req: NextRequest) {
   try {
+    // SEGURIDAD: este endpoint envía notificaciones push. Es solo server-to-server
+    // (procesos internos / admin). Sin esta verificación, cualquiera podía
+    // spamear/phishear a TODOS los usuarios. Requiere secreto interno.
+    const internalSecret = process.env.ADMIN_SETUP_SECRET || process.env.INTERNAL_API_SECRET;
+    const provided =
+      req.headers.get("x-internal-secret") ||
+      (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
+    if (!internalSecret || !provided || provided !== internalSecret) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
+
     const { userId, title, body, icon, url } = await req.json();
 
-    // Buscar suscripciones del usuario
+    // Nunca permitir blast a TODOS sin un userId explícito.
+    if (!userId || typeof userId !== "string") {
+      return NextResponse.json({ error: "userId requerido" }, { status: 400 });
+    }
+
     const subscriptions = await prisma.pushSubscription.findMany({
-      where: userId ? { userId } : {},
+      where: { userId },
     });
 
     const payload = JSON.stringify({
