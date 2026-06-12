@@ -156,6 +156,28 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           ...(pvDiagrams ?? []).map((d) => ({ url: `${BASE_URL}/despieces/${d.id}`, lastModified: new Date(), changeFrequency: "weekly" as const, priority: 0.6 })),
         ];
       }
+
+      // Diagnóstico por síntomas (flag propio)
+      const { data: diagFlag } = await supabaseService
+        .from("feature_flags").select("enabled").eq("key", "partsvision_diagnostics_enabled").maybeSingle();
+      if (diagFlag?.enabled) {
+        const { data: symptoms } = await supabaseService
+          .from("pv_symptoms").select("slug, type:machine_type_id(slug)").eq("status", "published").limit(2000);
+        const typeSlugs = new Set<string>();
+        const symRoutes: MetadataRoute.Sitemap = [];
+        for (const sRow of symptoms ?? []) {
+          const tt = (sRow as { type: { slug: string } | { slug: string }[] }).type;
+          const ts = (Array.isArray(tt) ? tt[0] : tt)?.slug;
+          if (!ts) continue;
+          typeSlugs.add(ts);
+          symRoutes.push({ url: `${BASE_URL}/diagnostico/${ts}/${sRow.slug}`, lastModified: new Date(), changeFrequency: "monthly" as const, priority: 0.5 });
+        }
+        pvRoutes.push(
+          { url: `${BASE_URL}/diagnostico`, lastModified: new Date(), changeFrequency: "monthly" as const, priority: 0.6 },
+          ...Array.from(typeSlugs).map((ts) => ({ url: `${BASE_URL}/diagnostico/${ts}`, lastModified: new Date(), changeFrequency: "monthly" as const, priority: 0.5 })),
+          ...symRoutes,
+        );
+      }
     } catch {
       /* sin PartsVision en el sitemap si falla */
     }
