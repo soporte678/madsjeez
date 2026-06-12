@@ -135,7 +135,32 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.7,
       }));
 
-    return [...staticRoutes, ...productRoutes, ...categoryRoutes, ...sellerRoutes, ...storeRoutes];
+    /* -- PartsVision: solo si el flag SEO está activo y hay contenido publicado -- */
+    let pvRoutes: MetadataRoute.Sitemap = [];
+    try {
+      const { data: flag } = await supabaseService
+        .from("feature_flags").select("enabled").eq("key", "partsvision_seo_enabled").maybeSingle();
+      if (flag?.enabled) {
+        const [{ data: pvTypes }, { data: pvModels }, { data: pvDiagrams }] = await Promise.all([
+          supabaseService.from("pv_machine_types").select("slug").eq("active", true),
+          supabaseService.from("pv_machine_models").select("slug, brand:brand_id(slug)").neq("status", "draft").limit(2000),
+          supabaseService.from("pv_diagrams").select("id").eq("publication_status", "published").limit(2000),
+        ]);
+        pvRoutes = [
+          { url: `${BASE_URL}/repuestos`, lastModified: new Date(), changeFrequency: "weekly" as const, priority: 0.7 },
+          ...(pvTypes ?? []).map((t) => ({ url: `${BASE_URL}/maquinas/${t.slug}`, lastModified: new Date(), changeFrequency: "weekly" as const, priority: 0.6 })),
+          ...(pvModels ?? [])
+            .map((m) => m as unknown as { slug: string; brand: { slug: string } | null })
+            .filter((m) => m.brand?.slug)
+            .map((m) => ({ url: `${BASE_URL}/modelos/${m.brand!.slug}/${m.slug}`, lastModified: new Date(), changeFrequency: "weekly" as const, priority: 0.6 })),
+          ...(pvDiagrams ?? []).map((d) => ({ url: `${BASE_URL}/despieces/${d.id}`, lastModified: new Date(), changeFrequency: "weekly" as const, priority: 0.6 })),
+        ];
+      }
+    } catch {
+      /* sin PartsVision en el sitemap si falla */
+    }
+
+    return [...staticRoutes, ...productRoutes, ...categoryRoutes, ...sellerRoutes, ...storeRoutes, ...pvRoutes];
   } catch {
     /* -- Fallback: solo rutas estáticas si la DB falla -------------- */
     return staticRoutes;
