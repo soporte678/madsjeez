@@ -145,7 +145,7 @@ export async function POST(req: Request) {
     }
 
     // Crear preference. Si MP responde 401 (token revocado/expirado),
-    // forzamos refresh y reintentamos UNA vez.
+    // forzamos refresh REAL (force:true, no re-lee el env vencido) y reintentamos.
     let preferenceResponse
     try {
       preferenceResponse = await preference.create({ body: preferenceData as any })
@@ -154,15 +154,16 @@ export async function POST(req: Request) {
       const msg = String(mpErr?.message || "").toLowerCase()
       const looksUnauthorized = status === 401 || msg.includes("unauthorized") || msg.includes("invalid access token")
       if (looksUnauthorized) {
+        // force:true ignora el env vencido y pide token fresco por client_credentials.
         invalidateMarketplaceAccessToken()
-        mpClient = await getMpClient()
-        if (mpClient) {
-          const retry = new Preference(mpClient)
-          preferenceResponse = await retry.create({ body: preferenceData as any })
-        } else {
-          throw mpErr
-        }
+        const freshToken = await getMarketplaceAccessToken({ force: true })
+        const retry = new Preference(new MercadoPagoConfig({ accessToken: freshToken, options: { timeout: 5000 } }))
+        preferenceResponse = await retry.create({ body: preferenceData as any })
       } else {
+        // Logueamos el detalle real de MP para diagnóstico.
+        console.error("MP preference error:", JSON.stringify({
+          status, message: mpErr?.message, cause: mpErr?.cause,
+        }).slice(0, 800))
         throw mpErr
       }
     }
@@ -181,9 +182,17 @@ export async function POST(req: Request) {
       sandboxInitPoint: preferenceResponse.sandbox_init_point,
     })
   } catch (error: any) {
-    console.error("Error creating subscription:", error)
+    // Detalle real de MP/Prisma para diagnóstico (el SDK de MP anida la causa).
+    const detail =
+      error?.cause?.[0]?.description ||
+      error?.cause?.message ||
+      error?.message ||
+      "Error al crear suscripción"
+    console.error("Error creating subscription:", JSON.stringify({
+      message: error?.message, status: error?.status, cause: error?.cause,
+    }).slice(0, 1000))
     return NextResponse.json(
-      { error: error.message || "Error al crear suscripción" },
+      { error: detail, message: detail },
       { status: 500 }
     )
   }
