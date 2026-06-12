@@ -24,13 +24,14 @@ async function getMpClient() {
   }
 }
 
-// Planes y precios base (3 tiers).
+// Planes y precios base (3 tiers). Deben coincidir con el frontend
+// (src/app/subscriptions/page.tsx) y con sell-subscription-limits.
 // FREE se activa en /api/subscriptions/activate-free (sin MP).
 // GOLD legacy aceptado para no romper suscriptores actuales — alias de PLATA.
 const PLAN_PRICES: Record<string, number> = {
-  PLATA: 9999,     // PRO — 200 publicaciones
-  GOLD: 9999,      // legacy alias
-  PLATINUM: 19999, // ULTRA — ilimitadas
+  PLATA: 29999,    // PRO — 200 publicaciones
+  GOLD: 29999,     // legacy alias
+  PLATINUM: 49999, // ULTRA — ilimitadas
 }
 
 // Descuentos por período
