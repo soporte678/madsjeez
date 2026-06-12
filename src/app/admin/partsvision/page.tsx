@@ -2,8 +2,12 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { HotspotEditor } from "@/components/partsvision/HotspotEditor";
+import { ReviewPanel } from "@/components/partsvision/admin/ReviewPanel";
+import { CatalogPanel } from "@/components/partsvision/admin/CatalogPanel";
 import { Loader2, Plus, ArrowLeft, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
+
+type Tab = "diagrams" | "review" | "catalog";
 
 type Diagram = {
   id: string; title: string; image_url: string;
@@ -18,6 +22,7 @@ export default function AdminPartsVisionPage() {
   const [editing, setEditing] = useState<Diagram | null>(null);
   const [form, setForm] = useState({ title: "", imageUrl: "", copyrightStatus: "unknown" });
   const [creating, setCreating] = useState(false);
+  const [tab, setTab] = useState<Tab>("diagrams");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -83,7 +88,21 @@ export default function AdminPartsVisionPage() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
-      <h1 className="text-2xl font-bold text-foreground mb-1">PartsVision — Despieces</h1>
+      <h1 className="text-2xl font-bold text-foreground mb-4">PartsVision — Administración</h1>
+
+      <div className="flex gap-1 mb-6 border-b border-border">
+        {([["diagrams", "Despieces"], ["review", "Revisión"], ["catalog", "Catálogo"]] as [Tab, string][]).map(([t, label]) => (
+          <button key={t} onClick={() => setTab(t)}
+            className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px ${tab === t ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "review" && <ReviewPanel />}
+      {tab === "catalog" && <CatalogPanel />}
+
+      {tab !== "diagrams" ? null : (<>
       <p className="text-sm text-muted-foreground mb-6">Cargá un despiece, dibujá los puntos y vinculá las piezas. Publicá solo con copyright resuelto.</p>
 
       <div className="rounded-xl border border-border bg-card p-4 mb-6">
@@ -122,6 +141,7 @@ export default function AdminPartsVisionPage() {
           ))}
         </div>
       )}
+      </>)}
     </div>
   );
 }
