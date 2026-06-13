@@ -211,10 +211,10 @@ export default function AIChatBot() {
           {/* Header — MadsJeez Style */}
           <div className="bg-gradient-to-r from-slate-800 via-indigo-900 to-slate-800 p-3 flex items-center justify-between flex-shrink-0">
             <div className="flex items-center gap-2">
-              <button className="p-1.5 hover:bg-white/20 rounded-full transition-colors text-white/80 hover:text-white">
+              <button aria-label="Nueva conversación" title="Nueva conversación" className="p-1.5 hover:bg-white/20 rounded-full transition-colors text-white/80 hover:text-white">
                 <Edit3 className="w-4 h-4" />
               </button>
-              <button className="p-1.5 hover:bg-white/20 rounded-full transition-colors text-white/80 hover:text-white">
+              <button aria-label="Historial de conversaciones" title="Historial" className="p-1.5 hover:bg-white/20 rounded-full transition-colors text-white/80 hover:text-white">
                 <Clock className="w-4 h-4" />
               </button>
             </div>

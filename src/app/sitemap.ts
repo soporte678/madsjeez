@@ -2,6 +2,8 @@ import type { MetadataRoute } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseService } from "@/lib/supabase/service";
 import { GUIAS_COMPRA } from "@/data/guias-compra";
+import { SELLER_LANDINGS } from "@/data/seller-landings";
+import { BLOG_POSTS } from "@/data/blog-posts";
 
 const BASE_URL = "https://www.madsjeez.com.ar";
 
@@ -15,11 +17,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: BASE_URL,                                  lastModified: new Date(), changeFrequency: "daily",   priority: 1.0 },
     { url: `${BASE_URL}/marketplace`,                 lastModified: new Date(), changeFrequency: "daily",   priority: 0.9 },
     { url: `${BASE_URL}/categories`,                  lastModified: new Date(), changeFrequency: "weekly",  priority: 0.8 },
-    { url: `${BASE_URL}/vender`,                      lastModified: new Date(), changeFrequency: "weekly",  priority: 0.9 },
     { url: `${BASE_URL}/sell`,                        lastModified: new Date(), changeFrequency: "weekly",  priority: 0.7 },
+    { url: `${BASE_URL}/crear-tienda-online`,         lastModified: new Date(), changeFrequency: "weekly",  priority: 0.9 },
+    // Landings de captación de vendedores (hub canónico: /vender-en-madsjeez).
+    // /vender ya no se lista: su canonical apunta al hub para consolidar señal.
+    ...SELLER_LANDINGS.map((l) => ({
+      url: `${BASE_URL}/${l.slug}`,
+      lastModified: new Date(),
+      changeFrequency: "weekly" as const,
+      priority: l.priority ?? 0.85,
+    })),
     { url: `${BASE_URL}/seller/register`,             lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
     { url: `${BASE_URL}/subscriptions`,               lastModified: new Date(), changeFrequency: "weekly",  priority: 0.6 },
     { url: `${BASE_URL}/blog`,                        lastModified: new Date(), changeFrequency: "weekly",  priority: 0.7 },
+    ...BLOG_POSTS.map((p) => ({
+      url: `${BASE_URL}/blog/${p.slug}`,
+      lastModified: new Date(p.updatedAt),
+      changeFrequency: "monthly" as const,
+      priority: 0.65,
+    })),
     { url: `${BASE_URL}/coupons`,                     lastModified: new Date(), changeFrequency: "daily",   priority: 0.6 },
     { url: `${BASE_URL}/quienes-somos`,               lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },
     { url: `${BASE_URL}/help`,                        lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },

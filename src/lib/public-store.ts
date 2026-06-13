@@ -149,6 +149,47 @@ export async function getPublicStoreByUserId(userId: string): Promise<PublicStor
   return getPublicStoreBySlug(slug);
 }
 
+export type StoreBranding = {
+  name: string; shortDescription: string | null; description: string | null;
+  logoUrl: string | null; bannerUrl: string | null;
+  primaryColor: string | null; secondaryColor: string | null;
+  whatsapp: string | null; email: string | null;
+  instagram: string | null; facebook: string | null; website: string | null;
+  province: string | null; city: string | null; category: string | null;
+  seoTitle: string | null; seoDescription: string | null; ogImageUrl: string | null;
+  isActive: boolean;
+};
+
+/** Branding/tema de la tienda (tabla Store) por dueño. null si no tiene Store. */
+export async function getStoreBranding(userId: string): Promise<StoreBranding | null> {
+  return prisma.store.findUnique({
+    where: { ownerUserId: userId },
+    select: {
+      name: true, shortDescription: true, description: true, logoUrl: true, bannerUrl: true,
+      primaryColor: true, secondaryColor: true, whatsapp: true, email: true,
+      instagram: true, facebook: true, website: true, province: true, city: true,
+      category: true, seoTitle: true, seoDescription: true, ogImageUrl: true, isActive: true,
+    },
+  });
+}
+
+/**
+ * Resuelve una tienda por "handle": primero el storeSlug legacy (User), y si no,
+ * por la tabla Store (subdominio o slug) → ownerUserId. Lo usa el storefront para
+ * soportar /tienda/[slug] y los subdominios nombre.madsjeez.com.ar.
+ */
+export async function getPublicStoreByHandle(handle: string): Promise<PublicStoreData | null> {
+  const direct = await getPublicStoreBySlug(handle);
+  if (direct) return direct;
+
+  const store = await prisma.store.findFirst({
+    where: { OR: [{ subdomain: handle }, { slug: handle }], isActive: true },
+    select: { ownerUserId: true },
+  });
+  if (!store) return null;
+  return getPublicStoreByUserId(store.ownerUserId);
+}
+
 /** Vendedores con tienda indexable (slug + al menos 1 producto activo con imagen). */
 export async function listIndexableStoreSlugs(): Promise<
   Array<{ slug: string; updatedAt: Date }>

@@ -109,6 +109,9 @@ model User {
   /// URL pública /tienda/[storeSlug]
   storeSlug         String?   @unique @map("store_slug")
 
+  /// Madsjeez Tiendas (store builder) — tienda propia 1:1 del vendedor
+  store             Store?
+
   /// Zona de operación del vendedor (uso para filtros geo y "comprar cerca tuyo")
   sellerProvince      String?  @map("seller_province")
   sellerProvinceSlug  String?  @map("seller_province_slug")
@@ -2305,5 +2308,183 @@ model PushSubscription {
 
   @@index([userId])
   @@map("push_subscriptions")
+}
+
+// ════════════════════════════════════════════════════════════════════════
+//  Madsjeez Tiendas — store builder multi-tenant
+//  Store es 1:1 con el vendedor (ownerUserId). NO duplica productos: los
+//  productos siguen en Product.sellerId; StoreProductSettings sólo ajusta
+//  destacado/orden/visibilidad/categoría por tienda.
+// ════════════════════════════════════════════════════════════════════════
+
+enum StoreDomainKind {
+  internal
+  subdomain
+  custom
+}
+
+enum StoreDnsStatus {
+  pending
+  dns_pending
+  verified
+  failed
+  disconnected
+}
+
+enum StoreSslStatus {
+  pending
+  ssl_pending
+  active
+  failed
+}
+
+model Store {
+  id                String   @id @default(cuid())
+  ownerUserId       String   @unique @map("owner_user_id")
+  owner             User     @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+
+  name              String
+  slug              String   @unique
+  subdomain         String?  @unique
+  customDomain      String?  @unique @map("custom_domain")
+  primaryDomainType StoreDomainKind @default(internal) @map("primary_domain_type")
+
+  logoUrl           String?  @map("logo_url")
+  bannerUrl         String?  @map("banner_url")
+  description       String?  @db.Text
+  shortDescription  String?  @map("short_description")
+
+  whatsapp          String?
+  email             String?
+  province          String?
+  city              String?
+  address           String?
+  category          String?
+
+  // tema rápido inline (StoreTheme guarda la config avanzada)
+  themeId           String?  @map("theme_id")
+  primaryColor      String?  @map("primary_color")
+  secondaryColor    String?  @map("secondary_color")
+  font              String?
+
+  // redes
+  instagram         String?
+  facebook          String?
+  website           String?
+
+  // SEO propio
+  seoTitle          String?  @map("seo_title")
+  seoDescription    String?  @map("seo_description")
+  ogImageUrl        String?  @map("og_image_url")
+
+  isActive          Boolean  @default(false) @map("is_active")
+  isVerified        Boolean  @default(false) @map("is_verified")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  theme             StoreTheme?
+  domains           StoreDomain[]
+  categories        StoreCategory[]
+  productSettings   StoreProductSettings[]
+  events            StoreEvent[]
+
+  @@index([slug])
+  @@index([subdomain])
+  @@index([customDomain])
+  @@index([isActive])
+  @@map("stores")
+}
+
+model StoreTheme {
+  id                 String   @id @default(cuid())
+  storeId            String   @unique @map("store_id")
+  store              Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  layout             String   @default("classic")
+  primaryColor       String   @default("#1d4ed8") @map("primary_color")
+  secondaryColor     String   @default("#3b82f6") @map("secondary_color")
+  logoPosition       String   @default("left") @map("logo_position")
+  bannerStyle        String   @default("full") @map("banner_style")
+  productCardStyle   String   @default("card") @map("product_card_style")
+  showWhatsappButton Boolean  @default(true) @map("show_whatsapp_button")
+  showLocation       Boolean  @default(true) @map("show_location")
+  showSocialLinks    Boolean  @default(true) @map("show_social_links")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  @@map("store_themes")
+}
+
+model StoreDomain {
+  id                String         @id @default(cuid())
+  storeId           String         @map("store_id")
+  store             Store          @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  domain            String         @unique
+  type              StoreDomainKind
+  verificationToken String         @map("verification_token")
+  dnsStatus         StoreDnsStatus @default(pending) @map("dns_status")
+  sslStatus         StoreSslStatus @default(pending) @map("ssl_status")
+  isPrimary         Boolean        @default(false) @map("is_primary")
+  createdAt         DateTime       @default(now()) @map("created_at")
+  verifiedAt        DateTime?      @map("verified_at")
+  lastCheckedAt     DateTime?      @map("last_checked_at")
+
+  @@index([storeId])
+  @@index([domain])
+  @@map("store_domains")
+}
+
+model StoreCategory {
+  id        String   @id @default(cuid())
+  storeId   String   @map("store_id")
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name      String
+  slug      String
+  order     Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([storeId, slug])
+  @@index([storeId])
+  @@map("store_categories")
+}
+
+// Ajustes de un producto del vendedor dentro de su tienda. productId es un FK
+// lógico a products (sin relación Prisma para no modificar el modelo Product);
+// la FK con ON DELETE CASCADE se crea en la migración SQL.
+model StoreProductSettings {
+  id              String   @id @default(cuid())
+  storeId         String   @map("store_id")
+  store           Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  productId       String   @map("product_id")
+  storeCategoryId String?  @map("store_category_id")
+  featured        Boolean  @default(false)
+  hidden          Boolean  @default(false)
+  sortOrder       Int      @default(0) @map("sort_order")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@unique([storeId, productId])
+  @@index([storeId])
+  @@index([productId])
+  @@map("store_product_settings")
+}
+
+enum StoreEventType {
+  view
+  product_click
+  whatsapp_click
+  share
+}
+
+// Eventos de tienda para estadísticas reales (Fase 6b). Append-only, agregado por tienda.
+model StoreEvent {
+  id        String         @id @default(cuid())
+  storeId   String         @map("store_id")
+  store     Store          @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  type      StoreEventType
+  productId String?        @map("product_id")
+  createdAt DateTime       @default(now()) @map("created_at")
+
+  @@index([storeId, type, createdAt])
+  @@map("store_events")
 }
 

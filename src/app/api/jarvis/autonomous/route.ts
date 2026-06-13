@@ -27,6 +27,7 @@ import {
   runAutonomousTask,
   getAutonomousTasks,
 } from "@/lib/jarvis/autonomous/engine";
+import { assertJarvisAuth } from "@/jarvis/api-auth";
 
 // ============================================================================
 // In-memory scheduler state (replace with Redis in multi-instance deploys)
@@ -44,7 +45,9 @@ let schedulerStarted = false;
  * - Per-task runtime state (next run, last run, recent history)
  * - Static task definitions (cron, priority, approval requirement)
  */
-export async function GET(): Promise<NextResponse> {
+export async function GET(req: NextRequest): Promise<NextResponse> {
+  const auth = await assertJarvisAuth(req);
+  if (auth) return auth;
   try {
     const scheduler = getScheduler();
     const tasks = scheduler.getStatus();
@@ -108,6 +111,8 @@ export async function GET(): Promise<NextResponse> {
  * Handles control actions for the autonomous scheduler.
  */
 export async function POST(req: NextRequest): Promise<NextResponse> {
+  const auth = await assertJarvisAuth(req);
+  if (auth) return auth;
   try {
     const body = (await req.json()) as {
       action: string;

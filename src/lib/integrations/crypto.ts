@@ -21,7 +21,12 @@ function getKey(): Buffer {
     const b = Buffer.from(raw, "base64");
     if (b.length === 32) return b;
   }
-  const secret = process.env.NEXTAUTH_SECRET || "madsjeez-fallback-secret";
+  const secret = process.env.NEXTAUTH_SECRET;
+  if (!secret) {
+    throw new Error(
+      "Cifrado de integraciones no configurado: definí INTEGRATION_ENC_KEY (32 bytes hex/base64) o NEXTAUTH_SECRET."
+    );
+  }
   return scryptSync(secret, "integration-creds-v1", 32);
 }
 

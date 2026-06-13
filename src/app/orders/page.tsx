@@ -111,7 +111,7 @@ export default function OrdersPage() {
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F5F5F5]">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
       </div>
     )
@@ -135,7 +135,7 @@ export default function OrdersPage() {
     SHIPPED: "text-blue-600 bg-blue-50",
     DELIVERED: "text-green-600 bg-green-50",
     CANCELLED: "text-red-600 bg-red-50",
-    REFUNDED: "text-gray-600 bg-gray-50",
+    REFUNDED: "text-muted-foreground bg-muted/50",
   }
 
   const filteredCompras = orders
@@ -153,9 +153,9 @@ export default function OrdersPage() {
     })
 
   return (
-    <div className="min-h-screen bg-[#F5F5F5]">
+    <div className="min-h-screen bg-background">
       {/* Header - Igual que otras páginas */}
-      <header className="bg-white border-b border-border pt-3 pb-2 px-4 shadow-md sticky top-0 z-[100]">
+      <header className="bg-card border-b border-border pt-3 pb-2 px-4 shadow-md sticky top-0 z-[100]">
         <div className="max-w-7xl mx-auto flex flex-col gap-3">
           <div className="flex items-center justify-between gap-6 md:gap-12">
             <RainbowLogo textSizeClassName="text-[22px]" iconSizeClassName="w-12 h-12" />
@@ -164,16 +164,16 @@ export default function OrdersPage() {
               <input 
                 type="text" 
                 placeholder="Buscar productos, marcas y más..." 
-                className="w-full py-2.5 px-5 pr-12 rounded shadow-sm bg-white focus:ring-2 focus:ring-blue-600/20 transition-all outline-none text-slate-700 font-medium text-[15px]" 
+                className="w-full py-2.5 px-5 pr-12 rounded shadow-sm bg-card focus:ring-2 focus:ring-blue-600/20 transition-all outline-none text-foreground font-medium text-[15px]" 
               />
-              <div className="absolute inset-y-0 right-0 pr-4 flex items-center cursor-pointer border-l border-slate-100 ml-2 pl-3 group-focus-within:text-blue-600">
-                <Search size={18} className="text-slate-400" />
+              <div className="absolute inset-y-0 right-0 pr-4 flex items-center cursor-pointer border-l border-border ml-2 pl-3 group-focus-within:text-blue-600">
+                <Search size={18} className="text-muted-foreground" />
               </div>
             </div>
 
-            <div className="flex items-center gap-5 font-semibold text-slate-800 text-sm">
+            <div className="flex items-center gap-5 font-semibold text-foreground text-sm">
               <div className="flex items-center gap-2 cursor-pointer hover:text-blue-700 transition-colors">
-                <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
                   <span className="text-xs font-bold">MJ</span>
                 </div>
                 <span className="hidden lg:block">Madsjeez</span>
@@ -189,9 +189,9 @@ export default function OrdersPage() {
       <div className="max-w-full mx-auto flex relative">
         
         {/* Sidebar Left */}
-        <aside className="w-72 bg-white min-h-[calc(100vh-110px)] border-r border-slate-200 sticky top-[110px] hidden md:block flex-shrink-0">
+        <aside className="w-72 bg-card min-h-[calc(100vh-110px)] border-r border-border sticky top-[110px] hidden md:block flex-shrink-0">
           <div className="p-6">
-            <h2 className="text-lg font-black uppercase mb-8 flex items-center gap-3 text-slate-800">
+            <h2 className="text-lg font-black uppercase mb-8 flex items-center gap-3 text-foreground">
               <LayoutGrid size={22} className="text-blue-600" /> Mi cuenta
             </h2>
             <nav className="flex flex-col gap-1">
@@ -200,7 +200,7 @@ export default function OrdersPage() {
                   <button
                     onClick={() => setActiveMenu(activeMenu === item.id ? "" : item.id)}
                     className={`w-full flex items-center justify-between p-3 rounded-lg transition-all ${
-                      activeMenu === item.id ? "bg-blue-50 text-blue-700" : "hover:bg-slate-50 text-slate-600"
+                      activeMenu === item.id ? "bg-blue-50 text-blue-700" : "hover:bg-muted/60 text-muted-foreground"
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -216,7 +216,7 @@ export default function OrdersPage() {
                           key={s} 
                           href={s === "Compras" ? "/orders" : s === "Favoritos" ? "/favorites" : "#"}
                           className={`text-left py-2 px-3 text-[13px] font-medium transition-all ${
-                            s === "Compras" ? "text-blue-600 bg-blue-50/50" : "text-slate-500 hover:text-blue-600 hover:bg-blue-50/50"
+                            s === "Compras" ? "text-blue-600 bg-blue-50/50" : "text-muted-foreground hover:text-blue-600 hover:bg-blue-50/50"
                           }`}
                         >
                           {s}
@@ -234,7 +234,7 @@ export default function OrdersPage() {
         <main className="flex-1 p-8">
           {/* Header de Compras */}
           <div className="mb-8">
-            <h1 className="text-2xl font-black text-slate-800 uppercase tracking-tight mb-4">Compras</h1>
+            <h1 className="text-2xl font-black text-foreground uppercase tracking-tight mb-4">Compras</h1>
             
             {/* Gestión de Colaboradores Banner */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
@@ -255,7 +255,7 @@ export default function OrdersPage() {
             </div>
 
             {/* Tabs */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6">
+            <div className="bg-card rounded-xl shadow-sm border border-border mb-6">
               <div className="flex border-b">
                 {tabs.map((tab) => (
                   <button
@@ -264,7 +264,7 @@ export default function OrdersPage() {
                     className={`flex-1 py-4 text-sm font-medium transition-colors ${
                       activeTab === tab.id
                         ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50/50"
-                        : "text-gray-500 hover:text-gray-700"
+                        : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
                     {tab.label}
@@ -274,19 +274,19 @@ export default function OrdersPage() {
             </div>
 
             {/* Barra de búsqueda */}
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6">
+            <div className="bg-card p-4 rounded-xl shadow-sm border border-border mb-6">
               <div className="flex flex-col md:flex-row gap-4">
                 <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={20} />
                   <input
                     type="text"
                     placeholder="Buscar compras"
-                    className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
-                <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50">
+                <button className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg hover:bg-muted/60">
                   <Filter size={20} />
                   Filtrar
                 </button>
@@ -302,12 +302,12 @@ export default function OrdersPage() {
           ) : filteredCompras.length > 0 ? (
             <div className="space-y-6">
               {filteredCompras.map((order) => (
-                <div key={order.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                  <div className="p-6 border-b border-gray-100 bg-gray-50/50">
+                <div key={order.id} className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
+                  <div className="p-6 border-b border-border bg-muted/40">
                     <div className="flex items-center justify-between mb-4">
                       <div>
-                        <h3 className="text-lg font-bold text-gray-900">{order.orderNumber}</h3>
-                        <p className="text-sm text-gray-500">
+                        <h3 className="text-lg font-bold text-foreground">{order.orderNumber}</h3>
+                        <p className="text-sm text-muted-foreground">
                           {new Date(order.createdAt).toLocaleDateString("es-AR", {
                             day: "numeric",
                             month: "long",
@@ -315,7 +315,7 @@ export default function OrdersPage() {
                           })}
                         </p>
                       </div>
-                      <Badge className={estadoColors[order.status] ?? "text-gray-600 bg-gray-50"}>
+                      <Badge className={estadoColors[order.status] ?? "text-muted-foreground bg-muted/50"}>
                         {mapOrderStatus(order.status)}
                       </Badge>
                     </div>
@@ -323,8 +323,8 @@ export default function OrdersPage() {
                     {order.shipment?.trackingNumber && (
                       <div className="flex items-center gap-4 text-sm">
                         <div className="flex items-center gap-2">
-                          <Package size={16} className="text-gray-400" />
-                          <span className="text-gray-600">
+                          <Package size={16} className="text-muted-foreground" />
+                          <span className="text-muted-foreground">
                             Seguimiento: <strong>{order.shipment.trackingNumber}</strong>
                           </span>
                         </div>
@@ -340,7 +340,7 @@ export default function OrdersPage() {
                         const lineTotal = Number(item.price) * item.quantity
                         return (
                           <div key={item.id} className="flex items-center gap-4">
-                            <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                            <div className="w-20 h-20 rounded-lg overflow-hidden bg-muted flex-shrink-0">
                               {img ? (
                                 <img
                                   src={img}
@@ -348,20 +348,20 @@ export default function OrdersPage() {
                                   className="w-full h-full object-cover"
                                 />
                               ) : (
-                                <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                                   <Package className="w-8 h-8" />
                                 </div>
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h4 className="font-medium text-gray-900 line-clamp-2">
+                              <h4 className="font-medium text-foreground line-clamp-2">
                                 {item.product.title}
                               </h4>
-                              <p className="text-sm text-gray-500">Vendido por: {sellerName}</p>
-                              <p className="text-sm text-gray-500">Cantidad: {item.quantity}</p>
+                              <p className="text-sm text-muted-foreground">Vendido por: {sellerName}</p>
+                              <p className="text-sm text-muted-foreground">Cantidad: {item.quantity}</p>
                             </div>
                             <div className="text-right flex-shrink-0">
-                              <p className="font-bold text-gray-900">{formatCurrency(lineTotal)}</p>
+                              <p className="font-bold text-foreground">{formatCurrency(lineTotal)}</p>
                               <Badge className={estadoColors[order.status] ?? ""} variant="outline">
                                 {mapOrderStatus(order.status)}
                               </Badge>
@@ -371,15 +371,15 @@ export default function OrdersPage() {
                       })}
                     </div>
 
-                    <div className="mt-6 pt-6 border-t border-gray-100">
+                    <div className="mt-6 pt-6 border-t border-border">
                       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                         <div>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-sm text-muted-foreground">
                             Total (
                             {order.items.reduce((acc, p) => acc + p.quantity, 0)}{" "}
                             productos)
                           </p>
-                          <p className="text-2xl font-bold text-gray-900">
+                          <p className="text-2xl font-bold text-foreground">
                             {formatCurrency(order.total)}
                           </p>
                         </div>
@@ -400,7 +400,7 @@ export default function OrdersPage() {
                                   ? `&product=${encodeURIComponent(order.items[0].product.id)}`
                                   : ""
                               }`}
-                              className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
+                              className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg hover:bg-muted/60"
                             >
                               <MessageSquare size={16} />
                               Contactar vendedor
@@ -408,7 +408,7 @@ export default function OrdersPage() {
                           ) : (
                             <Link
                               href={`/dashboard/pedido/${encodeURIComponent(order.id)}`}
-                              className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
+                              className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg hover:bg-muted/60"
                             >
                               <MessageSquare size={16} />
                               Ver detalle
@@ -417,7 +417,7 @@ export default function OrdersPage() {
                           <button
                             type="button"
                             onClick={() => window.print()}
-                            className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
+                            className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg hover:bg-muted/60"
                           >
                             <Download size={16} />
                             Descargar factura
@@ -430,12 +430,12 @@ export default function OrdersPage() {
               ))}
             </div>
           ) : (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
-              <Package className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            <div className="bg-card rounded-xl shadow-sm border border-border p-12 text-center">
+              <Package className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+              <h2 className="text-xl font-semibold text-foreground mb-2">
                 No tenés compras en esta sección
               </h2>
-              <p className="text-gray-500 mb-6">
+              <p className="text-muted-foreground mb-6">
                 {activeTab === "activas" && "No tenés compras activas en este momento"}
                 {activeTab === "finalizadas" && "No tenés compras finalizadas aún"}
                 {activeTab === "canceladas" && "No tenés compras canceladas"}
@@ -452,33 +452,33 @@ export default function OrdersPage() {
 
           {/* Info de estados */}
           <div className="mt-12 grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-white rounded-lg shadow-sm p-6 text-center">
+            <div className="bg-card rounded-lg shadow-sm p-6 text-center">
               <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-3">
                 <Clock className="w-6 h-6 text-primary" />
               </div>
-              <h3 className="font-medium text-gray-900 mb-1">En preparación</h3>
-              <p className="text-sm text-gray-500">El vendedor está preparando tu pedido</p>
+              <h3 className="font-medium text-foreground mb-1">En preparación</h3>
+              <p className="text-sm text-muted-foreground">El vendedor está preparando tu pedido</p>
             </div>
-            <div className="bg-white rounded-lg shadow-sm p-6 text-center">
+            <div className="bg-card rounded-lg shadow-sm p-6 text-center">
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3">
                 <Package className="w-6 h-6 text-blue-600" />
               </div>
-              <h3 className="font-medium text-gray-900 mb-1">Listo para enviar</h3>
-              <p className="text-sm text-gray-500">Tu pedido está listo para ser despachado</p>
+              <h3 className="font-medium text-foreground mb-1">Listo para enviar</h3>
+              <p className="text-sm text-muted-foreground">Tu pedido está listo para ser despachado</p>
             </div>
-            <div className="bg-white rounded-lg shadow-sm p-6 text-center">
+            <div className="bg-card rounded-lg shadow-sm p-6 text-center">
               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-3">
                 <Truck className="w-6 h-6 text-purple-600" />
               </div>
-              <h3 className="font-medium text-gray-900 mb-1">En camino</h3>
-              <p className="text-sm text-gray-500">Tu pedido está siendo entregado</p>
+              <h3 className="font-medium text-foreground mb-1">En camino</h3>
+              <p className="text-sm text-muted-foreground">Tu pedido está siendo entregado</p>
             </div>
-            <div className="bg-white rounded-lg shadow-sm p-6 text-center">
+            <div className="bg-card rounded-lg shadow-sm p-6 text-center">
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-3">
                 <CheckCircle className="w-6 h-6 text-green-600" />
               </div>
-              <h3 className="font-medium text-gray-900 mb-1">Entregado</h3>
-              <p className="text-sm text-gray-500">Tu pedido fue entregado con éxito</p>
+              <h3 className="font-medium text-foreground mb-1">Entregado</h3>
+              <p className="text-sm text-muted-foreground">Tu pedido fue entregado con éxito</p>
             </div>
           </div>
         </main>

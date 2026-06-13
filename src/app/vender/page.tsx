@@ -5,7 +5,10 @@ export const metadata: Metadata = {
   title: "Vendé en MadsJeez — Marketplace Argentina | Abrí tu tienda gratis",
   description:
     "Publicá tus productos en MadsJeez y llegá a compradores de todo el país. 0% comisión sobre tus ventas, siempre. Cobrás con tu Mercado Pago.",
-  alternates: { canonical: "https://www.madsjeez.com.ar/vender" },
+  // Consolidación SEO: el hub canónico de captación de vendedores es
+  // /vender-en-madsjeez (keyword-rich). Esta página sigue funcionando pero
+  // delega su señal de indexación al hub para no competir por la misma intención.
+  alternates: { canonical: "https://www.madsjeez.com.ar/vender-en-madsjeez" },
   openGraph: {
     title: "Vendé en MadsJeez — Marketplace Argentina",
     description:

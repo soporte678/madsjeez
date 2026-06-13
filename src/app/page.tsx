@@ -2,8 +2,25 @@ import type { Metadata } from "next";
 import HomePageClient from "@/app/HomePageClient";
 
 export const metadata: Metadata = {
+  title: "Madsjeez | Marketplace argentino para comprar y vender online",
+  description:
+    "Comprá y vendé productos online en Madsjeez. Marketplace argentino para compradores, emprendedores, comercios y mayoristas que quieren publicar productos, crear su tienda y sumar un nuevo canal de venta.",
   alternates: {
     canonical: "https://www.madsjeez.com.ar",
+  },
+  openGraph: {
+    type: "website",
+    url: "https://www.madsjeez.com.ar",
+    siteName: "Madsjeez",
+    title: "Madsjeez | Marketplace argentino para comprar y vender online",
+    description:
+      "Encontrá productos, descubrí tiendas y ayudá a emprendedores, comercios y mayoristas a vender por internet en Argentina.",
+    locale: "es_AR",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Madsjeez | Marketplace argentino para comprar y vender online",
+    description: "Comprá y vendé productos online en Madsjeez.",
   },
 };
 
@@ -14,7 +31,7 @@ const organizationJsonLd = {
   url: "https://www.madsjeez.com.ar",
   logo: "https://www.madsjeez.com.ar/brand/madsjeez-mark.svg",
   description:
-    "Marketplace argentino de tecnología, moda y hogar. Comprá y vendé online con envíos a todo el país y pagos seguros.",
+    "Marketplace argentino para comprar y vender online: productos de vendedores, comercios, emprendedores y mayoristas de todo el país.",
   sameAs: [
     "https://www.instagram.com/madsjeez",
   ],

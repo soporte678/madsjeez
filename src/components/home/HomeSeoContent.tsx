@@ -24,10 +24,10 @@ export function HomeSeoContent() {
             Cómo comprar y vender en Madsjeez
           </h2>
           <p className="text-slate-600 text-[15px] md:text-base leading-relaxed max-w-3xl dark:text-slate-300">
-            Madsjeez es un marketplace argentino donde encontrás productos de miles de vendedores
-            verificados, con búsqueda por categoría, ofertas activas, envíos coordinados y pagos
-            protegidos. Esta guía resume cómo aprovechar la plataforma si comprás por primera vez o
-            si querés llevar tu negocio online con herramientas profesionales.
+            Madsjeez es un marketplace argentino donde encontrás productos de vendedores de todo el
+            país, con búsqueda por categoría, ofertas activas y pagos con los medios disponibles según
+            cada publicación. Esta guía resume cómo aprovechar la plataforma si comprás por primera vez
+            o si querés llevar tu negocio online con herramientas profesionales.
           </p>
         </div>
 

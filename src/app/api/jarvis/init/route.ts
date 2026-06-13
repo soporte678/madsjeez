@@ -14,6 +14,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseService } from "@/lib/supabase/service";
 import { JARVIS_INIT_SQL, DEFAULT_CONFIG_ROWS, DEFAULT_AUTONOMOUS_TASKS } from "@/lib/jarvis/init-sql";
+import { assertJarvisAuth } from "@/jarvis/api-auth";
 
 // ============================================================================
 // Constants
@@ -146,7 +147,9 @@ async function seedTasks(supabase: any): Promise<{ inserted: number; errors: str
 // GET – Check status without modifying anything
 // ============================================================================
 
-export async function GET(): Promise<NextResponse> {
+export async function GET(req: NextRequest): Promise<NextResponse> {
+  const auth = await assertJarvisAuth(req);
+  if (auth) return auth;
   try {
     const supabase = getSupabaseService();
     const results: Record<string, boolean> = {};
@@ -180,6 +183,8 @@ export async function GET(): Promise<NextResponse> {
 // ============================================================================
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const auth = await assertJarvisAuth(request);
+  if (auth) return auth;
   const steps: Array<{
     step: string;
     status: "ok" | "error" | "skipped";

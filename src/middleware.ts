@@ -2,8 +2,23 @@ import { NextResponse, type NextRequest } from "next/server"
 import { createServerClient, type CookieOptions } from "@supabase/ssr"
 import { getSupabaseService } from "@/lib/supabase/service"
 import { getToken } from "next-auth/jwt"
+import { isReservedStoreSlug } from "@/lib/stores/reserved-slugs"
 
 const CANONICAL_HOST = "www.madsjeez.com.ar"
+
+/**
+ * Devuelve el label de un subdominio de tienda (nombre.madsjeez.com.ar) o null.
+ * Edge-safe: sólo parseo de string + Set de reservados (sin Prisma/DB).
+ */
+function getTenantSubdomain(host: string): string | null {
+  const h = host.toLowerCase().split(":")[0]
+  const suffix = ".madsjeez.com.ar"
+  if (!h.endsWith(suffix)) return null
+  const label = h.slice(0, -suffix.length)
+  if (!label || label === "www" || label.includes(".")) return null
+  if (isReservedStoreSlug(label)) return null
+  return label
+}
 
 /** Un solo salto apex → www (evita cadenas de redirección en auditorías SEO). */
 function canonicalHostRedirect(request: NextRequest): NextResponse | null {
@@ -18,6 +33,30 @@ function canonicalHostRedirect(request: NextRequest): NextResponse | null {
 }
 
 export async function middleware(request: NextRequest) {
+  // ── Tiendas por subdominio: nombre.madsjeez.com.ar ──────────────────────
+  // Debe ir ANTES del redirect canónico (que mandaría todo a www).
+  const sub = getTenantSubdomain(request.headers.get("host") ?? "")
+  if (sub) {
+    const url = request.nextUrl.clone()
+    const p = url.pathname
+    if (p === "/" || p === "") {
+      // El root del subdominio renderiza la tienda (rewrite interno, sin cambiar la URL).
+      url.pathname = `/tienda/${sub}`
+      return NextResponse.rewrite(url)
+    }
+    // Rutas con sentido en el subdominio (tienda, producto, API, assets) pasan;
+    // el resto del marketplace vive en www → redirigimos preservando el path.
+    if (
+      p.startsWith("/tienda/") || p.startsWith("/product/") ||
+      p.startsWith("/api/") || p.startsWith("/_next/")
+    ) {
+      return NextResponse.next()
+    }
+    url.host = CANONICAL_HOST
+    url.protocol = "https"
+    return NextResponse.redirect(url, 307)
+  }
+
   const hostRedirect = canonicalHostRedirect(request)
   if (hostRedirect) return hostRedirect
 

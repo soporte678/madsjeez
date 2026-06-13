@@ -1,9 +1,19 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { checkRateLimit, clientIpFromRequest } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
+  // Anti-spam: máximo 5 envíos por IP cada 10 minutos.
+  const rl = checkRateLimit(`seller-leads:${clientIpFromRequest(req)}`, { max: 5, windowMs: 600_000 });
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "Demasiados envíos. Probá de nuevo en unos minutos." },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } }
+    );
+  }
+
   const body = (await req.json().catch(() => ({}))) as {
     inviteCode?: string;
     email?: string;

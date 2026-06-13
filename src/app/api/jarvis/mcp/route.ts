@@ -36,6 +36,7 @@ import {
   requiresApproval,
   MCPService,
 } from "@/lib/jarvis/mcp";
+import { assertJarvisAuth } from "@/jarvis/api-auth";
 
 // ============================================================================
 // Constants
@@ -139,10 +140,12 @@ function buildStatusPayload() {
  * - Per-service health status
  * - Complete operations registry
  */
-export async function GET(): Promise<NextResponse> {
+export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
     const disabled = checkJarvisEnabled();
     if (disabled) return disabled;
+    const auth = await assertJarvisAuth(req);
+    if (auth) return auth;
 
     const payload = buildStatusPayload();
 
@@ -184,6 +187,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
     const disabled = checkJarvisEnabled();
     if (disabled) return disabled;
+    const auth = await assertJarvisAuth(req);
+    if (auth) return auth;
 
     // ── Parse request body ───────────────────────────────────────────────────
     let body: {

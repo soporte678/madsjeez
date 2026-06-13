@@ -29,8 +29,10 @@ type PaypalWebhookEvent = {
 async function verifySignature(req: Request, rawBody: string): Promise<boolean> {
   const webhookId = process.env.PAYPAL_WEBHOOK_ID?.trim();
   if (!webhookId) {
-    logger.warn("paypal webhook: PAYPAL_WEBHOOK_ID no seteado, aceptando sin verificar");
-    return true;
+    // Fail-closed: sin webhook id NO podemos verificar la firma, así que
+    // rechazamos en lugar de aceptar eventos no verificados (anti-spoofing).
+    logger.error("paypal webhook: PAYPAL_WEBHOOK_ID no seteado — rechazando evento sin verificar");
+    return false;
   }
   const h = req.headers;
   const payload = {

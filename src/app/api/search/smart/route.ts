@@ -2,6 +2,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai"
 import { NextRequest, NextResponse } from "next/server"
 import { getSupabaseService } from "@/lib/supabase/service"
 import { hasValidProductImageUrl, primaryImageUrlFromRows } from "@/lib/productVisibility"
+import { checkRateLimit, clientIpFromRequest } from "@/lib/rate-limit"
 
 /** Escapa caracteres wildcard de ILIKE para evitar SQL injection via wildcards */
 function escapeIlikeTerm(term: string): string {
@@ -10,6 +11,15 @@ function escapeIlikeTerm(term: string): string {
 
 export async function POST(req: NextRequest) {
   try {
+    // Rate limit por IP: búsqueda IA llama a Gemini (costo) — frenar abuso.
+    const rl = checkRateLimit(`search-smart:${clientIpFromRequest(req)}`, { max: 20, windowMs: 60_000 })
+    if (!rl.ok) {
+      return NextResponse.json(
+        { error: "Demasiadas búsquedas seguidas. Probá de nuevo en un momento." },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } }
+      )
+    }
+
     let supabase
     try {
       supabase = getSupabaseService()

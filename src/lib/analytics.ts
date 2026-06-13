@@ -59,6 +59,14 @@ const INTERNAL_ANALYTICS_EVENTS = new Set([
   "sign_up",
   "login",
   "contact_whatsapp",
+  // Madsjeez Tiendas (store builder)
+  "store_created",
+  "store_published",
+  "store_domain_added",
+  "store_domain_verified",
+  "store_whatsapp_click",
+  "store_product_click",
+  "store_share_click",
 ]);
 
 export function buildAnalyticsItem(params: {

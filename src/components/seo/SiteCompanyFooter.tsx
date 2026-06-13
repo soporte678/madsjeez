@@ -14,7 +14,7 @@ export function SiteCompanyFooter() {
           <span>{COMPANY.address.full}</span>
         </li>
         <li>
-          <span className="text-slate-500">CUIT:</span> {COMPANY.cuitFormatted}
+          <span className="text-slate-400">CUIT:</span> {COMPANY.cuitFormatted}
         </li>
         <li className="flex items-center gap-2">
           <Phone className="h-4 w-4 shrink-0 text-[#00b4d8]" aria-hidden />

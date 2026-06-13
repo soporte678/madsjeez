@@ -302,7 +302,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const parsed = parseVoiceCommand(transcript);
 
   // ── Security audit log ──────────────────────────────────────────────────
-  const sourceIp = req.headers.get("x-forwarded-for") ?? req.ip ?? "unknown";
+  const sourceIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
   logVoiceCommand({
     timestamp: new Date().toISOString(),
     command: transcript,

@@ -314,7 +314,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   // ── Rate limiting ─────────────────────────────────────────────────────────
-  const sourceIp = req.headers.get("x-forwarded-for") ?? req.ip ?? "unknown";
+  const sourceIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
   const rateLimit = checkRateLimit(sourceIp);
 
   if (!rateLimit.allowed) {

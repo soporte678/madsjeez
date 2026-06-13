@@ -77,14 +77,14 @@ function FilterSwitch({
     <button
       type="button"
       onClick={onToggle}
-      className="w-full text-left bg-white rounded-md shadow-[0_1px_2px_0_rgba(0,0,0,0.1)] p-3 mb-2 flex items-center justify-between cursor-pointer hover:shadow-md transition-shadow"
+      className="w-full text-left bg-card border border-border rounded-md shadow-sm p-3 mb-2 flex items-center justify-between cursor-pointer hover:shadow-md transition-shadow"
     >
       <div className="flex flex-col pr-3 min-w-0">
-        <span className="text-[13px] text-[#333] leading-tight">{title}</span>
-        {subtitle && <span className="text-[11px] text-[#999] leading-tight mt-0.5">{subtitle}</span>}
+        <span className="text-[13px] text-foreground leading-tight">{title}</span>
+        {subtitle && <span className="text-[11px] text-muted-foreground leading-tight mt-0.5">{subtitle}</span>}
       </div>
       <div
-        className={`w-10 h-6 rounded-full relative flex-shrink-0 transition-colors ${isActive ? "bg-[#3483fa]" : "bg-[#e6e6e6]"}`}
+        className={`w-10 h-6 rounded-full relative flex-shrink-0 transition-colors ${isActive ? "bg-[#3483fa]" : "bg-muted"}`}
       >
         <span
           className={`absolute top-[2px] w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${isActive ? "left-[18px]" : "left-[2px]"}`}
@@ -110,15 +110,15 @@ function FilterList({
   activeItem?: string;
 }) {
   return (
-    <div className="border-t border-[#e8e8e8] pt-4 first:border-t-0 first:pt-0">
-      <h4 className="text-[13px] font-semibold text-[#333] mb-2">{title}</h4>
-      <ul className="text-[13px] text-[#666] space-y-1.5">
+    <div className="border-t border-border pt-4 first:border-t-0 first:pt-0">
+      <h4 className="text-[13px] font-semibold text-foreground mb-2">{title}</h4>
+      <ul className="text-[13px] text-muted-foreground space-y-1.5">
         {items.map((item) => (
           <li key={item.value}>
             <button
               type="button"
               onClick={() => onItemClick?.(item.value)}
-              className={`hover:text-[#3483fa] text-left w-full ${activeItem === item.value ? "text-[#3483fa] font-semibold" : ""}`}
+              className={`hover:text-primary text-left w-full ${activeItem === item.value ? "text-primary font-semibold" : ""}`}
             >
               {item.label}
             </button>
@@ -129,7 +129,7 @@ function FilterList({
             <button
               type="button"
               onClick={onShowMore}
-              className="text-[#3483fa] font-semibold text-[12px] mt-1 hover:text-blue-700"
+              className="text-primary font-semibold text-[12px] mt-1 hover:text-primary/80"
             >
               Mostrar más
             </button>
@@ -425,7 +425,7 @@ function SearchContent() {
   const firstRowCount = 4;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#ebebeb] font-sans selection:bg-[#3483fa] selection:text-white">
+    <div className="min-h-screen flex flex-col bg-background font-sans selection:bg-[#3483fa] selection:text-white">
       <Navbar />
 
       <div className="max-w-[1184px] mx-auto px-3 sm:px-4 py-4 w-full">
@@ -457,12 +457,12 @@ function SearchContent() {
         <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 items-start">
           {/* SIDEBAR FILTROS */}
           <aside className="w-full lg:w-[232px] flex-shrink-0 lg:sticky lg:top-4 lg:self-start space-y-4">
-            <div className="bg-white rounded shadow-[0_1px_2px_rgba(0,0,0,0.08)] p-3">
-              <p className="text-[14px] font-semibold text-[#333] mb-3">Filtrar</p>
+            <div className="bg-card border border-border rounded shadow-sm p-3">
+              <p className="text-[14px] font-semibold text-foreground mb-3">Filtrar</p>
 
               <div className="flex flex-wrap gap-2 mb-3">
                 {activeConditionLabel && (
-                  <span className="bg-[#f5f5f5] border border-[#ddd] rounded px-2 py-1 text-[12px] flex items-center gap-1">
+                  <span className="bg-muted border border-border text-foreground rounded px-2 py-1 text-[12px] flex items-center gap-1">
                     {activeConditionLabel}
                     <button type="button" aria-label="Quitar" onClick={() => updateSearchParams({ condition: null })}>
                       <X className="w-3 h-3" />
@@ -470,7 +470,7 @@ function SearchContent() {
                   </span>
                 )}
                 {freeShipping && (
-                  <span className="bg-[#f5f5f5] border border-[#ddd] rounded px-2 py-1 text-[12px] flex items-center gap-1">
+                  <span className="bg-muted border border-border text-foreground rounded px-2 py-1 text-[12px] flex items-center gap-1">
                     Envío gratis
                     <button type="button" aria-label="Quitar" onClick={() => updateSearchParams({ free_shipping: null })}>
                       <X className="w-3 h-3" />
@@ -585,17 +585,17 @@ function SearchContent() {
           {/* CONTENIDO PRINCIPAL */}
           <div className="flex-1 min-w-0 space-y-4">
             {/* Barra título + resultados + ordenar — estilo ML */}
-            <div className="bg-white rounded shadow-[0_1px_2px_rgba(0,0,0,0.08)] px-4 py-3 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 border-b border-[#eaeaea]">
+            <div className="bg-card rounded shadow-sm px-4 py-3 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 border border-border">
               <div>
-                <h1 className="text-[20px] sm:text-[22px] font-normal text-[#333] leading-tight capitalize">
+                <h1 className="text-[20px] sm:text-[22px] font-normal text-foreground leading-tight capitalize">
                   {searchTerm}
                 </h1>
-                <p className="text-[13px] text-[#666] mt-1">
-                  <span className="font-semibold text-[#333]">{filteredProducts.length}</span> resultados
+                <p className="text-[13px] text-muted-foreground mt-1">
+                  <span className="font-semibold text-foreground">{filteredProducts.length}</span> resultados
                 </p>
               </div>
               <div className="flex items-center gap-2 text-[13px] flex-shrink-0">
-                <span className="text-[#666] hidden sm:inline">Ordenar por</span>
+                <span className="text-muted-foreground hidden sm:inline">Ordenar por</span>
                 <div className="relative">
                   <select
                     value={sortBy}
@@ -603,7 +603,7 @@ function SearchContent() {
                       setSortBy(e.target.value);
                       updateSearchParams({ sort: e.target.value });
                     }}
-                    className="appearance-none font-semibold text-[#333] bg-[#f5f5f5] sm:bg-transparent border border-[#ddd] sm:border-none rounded-md py-2 pl-3 pr-8 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#3483fa]/30 text-[13px]"
+                    className="appearance-none font-semibold text-foreground bg-muted sm:bg-transparent border border-border sm:border-none rounded-md py-2 pl-3 pr-8 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#3483fa]/30 text-[13px]"
                   >
                     <option value="relevance">Más relevantes</option>
                     <option value="price_asc">Menor precio</option>
@@ -940,7 +940,7 @@ export default function SearchPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex flex-col bg-[#ebebeb]">
+        <div className="min-h-screen flex flex-col bg-background">
           <Navbar />
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">

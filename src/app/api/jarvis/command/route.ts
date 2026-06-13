@@ -300,7 +300,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "command is required (min 2 chars)" }, { status: 400 });
   }
 
-  const sourceIp = req.headers.get("x-forwarded-for") ?? req.ip ?? "unknown";
+  const sourceIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
   const command = body.command.trim();
 
   // ── SECURITY GATE 1: Face Authentication (REQUIRED) ──────────────────────
