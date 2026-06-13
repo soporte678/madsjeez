@@ -19,6 +19,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/categories`,                  lastModified: new Date(), changeFrequency: "weekly",  priority: 0.8 },
     { url: `${BASE_URL}/sell`,                        lastModified: new Date(), changeFrequency: "weekly",  priority: 0.7 },
     { url: `${BASE_URL}/crear-tienda-online`,         lastModified: new Date(), changeFrequency: "weekly",  priority: 0.9 },
+    { url: `${BASE_URL}/comprar-en-madsjeez`,         lastModified: new Date(), changeFrequency: "weekly",  priority: 0.85 },
     // Landings de captación de vendedores (hub canónico: /vender-en-madsjeez).
     // /vender ya no se lista: su canonical apunta al hub para consolidar señal.
     ...SELLER_LANDINGS.map((l) => ({

@@ -555,6 +555,139 @@ export const SELLER_LANDINGS: SellerLanding[] = [
     priority: 0.7,
     campaign: true,
   },
+
+  /* -------------------------------------- 12. MARKETPLACE PARA VENDEDORES */
+  {
+    slug: "marketplace-para-vendedores",
+    keyword: "marketplace para vendedores",
+    breadcrumb: "Marketplace para vendedores",
+    seoTitle: "Marketplace para vendedores en Argentina | Madsjeez",
+    metaDescription:
+      "¿Por qué vender en un marketplace? Madsjeez te da tráfico, vidriera y herramientas sin armar una tienda desde cero. Para vendedores chicos y medianos.",
+    h1: "Un marketplace pensado para vendedores",
+    heroEyebrow: "Vendé donde ya hay compradores",
+    heroSubtitle:
+      "Vender en un marketplace te da tráfico y orden desde el primer día. Madsjeez es la plataforma para que vendedores chicos y medianos publiquen sus productos y consigan más clientes.",
+    intro:
+      "Armar una tienda online propia desde cero lleva tiempo y plata. Un marketplace te da la vidriera, el buscador y el tráfico resueltos: vos te enfocás en tus productos y tus ventas.",
+    benefits: [
+      { title: "Tráfico desde el día uno", desc: "Publicás donde la gente ya entra a buscar y comparar productos." },
+      { title: "Sin infraestructura propia", desc: "No contratás hosting, diseño ni pasarela: ya está todo listo." },
+      { title: "Vidriera ordenada", desc: "Catálogo con categorías y búsqueda, más serio que vender solo por redes." },
+      { title: "Herramientas para crecer", desc: "Panel de productos, consultas y planes para escalar cuando lo necesites." },
+    ],
+    comparison: {
+      title: "Marketplace vs. tienda online propia",
+      rows: [
+        { label: "Puesta en marcha", single: "Días o semanas armando la web", mads: "Publicás hoy mismo" },
+        { label: "Tráfico", single: "Tenés que generarlo vos desde cero", mads: "Aprovechás el del marketplace" },
+        { label: "Costo inicial", single: "Hosting, diseño, mantenimiento", mads: "Sin infraestructura propia" },
+        { label: "Control de marca", single: "Total, pero todo a tu cargo", mads: "Tu tienda dentro de Madsjeez + tu link" },
+      ],
+    },
+    content: [
+      {
+        h2: "Por qué vender en un marketplace",
+        body: "Un marketplace concentra compradores que ya están buscando productos. En lugar de invertir tiempo y dinero en atraer tráfico a una web nueva, publicás donde ese tráfico ya existe y te enfocás en vender.",
+      },
+      {
+        h2: "Ideal para vendedores chicos y medianos",
+        body: "Si recién arrancás o tenés un comercio que quiere vender online, Madsjeez te da una base profesional sin grandes costos: cargás tu catálogo, recibís consultas y vas creciendo a tu ritmo.",
+      },
+    ],
+    faqs: [
+      { question: "¿Conviene vender en un marketplace o tener tienda propia?", answer: "Depende de tu etapa. Un marketplace te da tráfico y herramientas sin inversión inicial; muchos vendedores empiezan ahí y suman su web después. No son excluyentes." },
+      { question: "¿Necesito conocimientos técnicos?", answer: "No. Publicás tus productos desde un panel simple, sin programar ni configurar servidores." },
+      { question: "¿Sirve si vendo poco volumen?", answer: "Sí. Podés empezar con pocos productos y escalar cuando tu volumen lo justifique." },
+    ],
+    ctaTitle: "Empezá a vender en el marketplace",
+    ctaSubtitle: "Publicá tus productos en Madsjeez y aprovechá el tráfico desde el primer día.",
+    related: [HUB_SLUG, "alternativa-a-mercado-libre", "marketplace-para-ferreterias", "marketplace-para-casas-de-repuestos"],
+    priority: 0.85,
+  },
+
+  /* ------------------------------------- 13. MARKETPLACE PARA FERRETERÍAS */
+  {
+    slug: "marketplace-para-ferreterias",
+    keyword: "marketplace para ferreterías",
+    breadcrumb: "Marketplace para ferreterías",
+    seoTitle: "Marketplace para ferreterías en Argentina | Madsjeez",
+    metaDescription:
+      "Digitalizá tu ferretería: vendé herramientas, repuestos y máquinas online en Madsjeez. Sumá un canal sin dejar tu local.",
+    h1: "El marketplace para ferreterías que quieren vender online",
+    heroEyebrow: "Tu ferretería, también online",
+    heroSubtitle:
+      "Si tenés una ferretería, Madsjeez te ayuda a llevar tu stock al online: herramientas, repuestos, máquinas y accesorios, con una vidriera ordenada y un canal más de venta.",
+    intro:
+      "Muchas ferreterías tienen un gran stock que solo ve quien pasa por el local. Llevarlo al online suma clientes nuevos sin dejar de vender en el mostrador.",
+    benefits: [
+      { title: "Digitalizá tu local", desc: "Mostrá tu catálogo de ferretería online y llegá a clientes que no pasan por tu negocio." },
+      { title: "Herramientas y repuestos", desc: "Ideal para herramientas, fijaciones, eléctricos, sanitarios, máquinas y repuestos." },
+      { title: "Un canal más", desc: "Sumás Madsjeez sin dejar tu local ni tus redes." },
+      { title: "Catálogo ordenado", desc: "Organizá por tipo de producto para que te encuentren fácil." },
+    ],
+    showCategories: true,
+    content: [
+      {
+        h2: "Llevá tu ferretería al mundo online",
+        body: "Con un comercio de ferretería tenés mucho para vender por internet. En Madsjeez publicás tu catálogo de herramientas, fijaciones, productos eléctricos, sanitarios, pinturería, máquinas y repuestos, y sumás un canal para que te encuentren clientes nuevos.",
+      },
+      {
+        h2: "Cómo empezar con tu ferretería",
+        body: "No hace falta cargar todo de una. Empezá con los productos que más vendés, sumá fotos claras y títulos con marca y medida, y ampliá tu catálogo con el tiempo.",
+      },
+    ],
+    faqs: [
+      { question: "¿Puedo vender productos de ferretería en Madsjeez?", answer: "Sí. Publicás herramientas, repuestos, máquinas y accesorios, y llegás a compradores de todo el país." },
+      { question: "¿Tengo que dejar de vender en mi local?", answer: "No. Madsjeez suma un canal online sin reemplazar tu mostrador." },
+      { question: "¿Necesito muchos productos para empezar?", answer: "No. Empezá con tu stock más vendido y ampliá cuando quieras." },
+    ],
+    ctaTitle: "Sumá tu ferretería a Madsjeez",
+    ctaSubtitle: "Mostrá tu catálogo de ferretería online y llegá a más clientes.",
+    related: [HUB_SLUG, "vender-ferreteria-online", "vender-repuestos-online", "marketplace-para-casas-de-repuestos"],
+    priority: 0.85,
+  },
+
+  /* --------------------------- 14. MARKETPLACE PARA CASAS DE REPUESTOS */
+  {
+    slug: "marketplace-para-casas-de-repuestos",
+    keyword: "marketplace de repuestos",
+    breadcrumb: "Marketplace para casas de repuestos",
+    seoTitle: "Marketplace para casas de repuestos | Madsjeez",
+    metaDescription:
+      "¿Tenés una casa de repuestos? Publicá tu catálogo de repuestos de máquinas en Madsjeez y llegá a compradores que buscan piezas específicas.",
+    h1: "El marketplace para casas de repuestos",
+    heroEyebrow: "Repuestos que se encuentran",
+    heroSubtitle:
+      "Si vendés repuestos de máquinas, Madsjeez te ayuda a publicar tu catálogo y conectar con compradores que buscan piezas para motosierra, desmalezadora, grupos electrógenos, motobombas y más.",
+    intro:
+      "El comprador de repuestos busca algo puntual para un modelo específico. Tener tu catálogo ordenado y publicado hace que te encuentre justo cuando lo necesita.",
+    benefits: [
+      { title: "Compradores que buscan piezas", desc: "La gente entra buscando el repuesto exacto: vos aparecés con tu publicación." },
+      { title: "Máquinas a explosión y jardinería", desc: "Motosierra, desmalezadora, grupos electrógenos, motobombas, motores y más." },
+      { title: "Catálogo técnico ordenado", desc: "Publicá por tipo de pieza, marca y modelo compatible para que te encuentren." },
+      { title: "Alcance nacional", desc: "Vendé a compradores de todo el país, no solo de tu zona." },
+    ],
+    content: [
+      {
+        h2: "Publicá tu catálogo de repuestos",
+        body: "En Madsjeez subís tu catálogo de repuestos de máquinas a explosión, jardinería y herramientas. Cada publicación con su tipo de pieza, marca y modelo compatible aparece cuando un comprador busca esa pieza.",
+      },
+      {
+        h2: "Por qué a las casas de repuestos les sirve un marketplace",
+        body: "Tu fuerte es la variedad y el conocimiento técnico. Un marketplace con buscador y categorías hace que esa variedad sea visible y que compradores de todo el país lleguen a la pieza que buscan.",
+      },
+    ],
+    faqs: [
+      { question: "¿Qué repuestos puedo publicar?", answer: "Repuestos de motosierra, desmalezadora, grupos electrógenos, motobombas, motores, herramientas y máquinas en general." },
+      { question: "¿Cómo hago para que encuentren la pieza correcta?", answer: "Publicá con título claro (pieza, marca y modelo compatible), buenas fotos y, si tenés, el número de parte. Recordá aclarar que conviene verificar medidas y modelo antes de comprar." },
+      { question: "¿Llego a todo el país?", answer: "Sí. Coordinás el envío o la entrega según cada venta." },
+    ],
+    ctaTitle: "Publicá tu catálogo de repuestos",
+    ctaSubtitle: "Conectá con compradores que buscan piezas específicas en todo el país.",
+    related: [HUB_SLUG, "vender-repuestos-online", "marketplace-para-ferreterias", "vender-ferreteria-online"],
+    priority: 0.85,
+  },
 ];
 
 const BY_SLUG = new Map(SELLER_LANDINGS.map((l) => [l.slug, l]));
