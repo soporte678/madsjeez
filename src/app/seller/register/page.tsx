@@ -9,6 +9,16 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Reveal } from "@/components/seller/premium/motion-primitives"
+import { Store, Check } from "lucide-react"
+
+const REG_BENEFITS = [
+  "Publicá productos con fotos, precio y stock.",
+  "Recibí consultas y ventas desde un solo lugar.",
+  "Compartí tu tienda por WhatsApp, Instagram y Facebook.",
+  "0% de comisión por venta durante la etapa beta.",
+  "Te ayudamos a empezar, para cualquier rubro.",
+]
 
 export default function SellerRegisterPage() {
   const router = useRouter()
@@ -57,11 +67,37 @@ export default function SellerRegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <Header />
-      
-      <main className="container mx-auto px-4 py-8">
-        <div className="max-w-2xl mx-auto">
+
+      <main className="mx-auto max-w-6xl px-4 py-10 md:py-14">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_440px] lg:items-start">
+          {/* Propuesta de valor (premium, motion) */}
+          <Reveal className="lg:sticky lg:top-24">
+            <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <Store className="h-3.5 w-3.5" /> Crear cuenta de vendedor
+            </span>
+            <h1 className="mt-4 text-3xl font-black leading-[1.1] tracking-tight md:text-4xl">Empezá a vender en Madsjeez</h1>
+            <p className="mt-3 max-w-md text-base leading-7 text-muted-foreground">
+              Sumá un canal de venta sin dejar tus redes. Publicás tu catálogo, recibís consultas y cobrás con tu Mercado Pago.
+            </p>
+            <ul className="mt-7 space-y-3.5">
+              {REG_BENEFITS.map((b, i) => (
+                <Reveal as="li" key={b} delay={0.1 + i * 0.06} className="flex items-start gap-3">
+                  <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary"><Check className="h-4 w-4" /></span>
+                  <span className="text-sm leading-6 text-foreground">{b}</span>
+                </Reveal>
+              ))}
+            </ul>
+            <div className="mt-8 flex flex-wrap gap-x-8 gap-y-4">
+              <div><p className="text-2xl font-black text-primary">0%</p><p className="text-xs text-muted-foreground">comisión en la beta</p></div>
+              <div><p className="text-2xl font-black text-primary">Mercado Pago</p><p className="text-xs text-muted-foreground">cobrás en tu cuenta</p></div>
+              <div><p className="text-2xl font-black text-primary">Minutos</p><p className="text-xs text-muted-foreground">para tu primer producto</p></div>
+            </div>
+          </Reveal>
+
+          {/* Formulario (intacto) */}
+          <Reveal delay={0.15}>
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl text-center">
@@ -178,6 +214,7 @@ export default function SellerRegisterPage() {
               </form>
             </CardContent>
           </Card>
+          </Reveal>
         </div>
       </main>
     </div>
