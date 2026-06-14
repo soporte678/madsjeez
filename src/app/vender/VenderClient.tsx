@@ -27,8 +27,8 @@ const liveStack = [
   "Checkout con Mercado Pago",
   "Dashboard de compras y ventas",
   "Ordenes para comprador y vendedor",
-  "SEO tecnico base: sitemap, robots y metadata",
-  "Captacion de vendedores con leads",
+  "Base de SEO para aparecer en Google",
+  "Alta de vendedores con acompañamiento",
   "Seguimiento de visitas y consultas desde tu panel",
 ];
 
@@ -51,9 +51,9 @@ const roadmap = [
     items: [
       "Centro de crecimiento para vendedores con recomendaciones accionables",
       "Score de calidad de publicaciones y checklist SEO por producto",
-      "Campanas de captacion por rubro, ciudad y categoria",
+      "Más visibilidad por rubro, ciudad y categoría",
       "Panel de conversion: visitas, productos vistos, carrito y venta",
-      "Automatizacion de mensajes para recuperar vendedores inactivos",
+      "Recordatorios para mantener tus publicaciones al día",
       "Plantillas de publicacion para cargar catalogo mas rapido",
     ],
   },
@@ -74,8 +74,8 @@ const roadmap = [
 const growthLoops = [
   {
     icon: Search,
-    title: "Contenido que atrae demanda",
-    text: "Landing, categorias y publicaciones preparadas para busquedas como vender online en Argentina, marketplace para comercios y comprar productos locales.",
+    title: "Contenido que te hace visible",
+    text: "Landing, categorías y publicaciones preparadas para que te encuentren quienes ya están buscando tus productos en Google.",
   },
   {
     icon: Megaphone,
@@ -84,8 +84,8 @@ const growthLoops = [
   },
   {
     icon: LineChart,
-    title: "Conversion continua",
-    text: "Medimos la friccion del embudo para mejorar landing, producto, checkout, postventa y recompra con datos concretos.",
+    title: "Mejora continua",
+    text: "Cuidamos la experiencia de compra (ficha, checkout y postventa) para que vender sea más simple y se concrete más fácil.",
   },
 ];
 
@@ -99,7 +99,7 @@ const sellerTools = [
 const faqs = [
   ["MadsJeez ya esta listo para vender?", "El marketplace ya cuenta con base de compra, pagos, paneles, productos, SEO tecnico y captacion. El roadmap suma herramientas de crecimiento para competir con mas fuerza."],
   ["Por que un comercio elegiria MadsJeez?", "Porque no solo publica productos. Queremos darle visibilidad, datos, herramientas y acompanamiento para que vender online sea mas simple y rentable."],
-  ["Como atraemos compradores?", "Con SEO, contenido por categoria, medicion de canales, experiencia de compra clara y campanas orientadas a demanda real."],
+  ["Como atraemos compradores?", "Con SEO, contenido por categoría, una experiencia de compra clara y difusión orientada a demanda real."],
   ["Que diferencia hay contra marketplaces grandes?", "MadsJeez puede moverse mas rapido, escuchar a comercios locales y construir herramientas especificas para la realidad argentina."],
   ["Que se viene en el roadmap?", "IA para mejorar publicaciones, analytics por embudo, recomendaciones, reputacion avanzada, logisticas integradas y automatizaciones comerciales."],
   ["Puedo sumarme aunque ya venda en otros canales?", "Si. La idea es que MadsJeez sea un canal adicional de ventas, adquisicion y posicionamiento para tu comercio."],
@@ -188,7 +188,7 @@ function Content() {
               ["Pagos", "Mercado Pago"],
               ["Ventas", "Dashboard vendedor"],
               ["SEO", "Base indexable"],
-              ["Growth", "Metricas por canal"],
+              ["Crecimiento", "Métricas en tu panel"],
             ].map(([k, v]) => (
               <div key={k} className="border border-white/15 bg-white/10 p-4 backdrop-blur">
                 <p className="text-xs uppercase tracking-[0.12em] text-cyan-100">{k}</p>
@@ -213,13 +213,13 @@ function Content() {
 
       <section className="mx-auto max-w-7xl px-4 pb-16">
         <div className="border border-cyan-300/20 bg-cyan-400/10 p-6 md:p-8">
-          <p className="text-sm font-bold uppercase tracking-[0.16em] text-cyan-100">Herramientas de captacion activadas</p>
-          <h2 className="mt-3 text-3xl font-black">No esperamos a que los vendedores lleguen solos: les damos una razon concreta para entrar.</h2>
+          <p className="text-sm font-bold uppercase tracking-[0.16em] text-cyan-100">Herramientas listas para vos</p>
+          <h2 className="mt-3 text-3xl font-black">Te damos herramientas concretas para empezar y vender más rápido.</h2>
           <div className="mt-6 grid gap-3 md:grid-cols-3">
             {[
-              ["/vender/auditoria", "Auditor gratis", "Diagnostico de potencial comercial y recomendaciones."],
-              ["/vender/importador", "Pre-importador", "Muestra que cargar catalogo puede ser rapido."],
-              ["/vender/ferreteria", "Landings por rubro", "SEO especifico para captar comercios por categoria."],
+              ["/vender/auditoria", "Auditor gratis", "Revisión de tu presencia online con recomendaciones."],
+              ["/vender/importador", "Pre-importador", "Cargá tu catálogo rápido, sin publicar uno por uno."],
+              ["/vender/ferreteria", "Páginas por rubro", "Tu rubro con su propia página para que te encuentren."],
             ].map(([href, title, text]) => (
               <a key={href} href={href} className="border border-white/15 bg-white/10 p-5 transition hover:bg-white/15">
                 <p className="font-black">{title}</p>
@@ -236,7 +236,7 @@ function Content() {
             <p className="text-sm font-bold uppercase tracking-[0.16em] text-cyan-200">Producto actual</p>
             <h2 className="mt-4 text-3xl font-black md:text-5xl">Lo que ya estamos poniendo en manos del marketplace</h2>
             <p className="mt-5 text-slate-300">
-              La promesa no arranca en cero. Ya hay flujo de compra, pagos, paneles, SEO inicial, captacion y medicion.
+              La promesa no arranca en cero. Ya hay flujo de compra, pagos, paneles, SEO inicial y difusión.
               La siguiente etapa es convertir eso en un sistema de crecimiento para vendedores.
             </p>
           </div>
