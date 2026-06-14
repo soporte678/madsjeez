@@ -361,7 +361,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/80 px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm">
                 <Sparkles className="theme-accent-text h-3.5 w-3.5" />
-                Landing SEO de categoria
+                {parentCategory ? parentCategory.name : "Categoría"}
               </div>
               <h1 className="mt-4 max-w-4xl text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
                 {seo.heroTitle}
@@ -394,22 +394,16 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className={`rounded-3xl bg-gradient-to-br ${seo.theme.glow} p-6 text-white shadow-xl sm:col-span-2`}>
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/70">Potencial comercial</p>
-                <p className="mt-3 text-2xl font-black">Pagina pensada para atraer trafico organico y convertirlo en demanda real.</p>
-                <div className="mt-5 grid grid-cols-3 gap-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/70">{category.name}</p>
+                <p className="mt-3 text-2xl font-black">Encontrá publicaciones de {category.name} de vendedores de todo el país.</p>
+                <div className="mt-5 grid grid-cols-2 gap-3">
                   <div className="rounded-2xl bg-white/10 p-4">
                     <p className="text-2xl font-black">{formatCount(products.length)}</p>
-                    <p className="text-xs text-white/70">publicaciones visibles</p>
+                    <p className="text-xs text-white/70">publicaciones</p>
                   </div>
                   <div className="rounded-2xl bg-white/10 p-4">
                     <p className="text-2xl font-black">{formatCount(relatedCategories.length)}</p>
-                    <p className="text-xs text-white/70">
-                      {category.parentId ? "subcategorias relacionadas" : "subcategorias enlazadas"}
-                    </p>
-                  </div>
-                  <div className="rounded-2xl bg-white/10 p-4">
-                    <p className="text-2xl font-black">SEO</p>
-                    <p className="text-xs text-white/70">metadata y FAQs activas</p>
+                    <p className="text-xs text-white/70">subcategorías</p>
                   </div>
                 </div>
               </div>
@@ -424,12 +418,12 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
         </section>
 
         <section className="mx-auto max-w-[1280px] px-4 py-8">
-          <div className="grid gap-5 lg:grid-cols-3">
+          <div className="grid gap-5 lg:grid-cols-2">
             <Card className="rounded-3xl border-0 bg-white shadow-sm">
               <CardContent className="p-6">
                 <div className="flex items-center gap-3">
                   <Target className="theme-accent-text h-5 w-5" />
-                  <h2 className="text-lg font-black text-slate-950">Por que esta categoria atrae compradores</h2>
+                  <h2 className="text-lg font-black text-slate-950">Por qué comprar {category.name} en Madsjeez</h2>
                 </div>
                 <div className="mt-4 space-y-3">
                   {seo.theme.buyerBenefits.map((benefit) => (
@@ -446,29 +440,13 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
               <CardContent className="p-6">
                 <div className="flex items-center gap-3">
                   <LineChart className="theme-accent-text h-5 w-5" />
-                  <h2 className="text-lg font-black text-slate-950">Por que ayuda a captar vendedores</h2>
+                  <h2 className="text-lg font-black text-slate-950">¿Vendés {category.name}?</h2>
                 </div>
                 <div className="mt-4 space-y-3">
                   {seo.theme.sellerBenefits.map((benefit) => (
                     <div key={benefit} className="flex gap-3">
                       <ArrowRight className="mt-0.5 h-4 w-4 flex-shrink-0 text-slate-400" />
                       <p className="text-sm leading-6 text-slate-600">{benefit}</p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="rounded-3xl border-0 bg-white shadow-sm">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-3">
-                  <ShieldCheck className="theme-accent-text h-5 w-5" />
-                  <h2 className="text-lg font-black text-slate-950">Roadmap para dominar el rubro</h2>
-                </div>
-                <div className="mt-4 space-y-3">
-                  {seo.theme.roadmap.map((item) => (
-                    <div key={item} className="rounded-2xl bg-slate-50 px-4 py-3">
-                      <p className="text-sm font-medium text-slate-700">{item}</p>
                     </div>
                   ))}
                 </div>
@@ -483,7 +461,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
               <CardContent className="p-6">
                 <div className="flex items-center gap-3">
                   <Compass className="theme-accent-text h-5 w-5" />
-                  <h2 className="text-2xl font-black text-slate-950">Busquedas que esta landing ataca</h2>
+                  <h2 className="text-2xl font-black text-slate-950">Búsquedas relacionadas con {category.name}</h2>
                 </div>
                 <p className="mt-2 text-sm leading-6 text-slate-600">{seo.editorialIntro}</p>
                 <div className="mt-5 flex flex-wrap gap-2">
@@ -501,11 +479,11 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
 
             <Card className="rounded-3xl border-0 bg-white shadow-sm">
               <CardContent className="p-6">
-                <h2 className="text-2xl font-black text-slate-950">Explora subcategorias y entradas internas</h2>
+                <h2 className="text-2xl font-black text-slate-950">Explorá subcategorías de {category.name}</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
                   {category.parentId
-                    ? `Como ${category.name} es una subcategoria dentro de ${parentCategory?.name || "su rubro"}, te mostramos otras entradas internas relacionadas para ampliar cobertura SEO y mejorar navegacion.`
-                    : "Cada enlace interno ayuda a posicionar mejor la categoria y al mismo tiempo empuja al usuario hacia resultados con mas intencion de compra."}
+                    ? `${category.name} es una subcategoría dentro de ${parentCategory?.name || "su rubro"}. Mirá también otras categorías relacionadas.`
+                    : "Entrá a las subcategorías para encontrar más rápido lo que estás buscando."}
                 </p>
                 <div className="mt-5 grid gap-2 sm:grid-cols-2">
                   {relatedCategories.length > 0 ? (
@@ -580,11 +558,10 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
             <div className="rounded-[28px] border border-black/5 bg-white p-6 shadow-sm">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="theme-accent-text text-sm font-semibold">Catalogo activo</p>
+                <p className="theme-accent-text text-sm font-semibold">Catálogo</p>
                 <h2 className="mt-1 text-2xl font-black text-slate-950">Publicaciones destacadas de {category.name}</h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-                  La landing conecta con productos reales para que Google vea una categoria viva y el usuario encuentre
-                  inventario apenas aterriza.
+                  Productos de {category.name} publicados por vendedores. La disponibilidad depende de las publicaciones vigentes.
                 </p>
               </div>
               <div className="flex items-center gap-3 text-sm text-slate-500">
@@ -593,21 +570,6 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
                   Ir al buscador
                 </Link>
               </div>
-              </div>
-
-              <div className="mt-5 grid gap-4 rounded-3xl bg-slate-50 p-5 lg:grid-cols-[0.9fr_1.1fr]">
-                <div>
-                  <p className="theme-accent-text text-sm font-semibold">Oportunidad comercial</p>
-                  <h3 className="mt-2 text-xl font-black text-slate-950">Que tipo de vendedores deberiamos atraer primero</h3>
-                  <p className="mt-3 text-sm leading-6 text-slate-600">{seo.editorialClosing}</p>
-                </div>
-                <div className="grid gap-2 sm:grid-cols-3">
-                  {seo.sellerAngles.map((angle) => (
-                    <div key={angle} className="rounded-2xl border border-slate-200 bg-white px-4 py-4">
-                      <p className="text-sm font-semibold text-slate-800">{angle}</p>
-                    </div>
-                  ))}
-                </div>
               </div>
 
             {products.length > 0 ? (
@@ -620,10 +582,10 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
               <Card className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50 shadow-none">
                 <CardContent className="p-12 text-center">
                   <Package className="mx-auto h-16 w-16 text-slate-300" />
-                  <h3 className="mt-4 text-xl font-black text-slate-900">Esta categoria esta lista para crecer</h3>
+                  <h3 className="mt-4 text-xl font-black text-slate-900">Estamos cargando productos en esta categoría</h3>
                   <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-                    Ya quedo preparada para indexar, atraer trafico organico y recibir vendedores. El siguiente salto es sumar
-                    mas inventario y reforzar subcategorias con contenido y publicaciones.
+                    Todavía no hay publicaciones activas en {category.name}. ¿Vendés productos de esta categoría?
+                    Sumá tu catálogo a Madsjeez y aparecé acá.
                   </p>
                   <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
                     <Link href="/vender">

@@ -225,8 +225,8 @@ export default function PublicCouponsPage() {
           </div>
         )}
 
-        <Link href="/coupons" className="block w-full mt-6 bg-[#3483FA] text-white py-3 rounded-lg font-medium text-center hover:bg-[#2968C8] transition-colors">
-          Ver todos los cupones
+        <Link href="/coupons/promociones" className="block w-full mt-6 bg-[#3483FA] text-white py-3 rounded-lg font-medium text-center hover:bg-[#2968C8] transition-colors">
+          Ver promociones del mes
         </Link>
       </main>
 

@@ -102,6 +102,12 @@ const nextConfig: NextConfig = {
         destination: "/dashboard#meli-sync",
         permanent: false,
       },
+      {
+        // Unificación: /coupons era casi gemela de /coupons/public.
+        source: "/coupons",
+        destination: "/coupons/public",
+        permanent: true,
+      },
     ];
   },
 };
