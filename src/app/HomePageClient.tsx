@@ -16,6 +16,7 @@ import dynamic from "next/dynamic"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { trackEvent } from "@/lib/analytics"
+import { Reveal } from "@/components/seller/premium/motion-primitives"
 import {
   Search, ShoppingBag, Store, Globe, ChevronRight, Check, ShieldCheck,
   MapPin, MessageCircle, FileText, CreditCard, Wrench, Hammer, Home as HomeIcon,
@@ -155,13 +156,15 @@ export default function HomePageClient() {
             { Icon: ShoppingBag, title: "Comprar productos", desc: "Encontrá productos, ofertas y tiendas dentro del marketplace.", cta: "Ver catálogo", href: "/search", ev: "home_explore_products_click" },
             { Icon: Store, title: "Vender en Madsjeez", desc: "Publicá tus productos, recibí consultas y sumá un nuevo canal de venta.", cta: "Quiero vender", href: "/seller/register", ev: "home_start_selling_click" },
             { Icon: Globe, title: "Crear mi tienda", desc: "Armá tu vidriera online con nombre propio y link para compartir.", cta: "Crear tienda", href: "/crear-tienda-online", ev: "home_create_store_click" },
-          ].map((c) => (
-            <Link key={c.title} href={c.href} onClick={() => track(c.ev)} className="group flex flex-col rounded-2xl border border-border bg-card p-6 transition hover:border-primary hover:shadow-lg">
-              <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary"><c.Icon className="h-6 w-6" /></span>
-              <h3 className="mt-4 text-lg font-bold text-foreground">{c.title}</h3>
-              <p className="mt-1.5 flex-1 text-sm leading-6 text-muted-foreground">{c.desc}</p>
-              <span className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-primary">{c.cta} <ChevronRight className="h-4 w-4 transition group-hover:translate-x-0.5" /></span>
-            </Link>
+          ].map((c, i) => (
+            <Reveal key={c.title} delay={i * 0.07} className="h-full">
+              <Link href={c.href} onClick={() => track(c.ev)} className="group flex h-full flex-col rounded-2xl border border-border bg-card p-6 transition hover:-translate-y-0.5 hover:border-primary hover:shadow-lg">
+                <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary"><c.Icon className="h-6 w-6" /></span>
+                <h3 className="mt-4 text-lg font-bold text-foreground">{c.title}</h3>
+                <p className="mt-1.5 flex-1 text-sm leading-6 text-muted-foreground">{c.desc}</p>
+                <span className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-primary">{c.cta} <ChevronRight className="h-4 w-4 transition group-hover:translate-x-0.5" /></span>
+              </Link>
+            </Reveal>
           ))}
         </div>
       </section>
@@ -173,11 +176,13 @@ export default function HomePageClient() {
       <section className="mx-auto max-w-6xl px-4 py-10">
         <h2 className="text-2xl font-bold tracking-tight md:text-3xl">Categorías destacadas</h2>
         <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {CATEGORIES.map((c) => (
-            <Link key={c.name} href={c.href} onClick={() => track("category_click", { category: c.name })} className="group flex items-center gap-3 rounded-xl border border-border bg-card p-4 transition hover:border-primary">
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary"><c.Icon className="h-5 w-5" /></span>
-              <span className="text-sm font-semibold text-foreground group-hover:text-primary">{c.name}</span>
-            </Link>
+          {CATEGORIES.map((c, i) => (
+            <Reveal key={c.name} delay={i * 0.04}>
+              <Link href={c.href} onClick={() => track("category_click", { category: c.name })} className="group flex items-center gap-3 rounded-xl border border-border bg-card p-4 transition hover:-translate-y-0.5 hover:border-primary hover:shadow-md">
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary"><c.Icon className="h-5 w-5" /></span>
+                <span className="text-sm font-semibold text-foreground group-hover:text-primary">{c.name}</span>
+              </Link>
+            </Reveal>
           ))}
         </div>
       </section>
@@ -192,7 +197,7 @@ export default function HomePageClient() {
 
       {/* ───────── PARA VENDEDORES ───────── */}
       <section className="mx-auto max-w-6xl px-4 py-14">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+        <Reveal className="grid grid-cols-1 gap-8 md:grid-cols-2">
           <div>
             <h2 className="text-2xl font-bold tracking-tight md:text-3xl">Tu negocio también puede vender en Madsjeez</h2>
             <ul className="mt-6 space-y-3 text-sm text-foreground">
@@ -228,7 +233,7 @@ export default function HomePageClient() {
             </ul>
             <Link href="/search" onClick={() => track("home_explore_products_click")} className="mt-7 inline-flex items-center gap-2 rounded-xl bg-foreground px-6 py-3 text-sm font-bold text-background hover:opacity-90">Explorar productos</Link>
           </div>
-        </div>
+        </Reveal>
       </section>
 
       {/* ───────── CONFIANZA (honesto) ───────── */}
