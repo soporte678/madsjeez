@@ -253,9 +253,9 @@ export default function PublicCouponsPage() {
       <footer className="bg-card border-t border-border mt-12">
         <div className="max-w-[1200px] mx-auto px-4 py-6">
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
-            <Link href="/about" className="hover:text-[#3483FA]">Trabajá con nosotros</Link>
+            <Link href="/quienes-somos" className="hover:text-[#3483FA]">Trabajá con nosotros</Link>
             <Link href="/legal/terminos" className="hover:text-[#3483FA]">Términos y condiciones</Link>
-            <Link href="/promotions" className="hover:text-[#3483FA]">Promociones</Link>
+            <Link href="/offers" className="hover:text-[#3483FA]">Promociones</Link>
             <Link href="/ayuda" className="hover:text-[#3483FA]">Ayuda</Link>
           </div>
           <div className="text-center mt-4 text-xs text-muted-foreground">

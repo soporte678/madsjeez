@@ -481,8 +481,8 @@ export default function SubscriptionsPage() {
                 ¿Hay período de prueba?
               </h4>
               <p className="text-white/80 text-sm">
-                Ofrecemos 14 días de prueba gratuita en el plan GOLD. No se requiere tarjeta 
-                de crédito para comenzar.
+                Podés empezar con el plan Básico ($0), sin tarjeta de crédito, y pasar a Pro o
+                Ultra cuando lo necesites.
               </p>
             </div>
           </div>

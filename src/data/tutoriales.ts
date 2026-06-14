@@ -92,10 +92,10 @@ export const TUTORIALES: Tutorial[] = [
     ],
     ctaLabel: 'Postularme ahora',
     ctaHref: '/seller/register?program=founding',
-    related: ['crear-cuenta', 'publicar-producto', 'configurar-pagos'],
+    related: ['crear-cuenta-vendedor', 'publicar-producto', 'configurar-pagos'],
   },
   {
-    slug: 'crear-cuenta',
+    slug: 'crear-cuenta-vendedor',
     title: 'Crear tu cuenta y verificar identidad',
     subtitle: 'De 0 a vendedor en menos de 10 minutos',
     audience: 'seller',
@@ -1106,7 +1106,7 @@ export const TUTORIALES: Tutorial[] = [
     ],
     ctaLabel: 'Importar mi catálogo',
     ctaHref: '/dashboard/importar',
-    related: ['publicar-producto', 'crear-cuenta', 'configurar-pagos'],
+    related: ['publicar-producto', 'crear-cuenta-vendedor', 'configurar-pagos'],
   },
 ];
 

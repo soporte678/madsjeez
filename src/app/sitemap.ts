@@ -9,6 +9,7 @@ import { SELLER_HELP_ARTICLES } from "@/data/help-seller-articles";
 import { COMPARATIVAS } from "@/data/comparativas";
 import { REP_GUIAS } from "@/data/reparacion-guias";
 import { MARCAS } from "@/data/marcas";
+import { TUTORIALES } from "@/data/tutoriales";
 
 const BASE_URL = "https://www.madsjeez.com.ar";
 
@@ -81,8 +82,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.6,
     })),
     { url: `${BASE_URL}/tutoriales`,                  lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
-    ...['postularte-fundador','crear-cuenta','publicar-producto','configurar-pagos','gestionar-preguntas','generar-etiquetas','ver-metricas','usar-ads'].map((s) => ({
-      url: `${BASE_URL}/tutoriales/${s}`,
+    ...TUTORIALES.map((t) => ({
+      url: `${BASE_URL}/tutoriales/${t.slug}`,
       lastModified: new Date(),
       changeFrequency: 'monthly' as const,
       priority: 0.6,

@@ -611,9 +611,9 @@ export default function OffersPage() {
       <footer className="mt-12 border-t border-white/10 bg-[#0b1220]">
         <div className="max-w-[1200px] mx-auto px-4 py-6">
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-slate-500">
-            <Link href="/about" className="hover:text-[#f97316] hover:underline">Trabajá con nosotros</Link>
+            <Link href="/quienes-somos" className="hover:text-[#f97316] hover:underline">Trabajá con nosotros</Link>
             <Link href="/legal/terminos" className="hover:text-[#f97316] hover:underline">Términos y condiciones</Link>
-            <Link href="/promotions" className="hover:text-[#f97316] hover:underline">Promociones</Link>
+            <Link href="/offers" className="hover:text-[#f97316] hover:underline">Promociones</Link>
             <Link href="/legal/privacidad" className="hover:text-[#f97316] hover:underline">Cómo cuidamos tu privacidad</Link>
             <Link href="/ayuda" className="hover:text-[#f97316] hover:underline">Ayuda</Link>
           </div>

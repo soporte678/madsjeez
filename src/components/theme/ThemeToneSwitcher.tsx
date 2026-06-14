@@ -29,8 +29,9 @@ export default function ThemeToneSwitcher({
 
   return (
     <label className={`inline-flex items-center ${compact ? "gap-1.5" : "gap-2"} text-xs`}>
-      <Palette size={compact ? 13 : 14} />
+      <Palette size={compact ? 13 : 14} aria-hidden="true" />
       <select
+        aria-label="Tema de color"
         value={themeTone}
         onChange={(e) => applyThemeTone(e.target.value as ThemeTone)}
         className={`border rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 ${

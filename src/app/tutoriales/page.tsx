@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Tutoriales MadsJeez para vendedores',
     description:
-      '8 guías cortas para arrancar a vender en el marketplace en menos de una tarde.',
+      'Guías cortas paso a paso para vender y comprar en el marketplace MadsJeez.',
     url: 'https://www.madsjeez.com.ar/tutoriales',
     type: 'website',
   },

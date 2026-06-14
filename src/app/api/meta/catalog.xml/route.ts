@@ -13,8 +13,12 @@ import { logger } from "@/lib/logger";
  *
  * Returns only active products with stock and at least one image. Reads via Prisma
  * (which enforces app-level row scoping); no service-role Supabase key needed here.
+ *
+ * force-dynamic: evita el prerender en build (sin DATABASE_URL en Docker build),
+ * que tiraba "[ERROR] meta/catalog.xml generation failed". La frescura la maneja
+ * el header Cache-Control (CDN 1h), no el ISR.
  */
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {

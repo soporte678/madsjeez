@@ -1,7 +1,11 @@
 import crypto from "crypto";
 
 function secret() {
-  return process.env.MELI_OAUTH_STATE_SECRET || process.env.NEXTAUTH_SECRET || "meli-oauth-state-change-me";
+  const s = process.env.MELI_OAUTH_STATE_SECRET || process.env.NEXTAUTH_SECRET;
+  if (!s) {
+    throw new Error("Falta MELI_OAUTH_STATE_SECRET o NEXTAUTH_SECRET para firmar el state de OAuth de MercadoLibre");
+  }
+  return s;
 }
 
 export function signMeliOAuthUserId(userId: string): string {
