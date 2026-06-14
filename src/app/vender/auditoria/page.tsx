@@ -25,10 +25,10 @@ export default function SellerAuditPage() {
   }, [form]);
 
   const recommendations = [
-    "Crear landing SEO por rubro y categoria para captar compradores desde Google.",
-    "Importar catalogo inicial y priorizar los productos con mas busqueda o margen.",
-    "Mejorar fichas con titulo tecnico, fotos claras, stock y preguntas frecuentes.",
-    "Medir origen de visitas para separar organico, pago, referido y social.",
+    "Sumá tu catálogo por rubro para que más compradores te encuentren en Google.",
+    "Importá tu catálogo inicial y priorizá los productos con más búsqueda o margen.",
+    "Mejorá las fichas con título claro, fotos nítidas, stock y preguntas frecuentes.",
+    "Revisá desde tu panel las visitas y consultas que recibís para enfocar tus esfuerzos.",
   ];
 
   const submit = async (e: React.FormEvent) => {

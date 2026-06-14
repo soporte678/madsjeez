@@ -40,9 +40,9 @@ const benefits: Array<{
 }> = [
   {
     icon: Percent,
-    title: "0% comisión sobre tus ventas. Siempre.",
+    title: "0% comisión sobre tus ventas durante la beta.",
     body:
-      "Madsjeez no cobra un peso de lo que vendés. Cobrás con tu MercadoPago y las cuotas las definís vos. Te quedás con el 100%.",
+      "Durante la etapa beta, Madsjeez no cobra comisión por venta. Cobrás con tu MercadoPago y las cuotas las definís vos. Te quedás con el 100%. Las condiciones pueden actualizarse e informarse oportunamente.",
     highlight: true,
   },
   {

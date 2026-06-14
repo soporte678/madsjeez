@@ -124,7 +124,7 @@ export default function TerminosPage() {
               <h2 className="text-xl font-semibold mt-8 mb-4">14. Contacto</h2>
               <p>Para consultas sobre estos términos, contacte a:</p>
               <p>Email: legal@madsjeez.com</p>
-              <p>Dirección: [Dirección de la empresa]</p>
+              <p>Dirección: Constancio C. Vigil 150, Carlos Spegazzini, Buenos Aires, Argentina</p>
 
               <hr className="my-8" />
               

@@ -155,7 +155,7 @@ export default function AvisoLegalPage() {
           Para consultas legales o notificaciones:<br />
           <strong>Departamento Legal</strong><br />
           Email: <a href="mailto:legal@madsjeez.com.ar" className="text-blue-600 hover:underline">legal@madsjeez.com.ar</a><br />
-          Dirección: [Dirección postal]<br />
+          Dirección: Constancio C. Vigil 150, Carlos Spegazzini, Buenos Aires, Argentina<br />
           Horario de atención: Lunes a Viernes de 9:00 a 18:00 hs.
         </p>
 

@@ -28,7 +28,7 @@ const liveStack = [
   "Ordenes para comprador y vendedor",
   "SEO tecnico base: sitemap, robots y metadata",
   "Captacion de vendedores con leads",
-  "Medicion de trafico organico, pago, directo y referral",
+  "Seguimiento de visitas y consultas desde tu panel",
 ];
 
 const roadmap = [
@@ -41,7 +41,7 @@ const roadmap = [
       "Panel de comprador con compras y detalle de pedido",
       "SEO inicial para que Google pueda descubrir el marketplace",
       "Sistema de leads para invitar comercios a vender",
-      "Admin con lectura de visitas por canal de adquisicion",
+      "Panel con visitas y consultas de tus publicaciones",
     ],
   },
   {
@@ -78,8 +78,8 @@ const growthLoops = [
   },
   {
     icon: Megaphone,
-    title: "Campanas medibles",
-    text: "UTM, origen de visita y canal de adquisicion para separar trafico organico, pago, social y referido desde el panel admin.",
+    title: "Resultados a la vista",
+    text: "Seguí cuántas visitas y consultas reciben tus productos desde tu panel, para enfocar mejor tus esfuerzos.",
   },
   {
     icon: LineChart,

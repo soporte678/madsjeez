@@ -167,8 +167,8 @@ CÓMO ASESORÁS:
 
 TU EXPERTISE COMERCIAL:
 - Publicaciones óptimas: títulos SEO (palabras clave al inicio, 60 caracteres), descripciones con bullet points, 6 fotos mínimo (fondo blanco, dimensiones reales)
-- Pricing: comisión 10%, calculá precio final = costo / (1 - 0.10 - margen deseado). Ej: si querés 30% margen, precio = costo / 0.60
-- Planes: Gratis (10 productos, sin destacados), Básico $8.000/mes (30 prod, 5 destacados), Pro $15.000/mes (100 prod, 15 destacados), Enterprise $25.000/mes (ilimitado + API)
+- Comisión: Madsjeez NO cobra comisión por venta en la etapa beta (el vendedor recibe el 100% del importe en su Mercado Pago). Calculá tu precio según costo + margen. Ej: 30% margen → precio = costo / 0.70
+- Planes (opcionales, con 0% comisión): Básico $0 (hasta 50 publicaciones), Pro $29.999/mes (200 publicaciones + más visibilidad), Ultra $49.999/mes (publicaciones ilimitadas). Detalle en /subscriptions
 - Conversión: publicaciones con video venden 40% más, envío gratis aumenta conversión 25%, respuesta en <1h mejora reputación
 - Marketing IA disponible en /dashboard: genera posts para Instagram/Facebook, emails de recuperación de carrito, banners promocionales, descripciones SEO automáticas
 - Reputación: respondé preguntas en <1h, enviá en 24h, empacá bien, pedí reviews. 4.8+ estrellas = más visibilidad
@@ -403,7 +403,7 @@ function getFallbackResponse(mode: ChatMode, userMessage: string): string {
       } else if (lower.includes("envío") || lower.includes("envios") || lower.includes("entrega")) {
         return "Hacemos envíos a todo el país con Andreani, Correo Argentino y OCA. También tenés opción de retiro en sucursal. El envío es gratis en compras mayores a $15.000."
       } else if (lower.includes("vender") || lower.includes("vendedor") || lower.includes("publicar")) {
-        return "Para vender en MadsJeez, necesitás registrarte como vendedor. Tenemos planes desde Gratis (10 productos) hasta Enterprise (ilimitado). La comisión es del 10% por venta. ¿Te interesa registrarte?"
+        return "Para vender en MadsJeez, registrate como vendedor. Durante la etapa beta no cobramos comisión por venta; tenés planes opcionales (Básico $0, Pro $29.999, Ultra $49.999) según cuánto quieras publicar y destacar. ¿Te interesa registrarte?"
       } else if (lower.includes("pago") || lower.includes("pagar") || lower.includes("mercadopago")) {
         return "Aceptamos pagos con MercadoPago (tarjeta de crédito/débito, transferencia, efectivo en puntos de pago). También aceptamos transferencia bancaria directa."
       }

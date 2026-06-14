@@ -114,7 +114,7 @@ export default function PrivacidadPage() {
               <h2 className="text-xl font-semibold mt-8 mb-4">11. Contacto</h2>
               <p>Para ejercer sus derechos o realizar consultas sobre privacidad:</p>
               <p>Email: privacidad@madsjeez.com</p>
-              <p>Dirección postal: [Dirección de la empresa]</p>
+              <p>Dirección postal: Constancio C. Vigil 150, Carlos Spegazzini, Buenos Aires, Argentina</p>
               <p>También puede contactar a la Dirección Nacional de Protección de Datos Personales.</p>
 
               <hr className="my-8" />
