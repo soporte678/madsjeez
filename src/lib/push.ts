@@ -9,7 +9,7 @@ import webpush from "web-push";
 // Configurar VAPID keys (solo en server-side)
 const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
 const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY || "";
-const vapidSubject = process.env.VAPID_SUBJECT || "mailto:soporte@madsjeez.com.ar";
+const vapidSubject = process.env.VAPID_SUBJECT || "mailto:soporte@madsjeez.com";
 
 // Inicializar web-push solo si hay keys configuradas
 if (vapidPublicKey && vapidPrivateKey) {

@@ -32,7 +32,7 @@ export default function ConfiguracionPage() {
   const [loading, setLoading] = useState(true)
   const [config, setConfig] = useState<ConfigData>({
     marketplace_name: "MadsJeez",
-    contact_email: "soporte@madsjeez.com.ar",
+    contact_email: "soporte@madsjeez.com",
     contact_phone: "+54 11 1234-5678",
     timezone: "America/Argentina/Buenos_Aires",
     description: "El marketplace de productos de ferretería más grande de Argentina",
