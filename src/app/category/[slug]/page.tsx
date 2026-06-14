@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 import { Header } from "@/components/Header";
 import { ProductCard } from "@/components/product/ProductCard";
+import { Reveal } from "@/components/seller/premium/motion-primitives";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -574,8 +575,10 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
 
             {products.length > 0 ? (
               <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
-                {products.slice(0, 12).map((product) => (
-                  <ProductCard key={product.id} product={product} />
+                {products.slice(0, 12).map((product, i) => (
+                  <Reveal key={product.id} delay={Math.min(i, 7) * 0.05} className="h-full">
+                    <ProductCard product={product} />
+                  </Reveal>
                 ))}
               </div>
             ) : (
