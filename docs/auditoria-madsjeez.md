@@ -85,20 +85,27 @@ Fecha: 2026-06-13 · Método: análisis del código + datos reales de Supabase +
 ## 30. Plan de implementación por prioridad
 
 **PRIORIDAD 1 (confianza/legal/coherencia — bajo riesgo, alto impacto):**
-- [ ] Reemplazar `[Dirección…]` en términos/aviso-legal/privacidad por `COMPANY.address.full` (dato real) — *o* quitar el campo si el dueño no quiere publicarlo.
-- [ ] Corregir el chatbot: comisión "10%" → mensaje único coherente ("0% durante la beta / monetizamos con planes").
-- [ ] Matizar "0% comisión **siempre**" → "0% durante la etapa beta; las condiciones pueden actualizarse e informarse oportunamente".
-- [ ] Reescribir la jerga interna de `/vender` y `/vender/auditoria` a copy orientado al vendedor (sin "UTM/tráfico orgánico/landing SEO").
+- [x] Reemplazar `[Dirección…]` en términos/aviso-legal/privacidad por `COMPANY.address.full` (dato real, ya público en el footer).
+- [x] Corregir el chatbot: comisión "10%" → mensaje único coherente ("0% durante la beta + planes opcionales Básico $0 / Pro / Ultra").
+- [x] Matizar "0% comisión **siempre**" → "0% durante la etapa beta; las condiciones pueden actualizarse e informarse oportunamente".
+- [x] Reescribir la jerga interna de `/vender` y `/vender/auditoria` a copy orientado al vendedor (sin "UTM/tráfico orgánico/landing SEO").
 
 **PRIORIDAD 2 (catálogo honesto + UX):**
-- [ ] Categorías vacías: ocultarlas del menú/listados o mostrar "Estamos cargando productos en esta categoría" + "¿Vendés esto? Sumá tu catálogo".
-- [ ] Checkout: ocultar/deshabilitar MP si el vendedor no lo conectó y ofrecer "Consultar por WhatsApp" como fallback.
-- [ ] Unificar `/coupons` ↔ `/coupons/public` (301 una hacia la otra).
+- [x] Categorías vacías: empty-state honesto "Estamos cargando productos en esta categoría… Sumá tu catálogo". Quitada toda la jerga SEO interna visible de `/category/[slug]`. Indexación gateada (≥5 productos).
+- [~] Checkout: el flujo ya muestra un error claro `SELLER_MP_NOT_CONNECTED` al enviar (no es engañoso) → aceptable. Mejora opcional (ocultar MP de entrada + fallback WhatsApp) queda como pendiente menor.
+- [x] Unificar `/coupons` ↔ `/coupons/public` (301 `/coupons`→`/coupons/public`).
 
-**PRIORIDAD 3 (SEO útil ya iniciado):**
-- [ ] Centro de ayuda `/ayuda` (¿reusar `/help`? evaluar redirect/canonical) + subpáginas de ayuda.
-- [ ] Guías técnicas de repuestos (carburador, cardán, cabezal, bobina, mezcla 2T…).
-- [ ] `/marcas`, `/localidades`, `/comparativas`, `/maqjeez-y-madsjeez`.
+**PRIORIDAD 3 (SEO útil — completado en lotes para evitar thin content):**
+- [x] Centro de ayuda `/ayuda` (hub + 10 artículos compradores) + `/ayuda-vendedores` (hub + 10 artículos vendedores). Redirect 301 `/help`→`/ayuda`.
+- [x] Guías de reparación/mantenimiento `/reparacion` (hub + 12 guías: no arranca, mezcla 2T, lubricación, afilado, carburador, identificar repuesto por medidas, cuándo ir al service — pistón/cardán/bobina/embrague encarados como señales para taller, sin teardown riesgoso). Verificado `/diagnostico` OFF → sin duplicar PartsVision.
+- [x] `/comparativas` (hub + 6 tipo-vs-tipo) y `/maqjeez-y-madsjeez`.
+- [x] `/marcas` (hub + 7 marcas con resultados reales en catálogo: niwa, gamma, stihl, lusqtoff, omaha, honda, shizen) — framing "no distribuidor oficial / originales o compatibles según el vendedor", sin logos.
+- [~] `/localidades` — **NO construido a propósito**: con 3 vendedores y sin inventario realmente local serían *doorway/thin pages* que penalizan el dominio (contra la regla "no thin content"). Reabrir cuando haya señal local real (vendedores por zona / stock geolocalizado).
+
+## 31. Estado final FASE 0–10 (sesión)
+- **P1, P2 y P3** implementados y deployados a producción (Railway, `main`). Cada lote: build "Compiled successfully" → push → deploy SUCCESS → smoke test 200 en vivo.
+- **Hallazgo de datos:** `Product` no tiene campo `brand`; las marcas viven en el título y el catálogo es mayormente compatible/aftermarket → por eso `/marcas` usa framing honesto y solo marcas con matches reales.
+- **Pendientes del dueño:** publicar (o no) CUIT en legales; validación legal/contable final; decidir si se reabre `/localidades` con señal local; mejora opcional de UX de checkout (fallback WhatsApp).
 
 **Requiere DATOS REALES del dueño:** ¿publicar la dirección postal completa en legales? ¿confirmar el modelo (0% beta vs planes)?
 **Requiere ABOGADO/CONTADOR:** revisión final de términos/privacidad/aviso-legal antes del lanzamiento formal (ya tienen base sólida; falta validación profesional).
