@@ -7,6 +7,7 @@ import { BLOG_POSTS } from "@/data/blog-posts";
 import { HELP_ARTICLES } from "@/data/help-articles";
 import { SELLER_HELP_ARTICLES } from "@/data/help-seller-articles";
 import { COMPARATIVAS } from "@/data/comparativas";
+import { REP_GUIAS } from "@/data/reparacion-guias";
 
 const BASE_URL = "https://www.madsjeez.com.ar";
 
@@ -60,6 +61,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/comparativas`,                lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
     ...COMPARATIVAS.map((c) => ({
       url: `${BASE_URL}/comparativas/${c.slug}`,
+      lastModified: new Date(),
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+    })),
+    { url: `${BASE_URL}/reparacion`,                  lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
+    ...REP_GUIAS.map((g) => ({
+      url: `${BASE_URL}/reparacion/${g.slug}`,
       lastModified: new Date(),
       changeFrequency: "monthly" as const,
       priority: 0.6,
