@@ -4,6 +4,7 @@ import { getMeliEnv } from "@/lib/meli/config";
 import { meliExchangeCode } from "@/lib/meli/token";
 import { meliGetMe } from "@/lib/meli/api";
 import { verifyMeliOAuthState } from "@/lib/meli/oauth-state";
+import { encryptToken } from "@/lib/integrations/crypto";
 
 function appBaseUrl() {
   return (
@@ -67,15 +68,15 @@ export async function GET(req: Request) {
         userId,
         meliUserId,
         nickname,
-        accessToken: tokens.access_token,
-        refreshToken: tokens.refresh_token ?? null,
+        accessToken: encryptToken(tokens.access_token) ?? tokens.access_token,
+        refreshToken: encryptToken(tokens.refresh_token ?? null),
         expiresAt,
         isPrimary: existingOtherAccounts === 0,
       },
       update: {
         nickname: nickname ?? undefined,
-        accessToken: tokens.access_token,
-        refreshToken: tokens.refresh_token ?? undefined,
+        accessToken: encryptToken(tokens.access_token) ?? tokens.access_token,
+        refreshToken: tokens.refresh_token ? (encryptToken(tokens.refresh_token) ?? undefined) : undefined,
         expiresAt,
       },
     });

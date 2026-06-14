@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { supabaseService } from "@/lib/supabase/service";
 import { verifyMpOAuthState } from "@/lib/mp-oauth-state";
 import { ensureMpOauthUsedNoncesTable } from "@/lib/supabase/postgrest-schema";
+import { encryptToken } from "@/lib/integrations/crypto";
 
 interface MercadoPagoTokenResponse {
   access_token: string;
@@ -138,8 +139,8 @@ export async function GET(request: Request) {
     const { error: dbError } = await supabaseService.from("seller_mercadopago").upsert(
       {
         seller_id: sellerId,
-        mp_access_token: tokenData.access_token,
-        mp_refresh_token: tokenData.refresh_token || null,
+        mp_access_token: encryptToken(tokenData.access_token),
+        mp_refresh_token: encryptToken(tokenData.refresh_token || null),
         mp_token_expires_at: expiresAt,
         mp_user_id: userInfo?.id?.toString() || null,
         mp_email: userInfo?.email || null,

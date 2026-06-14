@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { OrderStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { supabaseService } from "@/lib/supabase/service";
+import { decryptToken } from "@/lib/integrations/crypto";
 import { mergeSellerFulfillmentIntoShipping, parseSellerFulfillment } from "@/lib/orders/seller-fulfillment";
 import {
   hasActiveStockReservation,
@@ -165,7 +166,7 @@ async function fetchMercadoPagoPaymentJson(
     .eq("is_active", true);
 
   for (const row of sellerRows ?? []) {
-    const t = row?.mp_access_token as string | null | undefined;
+    const t = decryptToken(row?.mp_access_token as string | null | undefined);
     if (t && !tokens.includes(t)) tokens.push(t);
   }
 

@@ -56,3 +56,27 @@ export function decryptJSON<T = Record<string, unknown>>(blob: string): T | null
     return null;
   }
 }
+
+/* ------------------------------------------------------------------ */
+/*  Helpers para tokens OAuth (string) en reposo.                      */
+/*  encryptToken -> "v1:..." | decryptToken: compat con texto plano    */
+/*  legacy (si no empieza con "v1:", lo devuelve tal cual). Así los     */
+/*  tokens ya guardados siguen funcionando y se cifran solos en el     */
+/*  próximo refresh/reconexión, sin migración masiva riesgosa.         */
+/* ------------------------------------------------------------------ */
+
+/** Cifra un token para guardarlo. Pasa null/"" sin tocar. */
+export function encryptToken(token: string | null | undefined): string | null {
+  if (token == null || token === "") return token == null ? null : token;
+  return encryptJSON(token);
+}
+
+/** Descifra un token guardado. Si no está cifrado (legacy), lo devuelve igual. */
+export function decryptToken(stored: string | null | undefined): string | null {
+  if (stored == null || stored === "") return stored == null ? null : stored;
+  if (stored.startsWith("v1:")) {
+    const v = decryptJSON<string>(stored);
+    return typeof v === "string" ? v : null;
+  }
+  return stored; // legacy en texto plano
+}

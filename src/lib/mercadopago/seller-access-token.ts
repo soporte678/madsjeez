@@ -1,6 +1,16 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { prisma } from "@/lib/prisma";
 import { mpOAuthRefreshAdvisoryKey, withSessionAdvisoryBigintLock } from "@/lib/db/pg-advisory-lock";
+import { decryptToken, encryptToken } from "@/lib/integrations/crypto";
+
+/** Descifra los tokens de una fila (compat texto plano legacy). Muta la fila. */
+function decryptSellerMpRow(row: SellerMpRow | null): SellerMpRow | null {
+  if (row) {
+    row.mp_access_token = decryptToken(row.mp_access_token);
+    row.mp_refresh_token = decryptToken(row.mp_refresh_token);
+  }
+  return row;
+}
 
 /** Renovar antes del vencimiento para evitar 401 en checkout. */
 const MP_EXPIRY_BUFFER_MS = 5 * 60 * 1000;
@@ -105,7 +115,7 @@ async function ensureSellerMpAccessTokenImpl(
     console.error("seller_mercadopago load:", loadErr);
   }
 
-  const row = (live as SellerMpRow | null) ?? null;
+  const row = decryptSellerMpRow((live as SellerMpRow | null) ?? null);
   if (!row?.mp_access_token?.trim()) {
     return {
       ok: false,
@@ -152,7 +162,7 @@ async function ensureSellerMpAccessTokenImpl(
       console.error("seller_mercadopago load (locked):", loadErr2);
     }
 
-    const row2 = (live2 as SellerMpRow | null) ?? null;
+    const row2 = decryptSellerMpRow((live2 as SellerMpRow | null) ?? null);
     if (!row2?.mp_access_token?.trim()) {
       return {
         ok: false,
@@ -199,8 +209,8 @@ async function ensureSellerMpAccessTokenImpl(
       const { error: upErr } = await supabase
         .from("seller_mercadopago")
         .update({
-          mp_access_token: t.access_token,
-          mp_refresh_token: nextRefresh,
+          mp_access_token: encryptToken(t.access_token),
+          mp_refresh_token: encryptToken(nextRefresh),
           mp_token_expires_at: expiresAt,
           updated_at: new Date().toISOString(),
         })

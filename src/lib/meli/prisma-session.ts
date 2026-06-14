@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { getMeliEnv } from "./config";
 import { meliRefreshToken } from "./token";
+import { decryptToken, encryptToken } from "@/lib/integrations/crypto";
 
 export type MeliTokenCtx = {
   accessToken: string;
@@ -38,6 +39,10 @@ async function fetchMeliOAuthCoreRaw(accountId: string): Promise<MeliOAuthCoreRo
 }
 
 async function resolveAccessFromCore(accountId: string, row: MeliOAuthCoreRow): Promise<MeliTokenCtx> {
+  // Descifrar tokens en reposo (compat con texto plano legacy).
+  row.accessToken = decryptToken(row.accessToken) ?? row.accessToken;
+  row.refreshToken = decryptToken(row.refreshToken);
+
   const now = Date.now();
   const bufferMs = 5 * 60 * 1000;
   if (row.expiresAt.getTime() - bufferMs > now) {
@@ -60,8 +65,8 @@ async function resolveAccessFromCore(accountId: string, row: MeliOAuthCoreRow): 
       await prisma.sellerMeliOAuth.update({
         where: { id: accountId },
         data: {
-          accessToken: refreshed.access_token,
-          refreshToken: refreshed.refresh_token ?? row.refreshToken,
+          accessToken: encryptToken(refreshed.access_token) ?? refreshed.access_token,
+          refreshToken: encryptToken(refreshed.refresh_token ?? row.refreshToken),
           expiresAt,
         },
       });
