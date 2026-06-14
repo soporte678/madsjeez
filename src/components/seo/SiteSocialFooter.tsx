@@ -56,7 +56,7 @@ export function SiteSocialFooter() {
           ofertas activas
         </Link>{" "}
         y el{" "}
-        <Link href="/catalog" className="text-[#00b4d8] hover:underline font-semibold">
+        <Link href="/marketplace" className="text-[#00b4d8] hover:underline font-semibold">
           catálogo completo
         </Link>
         .

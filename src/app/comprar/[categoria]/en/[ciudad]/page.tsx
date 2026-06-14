@@ -21,12 +21,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const path = `/comprar/${categoria}/en/${ciudad}`;
   const title = `Comprar ${data.categoryName} en ${data.localityName} | MadsJeez Marketplace`;
-  const description = `Encontrá ${data.productCount}+ ${data.categoryName} con envío a ${data.localityName}, ${data.provinceName}. Comprá en el marketplace MadsJeez con Mercado Pago.`;
+  const description = `Comprá ${data.categoryName} en MadsJeez. Los envíos los coordina cada vendedor según su publicación. Pagos con Mercado Pago.`;
 
   return {
     ...canonicalMeta(path),
     title,
     description,
+    // noindex: el listado de productos es por categoría, no por ciudad (no hay
+    // inventario local real). Evita doorway/thin pages que penalizan el dominio;
+    // follow para conservar el enlazado interno hacia la categoría real.
+    robots: { index: false, follow: true },
     keywords: [
       `comprar ${data.categoryName} ${data.localityName}`,
       `marketplace ${data.localityName}`,
@@ -80,9 +84,9 @@ export default async function ComprarLandingPage({ params }: Props) {
             Comprar {data.categoryName} en {data.localityName}
           </h1>
           <p className="text-slate-600 mt-4 leading-relaxed">
-            MadsJeez Marketplace reúne vendedores verificados de {data.categoryName} con stock
-            actualizado y pagos con Mercado Pago. Enviamos a {data.localityName} y todo el país:{" "}
-            <strong>{data.productCount} productos</strong> disponibles ahora en esta categoría.
+            MadsJeez Marketplace reúne vendedores de {data.categoryName} con pagos por Mercado Pago.
+            Los envíos los coordina cada vendedor según su publicación (a {data.localityName} y todo
+            el país, según disponibilidad): <strong>{data.productCount} productos</strong> en esta categoría.
           </p>
         </div>
       </section>
@@ -147,7 +151,7 @@ export default async function ComprarLandingPage({ params }: Props) {
         <p>
           ¿Vendés {data.categoryName}?{" "}
           <Link href="/seller/register" className="text-[#3483FA] font-semibold hover:underline">
-            Publicá gratis en MadsJeez
+            Publicá en MadsJeez
           </Link>{" "}
           y aparecé en búsquedas de tu zona.
         </p>

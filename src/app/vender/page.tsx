@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import VenderClient from "./VenderClient";
 
 export const metadata: Metadata = {
-  title: "Vendé en MadsJeez — Marketplace Argentina | Abrí tu tienda gratis",
+  title: "Vendé en MadsJeez — Marketplace de Argentina",
   description:
-    "Publicá tus productos en MadsJeez y llegá a compradores de todo el país. 0% comisión sobre tus ventas durante la etapa beta. Cobrás con tu Mercado Pago.",
+    "Publicá tus productos en MadsJeez y llegá a compradores de todo el país. Durante la etapa beta no cobramos comisión por venta; cobrás con tu Mercado Pago. Planes opcionales.",
   // Consolidación SEO: el hub canónico de captación de vendedores es
   // /vender-en-madsjeez (keyword-rich). Esta página sigue funcionando pero
   // delega su señal de indexación al hub para no competir por la misma intención.

@@ -109,9 +109,21 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
-        // Centro de ayuda consolidado en /ayuda (subpáginas reales, sin 404).
+        // Centro de ayuda consolidado en /ayuda. El árbol legacy /help/* usaba
+        // otros slugs; redirigimos todo el árbol al hub (sin mapeo 1:1).
+        source: "/help/:path*",
+        destination: "/ayuda",
+        permanent: true,
+      },
+      {
         source: "/help",
         destination: "/ayuda",
+        permanent: true,
+      },
+      {
+        // /catalog servía datos demo hardcodeados → consolidar en el marketplace real.
+        source: "/catalog",
+        destination: "/marketplace",
         permanent: true,
       },
     ];

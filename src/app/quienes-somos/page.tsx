@@ -4,7 +4,7 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { SiteCompanyFooter } from "@/components/seo/SiteCompanyFooter";
 import { COMPANY } from "@/lib/company";
-import { FEATURED_SELLER, MARKETPLACE_STATS } from "@/lib/social-proof";
+import { FEATURED_SELLER, MARKETPLACE_STATS, MARKETPLACE_HIGHLIGHTS } from "@/lib/social-proof";
 import { canonicalMeta } from "@/lib/seo/canonical";
 import { SITE_URL } from "@/lib/seo/site";
 import { ChevronRight, Target, Users } from "lucide-react";
@@ -74,21 +74,16 @@ export default function QuienesSomosPage() {
 
       <section className="max-w-5xl mx-auto px-4 py-8">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          {[
-            { v: MARKETPLACE_STATS.productsPublished, l: "Productos" },
-            { v: MARKETPLACE_STATS.sellers, l: "Vendedores" },
-            { v: MARKETPLACE_STATS.buyers, l: "Compradores" },
-            { v: MARKETPLACE_STATS.ordersPerMonth, l: "Pedidos / mes" },
-          ].map((s) => (
-            <div key={s.l} className="text-center">
-              <p className="text-2xl font-black text-[#3483FA]">{s.v}</p>
-              <p className="text-xs font-semibold text-slate-500 mt-1">{s.l}</p>
+          {MARKETPLACE_HIGHLIGHTS.map((s) => (
+            <div key={s.label} className="text-center">
+              <p className="text-2xl font-black text-[#3483FA]">{s.value}</p>
+              <p className="text-xs font-semibold text-slate-500 mt-1">{s.label}</p>
             </div>
           ))}
         </div>
         <p className="text-center text-sm text-slate-600 mt-4">
           {MARKETPLACE_STATS.shippingHighlight} · Lanzamiento {MARKETPLACE_STATS.launchYear} ·
-          Tienda destacada: <strong>{FEATURED_SELLER.name}</strong>
+          Tienda: <strong>{FEATURED_SELLER.name}</strong>
         </p>
       </section>
 

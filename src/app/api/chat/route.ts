@@ -109,9 +109,9 @@ async function getMarketplaceContext(userMessage: string): Promise<string> {
   if (isSellerQuery) {
     contextParts.push(`\nINFO PARA VENDEDORES:`)
     contextParts.push(`- Registro: /seller/register`)
-    contextParts.push(`- Planes: Gratis (10 productos), Básico $8.000/mes (30 productos), Pro $15.000/mes (100 productos), Enterprise $25.000/mes (ilimitado)`)
-    contextParts.push(`- Comisión: 10% sobre cada venta`)
-    contextParts.push(`- Verificación KYC requerida para cobrar`)
+    contextParts.push(`- Planes (opcionales): Básico $0 (hasta 50 publicaciones), Pro $29.999/mes (200 publicaciones), Ultra $49.999/mes (ilimitadas)`)
+    contextParts.push(`- Comisión: 0% por venta durante la etapa beta (el vendedor recibe el 100% en su Mercado Pago)`)
+    contextParts.push(`- Para cobrar: el vendedor conecta su cuenta de Mercado Pago`)
     contextParts.push(`- Panel de vendedor: /dashboard`)
   }
 
@@ -126,10 +126,10 @@ const BASE_PROMPTS: Record<ChatMode, string> = {
 TU EXPERIENCIA REAL:
 - Conocés el catálogo completo de herramientas eléctricas, manuales, maquinaria agrícola/industrial, repuestos y ferretería
 - Sabés cómo funciona cada proceso de compra, venta, envío y pago
-- Conocés las políticas exactas: 7 días de devolución, 6 meses de garantía oficial, envío gratis >$15.000
-- Comisión del 10% para vendedores, planes desde Gratis hasta Enterprise
-- Medios de pago: MercadoPago (todas las tarjetas, transferencia, efectivo), transferencia bancaria
-- Envíos: Andreani (24-48hs), Correo Argentino (48-72hs), OCA (24-48hs), retiro en sucursal
+- Conocés cómo funcionan compras, envíos, pagos y devoluciones. Las condiciones de envío, garantía y devolución las define cada vendedor en su publicación (no son políticas únicas del marketplace)
+- Durante la etapa beta NO se cobra comisión por venta (el vendedor recibe el 100% en su Mercado Pago). Planes opcionales: Básico $0, Pro $29.999/mes, Ultra $49.999/mes
+- Medios de pago: MercadoPago (tarjetas, transferencia, efectivo). El medio disponible puede variar según el vendedor
+- Envíos: los coordina y define cada vendedor (forma y costo) en la publicación
 - Atención humana: soporte@madsjeez.com.ar o WhatsApp +54 11 2181-6064 (Lun-Vie 9 a 18hs)
 
 ESTILO DE RESPUESTA:
@@ -158,7 +158,7 @@ CÓMO ASESORÁS:
 - Recomendá accesorios compatibles siempre
 - Explicá diferencias técnicas de forma simple pero precisa
 - Si algo está agotado, sugerí alternativas similares con datos reales
-- Envío gratis en compras >$15.000
+- El envío y su costo los define cada vendedor en la publicación; verificalos antes de comprar
 - Links a productos: /product/ID
 - NUNCA inventés especificaciones técnicas que no estén en los datos.`
   ,
@@ -183,10 +183,10 @@ ESTILO:
   support: `Sos LAURA, la ESPECIALISTA EN ATENCIÓN AL CLIENTE de MadsJeez. Resolvés problemas de compras, envíos, pagos, cuentas y devoluciones con eficiencia y empatía. Tu objetivo: resolver en la primera respuesta.
 
 PROTOCOLOS DE RESOLUCIÓN:
-- Pedidos no llegaron: verificá tracking primero. Si >7 días sin movimiento, iniciamos reclamo directo con el transporte. Reembolso automático si se pierde.
+- Pedidos no llegaron: verificá el estado/seguimiento primero. Si está demorado, contactá al vendedor desde /orders. Para casos sin solución, derivá a soporte humano.
 - Pagos fallidos: verificá que la tarjeta tenga fondos y no esté vencida. MercadoPago rechaza por fondos insuficientes, datos incorrectos o banco que bloquea. Reintentá en 15 minutos.
-- Devoluciones: 7 días desde recepción. Condición: producto sin uso, en caja original, con factura. Proceso: /orders → seleccionar pedido → "Iniciar devolución". Reembolso en 3-5 días hábiles.
-- Garantía: 6 meses oficial. Para ejecutar: /orders → "Reclamar garantía". Nuestro equipo técnico evalúa en 48hs.
+- Devoluciones: las condiciones (plazo, estado del producto) las define cada vendedor en su publicación. Proceso: /orders → seleccionar pedido → contactar al vendedor / iniciar el reclamo. No afirmes plazos fijos del marketplace.
+- Garantía: depende del vendedor y del fabricante según la publicación. Para gestionarla: /orders → reclamo al vendedor. No prometas "6 meses oficial" como política única.
 - Cuenta bloqueada: verificá email de confirmación (spam). Si no llegó, solicitá reenvío en login. Para bloqueos por seguridad: contactá soporte@madsjeez.com.ar con DNI.
 - Disputas: mediación imparcial. Analizamos chat, evidencias fotográficas y tracking. Decisión en 72hs. Protegemos al comprador si el producto no coincide con la publicación.
 - Reembolsos: MercadoPago devuelve en 3-5 días hábiles a la tarjeta original. Transferencia: 1-2 días hábiles.
@@ -201,12 +201,12 @@ ESTILO:
 
 TU ASESORAMIENTO:
 - Comparación de productos: analizá potencia, marca, garantía, opiniones de otros compradores. Destacá el mejor valor por precio.
-- Medios de pago: MercadoPago (todas las tarjetas de crédito/débito, transferencia, efectivo en RapiPago/PagoFácit). También transferencia bancaria directa con 5% de descuento.
-- Envíos: Andreani ($800-$1.500, 24-48hs), Correo Argentino ($500-$1.200, 48-72hs), OCA ($900-$1.800, 24-48hs). GRATIS en compras >$15.000.
-- Tracking: /orders o link automático por email cuando despachamos
-- Protección al comprador: si el producto no llega, no coincide con la publicación o está defectuoso, reembolso 100% o reenvío sin costo. Sin preguntas.
-- Cómo elegir: si es para uso profesional diario, invertí en marca (Bosch, Makita, Dewalt). Si es ocasional, Gamma y Lusqtoff son excelente relación calidad-precio.
-- Beneficios MadsJeez: precios competitivos vs ferreterías tradicionales, envío gratis >$15.000, 6 meses garantía oficial, devolución 7 días, atención especializada.
+- Medios de pago: MercadoPago (tarjetas de crédito/débito, transferencia, efectivo). El medio disponible puede variar según el vendedor.
+- Envíos: cada vendedor define la forma de envío y el costo en su publicación. Verificá esos datos antes de comprar; no prometas envío gratis ni plazos fijos del marketplace.
+- Tracking: /orders o el seguimiento que comparta el vendedor cuando despacha
+- Protección al comprador: si el producto no llega o no coincide con la publicación, podés iniciar un reclamo desde /orders; el equipo media analizando evidencia. No prometas "reembolso 100% sin preguntas".
+- Cómo elegir: si es para uso profesional diario, invertí en marca (Bosch, Makita, Dewalt). Si es ocasional, Gamma y Lusqtoff son buena relación calidad-precio.
+- Beneficios MadsJeez: catálogo de varios vendedores en un solo lugar, pagos con Mercado Pago y, en la etapa beta, 0% de comisión para los vendedores.
 
 ESTILO:
 - Amigable, claro, como un amigo que entiende del tema
@@ -401,7 +401,7 @@ function getFallbackResponse(mode: ChatMode, userMessage: string): string {
       } else if (lower.includes("necesito") || lower.includes("busco") || lower.includes("comprar")) {
         return "¡Claro! Podés buscar productos en /search. Tenemos herramientas, maquinaria, ferretería y más. ¿Qué tipo de producto estás buscando?"
       } else if (lower.includes("envío") || lower.includes("envios") || lower.includes("entrega")) {
-        return "Hacemos envíos a todo el país con Andreani, Correo Argentino y OCA. También tenés opción de retiro en sucursal. El envío es gratis en compras mayores a $15.000."
+        return "Cada vendedor define la forma de envío y el costo en su publicación (envío a domicilio o retiro, según el caso). Revisá esos datos en la publicación antes de comprar."
       } else if (lower.includes("vender") || lower.includes("vendedor") || lower.includes("publicar")) {
         return "Para vender en MadsJeez, registrate como vendedor. Durante la etapa beta no cobramos comisión por venta; tenés planes opcionales (Básico $0, Pro $29.999, Ultra $49.999) según cuánto quieras publicar y destacar. ¿Te interesa registrarte?"
       } else if (lower.includes("pago") || lower.includes("pagar") || lower.includes("mercadopago")) {

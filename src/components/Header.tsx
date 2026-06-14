@@ -43,7 +43,7 @@ export function Header(_props: HeaderProps = {}) {
             <Link href="/sell" className="text-sm font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors">
               Vender
             </Link>
-            <Link href="/help" className="text-sm font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors">
+            <Link href="/ayuda" className="text-sm font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors">
               Ayuda
             </Link>
           </nav>

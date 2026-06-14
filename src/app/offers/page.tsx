@@ -615,7 +615,7 @@ export default function OffersPage() {
             <Link href="/legal/terminos" className="hover:text-[#f97316] hover:underline">Términos y condiciones</Link>
             <Link href="/promotions" className="hover:text-[#f97316] hover:underline">Promociones</Link>
             <Link href="/legal/privacidad" className="hover:text-[#f97316] hover:underline">Cómo cuidamos tu privacidad</Link>
-            <Link href="/help" className="hover:text-[#f97316] hover:underline">Ayuda</Link>
+            <Link href="/ayuda" className="hover:text-[#f97316] hover:underline">Ayuda</Link>
           </div>
           <div className="text-center mt-4 text-xs text-slate-400">
             Copyright © 2026 MadsJeez Commerce Group S.R.L. - Spegazzini, Buenos Aires, Argentina

@@ -670,6 +670,8 @@ body {
 
 /* Textos base */
 :root[data-theme="dark"] .text-black,
+:root[data-theme="dark"] .text-gray-950,
+:root[data-theme="dark"] .text-slate-950,
 :root[data-theme="dark"] .text-gray-900,
 :root[data-theme="dark"] .text-slate-900,
 :root[data-theme="dark"] .text-gray-800,

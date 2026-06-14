@@ -792,9 +792,9 @@ function SearchContent() {
               </>
             ) : (
               <div className="space-y-4">
-                <div className="bg-white rounded-lg p-10 text-center shadow-sm border border-[#eee]">
+                <div className="bg-white rounded-lg p-10 text-center shadow-sm border border-border">
                   <Search className="h-14 w-14 mx-auto text-gray-300 mb-3" />
-                  <h2 className="text-lg font-semibold mb-1 text-[#333]">
+                  <h2 className="text-lg font-semibold mb-1 text-foreground">
                     No encontramos &quot;{searchTerm}&quot;
                   </h2>
                   <p className="text-[13px] text-gray-500 mb-4">

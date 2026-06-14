@@ -1,7 +1,17 @@
 import { NextResponse } from "next/server"
+import crypto from "crypto"
 import { logger } from "@/lib/logger"
 
 const VERIFY_TOKEN = process.env.META_WEBHOOK_VERIFY_TOKEN
+
+/** Verifica la firma HMAC-SHA256 de Meta (header x-hub-signature-256). */
+function verifyMetaSignature(rawBody: string, header: string | null, secret: string): boolean {
+  if (!header) return false
+  const expected = "sha256=" + crypto.createHmac("sha256", secret).update(rawBody, "utf8").digest("hex")
+  const a = Buffer.from(header)
+  const b = Buffer.from(expected)
+  return a.length === b.length && crypto.timingSafeEqual(a, b)
+}
 
 // GET: Verificación del webhook (Meta lo llama para confirmar)
 export async function GET(request: Request) {
@@ -26,34 +36,36 @@ export async function GET(request: Request) {
 // POST: Recibir mensajes de WhatsApp/Messenger/Instagram
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
-
-    logger.info("Webhook recibido:", JSON.stringify(body, null, 2))
-
-    const entry = body.entry?.[0]
-    const changes = entry?.changes?.[0]
-    const value = changes?.value
-
-    if (value?.messages?.length > 0) {
-      const message = value.messages[0]
-      const from = message.from
-      const text = message.text?.body
-
-      logger.info(`Mensaje de WhatsApp: ${from} - ${text}`)
+    const appSecret = process.env.META_APP_SECRET?.trim()
+    if (!appSecret) {
+      logger.error("META_APP_SECRET no configurado — webhook rechazado")
+      return NextResponse.json({ success: false }, { status: 503 })
     }
 
-    if (value?.messaging?.length > 0) {
-      const messaging = value.messaging[0]
-      const sender = messaging.sender?.id
-      const message = messaging.message?.text
+    // Leemos el raw body para validar la firma (no JSON.parse antes de verificar).
+    const rawBody = await request.text()
+    const signature = request.headers.get("x-hub-signature-256")
+    if (!verifyMetaSignature(rawBody, signature, appSecret)) {
+      logger.warn("Webhook de Meta con firma inválida — rechazado")
+      return NextResponse.json({ success: false, error: "invalid signature" }, { status: 401 })
+    }
 
-      logger.info(`Mensaje Messenger/IG: ${sender} - ${message}`)
+    const body = JSON.parse(rawBody)
+
+    // No logueamos el payload completo (contiene teléfonos/PII): solo metadatos.
+    const value = body.entry?.[0]?.changes?.[0]?.value
+
+    if (value?.messages?.length > 0) {
+      logger.info(`Webhook WhatsApp: ${value.messages.length} mensaje(s) recibido(s)`)
+    }
+    if (value?.messaging?.length > 0) {
+      logger.info(`Webhook Messenger/IG: ${value.messaging.length} evento(s) recibido(s)`)
     }
 
     return NextResponse.json({ success: true })
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error"
-    console.error("Error en webhook:", error)
+    logger.error("Error en webhook de Meta", { message })
     return NextResponse.json({ success: false, error: message }, { status: 500 })
   }
 }

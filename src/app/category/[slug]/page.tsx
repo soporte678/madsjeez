@@ -331,7 +331,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
   };
 
   return (
-    <div className="category-page min-h-screen flex flex-col bg-[#f7f8fb]" style={accentVars}>
+    <div className="category-page min-h-screen flex flex-col bg-background" style={accentVars}>
       <Header user={null} />
       <main className="flex-1">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(breadcrumbJsonLd) }} />

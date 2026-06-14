@@ -172,7 +172,7 @@ export default function ReembolsosPage() {
               </ul>
 
               <div className="mt-8 flex gap-4">
-                <Link href="/help">
+                <Link href="/ayuda">
                   <Button variant="outline">Centro de Ayuda</Button>
                 </Link>
                 <Link href="/contact">

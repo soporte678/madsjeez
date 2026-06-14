@@ -255,7 +255,7 @@ export default function HomePageClient() {
           </div>
           <div className="mt-6 flex flex-wrap gap-4 text-sm">
             <Link href="/quienes-somos" className="font-semibold text-primary hover:underline">Quiénes somos</Link>
-            <Link href="/help" className="font-semibold text-primary hover:underline">Centro de ayuda</Link>
+            <Link href="/ayuda" className="font-semibold text-primary hover:underline">Centro de ayuda</Link>
             <Link href="/legal/terminos" className="font-semibold text-primary hover:underline">Términos</Link>
             <Link href="/legal/privacidad" className="font-semibold text-primary hover:underline">Privacidad</Link>
           </div>
@@ -354,7 +354,7 @@ export default function HomePageClient() {
       {/* ───────── FOOTER ───────── */}
       <footer className="border-t-[10px] border-[#f97316] bg-gradient-to-b from-[#1a1a2e] to-[#16213e] pb-10 pt-16">
         <div className="mx-auto flex max-w-7xl flex-col gap-12 px-4">
-          <div className="grid grid-cols-2 gap-10 md:grid-cols-4 lg:grid-cols-5">
+          <div className="grid grid-cols-2 gap-10 md:grid-cols-4 lg:grid-cols-6">
             <div className="col-span-2">
               <span className="font-outfit text-2xl font-black uppercase tracking-tighter text-white">MADS<span className="text-[#f97316]">JEEZ</span></span>
               <p className="mt-5 mb-6 max-w-sm text-sm leading-relaxed font-medium text-slate-400">
@@ -366,8 +366,9 @@ export default function HomePageClient() {
               <SiteNetworkFooter />
             </div>
             {[
-              { title: "Marketplace", links: [["Quiénes somos", "/quienes-somos"], ["Ayuda", "/help"], ["Ofertas", "/offers"], ["Contacto", "/help"]] },
-              { title: "Vendedores", links: [["Empezar a vender", "/seller/register"], ["Crear mi tienda", "/crear-tienda-online"], ["Suscripciones", "/subscriptions"], ["MADSJEEZ Ads", "/dashboard#publicidad"]] },
+              { title: "Marketplace", links: [["Quiénes somos", "/quienes-somos"], ["Centro de ayuda", "/ayuda"], ["Ofertas", "/offers"], ["Contacto", "/ayuda"]] },
+              { title: "Vendedores", links: [["Empezar a vender", "/seller/register"], ["Crear mi tienda", "/crear-tienda-online"], ["Ayuda para vendedores", "/ayuda-vendedores"], ["Suscripciones", "/subscriptions"]] },
+              { title: "Guías y ayuda", links: [["Guías de compra", "/guias"], ["Reparación", "/reparacion"], ["Comparativas", "/comparativas"], ["Marcas", "/marcas"], ["Blog", "/blog"], ["Tutoriales", "/tutoriales"]] },
               { title: "Legales", links: [["Términos", "/legal/terminos"], ["Privacidad", "/legal/privacidad"], ["Aviso Legal", "/legal/aviso-legal"]] },
             ].map((section) => (
               <div key={section.title}>

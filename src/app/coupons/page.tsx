@@ -256,7 +256,7 @@ export default function PublicCouponsPage() {
             <Link href="/about" className="hover:text-[#3483FA]">Trabajá con nosotros</Link>
             <Link href="/legal/terminos" className="hover:text-[#3483FA]">Términos y condiciones</Link>
             <Link href="/promotions" className="hover:text-[#3483FA]">Promociones</Link>
-            <Link href="/help" className="hover:text-[#3483FA]">Ayuda</Link>
+            <Link href="/ayuda" className="hover:text-[#3483FA]">Ayuda</Link>
           </div>
           <div className="text-center mt-4 text-xs text-muted-foreground">
             Copyright © 2026 MadsJeez Commerce Group S.R.L.

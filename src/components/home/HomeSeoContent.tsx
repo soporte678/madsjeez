@@ -88,7 +88,7 @@ export function HomeSeoContent() {
               La logística integrada y los acuerdos con transportistas ayudan a cumplir plazos de
               entrega prometidos, mientras el equipo de soporte acompaña reclamos y casos excepcionales
               desde el{" "}
-              <Link href="/help" className="text-[#1a56db] dark:text-[#60a5fa] font-semibold hover:underline">
+              <Link href="/ayuda" className="text-[#1a56db] dark:text-[#60a5fa] font-semibold hover:underline">
                 centro de ayuda
               </Link>
               .
