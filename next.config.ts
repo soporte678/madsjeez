@@ -108,6 +108,12 @@ const nextConfig: NextConfig = {
         destination: "/coupons/public",
         permanent: true,
       },
+      {
+        // Centro de ayuda consolidado en /ayuda (subpáginas reales, sin 404).
+        source: "/help",
+        destination: "/ayuda",
+        permanent: true,
+      },
     ];
   },
 };

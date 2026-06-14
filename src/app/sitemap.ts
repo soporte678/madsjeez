@@ -4,6 +4,7 @@ import { supabaseService } from "@/lib/supabase/service";
 import { GUIAS_COMPRA } from "@/data/guias-compra";
 import { SELLER_LANDINGS } from "@/data/seller-landings";
 import { BLOG_POSTS } from "@/data/blog-posts";
+import { HELP_ARTICLES } from "@/data/help-articles";
 
 const BASE_URL = "https://www.madsjeez.com.ar";
 
@@ -40,7 +41,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
     { url: `${BASE_URL}/coupons`,                     lastModified: new Date(), changeFrequency: "daily",   priority: 0.6 },
     { url: `${BASE_URL}/quienes-somos`,               lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },
-    { url: `${BASE_URL}/help`,                        lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },
+    { url: `${BASE_URL}/ayuda`,                       lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
+    ...HELP_ARTICLES.map((a) => ({
+      url: `${BASE_URL}/ayuda/${a.slug}`,
+      lastModified: new Date(),
+      changeFrequency: "monthly" as const,
+      priority: 0.55,
+    })),
     { url: `${BASE_URL}/tutoriales`,                  lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
     ...['postularte-fundador','crear-cuenta','publicar-producto','configurar-pagos','gestionar-preguntas','generar-etiquetas','ver-metricas','usar-ads'].map((s) => ({
       url: `${BASE_URL}/tutoriales/${s}`,
