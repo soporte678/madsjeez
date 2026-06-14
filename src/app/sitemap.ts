@@ -6,6 +6,7 @@ import { SELLER_LANDINGS } from "@/data/seller-landings";
 import { BLOG_POSTS } from "@/data/blog-posts";
 import { HELP_ARTICLES } from "@/data/help-articles";
 import { SELLER_HELP_ARTICLES } from "@/data/help-seller-articles";
+import { COMPARATIVAS } from "@/data/comparativas";
 
 const BASE_URL = "https://www.madsjeez.com.ar";
 
@@ -55,6 +56,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
       changeFrequency: "monthly" as const,
       priority: 0.55,
+    })),
+    { url: `${BASE_URL}/comparativas`,                lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
+    ...COMPARATIVAS.map((c) => ({
+      url: `${BASE_URL}/comparativas/${c.slug}`,
+      lastModified: new Date(),
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
     })),
     { url: `${BASE_URL}/tutoriales`,                  lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
     ...['postularte-fundador','crear-cuenta','publicar-producto','configurar-pagos','gestionar-preguntas','generar-etiquetas','ver-metricas','usar-ads'].map((s) => ({
