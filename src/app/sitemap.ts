@@ -5,6 +5,7 @@ import { GUIAS_COMPRA } from "@/data/guias-compra";
 import { SELLER_LANDINGS } from "@/data/seller-landings";
 import { BLOG_POSTS } from "@/data/blog-posts";
 import { HELP_ARTICLES } from "@/data/help-articles";
+import { SELLER_HELP_ARTICLES } from "@/data/help-seller-articles";
 
 const BASE_URL = "https://www.madsjeez.com.ar";
 
@@ -44,6 +45,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/ayuda`,                       lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
     ...HELP_ARTICLES.map((a) => ({
       url: `${BASE_URL}/ayuda/${a.slug}`,
+      lastModified: new Date(),
+      changeFrequency: "monthly" as const,
+      priority: 0.55,
+    })),
+    { url: `${BASE_URL}/ayuda-vendedores`,           lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
+    ...SELLER_HELP_ARTICLES.map((a) => ({
+      url: `${BASE_URL}/ayuda-vendedores/${a.slug}`,
       lastModified: new Date(),
       changeFrequency: "monthly" as const,
       priority: 0.55,
