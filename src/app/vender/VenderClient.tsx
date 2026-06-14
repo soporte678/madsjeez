@@ -3,6 +3,7 @@
 import { Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { trackEvent } from "@/lib/analytics";
+import { Reveal } from "@/components/seller/premium/motion-primitives";
 import {
   ArrowRight,
   BarChart3,
@@ -200,12 +201,12 @@ function Content() {
 
       <section className="mx-auto max-w-7xl px-4 py-16">
         <div className="grid gap-5 md:grid-cols-3">
-          {growthLoops.map(({ icon: Icon, title, text }) => (
-            <article key={title} className="border border-white/12 bg-white/[0.04] p-6">
+          {growthLoops.map(({ icon: Icon, title, text }, i) => (
+            <Reveal as="article" key={title} delay={i * 0.08} className="border border-white/12 bg-white/[0.04] p-6 transition hover:-translate-y-1 hover:border-cyan-300/40 hover:bg-white/[0.07]">
               <Icon className="text-cyan-300" size={24} />
               <h2 className="mt-5 text-xl font-bold">{title}</h2>
               <p className="mt-3 text-sm leading-6 text-slate-300">{text}</p>
-            </article>
+            </Reveal>
           ))}
         </div>
       </section>
@@ -240,11 +241,11 @@ function Content() {
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
-            {liveStack.map((item) => (
-              <div key={item} className="flex gap-3 border border-white/10 bg-white/[0.04] p-4">
+            {liveStack.map((item, i) => (
+              <Reveal key={item} delay={i * 0.05} className="flex gap-3 border border-white/10 bg-white/[0.04] p-4">
                 <CheckCircle2 className="mt-0.5 shrink-0 text-emerald-300" size={18} />
                 <p className="text-sm font-semibold text-slate-100">{item}</p>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>
