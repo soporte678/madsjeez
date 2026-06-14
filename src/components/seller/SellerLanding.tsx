@@ -7,7 +7,7 @@
 
 import Link from "next/link";
 import { Suspense } from "react";
-import { ChevronRight, Check, Store, PackageCheck, MessagesSquare } from "lucide-react";
+import { ChevronRight, Check, Store, PackageCheck, MessagesSquare, Sparkles, ShieldCheck, Truck, CreditCard, LifeBuoy } from "lucide-react";
 import { BreadcrumbJsonLd, FaqJsonLd } from "@/components/seo";
 import { SITE_URL } from "@/lib/seo/site";
 import {
@@ -20,16 +20,29 @@ import {
 } from "@/data/seller-landings";
 import { SellerLeadForm } from "./SellerLeadForm";
 import { SellerCtaButton, SellerWhatsApp, SellerPageView } from "./SellerInteractive";
+import { Reveal, TiltCard, CountUp } from "./premium/motion-primitives";
+import { SellerHeroVisual, type HeroProduct } from "./premium/SellerHeroVisual";
+import { AnimatedPipeline } from "./premium/AnimatedPipeline";
+import { LogisticsCard } from "./premium/LogisticsCard";
+import { getHeroProducts } from "@/lib/seo/hero-products";
 
 const STEP_ICONS = [Store, PackageCheck, MessagesSquare];
 
-export function SellerLanding({ slug }: { slug: string }) {
+const TRUST = [
+  { icon: CreditCard, label: "0% comisión", sub: "durante la beta" },
+  { icon: ShieldCheck, label: "Mercado Pago", sub: "cobrás en tu cuenta" },
+  { icon: Truck, label: "Envíos", sub: "los define cada vendedor" },
+  { icon: LifeBuoy, label: "Soporte", sub: "te ayudamos a empezar" },
+];
+
+export async function SellerLanding({ slug }: { slug: string }) {
   const data = getSellerLanding(slug);
   if (!data) return null;
-  return <Body data={data} />;
+  const heroProducts = await getHeroProducts(4);
+  return <Body data={data} heroProducts={heroProducts} />;
 }
 
-function Body({ data }: { data: Landing }) {
+function Body({ data, heroProducts }: { data: Landing; heroProducts: HeroProduct[] }) {
   const primaryCta = data.primaryCta || DEFAULT_PRIMARY_CTA;
   const steps = data.steps || HOW_IT_WORKS;
   const pageUrl = `${SITE_URL}/${data.slug}`;
@@ -67,23 +80,51 @@ function Body({ data }: { data: Landing }) {
         </ol>
       </nav>
 
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_60%_at_15%_0%,color-mix(in_srgb,var(--primary)_18%,transparent),transparent)]" />
-        <div className="relative mx-auto max-w-6xl px-4 pb-12 pt-10 md:pb-16 md:pt-14">
-          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {data.heroEyebrow}
-          </span>
-          <h1 className="mt-5 max-w-3xl text-3xl font-black leading-[1.08] tracking-tight md:text-5xl">{data.h1}</h1>
-          <p className="mt-5 max-w-2xl text-base leading-7 text-muted-foreground md:text-lg">{data.heroSubtitle}</p>
-          <div className="mt-7 flex flex-wrap gap-3">
-            <SellerCtaButton href="#lead-form" source={data.slug} event="seller_cta_click">{primaryCta}</SellerCtaButton>
-            {!data.campaign && (
-              <SellerCtaButton href="#como-funciona" source={data.slug} event="seller_cta_click" variant="secondary">
-                Ver cómo funciona
-              </SellerCtaButton>
-            )}
+      {/* Hero (dark premium, split asimétrico). Texto estático para LCP/SEO. */}
+      <section className="relative overflow-hidden bg-[#0a1226] text-white">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(70%_60%_at_18%_-5%,rgba(59,130,246,0.30),transparent_60%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(45%_45%_at_105%_110%,rgba(37,99,235,0.20),transparent_60%)]" />
+        <div className="relative mx-auto grid max-w-6xl grid-cols-1 items-center gap-8 px-4 pb-14 pt-12 md:pb-20 md:pt-16 lg:grid-cols-[1.05fr_0.95fr] lg:gap-6">
+          <div>
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-200">
+              <Sparkles className="h-3.5 w-3.5" /> {data.heroEyebrow}
+            </span>
+            <h1 className="mt-5 max-w-xl text-3xl font-black leading-[1.08] tracking-tight md:text-5xl">{data.h1}</h1>
+            <p className="mt-5 max-w-lg text-base leading-7 text-slate-300 md:text-lg">{data.heroSubtitle}</p>
+            <div className="mt-7 flex flex-wrap gap-3">
+              <SellerCtaButton href="#lead-form" source={data.slug} event="seller_cta_click">{primaryCta}</SellerCtaButton>
+              {!data.campaign && (
+                <SellerCtaButton href="#como-funciona" source={data.slug} event="seller_cta_click" variant="secondary">
+                  Ver cómo funciona
+                </SellerCtaButton>
+              )}
+            </div>
           </div>
+          <div className="lg:pl-4">
+            <SellerHeroVisual products={heroProducts} />
+          </div>
+        </div>
+      </section>
+
+      {/* Tira de confianza */}
+      <section className="border-b border-border bg-card/40">
+        <div className="mx-auto max-w-6xl px-4 py-6">
+          <ul className="grid grid-cols-2 gap-5 md:grid-cols-4">
+            {TRUST.map((t) => {
+              const Icon = t.icon;
+              return (
+                <li key={t.label} className="flex items-center gap-3">
+                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <p className="text-sm font-bold text-foreground">{t.label}</p>
+                    <p className="text-xs text-muted-foreground">{t.sub}</p>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       </section>
 
@@ -97,14 +138,16 @@ function Body({ data }: { data: Landing }) {
       <section className="mx-auto max-w-6xl px-4 py-12 md:py-16">
         <h2 className="text-2xl font-bold tracking-tight md:text-3xl">Por qué vender en Madsjeez</h2>
         <div className="mt-7 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {data.benefits.map((b) => (
-            <div key={b.title} className="rounded-2xl border border-border bg-card p-5">
-              <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Check className="h-5 w-5" />
-              </div>
-              <h3 className="font-semibold text-foreground">{b.title}</h3>
-              <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{b.desc}</p>
-            </div>
+          {data.benefits.map((b, i) => (
+            <Reveal key={b.title} delay={i * 0.06} className="h-full">
+              <TiltCard className="group h-full rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/50">
+                <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary transition group-hover:bg-primary group-hover:text-primary-foreground">
+                  <Check className="h-5 w-5" />
+                </div>
+                <h3 className="font-semibold text-foreground">{b.title}</h3>
+                <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{b.desc}</p>
+              </TiltCard>
+            </Reveal>
           ))}
         </div>
       </section>
@@ -113,18 +156,24 @@ function Body({ data }: { data: Landing }) {
       <section id="como-funciona" className="border-y border-border bg-card/40 scroll-mt-20">
         <div className="mx-auto max-w-6xl px-4 py-12 md:py-16">
           <h2 className="text-2xl font-bold tracking-tight md:text-3xl">Cómo funciona en 3 pasos</h2>
+          <p className="mt-2 text-sm text-muted-foreground">Del producto al cobro, en un solo flujo.</p>
+          <div className="mt-7 rounded-2xl border border-border bg-background p-5 md:p-6">
+            <AnimatedPipeline />
+          </div>
           <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
             {steps.map((s, i) => {
               const Icon = STEP_ICONS[i % STEP_ICONS.length];
               return (
-                <div key={s.title} className="relative rounded-2xl border border-border bg-background p-6">
-                  <div className="flex items-center gap-3">
-                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">{i + 1}</span>
-                    <Icon className="h-5 w-5 text-primary" />
+                <Reveal key={s.title} delay={i * 0.08} className="h-full">
+                  <div className="relative h-full rounded-2xl border border-border bg-background p-6">
+                    <div className="flex items-center gap-3">
+                      <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">{i + 1}</span>
+                      <Icon className="h-5 w-5 text-primary" />
+                    </div>
+                    <h3 className="mt-4 font-semibold text-foreground">{s.title}</h3>
+                    <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{s.desc}</p>
                   </div>
-                  <h3 className="mt-4 font-semibold text-foreground">{s.title}</h3>
-                  <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{s.desc}</p>
-                </div>
+                </Reveal>
               );
             })}
           </div>
@@ -158,7 +207,7 @@ function Body({ data }: { data: Landing }) {
         <section className="border-y border-border bg-card/40">
           <div className="mx-auto max-w-4xl px-4 py-12 md:py-16">
             <h2 className="text-2xl font-bold tracking-tight md:text-3xl">{data.comparison.title}</h2>
-            <div className="mt-7 overflow-hidden rounded-2xl border border-border">
+            <Reveal className="mt-7 overflow-hidden rounded-2xl border border-border">
               <table className="w-full text-left text-sm">
                 <thead className="bg-muted/60 text-xs uppercase tracking-wide text-muted-foreground">
                   <tr>
@@ -177,10 +226,39 @@ function Body({ data }: { data: Landing }) {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </Reveal>
           </div>
         </section>
       )}
+
+      {/* Madsjeez Flash + stats honestos */}
+      <section className="mx-auto max-w-6xl px-4 py-12 md:py-16">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:items-center">
+          <Reveal>
+            <h2 className="text-2xl font-bold tracking-tight md:text-3xl">Despachá con Madsjeez Flash</h2>
+            <p className="mt-3 max-w-md text-base leading-7 text-muted-foreground">
+              Si tu zona tiene cobertura, coordinamos el retiro y la entrega para que te enfoques en vender. Según disponibilidad de la zona.
+            </p>
+            <div className="mt-7 grid grid-cols-3 gap-4">
+              <div>
+                <p className="text-3xl font-black text-primary"><CountUp to={700} prefix="+" /></p>
+                <p className="mt-1 text-xs text-muted-foreground">productos en el catálogo</p>
+              </div>
+              <div>
+                <p className="text-3xl font-black text-primary"><CountUp to={0} suffix="%" /></p>
+                <p className="mt-1 text-xs text-muted-foreground">comisión en la beta</p>
+              </div>
+              <div>
+                <p className="text-3xl font-black text-primary"><CountUp to={100} suffix="%" /></p>
+                <p className="mt-1 text-xs text-muted-foreground">del importe para vos</p>
+              </div>
+            </div>
+          </Reveal>
+          <Reveal delay={0.1}>
+            <LogisticsCard />
+          </Reveal>
+        </div>
+      </section>
 
       {/* Prosa SEO */}
       {data.content.length > 0 && (
@@ -240,14 +318,14 @@ function Body({ data }: { data: Landing }) {
 
       {/* CTA final */}
       <section className="mx-auto max-w-6xl px-4 pb-16">
-        <div className="rounded-3xl border border-border bg-gradient-to-br from-primary/10 to-transparent p-8 text-center md:p-12">
+        <Reveal className="rounded-3xl border border-border bg-gradient-to-br from-primary/10 to-transparent p-8 text-center md:p-12">
           <h2 className="text-2xl font-black tracking-tight md:text-3xl">{data.ctaTitle}</h2>
           <p className="mx-auto mt-3 max-w-xl text-base text-muted-foreground">{data.ctaSubtitle}</p>
           <div className="mt-7 flex flex-wrap justify-center gap-3">
             <SellerCtaButton href="#lead-form" source={data.slug} event="seller_cta_click">{primaryCta}</SellerCtaButton>
             <SellerCtaButton href="/seller/register" source={data.slug} event="seller_register_click" variant="secondary">Crear cuenta de vendedor</SellerCtaButton>
           </div>
-        </div>
+        </Reveal>
       </section>
     </main>
   );
