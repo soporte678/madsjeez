@@ -101,28 +101,29 @@
   --shell-sidebar-active-bg: color-mix(in srgb, var(--primary) 12%, white);
 }
 
-/* Tema suave (tono intermedio frío) */
+/* Tema suave (azul claro coherente con la marca — antes era morado off-brand) */
 :root[data-theme="soft"] {
-  --background: #f6f2ff;
-  --foreground: #2a1f3d;
-  --primary: #7c3aed;
-  --primary-hover: #6d28d9;
-  --secondary: #efe7ff;
-  --secondary-hover: #e7ddff;
-  --accent: #a855f7;
-  --accent-hover: #9333ea;
-  --muted: #f1e9ff;
-  --muted-foreground: #6b5a86;
-  --card: #fbf8ff;
-  --card-foreground: #2a1f3d;
-  --popover: #fbf8ff;
-  --popover-foreground: #2a1f3d;
-  --border: #ddcff8;
-  --input: #ddcff8;
-  --ring: #a855f7;
-  --shell-header-bg: #f5efff;
-  --shell-header-border: #ddcff8;
-  --shell-sidebar-active-bg: color-mix(in srgb, var(--primary) 18%, white);
+  --background: #eef3fb;
+  --foreground: #1e293b;
+  --primary: #1d4ed8;
+  --primary-hover: #1e40af;
+  --secondary: #e3ebf7;
+  --secondary-hover: #d6e1f3;
+  --secondary-foreground: #1e293b;
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --muted: #e6edf8;
+  --muted-foreground: #566377;
+  --card: #ffffff;
+  --card-foreground: #1e293b;
+  --popover: #ffffff;
+  --popover-foreground: #1e293b;
+  --border: #d4e0f2;
+  --input: #d4e0f2;
+  --ring: #3b82f6;
+  --shell-header-bg: #f5f8fd;
+  --shell-header-border: #d4e0f2;
+  --shell-sidebar-active-bg: color-mix(in srgb, var(--primary) 14%, white);
 }
 
 /* Tema oscuro */
