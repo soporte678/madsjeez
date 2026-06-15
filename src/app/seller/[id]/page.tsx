@@ -5,6 +5,7 @@ import { ensureStoreSlugForUser } from "@/lib/public-store";
 import Link from "next/link";
 import { Header } from "@/components/Header";
 import { ProductCard } from "@/components/product/ProductCard";
+import { Reveal } from "@/components/premium";
 import { ReputationBadge } from "@/components/ReputationBadge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -239,8 +240,10 @@ export default async function SellerPage({ params }: { params: Promise<{ id: str
             <TabsContent value="products">
               {products.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {products.map((product: any) => (
-                    <ProductCard key={product.id} product={product} />
+                  {products.map((product: any, i: number) => (
+                    <Reveal key={product.id} delay={Math.min(i, 7) * 0.05} className="h-full">
+                      <ProductCard product={product} />
+                    </Reveal>
                   ))}
                 </div>
               ) : (
