@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { motion, useReducedMotion } from "motion/react";
 import {
   AlertCircle, CheckCircle2, TrendingUp, HelpCircle, Package,
   FileText, Megaphone, Settings, CreditCard, ShieldAlert,
@@ -96,8 +97,15 @@ type SummaryData = {
 
 const MeliCard = ({ title, children, actionText, noPadding = false, className = "" }: {
   title?: string; children: React.ReactNode; actionText?: string; noPadding?: boolean; className?: string;
-}) => (
-  <div className={`bg-card rounded-lg shadow-[0_1px_2px_0_rgba(0,0,0,0.12)] border border-border overflow-hidden flex flex-col ${className}`}>
+}) => {
+  const reduce = useReducedMotion();
+  return (
+  <motion.div
+    initial={reduce ? false : { opacity: 0, y: 12 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+    className={`bg-card rounded-lg shadow-[0_1px_2px_0_rgba(0,0,0,0.12)] border border-border overflow-hidden flex flex-col transition-shadow duration-200 hover:shadow-md ${className}`}
+  >
     {title && (
       <div className="px-5 py-4 border-b border-border flex justify-between items-center">
         <h3 className="text-base font-semibold text-card-foreground">{title}</h3>
@@ -113,8 +121,9 @@ const MeliCard = ({ title, children, actionText, noPadding = false, className = 
         </a>
       </div>
     )}
-  </div>
-);
+  </motion.div>
+  );
+};
 
 const MeliListItem = ({ label, value, alert, alertType = 'red', isLast = false, actionText }: {
   label: string; value: string; alert?: boolean; alertType?: 'red' | 'green'; isLast?: boolean; actionText?: string;
