@@ -25,6 +25,7 @@ import { ProductQuestions } from "@/components/product/ProductQuestions";
 import { getPrismaProductDetailBundle } from "@/lib/product/prisma-detail-for-page";
 import { ProductDetailClient } from "@/components/product/ProductDetailClient";
 import { BuyBox } from "@/components/product/BuyBox";
+import { Reveal } from "@/components/premium";
 import { ProductViewTracker } from "@/components/analytics/ProductViewTracker";
 import { ProductJsonLd } from "@/components/seo/ProductJsonLd";
 import { BreadcrumbJsonLd } from "@/components/seo/BreadcrumbJsonLd";
@@ -410,7 +411,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
               {/* Related Products Carousel */}
               {relatedProducts.length > 0 && (
                 <>
-                  <div className="px-4 lg:px-0">
+                  <Reveal className="px-4 lg:px-0">
                     <h2 className="text-[20px] font-normal text-gray-800 mb-5">Relacionado con esta publicación</h2>
                     <div className="relative group bg-card border border-border rounded-lg p-4">
                       <div className="flex gap-0 overflow-x-auto scroll-smooth" style={{ scrollbarWidth: 'none' }}>
@@ -426,7 +427,6 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                             <h4 className="text-[13px] text-[#3483fa] leading-snug mb-2 line-clamp-2 min-h-[36px]">{item.title}</h4>
                             <div className="mt-auto">
                               <span className="text-[18px] font-normal text-gray-800">$ {item.price.toLocaleString("es-AR")}</span>
-                              <span className="text-[12px] text-emerald-500 block mt-1">Llega mañana</span>
                             </div>
                           </Link>
                         ))}
@@ -436,7 +436,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                         <ChevronRight size={20} className="text-muted-foreground" />
                       </button>
                     </div>
-                  </div>
+                  </Reveal>
                   <div className="w-full h-px bg-border my-8 hidden md:block"></div>
                 </>
               )}
@@ -548,7 +548,6 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                             <h4 className="text-[13px] text-gray-700 leading-snug mb-3 line-clamp-2 min-h-[36px] font-medium">{item.title}</h4>
                             <div className="mt-auto flex flex-col gap-1">
                               <span className="text-[18px] font-medium text-gray-800">$ {item.price.toLocaleString("es-AR")}</span>
-                              <span className="text-[12px] text-emerald-500 font-medium">Llega mañana</span>
                             </div>
                           </Link>
                         ))}
@@ -645,7 +644,6 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                     <h4 className="text-[13px] text-[#3483fa] leading-snug mb-2 line-clamp-2 min-h-[36px]">{item.title}</h4>
                     <div className="mt-auto">
                       <span className="text-[18px] font-normal text-gray-800">$ {item.price.toLocaleString("es-AR")}</span>
-                      <span className="text-[12px] text-emerald-500 block mt-1">Llega mañana</span>
                     </div>
                   </Link>
                 ))}
