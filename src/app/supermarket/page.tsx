@@ -2,6 +2,7 @@
 
 import { Header } from "@/components/Header"
 import { ProductCard } from "@/components/product/ProductCard"
+import { Reveal } from "@/components/premium"
 import { useEffect, useState } from "react"
 
 interface Product {
@@ -54,8 +55,10 @@ export default function SupermarketPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {products.map((product) => (
-              <ProductCard key={product.id} product={product} />
+            {products.map((product, i) => (
+              <Reveal key={product.id} delay={Math.min(i, 7) * 0.05} className="h-full">
+                <ProductCard product={product} />
+              </Reveal>
             ))}
           </div>
         )}
