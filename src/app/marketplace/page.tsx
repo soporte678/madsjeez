@@ -5,6 +5,7 @@ import { SiteCompanyFooter } from "@/components/seo/SiteCompanyFooter";
 import { ARGENTINA_PROVINCES } from "@/lib/seo/argentina-locations";
 import { canonicalMeta } from "@/lib/seo/canonical";
 import { MapPin, ShieldCheck, Truck, CreditCard } from "lucide-react";
+import { Reveal } from "@/components/premium";
 
 export const metadata: Metadata = {
   ...canonicalMeta("/marketplace"),
@@ -59,11 +60,11 @@ export default function MarketplaceIndexPage() {
           Elegí tu provincia
         </p>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {ARGENTINA_PROVINCES.map((prov) => (
+          {ARGENTINA_PROVINCES.map((prov, i) => (
+            <Reveal key={prov.slug} delay={Math.min(i, 9) * 0.03} className="h-full">
             <Link
-              key={prov.slug}
               href={`/marketplace/${prov.slug}`}
-              className="group flex items-center justify-between rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm hover:border-[#3483FA] hover:shadow-md transition-all duration-200"
+              className="group flex h-full items-center justify-between rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm hover:-translate-y-0.5 hover:border-[#3483FA] hover:shadow-md transition-all duration-200"
             >
               <div className="flex items-center gap-3 min-w-0">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#3483FA]/10 group-hover:bg-[#3483FA]/20 transition-colors">
@@ -76,6 +77,7 @@ export default function MarketplaceIndexPage() {
               </div>
               <span className="text-slate-300 group-hover:text-[#3483FA] text-lg transition-colors ml-2">›</span>
             </Link>
+            </Reveal>
           ))}
         </div>
       </section>

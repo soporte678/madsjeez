@@ -12,6 +12,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { trackEvent } from "@/lib/analytics";
 import { OptimizedProductImage } from "@/components/product/OptimizedProductImage";
+import { Reveal } from "@/components/premium";
 import type { PublicStoreData, StoreBranding } from "@/lib/public-store";
 import { Store, Package, Search, MessageCircle, MapPin, AtSign, Users, Globe, ChevronRight } from "lucide-react";
 
@@ -118,9 +119,10 @@ export function StorefrontView({ store, branding }: { store: PublicStoreData; br
           <>
             <p className="mb-5 text-xs font-bold uppercase tracking-widest text-slate-400">Productos</p>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-              {store.products.map((p) => (
-                <Link key={p.id} href={`/product/${p.id}`} onClick={() => { trackEvent("store_product_click", { product_id: p.id, store: store.storeSlug }); trackStore("product_click", p.id); }}
-                  className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:shadow-lg" style={{ borderColor: undefined }}>
+              {store.products.map((p, i) => (
+                <Reveal key={p.id} delay={Math.min(i, 7) * 0.04} className="h-full">
+                <Link href={`/product/${p.id}`} onClick={() => { trackEvent("store_product_click", { product_id: p.id, store: store.storeSlug }); trackStore("product_click", p.id); }}
+                  className="group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg" style={{ borderColor: undefined }}>
                   <div className="relative aspect-square bg-slate-50">
                     {p.image ? (
                       <OptimizedProductImage src={p.image} title={p.title} category={p.categoryName} fill sizes="(max-width:768px) 50vw, 25vw" className="object-contain p-3 transition-transform duration-300 group-hover:scale-105" />
@@ -131,6 +133,7 @@ export function StorefrontView({ store, branding }: { store: PublicStoreData; br
                     <p className="mt-auto text-base font-bold" style={{ color: primary }}>${p.price.toLocaleString("es-AR")}</p>
                   </div>
                 </Link>
+                </Reveal>
               ))}
             </div>
           </>
