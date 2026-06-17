@@ -4,6 +4,8 @@ import { supabaseService } from "@/lib/supabase/service";
 import { verifyMpOAuthState } from "@/lib/mp-oauth-state";
 import { ensureMpOauthUsedNoncesTable } from "@/lib/supabase/postgrest-schema";
 import { encryptToken } from "@/lib/integrations/crypto";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 interface MercadoPagoTokenResponse {
   access_token: string;
@@ -59,6 +61,13 @@ export async function GET(request: Request) {
     if (!payload) {
       return NextResponse.redirect(
         `${appBase()}/dashboard?mp_error=invalid_state#perfil`
+      );
+    }
+
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id || session.user.id !== payload.sellerUserId) {
+      return NextResponse.redirect(
+        new URL("/dashboard/integraciones?error=unauthorized", request.url)
       );
     }
 

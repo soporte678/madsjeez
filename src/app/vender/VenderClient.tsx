@@ -1,6 +1,9 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Suspense, useMemo, useState } from "react";
+
+const Navbar = dynamic(() => import("@/components/Navbar"), { ssr: false, loading: () => null });
 import { useSearchParams } from "next/navigation";
 import { trackEvent } from "@/lib/analytics";
 import { Reveal } from "@/components/seller/premium/motion-primitives";
@@ -147,7 +150,8 @@ function Content() {
   };
 
   return (
-    <main className="bg-[#07090f] text-white">
+    <main className="bg-[#07090f] text-white" data-theme="dark">
+      <Navbar />
       <section className="relative min-h-[92vh] overflow-hidden">
         <img
           src="https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=2400&auto=format&fit=crop"
@@ -171,7 +175,7 @@ function Content() {
             <div className="mt-8 flex flex-wrap gap-3">
               <a
                 href="#registro"
-                className="inline-flex items-center gap-2 bg-cyan-300 px-6 py-3 font-bold text-slate-950 transition hover:bg-white"
+                className="inline-flex items-center gap-2 bg-primary px-6 py-3 font-bold text-primary-foreground transition hover:bg-white hover:text-slate-950"
               >
                 Quiero vender en MadsJeez <ArrowRight size={18} />
               </a>
@@ -277,7 +281,7 @@ function Content() {
         </div>
       </section>
 
-      <section className="border-y border-white/10 bg-[#f4f7fb] text-slate-950">
+      <section className="border-y border-white/10 bg-card text-foreground">
         <div className="mx-auto max-w-7xl px-4 py-16 md:py-20">
           <div className="grid gap-10 lg:grid-cols-[0.85fr_1.15fr]">
             <div>
@@ -352,7 +356,7 @@ function Content() {
               <input className="bg-white px-3 py-3 text-slate-950" placeholder="Cantidad de productos" type="number" value={form.monthlyCatalog} onChange={(e) => setForm({ ...form, monthlyCatalog: e.target.value })} />
               <textarea className="bg-white px-3 py-3 text-slate-950 md:col-span-2" rows={4} placeholder="Objetivo comercial" value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} />
               {error ? <p className="text-sm text-red-200 md:col-span-2">{error}</p> : null}
-              <button disabled={loading} className="bg-cyan-300 px-5 py-3 font-black text-slate-950 md:col-span-2">
+              <button disabled={loading} className="bg-primary px-5 py-3 font-black text-primary-foreground md:col-span-2">
                 {loading ? "Enviando..." : "Quiero vender en MadsJeez"}
               </button>
             </form>

@@ -28,7 +28,7 @@ const TRUST_BADGES = [
 
 export default function MarketplaceIndexPage() {
   return (
-    <main className="min-h-screen bg-mesh font-outfit text-slate-900">
+    <main className="min-h-screen bg-mesh font-outfit text-foreground">
       <Navbar />
 
       {/* Hero */}
@@ -46,7 +46,7 @@ export default function MarketplaceIndexPage() {
           <div className="flex flex-wrap justify-center gap-6 md:gap-10">
             {TRUST_BADGES.map(({ icon: Icon, label }) => (
               <div key={label} className="flex items-center gap-2 text-sm text-slate-300">
-                <Icon className="h-4 w-4 text-[#3483FA] shrink-0" />
+                <Icon className="h-4 w-4 text-primary shrink-0" />
                 {label}
               </div>
             ))}
@@ -64,25 +64,25 @@ export default function MarketplaceIndexPage() {
             <Reveal key={prov.slug} delay={Math.min(i, 9) * 0.03} className="h-full">
             <Link
               href={`/marketplace/${prov.slug}`}
-              className="group flex h-full items-center justify-between rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm hover:-translate-y-0.5 hover:border-[#3483FA] hover:shadow-md transition-all duration-200"
+              className="group flex h-full items-center justify-between rounded-xl border border-border bg-card px-5 py-4 shadow-sm hover:-translate-y-0.5 hover:border-primary hover:shadow-md transition-all duration-200"
             >
               <div className="flex items-center gap-3 min-w-0">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#3483FA]/10 group-hover:bg-[#3483FA]/20 transition-colors">
-                  <MapPin className="h-4 w-4 text-[#3483FA]" />
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                  <MapPin className="h-4 w-4 text-primary" />
                 </div>
                 <div className="min-w-0">
-                  <p className="font-semibold text-slate-900 truncate">{prov.name}</p>
-                  <p className="text-xs text-slate-400">{prov.localities.length} ciudades</p>
+                  <p className="font-semibold text-foreground truncate">{prov.name}</p>
+                  <p className="text-xs text-muted-foreground">{prov.localities.length} ciudades</p>
                 </div>
               </div>
-              <span className="text-slate-300 group-hover:text-[#3483FA] text-lg transition-colors ml-2">›</span>
+              <span className="text-slate-300 group-hover:text-primary text-lg transition-colors ml-2">›</span>
             </Link>
             </Reveal>
           ))}
         </div>
       </section>
 
-      <footer className="border-t bg-white py-10">
+      <footer className="border-t border-border bg-card py-10">
         <div className="max-w-4xl mx-auto px-4">
           <SiteCompanyFooter />
         </div>

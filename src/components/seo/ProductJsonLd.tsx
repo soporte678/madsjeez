@@ -15,15 +15,16 @@ interface ProductJsonLdProps {
     availability?: "InStock" | "OutOfStock";
     url?: string;
   };
+  sellerName?: string;
 }
 
-export function ProductJsonLd({ product }: ProductJsonLdProps) {
+export function ProductJsonLd({ product, sellerName }: ProductJsonLdProps) {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.title,
     description: product.description || product.title,
-    image: product.images?.[0] || "/og-image.jpg",
+    image: product.images?.length ? product.images : ["/og-image.jpg"],
     brand: product.brand
       ? {
           "@type": "Brand",
@@ -40,7 +41,7 @@ export function ProductJsonLd({ product }: ProductJsonLdProps) {
       availability: `https://schema.org/${product.availability || "InStock"}` as const,
       seller: {
         "@type": "Organization",
-        name: "MadsJeez",
+        name: sellerName || "MadsJeez",
       },
     },
     aggregateRating:

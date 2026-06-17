@@ -27,6 +27,7 @@ model Account {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId])
   @@map("accounts")
 }
 
@@ -37,6 +38,7 @@ model Session {
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
   @@map("sessions")
 }
 
@@ -378,7 +380,8 @@ model ProductAttribute {
   value     String
   productId String  @map("product_id")
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  
+
+  @@index([productId])
   @@map("product_attributes")
 }
 
@@ -588,9 +591,11 @@ model ProductBoost {
   seller      User     @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   
   stripeId    String?  @map("stripe_id")
-  
+
   createdAt   DateTime @default(now()) @map("created_at")
-  
+
+  @@index([productId])
+  @@index([sellerId])
   @@map("product_boosts")
 }
 
@@ -825,10 +830,11 @@ model Shipment {
   
   // Shipping address (snapshot)
   shippingAddress Json? @map("shipping_address")
-  
+
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
-  
+
+  @@index([status])
   @@map("shipments")
 }
 
@@ -1054,6 +1060,7 @@ model Coupon {
   
   @@index([code])                        // Búsqueda por código
   @@index([expiresAt])                   // Para validación de vigencia
+  @@index([sellerId])
   @@map("coupons")
 }
 
@@ -2485,6 +2492,7 @@ model StoreEvent {
   createdAt DateTime       @default(now()) @map("created_at")
 
   @@index([storeId, type, createdAt])
+  @@index([productId])
   @@map("store_events")
 }
 

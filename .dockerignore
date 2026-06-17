@@ -9,3 +9,9 @@ npm-debug.log
 coverage
 .vscode
 .idea
+tsconfig.tsbuildinfo
+*.ps1
+*.bat
+photo-bank/
+scripts/*.sh
+docs/

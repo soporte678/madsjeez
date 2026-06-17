@@ -10,7 +10,6 @@ import {
   ChevronRight,
   Zap,
   X,
-  Star,
   Package,
   Camera,
   Sparkles,
@@ -140,25 +139,12 @@ function FilterList({
   );
 }
 
-function StarRating({ soldCount }: { soldCount: number }) {
-  const rating = 4.2 + (soldCount % 8) / 10;
-  const full = Math.floor(rating);
-  const partial = rating - full >= 0.5;
+function SoldCount({ soldCount }: { soldCount: number }) {
+  if (soldCount <= 0) return null;
   return (
-    <div className="flex items-center gap-1 flex-wrap">
-      <span className="flex items-center text-[#3483fa]">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Star
-            key={i}
-            className={`w-3 h-3 ${i < full ? "fill-[#3483fa] text-[#3483fa]" : i === full && partial ? "fill-[#3483fa]/50 text-[#3483fa]" : "text-gray-300"}`}
-          />
-        ))}
-      </span>
-      <span className="text-[12px] text-[#666]">{rating.toFixed(1)}</span>
-      <span className="text-[12px] text-[#999]">
-        {soldCount >= 1000 ? `+${Math.floor(soldCount / 1000) * 1000} vendidos` : `${soldCount} vendidos`}
-      </span>
-    </div>
+    <span className="text-[12px] text-[#999]">
+      {soldCount >= 1000 ? `+${Math.floor(soldCount / 1000) * 1000} vendidos` : `${soldCount} vendidos`}
+    </span>
   );
 }
 
@@ -901,7 +887,7 @@ function ProductCard({
           </p>
         )}
 
-        <StarRating soldCount={sold} />
+        <SoldCount soldCount={sold} />
 
         <h2 className="text-[13px] text-foreground font-medium leading-snug line-clamp-2 min-h-[36px] mt-1.5 mb-2 group-hover:text-primary transition-colors">
           {product.title}

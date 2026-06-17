@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import DOMPurify from "dompurify";
 import { useSession } from "next-auth/react";
 import {
   Sparkles,
@@ -535,7 +536,14 @@ export default function MarketingPage() {
                       </div>
                       <div
                         className="rounded-lg border border-slate-700 bg-slate-900 p-4 text-sm text-slate-200"
-                        dangerouslySetInnerHTML={{ __html: result.body_html }}
+                        dangerouslySetInnerHTML={{
+                          __html: typeof window !== "undefined"
+                            ? DOMPurify.sanitize(result.body_html as string, {
+                                ALLOWED_TAGS: ["p","h1","h2","h3","h4","ul","ol","li","strong","em","a","blockquote","code","pre","br"],
+                                ALLOWED_ATTR: ["href","target","rel","class"],
+                              })
+                            : (result.body_html as string),
+                        }}
                       />
                     </div>
                   )}

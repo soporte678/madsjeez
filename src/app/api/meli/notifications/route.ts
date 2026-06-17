@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { processMeliNotification } from "@/lib/meli/notifications-handler";
+import { supabaseService } from "@/lib/supabase/service";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,24 @@ export async function POST(req: Request) {
       } catch {
         payload = {};
       }
+    }
+
+    // Validar que el user_id esté presente
+    if (!payload.user_id) {
+      console.warn("[meli notifications] Missing user_id in payload — silent 200");
+      return NextResponse.json({ ok: true }, { status: 200 });
+    }
+
+    // Verificar que el seller existe en nuestra DB antes de procesar
+    const { data: sellerExists } = await supabaseService
+      .from("profiles")
+      .select("id")
+      .eq("meli_user_id", String(payload.user_id))
+      .maybeSingle();
+
+    if (!sellerExists) {
+      console.warn("[meli notifications] Unknown seller user_id:", payload.user_id, "— silent 200");
+      return NextResponse.json({ ok: true }, { status: 200 });
     }
 
     void processMeliNotification({

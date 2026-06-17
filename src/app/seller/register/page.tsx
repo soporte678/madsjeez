@@ -92,12 +92,12 @@ export default function SellerRegisterPage() {
             <div className="mt-8 flex flex-wrap gap-x-8 gap-y-4">
               <div><p className="text-2xl font-black text-primary">0%</p><p className="text-xs text-muted-foreground">comisión en la beta</p></div>
               <div><p className="text-2xl font-black text-primary">Mercado Pago</p><p className="text-xs text-muted-foreground">cobrás en tu cuenta</p></div>
-              <div><p className="text-2xl font-black text-primary">Minutos</p><p className="text-xs text-muted-foreground">para tu primer producto</p></div>
+              <div><p className="text-2xl font-black text-primary">3 pasos</p><p className="text-xs text-muted-foreground">para tu primer producto</p></div>
             </div>
           </Reveal>
 
           {/* Formulario (intacto) */}
-          <Reveal delay={0.15}>
+          <Reveal delay={0.15} className="order-first lg:order-none">
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl text-center">
@@ -107,7 +107,7 @@ export default function SellerRegisterPage() {
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
                 {error && (
-                  <div className="p-3 bg-red-100 text-red-700 rounded-md text-sm">
+                  <div className="p-3 bg-destructive/10 text-destructive rounded-md text-sm">
                     {error}
                   </div>
                 )}
@@ -197,7 +197,7 @@ export default function SellerRegisterPage() {
                   />
                   <Label htmlFor="terms" className="text-sm font-normal">
                     Acepto los{" "}
-                    <Link href="/legal/terminos" className="text-[#3483FA] hover:underline">
+                    <Link href="/legal/terminos" className="text-primary hover:underline">
                       términos y condiciones
                     </Link>{" "}
                     para vendedores
@@ -206,7 +206,7 @@ export default function SellerRegisterPage() {
 
                 <Button
                   type="submit"
-                  className="w-full bg-[#3483FA]"
+                  className="w-full bg-primary text-primary-foreground"
                   disabled={loading}
                 >
                   {loading ? "Registrando..." : "Comenzar a vender"}

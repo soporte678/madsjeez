@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { getSupabaseService } from "@/lib/supabase/service";
-import { rateLimit } from "@/lib/rate-limit";
+import { rateLimit, clientIpFromRequest } from "@/lib/rate-limit";
 import {
   ADMIN_SESSION_COOKIE,
   createAdminSession,
@@ -21,7 +21,7 @@ function applyPendingCookies(
  */
 export async function POST(request: NextRequest) {
   // Rate limiting: max 5 intentos por IP cada 10 minutos
-  const ip = request.headers.get("x-forwarded-for") || "unknown"
+  const ip = clientIpFromRequest(request)
   const { allowed, retryAfter } = rateLimit(`admin-signin:${ip}`, 5, 10 * 60 * 1000)
   if (!allowed) {
     return NextResponse.json(

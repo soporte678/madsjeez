@@ -91,7 +91,7 @@ const ChatResponseSchema = z.object({
  * En produccion, restringir al dominio de la aplicacion.
  */
 const CORS_HEADERS: Record<string, string> = {
-  "Access-Control-Allow-Origin": process.env.NEXT_PUBLIC_APP_URL ?? "*",
+  "Access-Control-Allow-Origin": process.env.NEXT_PUBLIC_APP_URL ?? "https://www.madsjeez.com.ar",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
   "Access-Control-Max-Age": "86400",

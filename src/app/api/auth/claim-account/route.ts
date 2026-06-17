@@ -14,14 +14,14 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { rateLimit } from "@/lib/rate-limit";
+import { rateLimit, clientIpFromRequest } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { TRIAL_MS } from "@/lib/subscription/effective-tier";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const ip = clientIpFromRequest(req);
   const { allowed, retryAfter } = rateLimit(`claim-account:${ip}`, 5, 15 * 60 * 1000);
   if (!allowed) {
     return NextResponse.json(

@@ -167,8 +167,8 @@ export default function ReembolsosPage() {
               <p>Para consultas sobre devoluciones:</p>
               <ul className="list-disc pl-6 space-y-2">
                 <li>Email: devoluciones@madsjeez.com</li>
-                <li>Teléfono: 0800-123-MADS (6237)</li>
-                <li>Chat en vivo: Disponible 24/7</li>
+                <li>Teléfono: +54 11 2181-6064</li>
+                <li>Chat en vivo: chatbot disponible 24hs / soporte humano L-V 9 a 18hs</li>
               </ul>
 
               <div className="mt-8 flex gap-4">

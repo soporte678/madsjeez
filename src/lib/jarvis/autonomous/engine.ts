@@ -495,16 +495,16 @@ function generateAutoReply(
   // --- Warranty ------------------------------------------------------------
   if (q.includes("garantia") || q.includes("garantia")) {
     return (
-      "Hola! Todos nuestros productos tienen garantia de fabrica " +
-      "de 6 meses a 2 anos dependiendo de la marca."
+      "Hola! Consulta las condiciones de garantia directamente con el vendedor, " +
+      "ya que cada comercio establece sus propios terminos."
     );
   }
 
   // --- Authenticity --------------------------------------------------------
   if (q.includes("original") || q.includes("genuino") || q.includes("fake")) {
     return (
-      "Hola! Si, todos nuestros productos son 100% originales " +
-      "con garantia oficial de fabrica."
+      "Hola! Los productos son publicados por vendedores independientes. " +
+      "Te recomendamos verificar caracteristicas y autenticidad con el vendedor antes de comprar."
     );
   }
 

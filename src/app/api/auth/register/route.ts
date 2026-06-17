@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
-import { rateLimit } from "@/lib/rate-limit"
+import { rateLimit, clientIpFromRequest } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 
 export async function POST(req: Request) {
   // Rate limiting: max 3 intentos por IP cada 15 minutos
-  const ip = req.headers.get("x-forwarded-for") || "unknown"
+  const ip = clientIpFromRequest(req)
   const { allowed, retryAfter } = rateLimit(`register:${ip}`, 3, 15 * 60 * 1000)
   if (!allowed) {
     return NextResponse.json(

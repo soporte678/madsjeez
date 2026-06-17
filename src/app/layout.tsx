@@ -29,7 +29,10 @@ const montserrat = Montserrat({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.madsjeez.com.ar"),
-  title: "MadsJeez - Maquinaria, Herramientas y Repuestos | Argentina",
+  title: {
+    default: "MadsJeez - Maquinaria, Herramientas y Repuestos | Argentina",
+    template: "%s | MadsJeez",
+  },
   description: "Compra y vende maquinaria industrial, herramientas profesionales y repuestos. Stock real, envios a todo el pais. El marketplace de la construccion y la industria.",
   keywords: ["marketplace", "compras online", "Argentina", "maquinaria", "herramientas", "repuestos", "construccion", "industria", "ferreteria", "MadsJeez"],
   alternates: {
@@ -93,8 +96,6 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   viewportFit: "cover",
   themeColor: "#EB5204",
 }

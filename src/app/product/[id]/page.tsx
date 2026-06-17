@@ -188,7 +188,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       imgs.find((i) => i.url)?.url ||
       undefined;
     return {
-      title: product.title,
+      title: `${product.title} | Comprar en MadsJeez`,
       description: desc,
       alternates: { canonical },
       openGraph: {
@@ -222,7 +222,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     `Comprá ${prismaProd.title} en el marketplace MadsJeez Argentina.`;
   const canonical = `/product/${id}`;
   return {
-    title: prismaProd.title,
+    title: `${prismaProd.title} | Comprar en MadsJeez`,
     description: desc,
     alternates: { canonical },
     openGraph: {
@@ -315,6 +315,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
           rating: avgRating || undefined,
           reviewCount: totalReviews || undefined,
         }}
+        sellerName={sellerName}
       />
       <BreadcrumbJsonLd
         items={[
@@ -346,20 +347,20 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
         <div className="max-w-[1200px] mx-auto px-4 pt-4">
           {/* Breadcrumbs */}
           <div className="flex justify-between items-center text-[13px] mb-4">
-            <div className="flex items-center gap-2 text-blue-600">
+            <div className="flex items-center gap-2 text-primary">
               <Link href="/" className="hover:underline">Inicio</Link>
-              <ChevronRight size={12} className="text-gray-400" />
+              <ChevronRight size={12} className="text-muted-foreground" />
               {product.categories && (
                 <>
                   <Link href={`/category/${product.categories.slug}`} className="hover:underline">
                     {product.categories.name}
                   </Link>
-                  <ChevronRight size={12} className="text-gray-400" />
+                  <ChevronRight size={12} className="text-muted-foreground" />
                 </>
               )}
-              <span className="text-gray-500 font-medium truncate max-w-[200px]">{product.title}</span>
+              <span className="text-muted-foreground font-medium truncate max-w-[200px]">{product.title}</span>
             </div>
-            <div className="flex items-center gap-4 text-[13px] text-blue-600">
+            <div className="flex items-center gap-4 text-[13px] text-primary">
               <Link href={`/seller/${product.seller_id}`} className="hover:underline">Vender uno igual</Link>
               <button className="hover:underline flex items-center gap-1"><Share2 size={14}/> Compartir</button>
             </div>
@@ -378,17 +379,17 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
 
                 {/* Product Info */}
                 <div className="flex-1 min-w-0 flex flex-col pt-2 md:pt-0 relative z-10">
-                  <span className="text-[13px] text-gray-500 mb-1">{conditionLabel}  |  +{salesCount} vendidos</span>
-                  <h1 className="text-[22px] font-normal text-gray-800 leading-tight mb-2 pr-8">{product.title}</h1>
+                  <span className="text-[13px] text-muted-foreground mb-1">{conditionLabel}  |  +{salesCount} vendidos</span>
+                  <h1 className="text-2xl font-semibold text-foreground leading-tight mb-2 pr-8">{product.title}</h1>
 
                   <div className="flex flex-col mb-4">
                     {originalPriceNumber && originalPriceNumber > priceNumber && (
-                      <span className="text-[15px] text-gray-400 line-through">$ {originalPriceNumber.toLocaleString("es-AR")}</span>
+                      <span className="text-[15px] text-muted-foreground line-through">$ {originalPriceNumber.toLocaleString("es-AR")}</span>
                     )}
-                    <span className="text-[36px] font-light text-gray-800 leading-none">$ {priceNumber.toLocaleString("es-AR")}</span>
+                    <span className="text-4xl font-bold text-foreground leading-none">$ {priceNumber.toLocaleString("es-AR")}</span>
                     {discount && <span className="text-[15px] font-medium text-emerald-500 mt-1">{discount}% OFF</span>}
                     <span className="text-[15px] font-medium text-emerald-500 mt-1">Mismo precio en 6 cuotas de $ {cuotas6.toLocaleString("es-AR")}</span>
-                    <Link href="#" className="text-[13px] text-blue-500 hover:underline mt-1">Ver los medios de pago</Link>
+                    <Link href="#" className="text-[13px] text-primary hover:underline mt-1">Ver los medios de pago</Link>
                   </div>
                 </div>
               </div>
@@ -399,8 +400,8 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
               {product.description && (
                 <>
                   <div className="px-4 lg:px-0">
-                    <h2 className="text-[24px] font-semibold text-gray-800 mb-6">Descripción</h2>
-                    <div className="text-[15px] text-gray-600 leading-relaxed whitespace-pre-wrap">
+                    <h2 className="text-[24px] font-semibold text-foreground mb-6">Descripción</h2>
+                    <div className="text-[15px] text-muted-foreground leading-relaxed whitespace-pre-wrap">
                       {product.description}
                     </div>
                   </div>
@@ -412,7 +413,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
               {relatedProducts.length > 0 && (
                 <>
                   <Reveal className="px-4 lg:px-0">
-                    <h2 className="text-[20px] font-normal text-gray-800 mb-5">Relacionado con esta publicación</h2>
+                    <h2 className="text-[20px] font-normal text-foreground mb-5">Relacionado con esta publicación</h2>
                     <div className="relative group bg-card border border-border rounded-lg p-4">
                       <div className="flex gap-0 overflow-x-auto scroll-smooth" style={{ scrollbarWidth: 'none' }}>
                         {relatedProducts.map((item: any) => (
@@ -421,12 +422,12 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                               {item.primary_image ? (
                                 <img src={item.primary_image} alt={item.title} className="max-h-full max-w-full object-contain" />
                               ) : (
-                                <Package className="h-16 w-16 text-gray-300" />
+                                <Package className="h-16 w-16 text-muted-foreground" />
                               )}
                             </div>
-                            <h4 className="text-[13px] text-[#3483fa] leading-snug mb-2 line-clamp-2 min-h-[36px]">{item.title}</h4>
+                            <h4 className="text-[13px] text-primary leading-snug mb-2 line-clamp-2 min-h-[36px]">{item.title}</h4>
                             <div className="mt-auto">
-                              <span className="text-[18px] font-normal text-gray-800">$ {item.price.toLocaleString("es-AR")}</span>
+                              <span className="text-[18px] font-normal text-foreground">$ {item.price.toLocaleString("es-AR")}</span>
                             </div>
                           </Link>
                         ))}
@@ -458,7 +459,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                         {totalReviews > 0 ? avgRating.toFixed(1) : '—'}
                       </span>
                       <div className="flex flex-col mb-1.5">
-                        <div className="flex text-blue-600 mb-1">
+                        <div className="flex text-primary mb-1">
                           {[1, 2, 3, 4, 5].map((s) => {
                             const filled = avgRating >= s;
                             const partial = !filled && avgRating > s - 1;
@@ -467,12 +468,12 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                                 <Star size={16} className="text-blue-200" fill="currentColor" />
                                 {filled && (
                                   <div className="absolute top-0 left-0 overflow-hidden w-full">
-                                    <Star size={16} className="text-blue-600" fill="currentColor" />
+                                    <Star size={16} className="text-primary" fill="currentColor" />
                                   </div>
                                 )}
                                 {partial && (
                                   <div className="absolute top-0 left-0 overflow-hidden" style={{ width: `${((avgRating - (s - 1)) * 100)}%` }}>
-                                    <Star size={16} className="text-blue-600" fill="currentColor" />
+                                    <Star size={16} className="text-primary" fill="currentColor" />
                                   </div>
                                 )}
                               </div>
@@ -507,7 +508,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                         {productReviews.slice(0, 5).map((review: any) => (
                           <div key={review.id} className="border-b border-border pb-4 last:border-b-0">
                             <div className="flex items-center gap-2 mb-2">
-                              <div className="flex text-blue-600">
+                              <div className="flex text-primary">
                                 {[1, 2, 3, 4, 5].map((s) => (
                                   <Star key={s} size={12} fill="currentColor" className={s <= review.rating ? "text-primary" : "text-muted-foreground/30"} />
                                 ))}
@@ -534,7 +535,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                 <>
                   <div className="px-4 lg:px-0">
                     <div className="bg-card p-6 rounded-lg border border-border relative group">
-                      <h2 className="text-[22px] font-semibold text-gray-800 mb-6">Con 4 estrellas o más</h2>
+                      <h2 className="text-[22px] font-semibold text-foreground mb-6">Con 4 estrellas o más</h2>
                       <div className="flex gap-4 overflow-x-auto pb-4" style={{ scrollbarWidth: 'none' }}>
                         {topRatedProducts.map((item: any) => (
                           <Link key={item.id} href={`/product/${item.id}`} className="min-w-[200px] max-w-[200px] border border-border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer flex flex-col bg-card">
@@ -542,12 +543,12 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                               {item.primary_image ? (
                                 <img src={item.primary_image} alt={item.title} className="max-h-full max-w-full object-contain" />
                               ) : (
-                                <Package className="h-12 w-12 text-gray-300" />
+                                <Package className="h-12 w-12 text-muted-foreground" />
                               )}
                             </div>
-                            <h4 className="text-[13px] text-gray-700 leading-snug mb-3 line-clamp-2 min-h-[36px] font-medium">{item.title}</h4>
+                            <h4 className="text-[13px] text-foreground leading-snug mb-3 line-clamp-2 min-h-[36px] font-medium">{item.title}</h4>
                             <div className="mt-auto flex flex-col gap-1">
-                              <span className="text-[18px] font-medium text-gray-800">$ {item.price.toLocaleString("es-AR")}</span>
+                              <span className="text-[18px] font-medium text-foreground">$ {item.price.toLocaleString("es-AR")}</span>
                             </div>
                           </Link>
                         ))}
@@ -564,35 +565,35 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
               {/* FOOTER - CATEGORÍAS DESTACADAS */}
               <div className="px-4 lg:px-0 mb-10">
                 <div className="bg-card p-8 rounded-lg border border-border">
-                  <h3 className="text-[18px] font-semibold text-gray-800 mb-6">Destacado en {categoryName}</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-6 text-[13px] text-gray-500">
+                  <h3 className="text-[18px] font-semibold text-foreground mb-6">Destacado en {categoryName}</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-6 text-[13px] text-muted-foreground">
                     <div className="flex flex-col gap-3">
-                      <h4 className="font-bold text-gray-800 mb-1">Más vendidos</h4>
-                      <Link href={`/category/${categorySlug}?sort=sales`} className="hover:text-blue-600 transition-colors">Los más vendidos de la categoría</Link>
-                      <Link href={`/category/${categorySlug}?sort=price_asc`} className="hover:text-blue-600 transition-colors">Precios más bajos</Link>
-                      <Link href={`/category/${categorySlug}?sort=newest`} className="hover:text-blue-600 transition-colors">Recién llegados</Link>
-                      <Link href={`/category/${categorySlug}`} className="text-blue-500 hover:underline flex items-center gap-1 mt-1 font-medium">Ver todo <ChevronDown size={14}/></Link>
+                      <h4 className="font-bold text-foreground mb-1">Más vendidos</h4>
+                      <Link href={`/category/${categorySlug}?sort=sales`} className="hover:text-primary transition-colors">Los más vendidos de la categoría</Link>
+                      <Link href={`/category/${categorySlug}?sort=price_asc`} className="hover:text-primary transition-colors">Precios más bajos</Link>
+                      <Link href={`/category/${categorySlug}?sort=newest`} className="hover:text-primary transition-colors">Recién llegados</Link>
+                      <Link href={`/category/${categorySlug}`} className="text-primary hover:underline flex items-center gap-1 mt-1 font-medium">Ver todo <ChevronDown size={14}/></Link>
                     </div>
                     <div className="flex flex-col gap-3">
-                      <h4 className="font-bold text-gray-800 mb-1">Mejores opiniones</h4>
-                      <Link href={`/category/${categorySlug}?sort=rating`} className="hover:text-blue-600 transition-colors">Mejor calificados</Link>
-                      <Link href={`/category/${categorySlug}?filter=free_shipping`} className="hover:text-blue-600 transition-colors">Con envío gratis</Link>
-                      <Link href={`/category/${categorySlug}?filter=discount`} className="hover:text-blue-600 transition-colors">En oferta</Link>
-                      <Link href={`/category/${categorySlug}`} className="text-blue-500 hover:underline flex items-center gap-1 mt-1 font-medium">Ver todo <ChevronDown size={14}/></Link>
+                      <h4 className="font-bold text-foreground mb-1">Mejores opiniones</h4>
+                      <Link href={`/category/${categorySlug}?sort=rating`} className="hover:text-primary transition-colors">Mejor calificados</Link>
+                      <Link href={`/category/${categorySlug}?filter=free_shipping`} className="hover:text-primary transition-colors">Con envío gratis</Link>
+                      <Link href={`/category/${categorySlug}?filter=discount`} className="hover:text-primary transition-colors">En oferta</Link>
+                      <Link href={`/category/${categorySlug}`} className="text-primary hover:underline flex items-center gap-1 mt-1 font-medium">Ver todo <ChevronDown size={14}/></Link>
                     </div>
                     <div className="flex flex-col gap-3">
-                      <h4 className="font-bold text-gray-800 mb-1">Por precio</h4>
-                      <Link href={`/category/${categorySlug}?price=0-10000`} className="hover:text-blue-600 transition-colors">Hasta $ 10.000</Link>
-                      <Link href={`/category/${categorySlug}?price=10000-50000`} className="hover:text-blue-600 transition-colors">$ 10.000 a $ 50.000</Link>
-                      <Link href={`/category/${categorySlug}?price=50000-`} className="hover:text-blue-600 transition-colors">Más de $ 50.000</Link>
-                      <Link href={`/category/${categorySlug}`} className="text-blue-500 hover:underline flex items-center gap-1 mt-1 font-medium">Ver todo <ChevronDown size={14}/></Link>
+                      <h4 className="font-bold text-foreground mb-1">Por precio</h4>
+                      <Link href={`/category/${categorySlug}?price=0-10000`} className="hover:text-primary transition-colors">Hasta $ 10.000</Link>
+                      <Link href={`/category/${categorySlug}?price=10000-50000`} className="hover:text-primary transition-colors">$ 10.000 a $ 50.000</Link>
+                      <Link href={`/category/${categorySlug}?price=50000-`} className="hover:text-primary transition-colors">Más de $ 50.000</Link>
+                      <Link href={`/category/${categorySlug}`} className="text-primary hover:underline flex items-center gap-1 mt-1 font-medium">Ver todo <ChevronDown size={14}/></Link>
                     </div>
                     <div className="flex flex-col gap-3">
-                      <h4 className="font-bold text-gray-800 mb-1">Marcas populares</h4>
-                      <Link href={`/category/${categorySlug}?brand=premium`} className="hover:text-blue-600 transition-colors">Marcas Premium</Link>
-                      <Link href={`/category/${categorySlug}?condition=new`} className="hover:text-blue-600 transition-colors">Solo nuevos</Link>
-                      <Link href={`/category/${categorySlug}?condition=used`} className="hover:text-blue-600 transition-colors">Usados y reacondicionados</Link>
-                      <Link href={`/category/${categorySlug}`} className="text-blue-500 hover:underline flex items-center gap-1 mt-1 font-medium">Ver todo <ChevronDown size={14}/></Link>
+                      <h4 className="font-bold text-foreground mb-1">Marcas populares</h4>
+                      <Link href={`/category/${categorySlug}?brand=premium`} className="hover:text-primary transition-colors">Marcas Premium</Link>
+                      <Link href={`/category/${categorySlug}?condition=new`} className="hover:text-primary transition-colors">Solo nuevos</Link>
+                      <Link href={`/category/${categorySlug}?condition=used`} className="hover:text-primary transition-colors">Usados y reacondicionados</Link>
+                      <Link href={`/category/${categorySlug}`} className="text-primary hover:underline flex items-center gap-1 mt-1 font-medium">Ver todo <ChevronDown size={14}/></Link>
                     </div>
                   </div>
                 </div>
@@ -630,7 +631,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
           {/* Seller Products Carousel */}
           {sellerProducts.length > 0 && (
             <div className="mt-8 bg-card p-6 rounded-lg border border-border relative group">
-              <h2 className="text-[20px] font-normal text-gray-800 mb-5">Elegidos para vos de {sellerName}</h2>
+              <h2 className="text-[20px] font-normal text-foreground mb-5">Elegidos para vos de {sellerName}</h2>
               <div className="flex gap-0 overflow-x-auto scroll-smooth" style={{ scrollbarWidth: 'none' }}>
                 {sellerProducts.map((item: any) => (
                   <Link key={item.id} href={`/product/${item.id}`} className="min-w-[170px] max-w-[170px] px-3 py-2 cursor-pointer flex flex-col hover:opacity-95 transition-opacity border-r border-border last:border-r-0">
@@ -638,12 +639,12 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                       {item.primary_image ? (
                         <img src={item.primary_image} alt={item.title} className="max-h-full max-w-full object-contain" />
                       ) : (
-                        <Package className="h-16 w-16 text-gray-300" />
+                        <Package className="h-16 w-16 text-muted-foreground" />
                       )}
                     </div>
-                    <h4 className="text-[13px] text-[#3483fa] leading-snug mb-2 line-clamp-2 min-h-[36px]">{item.title}</h4>
+                    <h4 className="text-[13px] text-primary leading-snug mb-2 line-clamp-2 min-h-[36px]">{item.title}</h4>
                     <div className="mt-auto">
-                      <span className="text-[18px] font-normal text-gray-800">$ {item.price.toLocaleString("es-AR")}</span>
+                      <span className="text-[18px] font-normal text-foreground">$ {item.price.toLocaleString("es-AR")}</span>
                     </div>
                   </Link>
                 ))}

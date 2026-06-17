@@ -9,7 +9,7 @@ import { checkEvolutionApiHealth } from "@/lib/whatsapp-bot/evolution-health";
 
 function authDebug(req: NextRequest): boolean {
   const { webhookSecret } = getWhatsappBotEnv();
-  if (!webhookSecret) return process.env.NODE_ENV !== "production";
+  if (!webhookSecret) return false;
   const q = req.nextUrl.searchParams.get("secret");
   const h = req.headers.get("x-madsjeez-webhook-secret");
   return q === webhookSecret || h === webhookSecret;

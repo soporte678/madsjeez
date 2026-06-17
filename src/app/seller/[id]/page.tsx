@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { notFound, redirect } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { ensureStoreSlugForUser } from "@/lib/public-store";
 import Link from "next/link";
@@ -123,7 +123,7 @@ export default async function SellerPage({ params }: { params: Promise<{ id: str
   const { id } = await params;
 
   const slug = await ensureStoreSlugForUser(id);
-  if (slug) redirect(`/tienda/${slug}`);
+  if (slug) permanentRedirect(`/tienda/${slug}`);
 
   const seller = await getSeller(id);
 
@@ -155,13 +155,13 @@ export default async function SellerPage({ params }: { params: Promise<{ id: str
     <div className="min-h-screen flex flex-col">
       <Header user={null} />
 
-      <main className="flex-1 bg-[#EBEBEB]">
+      <main className="flex-1 bg-background">
         {/* Header */}
-        <div className="bg-white border-b">
+        <div className="bg-card border-b border-border">
           <div className="container mx-auto px-4 py-8">
             <div className="flex flex-col md:flex-row md:items-center gap-6">
               {/* Avatar */}
-              <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center text-3xl">
+              <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center text-3xl">
                 {seller.avatar_url ? (
                   <img
                     src={seller.avatar_url}
@@ -169,7 +169,7 @@ export default async function SellerPage({ params }: { params: Promise<{ id: str
                     className="w-full h-full rounded-full object-cover"
                   />
                 ) : (
-                  <Store className="h-12 w-12 text-gray-400" />
+                  <Store className="h-12 w-12 text-muted-foreground" />
                 )}
               </div>
 
@@ -185,7 +185,7 @@ export default async function SellerPage({ params }: { params: Promise<{ id: str
                   )}
                 </div>
 
-                <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
+                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <Calendar className="h-4 w-4" />
                     Miembro desde {memberSince}
@@ -211,7 +211,7 @@ export default async function SellerPage({ params }: { params: Promise<{ id: str
                 {seller.reputation && (
                   <div className="flex items-center gap-3 mt-3">
                     <ReputationBadge color={seller.reputation.color} />
-                    <span className="text-sm text-gray-500">{positiveRate}% opiniones positivas</span>
+                    <span className="text-sm text-muted-foreground">{positiveRate}% opiniones positivas</span>
                   </div>
                 )}
               </div>
@@ -249,8 +249,8 @@ export default async function SellerPage({ params }: { params: Promise<{ id: str
               ) : (
                 <Card>
                   <CardContent className="p-12 text-center">
-                    <Package className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-                    <p className="text-gray-500">Este vendedor no tiene productos activos</p>
+                    <Package className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">Este vendedor no tiene productos activos</p>
                   </CardContent>
                 </Card>
               )}
@@ -273,14 +273,14 @@ export default async function SellerPage({ params }: { params: Promise<{ id: str
                                 {review.is_positive ? "Positiva" : "Negativa"}
                               </Badge>
                             </div>
-                            <p className="text-sm text-gray-600">{review.comment}</p>
+                            <p className="text-sm text-muted-foreground">{review.comment}</p>
                             {review.product && (
-                              <p className="text-sm text-gray-400 mt-2">
+                              <p className="text-sm text-muted-foreground mt-2">
                                 Producto: {review.product.title}
                               </p>
                             )}
                           </div>
-                          <span className="text-sm text-gray-400">
+                          <span className="text-sm text-muted-foreground">
                             {new Date(review.created_at).toLocaleDateString("es-AR")}
                           </span>
                         </div>
@@ -291,8 +291,8 @@ export default async function SellerPage({ params }: { params: Promise<{ id: str
               ) : (
                 <Card>
                   <CardContent className="p-12 text-center">
-                    <Star className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-                    <p className="text-gray-500">Aún no hay opiniones</p>
+                    <Star className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">Aún no hay opiniones</p>
                   </CardContent>
                 </Card>
               )}
@@ -305,26 +305,26 @@ export default async function SellerPage({ params }: { params: Promise<{ id: str
                   
                   {seller.reputation && (
                     <div className="grid md:grid-cols-3 gap-4 mb-6">
-                      <div className="bg-gray-50 p-4 rounded-lg text-center">
+                      <div className="bg-muted p-4 rounded-lg text-center">
                         <p className="text-2xl font-bold text-green-600">{positiveRate}%</p>
-                        <p className="text-sm text-gray-500">Opiniones positivas</p>
+                        <p className="text-sm text-muted-foreground">Opiniones positivas</p>
                       </div>
-                      <div className="bg-gray-50 p-4 rounded-lg text-center">
+                      <div className="bg-muted p-4 rounded-lg text-center">
                         <p className="text-2xl font-bold">{seller.reputation.total_sales}</p>
-                        <p className="text-sm text-gray-500">Ventas concretadas</p>
+                        <p className="text-sm text-muted-foreground">Ventas concretadas</p>
                       </div>
-                      <div className="bg-gray-50 p-4 rounded-lg text-center">
+                      <div className="bg-muted p-4 rounded-lg text-center">
                         <p className="text-2xl font-bold">
                           {seller.reputation.average_rating.toFixed(1)}
                         </p>
-                        <p className="text-sm text-gray-500">Calificación promedio</p>
+                        <p className="text-sm text-muted-foreground">Calificación promedio</p>
                       </div>
                     </div>
                   )}
 
                   <Separator className="my-4" />
 
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Shield className="h-4 w-4" />
                     <span>Este vendedor está protegido por MADSJEEZ</span>
                   </div>

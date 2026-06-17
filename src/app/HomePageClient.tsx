@@ -108,7 +108,7 @@ export default function HomePageClient() {
                 aria-label="Buscar en el marketplace"
                 className="w-full bg-transparent px-1 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none"
               />
-              <button type="submit" className="shrink-0 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-slate-800">Buscar</button>
+              <button type="submit" className="shrink-0 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground transition hover:opacity-90">Buscar</button>
             </form>
 
             {/* CTAs */}
@@ -118,9 +118,6 @@ export default function HomePageClient() {
               </Link>
               <Link href="/seller/register" onClick={() => track("home_start_selling_click")} className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-bold text-white transition hover:bg-white/10">
                 Empezar a vender
-              </Link>
-              <Link href="/crear-tienda-online" onClick={() => track("home_create_store_click")} className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold text-white/80 underline-offset-4 transition hover:text-white hover:underline">
-                Crear mi tienda online
               </Link>
             </div>
           </div>

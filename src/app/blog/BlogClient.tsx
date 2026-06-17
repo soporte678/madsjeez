@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import DOMPurify from "dompurify"
 import {
   Sparkles, Loader2, Copy, Check, BookOpen, Lightbulb,
   Search, TrendingUp, Clock, Tag, ChevronRight, FileText, Zap
@@ -248,7 +249,14 @@ export default function BlogClient() {
                   </div>
                   <div
                     className="prose prose-slate max-w-none prose-headings:text-slate-800 prose-p:text-slate-600 prose-a:text-blue-600 prose-li:text-slate-600"
-                    dangerouslySetInnerHTML={{ __html: article.content_html || "" }}
+                    dangerouslySetInnerHTML={{
+                      __html: typeof window !== "undefined"
+                        ? DOMPurify.sanitize(article.content_html || "", {
+                            ALLOWED_TAGS: ["p","h1","h2","h3","h4","ul","ol","li","strong","em","a","blockquote","code","pre","br"],
+                            ALLOWED_ATTR: ["href","target","rel","class"],
+                          })
+                        : (article.content_html || ""),
+                    }}
                   />
                 </div>
 

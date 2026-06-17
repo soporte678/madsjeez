@@ -3,8 +3,8 @@
 # en deb.debian.org (incidente de infra). node:22-bookworm-slim ya trae libssl3 y ca-certificates.
 FROM node:22-bookworm-slim AS deps
 WORKDIR /app
-COPY package.json ./
-RUN npm install --no-audit --no-fund
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
 
 FROM node:22-bookworm-slim AS builder
 WORKDIR /app

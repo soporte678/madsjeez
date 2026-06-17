@@ -8,7 +8,7 @@
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { rateLimit } from "@/lib/rate-limit";
+import { rateLimit, clientIpFromRequest } from "@/lib/rate-limit";
 import { signResetToken } from "@/lib/auth/password-reset-token";
 import { logger } from "@/lib/logger";
 
@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || "https://www.madsjeez.com.ar").replace(/\/$/, "");
 
 export async function POST(req: Request) {
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const ip = clientIpFromRequest(req);
   const { allowed, retryAfter } = rateLimit(`forgot-pw:${ip}`, 3, 15 * 60 * 1000);
   if (!allowed) {
     return NextResponse.json(
