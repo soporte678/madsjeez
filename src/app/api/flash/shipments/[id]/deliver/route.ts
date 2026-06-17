@@ -37,6 +37,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   })
   if (!shipment) return NextResponse.json({ error: "Envío no encontrado" }, { status: 404 })
 
+  if (shipment.driverId !== driver.id) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 })
+  }
+
   // Validar DNI del titular si corresponde
   if (receiverType === "TITULAR") {
     const dniClean = receiverDni.replace(/\D/g, "")

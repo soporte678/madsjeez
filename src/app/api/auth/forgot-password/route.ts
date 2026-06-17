@@ -45,7 +45,7 @@ export async function POST(req: Request) {
     });
 
     if (!user) {
-      logger.info("forgot-pw: email no encontrado", { email });
+      logger.debug("forgot-pw: email no encontrado (sin revelar cuál)");
       return generic;
     }
 
@@ -54,7 +54,9 @@ export async function POST(req: Request) {
 
     const apiKey = process.env.RESEND_API_KEY?.trim();
     if (!apiKey) {
-      logger.warn("forgot-pw: RESEND_API_KEY no seteada, link generado pero no enviado:", resetUrl);
+      logger.warn("forgot-pw: RESEND_API_KEY no seteada — link generado pero no enviado", {
+        email: email.slice(0, 3) + "***",
+      });
       return generic;
     }
 

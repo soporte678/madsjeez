@@ -18,9 +18,7 @@ export async function POST(req: NextRequest) {
   const body = await parseJarvisJson<DispatchBody>(req);
   if (body instanceof NextResponse) return body;
 
-  if (body.confirm) {
-    process.env.JARVIS_AUTO_DISPATCH = "true";
-  }
+  const autoDispatch = body.confirm === true;
 
   if (body.all) {
     const results = await dispatchAllPendingTasks();
@@ -38,6 +36,7 @@ export async function POST(req: NextRequest) {
     agent: body.agent as "cursor" | "claude" | "windsurf" | "codex",
     taskPath: body.taskPath,
     objective: body.objective ?? "Jarvis task",
+    autoDispatch,
   });
 
   return NextResponse.json({ status: "ok", result });

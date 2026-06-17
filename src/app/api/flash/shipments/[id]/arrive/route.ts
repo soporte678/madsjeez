@@ -23,6 +23,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   })
   if (!driver) return NextResponse.json({ error: "No sos chofer" }, { status: 403 })
 
+  if (shipment.driverId !== driver.id) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 })
+  }
+
   const lastAttempt = shipment.attempts[0]
   const attemptNumber = lastAttempt ? lastAttempt.attemptNumber + 1 : 1
   if (attemptNumber > 3) {

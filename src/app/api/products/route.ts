@@ -72,7 +72,7 @@ export async function GET(req: Request) {
     const maxPrice = searchParams.get("maxPrice")
     const sort = searchParams.get("sort") || "relevance"
     const page = parseInt(searchParams.get("page") || "1")
-    const limit = parseInt(searchParams.get("limit") || "20")
+    const limit = Math.min(parseInt(searchParams.get("limit") || "20"), 100)
 
     // /api/products es genérico. Para filtros geo usar /api/search/listings.
     let query = supabase

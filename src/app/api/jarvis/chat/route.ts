@@ -212,7 +212,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   const data = validation.data;
   const clientIp = getClientIp(request);
-  const userId = data.userId ?? `ip_${clientIp}`;
+  // userId is derived from the server-controlled IP only — never trust the
+  // client-supplied value to avoid actor impersonation in audit logs and
+  // rate-limit keys.
+  const userId = `ip_${clientIp}`;
 
   // ── Logging de request ────────────────────────────────────────────────
   await logSecurityEvent({

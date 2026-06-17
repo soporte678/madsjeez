@@ -49,7 +49,6 @@ interface StreamRequest {
   command?: string;
   scope?: string;
   detail?: string;
-  system?: string;
   model?: string;
   temperature?: number;
   maxTokens?: number;
@@ -69,7 +68,6 @@ function parseRequest(searchParams: URLSearchParams): StreamRequest | null {
     command: searchParams.get("command") ?? undefined,
     scope: searchParams.get("scope") ?? undefined,
     detail: searchParams.get("detail") ?? undefined,
-    system: searchParams.get("system") ?? undefined,
     model: searchParams.get("model") ?? undefined,
     temperature: searchParams.get("temperature")
       ? parseFloat(searchParams.get("temperature")!)
@@ -137,9 +135,7 @@ export async function GET(req: NextRequest) {
 
   /* -- Build messages -- */
   const messages: LlmMessage[] = [];
-  const systemPrompt = params.system
-    ? `${JARVIS_SYSTEM_PROMPT}\n\n${params.system}`
-    : `${JARVIS_SYSTEM_PROMPT}\n\nRespondé en español argentino, conciso, sin secretos ni credenciales.`;
+  const systemPrompt = `${JARVIS_SYSTEM_PROMPT}\n\nRespondé en español argentino, conciso, sin secretos ni credenciales.`;
 
   messages.push({ role: "system", content: systemPrompt });
 
@@ -375,7 +371,7 @@ export async function POST(req: NextRequest) {
     try {
       const response = await callLlmFast(
         body.prompt,
-        body.system,
+        undefined,
         body.maxTokens ?? 128
       );
       return new Response(
@@ -405,7 +401,6 @@ export async function POST(req: NextRequest) {
   if (body.command) searchParams.set("command", body.command);
   if (body.scope) searchParams.set("scope", body.scope);
   if (body.detail) searchParams.set("detail", body.detail);
-  if (body.system) searchParams.set("system", body.system);
   if (body.model) searchParams.set("model", body.model);
   if (body.temperature !== undefined)
     searchParams.set("temperature", String(body.temperature));

@@ -24,6 +24,14 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ tok
 
   if (!shipment) return NextResponse.json({ error: "QR inválido o expirado" }, { status: 404 })
 
+  const driver = await prisma.flashDriver.findUnique({
+    where: { userId: (session.user as { id: string }).id },
+  })
+  if (!driver) return NextResponse.json({ error: "No sos chofer" }, { status: 403 })
+  if (shipment.driverId !== driver.id) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 })
+  }
+
   const mapsUrl = buildGoogleMapsUrl({
     recipientName: shipment.recipientName,
     recipientDni: shipment.recipientDni,

@@ -147,7 +147,7 @@ export async function DELETE(request: Request) {
     // Extraer el path del URL
     const urlObj = new URL(url)
     const pathParts = urlObj.pathname.split("/")
-    const bucketName = pathParts[2] // "question-images"
+    const bucketName = "question-images" // hardcoded — never derived from user input
     const filePath = pathParts.slice(3).join("/")
 
     // Verificar que el usuario sea el dueño del archivo

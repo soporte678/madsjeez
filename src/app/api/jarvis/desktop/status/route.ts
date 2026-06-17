@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getJarvisConfig, isJarvisEnabled } from "@/jarvis/jarvis-env";
 import { desktopAgentStatus } from "@/jarvis/jarvis-desktop-state";
+import { assertJarvisAuth } from "@/jarvis/api-auth";
 
 /** Estado Jarvis para el agente desktop (auth: JARVIS_DESKTOP_SECRET). */
 export async function GET(req: NextRequest) {
@@ -10,6 +11,9 @@ export async function GET(req: NextRequest) {
     if (header !== expected) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+  } else {
+    const authResult = await assertJarvisAuth(req);
+    if (authResult) return authResult;
   }
 
   const config = getJarvisConfig();

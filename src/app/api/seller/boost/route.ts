@@ -144,6 +144,14 @@ export async function PUT(req: Request) {
       )
     }
 
+    const ALLOWED_DURATIONS = [1, 7, 14, 30]
+    if (!ALLOWED_DURATIONS.includes(duration)) {
+      return NextResponse.json(
+        { error: "Duración inválida. Valores permitidos: 1, 7, 14, 30 días." },
+        { status: 400 }
+      )
+    }
+
     const product = await prisma.product.findUnique({
       where: { id: productId },
       select: { sellerId: true },

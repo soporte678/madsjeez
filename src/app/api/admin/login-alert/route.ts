@@ -3,6 +3,11 @@ import { createClient } from "@/lib/supabase/server"
 
 export async function POST(request: NextRequest) {
   try {
+    const internalSecret = process.env.INTERNAL_SECRET || process.env.ADMIN_SETUP_SECRET
+    if (!internalSecret || request.headers.get("x-internal-secret") !== internalSecret) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+    }
+
     const { adminUserId, email, ip, userAgent, timestamp } = await request.json()
     
     // Get client IP from request

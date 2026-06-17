@@ -227,14 +227,15 @@ export const authOptions: NextAuthOptions = {
         if (dbUser) {
           if (trigger === "signIn" || !token.id) {
             token.id = dbUser.id
-            token.role = dbUser.role
-            token.isSeller = dbUser.isSeller
             token.subscriptionTier = dbUser.subscriptionTier
             token.reputationColor = dbUser.reputationColor
             token.name = dbUser.name
             token.image = dbUser.image
-            token.hasAccessKey = !!dbUser.accessKey
           }
+          // Siempre refrescar roles/permisos críticos en cada validación de token:
+          token.role = dbUser.role
+          token.isSeller = dbUser.isSeller
+          token.hasAccessKey = !!dbUser.accessKey
           const driver = await prisma.flashDriver.findUnique({
             where: { userId: dbUser.id },
             select: { isActive: true },

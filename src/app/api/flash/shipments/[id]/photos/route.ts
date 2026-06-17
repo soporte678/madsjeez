@@ -15,6 +15,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "attemptId y photos son requeridos" }, { status: 400 })
   }
 
+  const driver = await prisma.flashDriver.findUnique({
+    where: { userId: (session.user as { id: string }).id },
+  })
+  if (!driver) return NextResponse.json({ error: "No sos chofer" }, { status: 403 })
+
+  const attempt = await prisma.flashDeliveryAttempt.findUnique({
+    where: { id: attemptId },
+    select: { id: true, driverId: true, shipmentId: true },
+  })
+  if (!attempt) return NextResponse.json({ error: "Intento no encontrado" }, { status: 404 })
+  if (attempt.driverId !== driver.id || attempt.shipmentId !== id) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 })
+  }
+
   const existing = await prisma.flashAttemptPhoto.count({ where: { attemptId } })
   if (existing + photos.length > 5) {
     return NextResponse.json({ error: `Máximo 5 fotos por intento (ya tenés ${existing})` }, { status: 400 })

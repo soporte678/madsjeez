@@ -54,7 +54,7 @@ export async function GET(
           receiverName: true,
           receiverType: true,
           signedAt: true,
-          photos: true,
+          // photos omitted — requieren auth del comprador para accederse
         },
       },
       order: {

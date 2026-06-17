@@ -71,12 +71,16 @@ export async function dispatchJarvisTask(params: {
   agent: RoutedAgent;
   taskPath: string;
   objective: string;
+  autoDispatch?: boolean;
 }): Promise<DispatchResult> {
   const config = getJarvisConfig();
   if (!config.allowAgentTasks) {
     return { agent: params.agent, status: "skipped", message: "JARVIS_ALLOW_AGENT_TASKS=false" };
   }
-  if (config.requireConfirmation && process.env.JARVIS_AUTO_DISPATCH?.trim().toLowerCase() !== "true") {
+  const autoDispatchFlag =
+    params.autoDispatch === true ||
+    process.env.JARVIS_AUTO_DISPATCH?.trim().toLowerCase() === "true";
+  if (config.requireConfirmation && !autoDispatchFlag) {
     return {
       agent: params.agent,
       status: "skipped",

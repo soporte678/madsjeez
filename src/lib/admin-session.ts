@@ -21,7 +21,7 @@ export function getAdminSessionExpiryDate() {
 export function getAdminSessionCookieOptions(expiresAt: Date) {
   return {
     httpOnly: true,
-    sameSite: "lax" as const,
+    sameSite: "strict" as const,
     secure: process.env.NODE_ENV === "production",
     path: "/",
     expires: expiresAt,

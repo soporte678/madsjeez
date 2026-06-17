@@ -26,6 +26,7 @@ import {
   getMemoryBuffer,
   type AuditEntry,
 } from "@/lib/jarvis/governance/auditor";
+import { assertJarvisAuth } from "@/jarvis/api-auth";
 
 // ============================================================================
 // Constants
@@ -234,6 +235,9 @@ function sanitizeForResponse(
  */
 export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
+    const authResult = await assertJarvisAuth(req);
+    if (authResult) return authResult;
+
     const disabled = checkJarvisEnabled();
     if (disabled) return disabled;
 

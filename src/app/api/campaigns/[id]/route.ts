@@ -63,7 +63,9 @@ export async function PATCH(
     }
 
     const body = await req.json();
-    const { status, maxBudget, spentBudget, endDate, name, internalAd } = body;
+    // spentBudget is intentionally excluded — it's an internal billing field
+    // and must only be updated by the payment/billing system, not by sellers.
+    const { status, maxBudget, endDate, name, internalAd } = body;
 
     const existing = await prisma.campaign.findFirst({
       where: {
@@ -81,7 +83,6 @@ export async function PATCH(
       data: {
         ...(status && { status }),
         ...(maxBudget !== undefined && { maxBudget: parseFloat(maxBudget) }),
-        ...(spentBudget !== undefined && { spentBudget: parseFloat(spentBudget) }),
         ...(endDate && { endDate: new Date(endDate) }),
         ...(name && { name }),
         ...(internalAd

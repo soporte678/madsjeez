@@ -21,7 +21,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!session?.user) return NextResponse.json({ error: "No autenticado" }, { status: 401 })
 
   const { id } = await params
-  const { attemptId, notes, photos, arrivedAt } = await req.json()
+  const { attemptId, notes, photos } = await req.json()
 
   const driver = await prisma.flashDriver.findUnique({
     where: { userId: (session.user as { id: string }).id },
@@ -31,8 +31,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const attempt = await prisma.flashDeliveryAttempt.findUnique({ where: { id: attemptId } })
   if (!attempt) return NextResponse.json({ error: "Intento no encontrado" }, { status: 404 })
 
-  // Validar 10 minutos de espera
-  const arrivedTime = attempt.arrivedAt ? new Date(attempt.arrivedAt) : new Date(arrivedAt)
+  if (attempt.driverId !== driver.id) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 })
+  }
+
+  // Validar 10 minutos de espera (usar arrivedAt del registro; si no existe, createdAt del intento)
+  const arrivedTime = attempt.arrivedAt ? new Date(attempt.arrivedAt) : new Date(attempt.createdAt)
   const waitedMs = Date.now() - arrivedTime.getTime()
   const tenMinutesMs = 10 * 60 * 1000
   if (waitedMs < tenMinutesMs) {

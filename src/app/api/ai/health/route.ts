@@ -1,12 +1,24 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import {
   checkOllamaHealth,
   describeOllamaConfigIssue,
 } from "@/lib/whatsapp-bot/ollama-client";
 import { getLoadedModels, listModels } from "@/lib/ai/ollama-client";
 import { getModelRouterEnv, getSalesCloserEnv } from "@/lib/ai/sales-closer-env";
+import { tryAdminRequest } from "@/lib/admin-api";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  // Without an admin session, return only the ok flag (no infra details)
+  const adminCtx = await tryAdminRequest(request);
+  if (!adminCtx) {
+    // Minimal health check: just ping Ollama reachability
+    const configIssue = describeOllamaConfigIssue();
+    if (configIssue) return NextResponse.json({ ok: false });
+    const health = await checkOllamaHealth();
+    return NextResponse.json({ ok: health.ok });
+  }
+
+  // Full details only for authenticated admins
   const env = getSalesCloserEnv();
   const router = getModelRouterEnv();
   const configIssue = describeOllamaConfigIssue();

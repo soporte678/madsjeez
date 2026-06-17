@@ -17,11 +17,11 @@ function createLogger() {
     info: (msg: string, ...args: unknown[]) => {
       // Info se muestra en dev, en prod solo si JARVIS_LOG_LEVEL=info
       if (shouldLog || process.env.JARVIS_LOG_LEVEL === "info") {
-        console.info(`[INFO] ${msg}`, ...args);
+        console.info(`[INFO] ${msg}`, ...sanitizeForLog(args));
       }
     },
     warn: (msg: string, ...args: unknown[]) => {
-      console.warn(`[WARN] ${msg}`, ...args);
+      console.warn(`[WARN] ${msg}`, ...sanitizeForLog(args));
     },
     error: (msg: string, ...args: unknown[]) => {
       // Error siempre se loguea pero sin datos sensibles
@@ -31,20 +31,28 @@ function createLogger() {
   };
 }
 
-function sanitizeForLog(args: unknown[]): unknown[] {
-  const sensitiveKeys = ["password", "token", "secret", "key", "authorization", "credit_card"];
-  return args.map((arg) => {
-    if (typeof arg === "object" && arg !== null) {
-      const sanitized = { ...(arg as Record<string, unknown>) };
-      for (const key of Object.keys(sanitized)) {
-        if (sensitiveKeys.some((sk) => key.toLowerCase().includes(sk))) {
-          sanitized[key] = "[REDACTED]";
-        }
+function sanitizeArg(arg: unknown): unknown {
+  if (typeof arg === "string") {
+    return arg
+      .replace(/([?&]token=)[^&\s]+/gi, "$1[REDACTED]")
+      .replace(/Bearer\s+[A-Za-z0-9._-]+/g, "Bearer [REDACTED]")
+      .replace(/password=([^&\s]+)/gi, "password=[REDACTED]");
+  }
+  if (arg && typeof arg === "object" && !Array.isArray(arg)) {
+    const sensitiveKeys = ["password", "token", "secret", "key", "authorization", "credit_card"];
+    const sanitized = { ...(arg as Record<string, unknown>) };
+    for (const key of Object.keys(sanitized)) {
+      if (sensitiveKeys.some((sk) => key.toLowerCase().includes(sk))) {
+        sanitized[key] = "[REDACTED]";
       }
-      return sanitized;
     }
-    return arg;
-  });
+    return sanitized;
+  }
+  return arg;
+}
+
+function sanitizeForLog(args: unknown[]): unknown[] {
+  return args.map(sanitizeArg);
 }
 
 export const logger = createLogger();

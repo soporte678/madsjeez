@@ -150,6 +150,14 @@ export async function middleware(request: NextRequest) {
     return response
   }
 
+  // Protect /dashboard routes
+  if (pathname.startsWith("/dashboard")) {
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET })
+    if (!token?.id) {
+      return NextResponse.redirect(new URL("/auth/login", request.url))
+    }
+  }
+
   /* ================================================================ */
   /* JARVIS EDGE CACHING — Sub-50ms responses for cached queries      */
   /* ================================================================ */

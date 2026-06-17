@@ -2,6 +2,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai"
 import { NextRequest, NextResponse } from "next/server"
 import { getSupabaseService } from "@/lib/supabase/service"
 import { hasValidProductImageUrl, primaryImageUrlFromRows } from "@/lib/productVisibility"
+import { rateLimit, clientIpFromRequest } from "@/lib/rate-limit"
 
 /** Escapa caracteres wildcard de ILIKE para evitar SQL injection via wildcards */
 function escapeIlikeTerm(term: string): string {
@@ -10,6 +11,12 @@ function escapeIlikeTerm(term: string): string {
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = clientIpFromRequest(req)
+    const { allowed } = rateLimit(`search-image:${ip}`, 5, 60 * 1000)
+    if (!allowed) {
+      return NextResponse.json({ error: "Rate limit excedido. Intentá de nuevo en un minuto." }, { status: 429 })
+    }
+
     const formData = await req.formData()
     const file = formData.get("image") as File | null
 
