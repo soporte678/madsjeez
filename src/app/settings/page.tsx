@@ -146,12 +146,27 @@ function SettingsContent() {
     setSaving(false);
   };
 
+  const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+  const ALLOWED_AVATAR_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
+
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
+    if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
+      toast.error("Solo se permiten imágenes JPG, PNG, WebP o GIF");
+      return;
+    }
+
+    const fileExtRaw = file.name.split(".").pop()?.toLowerCase() ?? "";
+    const fileExtDot = `.${fileExtRaw}`;
+    if (!ALLOWED_AVATAR_EXTENSIONS.includes(fileExtDot)) {
+      toast.error("Solo se permiten imágenes JPG, PNG, WebP o GIF");
+      return;
+    }
+
     const supabase = createClient();
-    const fileExt = file.name.split(".").pop();
+    const fileExt = fileExtRaw;
     const fileName = `${user.id}/avatar.${fileExt}`;
 
     const { error: uploadError } = await supabase.storage

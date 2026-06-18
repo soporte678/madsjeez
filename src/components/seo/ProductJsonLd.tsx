@@ -1,4 +1,5 @@
 import React from "react";
+import { safeJsonLd } from "@/lib/safe-json-ld";
 
 interface ProductJsonLdProps {
   product: {
@@ -57,7 +58,7 @@ export function ProductJsonLd({ product, sellerName }: ProductJsonLdProps) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
     />
   );
 }

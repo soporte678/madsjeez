@@ -9,6 +9,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { ChevronRight, Check, Store, PackageCheck, MessagesSquare, Sparkles, ShieldCheck, Truck, CreditCard, LifeBuoy } from "lucide-react";
 import { BreadcrumbJsonLd, FaqJsonLd } from "@/components/seo";
+import { safeJsonLd } from "@/lib/safe-json-ld";
 import { SITE_URL } from "@/lib/seo/site";
 import {
   getSellerLanding,
@@ -69,7 +70,7 @@ function Body({ data, heroProducts }: { data: Landing; heroProducts: HeroProduct
       </Suspense>
       <BreadcrumbJsonLd items={breadcrumbItems} />
       <FaqJsonLd faqs={data.faqs} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(webPageLd) }} />
 
       {/* Breadcrumb visible */}
       <nav aria-label="Migas de pan" className="mx-auto max-w-6xl px-4 pt-6">

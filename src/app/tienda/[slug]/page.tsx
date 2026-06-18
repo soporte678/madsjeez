@@ -4,6 +4,7 @@ import { getPublicStoreByHandle, getStoreBranding } from "@/lib/public-store";
 import { canonicalMeta } from "@/lib/seo/canonical";
 import { SITE_URL } from "@/lib/seo/site";
 import { StorefrontView } from "@/components/storefront/StorefrontView";
+import { safeJsonLd } from "@/lib/safe-json-ld";
 
 export const dynamic = "force-dynamic";
 
@@ -60,7 +61,7 @@ export default async function TiendaPublicaPage({ params }: Props) {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(storeJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(storeJsonLd) }} />
       <StorefrontView store={store} branding={branding} />
     </>
   );

@@ -1,10 +1,9 @@
 import { COMPANY } from "@/lib/company";
 import { getSocialSameAs } from "@/lib/seo/social";
 import { SITE_NAME, SITE_URL } from "@/lib/seo/site";
+import { safeJsonLd } from "@/lib/safe-json-ld";
 
-function jsonLd(data: unknown) {
-  return JSON.stringify(data).replace(/</g, "\\u003c");
-}
+const jsonLd = safeJsonLd;
 
 /** Organization + LocalBusiness + Person (fundador) + WebSite. */
 export function SiteJsonLd() {

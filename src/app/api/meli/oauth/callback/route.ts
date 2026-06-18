@@ -27,7 +27,14 @@ export async function GET(req: Request) {
   const meliError = url.searchParams.get("error");
 
   if (meliError) {
-    return NextResponse.redirect(meliDashboardReturn({ error: meliError }));
+    const MELI_ERROR_MAP: Record<string, string> = {
+      access_denied: "access_denied",
+      invalid_client: "config_error",
+      invalid_grant: "config_error",
+      server_error: "oauth_error",
+    };
+    const safeError = MELI_ERROR_MAP[String(meliError)] ?? "oauth_error";
+    return NextResponse.redirect(meliDashboardReturn({ error: safeError }));
   }
 
   const userId = verifyMeliOAuthState(state || "");

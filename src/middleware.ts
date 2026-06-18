@@ -33,6 +33,41 @@ function canonicalHostRedirect(request: NextRequest): NextResponse | null {
 }
 
 export async function middleware(request: NextRequest) {
+  // ── CSP nonce — generated per-request so inline scripts never need unsafe-inline ──
+  const nonce = Buffer.from(crypto.randomUUID()).toString("base64")
+
+  const cspHeader = [
+    `default-src 'self'`,
+    `script-src 'self' 'nonce-${nonce}' https://www.googletagmanager.com https://connect.facebook.net https://*.mercadopago.com`,
+    `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
+    `img-src 'self' data: blob: https:`,
+    `font-src 'self' https://fonts.gstatic.com`,
+    `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://*.googletagmanager.com https://*.mercadopago.com`,
+    `frame-src 'self' https://*.mercadopago.com https://*.stripe.com`,
+    `media-src 'self'`,
+    `object-src 'none'`,
+    `base-uri 'self'`,
+    `form-action 'self'`,
+    `frame-ancestors 'none'`,
+    `upgrade-insecure-requests`,
+  ].join("; ")
+
+  // Forward nonce to route handlers / server components via request header
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set("x-nonce", nonce)
+
+  /** Apply CSP + isolation headers to any NextResponse. */
+  function applySecHeaders(res: NextResponse): NextResponse {
+    res.headers.set("Content-Security-Policy", cspHeader)
+    res.headers.set("Cross-Origin-Opener-Policy", "same-origin")
+    res.headers.set("Cross-Origin-Resource-Policy", "same-origin")
+    res.headers.set("Cross-Origin-Embedder-Policy", "credentialless")
+    res.headers.set("X-Content-Type-Options", "nosniff")
+    res.headers.set("X-Frame-Options", "DENY")
+    res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
+    return res
+  }
+
   // ── Tiendas por subdominio: nombre.madsjeez.com.ar ──────────────────────
   // Debe ir ANTES del redirect canónico (que mandaría todo a www).
   const sub = getTenantSubdomain(request.headers.get("host") ?? "")
@@ -42,7 +77,7 @@ export async function middleware(request: NextRequest) {
     if (p === "/" || p === "") {
       // El root del subdominio renderiza la tienda (rewrite interno, sin cambiar la URL).
       url.pathname = `/tienda/${sub}`
-      return NextResponse.rewrite(url)
+      return applySecHeaders(NextResponse.rewrite(url, { request: { headers: requestHeaders } }))
     }
     // Rutas con sentido en el subdominio (tienda, producto, API, assets) pasan;
     // el resto del marketplace vive en www → redirigimos preservando el path.
@@ -50,15 +85,15 @@ export async function middleware(request: NextRequest) {
       p.startsWith("/tienda/") || p.startsWith("/product/") ||
       p.startsWith("/api/") || p.startsWith("/_next/")
     ) {
-      return NextResponse.next()
+      return applySecHeaders(NextResponse.next({ request: { headers: requestHeaders } }))
     }
     url.host = CANONICAL_HOST
     url.protocol = "https"
-    return NextResponse.redirect(url, 307)
+    return applySecHeaders(NextResponse.redirect(url, 307))
   }
 
   const hostRedirect = canonicalHostRedirect(request)
-  if (hostRedirect) return hostRedirect
+  if (hostRedirect) return applySecHeaders(hostRedirect)
 
   const { pathname } = request.nextUrl
 
@@ -69,7 +104,7 @@ export async function middleware(request: NextRequest) {
       secret: process.env.NEXTAUTH_SECRET,
     })
     if (!token?.id) {
-      return NextResponse.redirect(new URL("/driver/login", request.url))
+      return applySecHeaders(NextResponse.redirect(new URL("/driver/login", request.url)))
     }
 
     let isDriver = Boolean(token.isDriver)
@@ -92,19 +127,19 @@ export async function middleware(request: NextRequest) {
     if (!isDriver) {
       const url = new URL("/driver/login", request.url)
       url.searchParams.set("error", "not_driver")
-      return NextResponse.redirect(url)
+      return applySecHeaders(NextResponse.redirect(url))
     }
   }
 
   // Only protect admin routes except login
   if (pathname.startsWith("/admin") && !pathname.startsWith("/admin/login")) {
-    const response = NextResponse.next()
-    
+    const response = NextResponse.next({ request: { headers: requestHeaders } })
+
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()
     const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()
 
     if (!url || !anon) {
-      return NextResponse.redirect(new URL("/admin/login", request.url))
+      return applySecHeaders(NextResponse.redirect(new URL("/admin/login", request.url)))
     }
 
     const supabase = createServerClient(
@@ -130,7 +165,7 @@ export async function middleware(request: NextRequest) {
     } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.redirect(new URL("/admin/login", request.url))
+      return applySecHeaders(NextResponse.redirect(new URL("/admin/login", request.url)))
     }
 
     const svc = getSupabaseService()
@@ -144,17 +179,17 @@ export async function middleware(request: NextRequest) {
 
     if (!adminUser) {
       await supabase.auth.signOut()
-      return NextResponse.redirect(new URL("/admin/login", request.url))
+      return applySecHeaders(NextResponse.redirect(new URL("/admin/login", request.url)))
     }
 
-    return response
+    return applySecHeaders(response)
   }
 
   // Protect /dashboard routes
   if (pathname.startsWith("/dashboard")) {
     const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET })
     if (!token?.id) {
-      return NextResponse.redirect(new URL("/auth/login", request.url))
+      return applySecHeaders(NextResponse.redirect(new URL("/auth/login", request.url)))
     }
   }
 
@@ -169,7 +204,7 @@ export async function middleware(request: NextRequest) {
   );
 
   if (isJarvisApi && !isJarvisStream && !isDestructiveCommand) {
-    const response = NextResponse.next();
+    const response = NextResponse.next({ request: { headers: requestHeaders } });
 
     // Enable stale-while-revalidate for safe JARVIS endpoints
     // Cache in CDN edge for 30s (health checks, status, etc.)
@@ -186,26 +221,26 @@ export async function middleware(request: NextRequest) {
     const scope = request.nextUrl.searchParams.get("scope") ?? "all";
     response.headers.set("Cache-Tag", `jarvis,${scope}`);
 
-    return response;
+    return applySecHeaders(response);
   }
 
   // Streaming endpoint: never cache, but add performance hints
   if (isJarvisStream) {
-    const response = NextResponse.next();
+    const response = NextResponse.next({ request: { headers: requestHeaders } });
     response.headers.set("X-Accel-Buffering", "no");
     response.headers.set("Cache-Control", "no-cache, no-store");
-    return response;
+    return applySecHeaders(response);
   }
 
   // Destructive JARVIS commands: bypass all caching
   if (isJarvisApi && isDestructiveCommand) {
-    const response = NextResponse.next();
+    const response = NextResponse.next({ request: { headers: requestHeaders } });
     response.headers.set("Cache-Control", "no-cache, no-store, must-revalidate");
     response.headers.set("X-Jarvis-Cache", "bypass-destructive");
-    return response;
+    return applySecHeaders(response);
   }
 
-  return NextResponse.next()
+  return applySecHeaders(NextResponse.next({ request: { headers: requestHeaders } }))
 }
 
 export const config = {

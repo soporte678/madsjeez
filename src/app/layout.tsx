@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next"
 import { Outfit, Montserrat } from "next/font/google"
+import { headers } from "next/headers"
 import "./globals.css"
 import { Providers } from "@/components/providers"
 import { ChatProvider } from "@/components/ChatContext"
@@ -104,14 +105,18 @@ const GA_MEASUREMENT_ID = (
   process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim() || "G-ZXW730DHRB"
 ).replace(/[^A-Z0-9-]/g, "")
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const nonce = (await headers()).get("x-nonce") ?? ""
+
   return (
     <html lang="es" className={`${outfit.variable} ${montserrat.variable} antialiased`}>
       <head>
+        {/* CSP nonce for next/script client components — Next.js reads this via __webpack_nonce__ */}
+        {nonce ? <meta property="csp-nonce" content={nonce} /> : null}
         {/* Meta domain verification — Business Manager */}
         {META_DOMAIN_VERIFICATION ? (
           <meta name="facebook-domain-verification" content={META_DOMAIN_VERIFICATION} />
@@ -125,6 +130,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#EB5204" media="(prefers-color-scheme: light)" />
         <meta name="theme-color" content="#EB5204" media="(prefers-color-scheme: dark)" />
         <script
+          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var t=localStorage.getItem('madsjeez-theme-tone');document.documentElement.setAttribute('data-theme',t==='soft'||t==='dark'?t:'light')}catch(e){}})();`,
           }}
@@ -132,10 +138,12 @@ export default function RootLayout({
         {GA_MEASUREMENT_ID ? (
           <>
             <script
+              nonce={nonce}
               async
               src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
             />
             <script
+              nonce={nonce}
               dangerouslySetInnerHTML={{
                 __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_MEASUREMENT_ID}');`,
               }}

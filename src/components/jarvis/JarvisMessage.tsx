@@ -276,8 +276,18 @@ function MarkdownContent({ content }: { content: string }): React.ReactNode {
   return <>{elements}</>;
 }
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;");
+}
+
 function processInline(text: string): string {
-  let result = text;
+  // Escape HTML entities first to prevent XSS from AI-generated content
+  let result = escapeHtml(text);
 
   // Bold + italic
   result = result.replace(
@@ -303,10 +313,14 @@ function processInline(text: string): string {
     '<code class="bg-[#1a1a2e] text-emerald-300 px-1.5 py-0.5 rounded text-xs font-mono">$1</code>'
   );
 
-  // Links [texto](url)
+  // Links [texto](url) — validate protocol to prevent javascript: URIs
   result = result.replace(
     /\[(.+?)\]\((.+?)\)/g,
-    '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-[#EB5204] hover:underline">$1</a>'
+    (_, linkText, url) => {
+      const safeUrl =
+        url.startsWith("https://") || url.startsWith("http://") ? url : "#";
+      return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="text-[#EB5204] hover:underline">${linkText}</a>`;
+    }
   );
 
   return result;
