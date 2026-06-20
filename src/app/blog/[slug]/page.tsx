@@ -7,9 +7,10 @@ import { SITE_URL, SITE_NAME } from "@/lib/seo/site";
 import { getBlogPost, allBlogSlugs, type BlogPost } from "@/data/blog-posts";
 import { getSellerLanding } from "@/data/seller-landings";
 import { SellerCtaButton } from "@/components/seller/SellerInteractive";
+import { getPost, type DynamicPost } from "@/lib/blog/store";
 
-export const revalidate = 86400;
-export const dynamicParams = false;
+export const revalidate = 60;
+export const dynamicParams = true;
 
 export function generateStaticParams() {
   return allBlogSlugs().map((slug) => ({ slug }));
@@ -18,7 +19,29 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const post = getBlogPost(slug);
-  if (!post) return {};
+  if (!post) {
+    const dyn = getPost(slug);
+    if (!dyn) return {};
+    const url = `${SITE_URL}/blog/${dyn.slug}`;
+    return {
+      title: `${dyn.title} | Madsjeez Blog`,
+      description: dyn.excerpt,
+      keywords: dyn.tags.join(", "),
+      alternates: { canonical: `/blog/${dyn.slug}` },
+      openGraph: {
+        type: "article",
+        url,
+        siteName: SITE_NAME,
+        title: dyn.title,
+        description: dyn.excerpt,
+        locale: "es_AR",
+        publishedTime: dyn.publishedAt,
+        modifiedTime: dyn.updatedAt,
+        tags: dyn.tags,
+      },
+      twitter: { card: "summary_large_image", title: dyn.title, description: dyn.excerpt },
+    };
+  }
   const url = `${SITE_URL}/blog/${post.slug}`;
   return {
     title: post.seoTitle,
@@ -52,10 +75,83 @@ function formatDate(iso: string): string {
   return `${d}/${m}/${y}`;
 }
 
+function DynamicPostPage({ post }: { post: DynamicPost }) {
+  const url = `${SITE_URL}/blog/${post.slug}`;
+  const articleLd = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.title,
+    description: post.excerpt,
+    url,
+    inLanguage: "es-AR",
+    datePublished: post.publishedAt,
+    dateModified: post.updatedAt,
+    author: { "@type": "Person", name: post.author },
+    publisher: { "@type": "Organization", name: "Madsjeez", url: SITE_URL },
+    mainEntityOfPage: { "@type": "WebPage", "@id": url },
+    keywords: post.tags.join(", "),
+  };
+  return (
+    <main className="bg-background text-foreground">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleLd) }} />
+      <nav aria-label="Migas de pan" className="mx-auto max-w-3xl px-4 pt-6">
+        <ol className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+          <li><Link href="/" className="hover:text-foreground">Inicio</Link></li>
+          <li aria-hidden><ChevronRight className="h-3.5 w-3.5" /></li>
+          <li><Link href="/blog" className="hover:text-foreground">Blog</Link></li>
+          <li aria-hidden><ChevronRight className="h-3.5 w-3.5" /></li>
+          <li className="truncate font-medium text-foreground">{post.title}</li>
+        </ol>
+      </nav>
+      <article className="mx-auto max-w-3xl px-4 pb-16 pt-6">
+        <header>
+          {post.tags.length > 0 && (
+            <span className="inline-flex rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">{post.tags[0]}</span>
+          )}
+          <h1 className="mt-4 text-3xl font-black leading-tight tracking-tight md:text-4xl">{post.title}</h1>
+          <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {post.readingTime} min de lectura</span>
+            <span>Por {post.author}</span>
+            <span>{new Date(post.publishedAt).toLocaleDateString("es-AR")}</span>
+          </div>
+        </header>
+        {post.coverImage && (
+          <img src={post.coverImage} alt={post.title} className="mt-6 w-full rounded-2xl object-cover" />
+        )}
+        <div className="prose prose-neutral dark:prose-invert mt-8 max-w-none">
+          {post.content.split("\n\n").map((para, i) => (
+            <p key={i}>{para}</p>
+          ))}
+        </div>
+        {post.tags.length > 1 && (
+          <div className="mt-8 flex flex-wrap gap-2">
+            {post.tags.map((t) => (
+              <span key={t} className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">{t}</span>
+            ))}
+          </div>
+        )}
+        <div className="mt-10 rounded-2xl border border-border bg-gradient-to-br from-primary/10 to-transparent p-6 md:p-8">
+          <h2 className="text-xl font-bold tracking-tight">Publicá en Madsjeez sin comisiones</h2>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">Marketplace para maquinaria, herramientas y repuestos. Sin cobro por venta.</p>
+          <div className="mt-5">
+            <Link href="/vender-en-madsjeez" className="inline-flex items-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90">
+              Quiero vender en Madsjeez
+            </Link>
+          </div>
+        </div>
+      </article>
+    </main>
+  );
+}
+
 export default async function BlogArticlePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const post = getBlogPost(slug);
-  if (!post) notFound();
+  if (!post) {
+    const dyn = getPost(slug);
+    if (!dyn) notFound();
+    return <DynamicPostPage post={dyn} />;
+  }
 
   const url = `${SITE_URL}/blog/${post.slug}`;
   const landing = getSellerLanding(post.ctaLanding);

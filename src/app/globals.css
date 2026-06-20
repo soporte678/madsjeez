@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 /*
  * Dark mode hook: el proyecto usa `data-theme="dark"` en <html> (ver layout.tsx),

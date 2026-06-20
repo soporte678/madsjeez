@@ -10,6 +10,7 @@ import { COMPARATIVAS } from "@/data/comparativas";
 import { REP_GUIAS } from "@/data/reparacion-guias";
 import { MARCAS } from "@/data/marcas";
 import { TUTORIALES } from "@/data/tutoriales";
+import { getAllPosts } from "@/lib/blog/store";
 
 const BASE_URL = "https://www.madsjeez.com.ar";
 
@@ -43,6 +44,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${BASE_URL}/blog/${p.slug}`,
       lastModified: new Date(p.updatedAt),
       changeFrequency: "monthly" as const,
+      priority: 0.65,
+    })),
+    ...getAllPosts().map((p) => ({
+      url: `${BASE_URL}/blog/${p.slug}`,
+      lastModified: new Date(p.updatedAt),
+      changeFrequency: "weekly" as const,
       priority: 0.65,
     })),
     { url: `${BASE_URL}/coupons`,                     lastModified: new Date("2026-06-01"), changeFrequency: "daily",   priority: 0.6 },
