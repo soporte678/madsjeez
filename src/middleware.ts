@@ -38,7 +38,7 @@ export async function middleware(request: NextRequest) {
 
   const cspHeader = [
     `default-src 'self'`,
-    `script-src 'self' 'nonce-${nonce}' https://www.googletagmanager.com https://connect.facebook.net https://*.mercadopago.com`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://www.googletagmanager.com https://connect.facebook.net https://*.mercadopago.com`,
     `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
     `img-src 'self' data: blob: https:`,
     `font-src 'self' https://fonts.gstatic.com`,
@@ -191,53 +191,6 @@ export async function middleware(request: NextRequest) {
     if (!token?.id) {
       return applySecHeaders(NextResponse.redirect(new URL("/auth/login", request.url)))
     }
-  }
-
-  /* ================================================================ */
-  /* JARVIS EDGE CACHING — Sub-50ms responses for cached queries      */
-  /* ================================================================ */
-
-  const isJarvisApi = pathname.startsWith("/api/jarvis");
-  const isJarvisStream = pathname.startsWith("/api/jarvis/stream");
-  const isDestructiveCommand = /\b(create-agent-task|orchestrate|dispatch)\b/.test(
-    request.nextUrl.search
-  );
-
-  if (isJarvisApi && !isJarvisStream && !isDestructiveCommand) {
-    const response = NextResponse.next({ request: { headers: requestHeaders } });
-
-    // Enable stale-while-revalidate for safe JARVIS endpoints
-    // Cache in CDN edge for 30s (health checks, status, etc.)
-    response.headers.set(
-      "Cache-Control",
-      "public, s-maxage=30, stale-while-revalidate=60"
-    );
-
-    // Add performance headers
-    response.headers.set("X-Jarvis-Cache", "edge-enabled");
-    response.headers.set("X-Jarvis-Edge-TTL", "30");
-
-    // Add cache tags for selective invalidation
-    const scope = request.nextUrl.searchParams.get("scope") ?? "all";
-    response.headers.set("Cache-Tag", `jarvis,${scope}`);
-
-    return applySecHeaders(response);
-  }
-
-  // Streaming endpoint: never cache, but add performance hints
-  if (isJarvisStream) {
-    const response = NextResponse.next({ request: { headers: requestHeaders } });
-    response.headers.set("X-Accel-Buffering", "no");
-    response.headers.set("Cache-Control", "no-cache, no-store");
-    return applySecHeaders(response);
-  }
-
-  // Destructive JARVIS commands: bypass all caching
-  if (isJarvisApi && isDestructiveCommand) {
-    const response = NextResponse.next({ request: { headers: requestHeaders } });
-    response.headers.set("Cache-Control", "no-cache, no-store, must-revalidate");
-    response.headers.set("X-Jarvis-Cache", "bypass-destructive");
-    return applySecHeaders(response);
   }
 
   return applySecHeaders(NextResponse.next({ request: { headers: requestHeaders } }))

@@ -9,6 +9,7 @@ import {
   getMarketplaceAccessToken,
   invalidateMarketplaceAccessToken,
 } from "@/lib/mercadopago/marketplace-token"
+import { rateLimit } from "@/lib/rate-limit"
 
 /** Construye el client MP con un token siempre fresco (auto-refresh). */
 async function getMpClient() {
@@ -50,6 +51,14 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { error: "No autorizado" },
         { status: 401 }
+      )
+    }
+
+    const { allowed } = rateLimit(`sub:${session.user.id}`, 3, 300_000)
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "Demasiados intentos. Intentá de nuevo en 5 minutos." },
+        { status: 429 }
       )
     }
 

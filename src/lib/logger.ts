@@ -15,8 +15,7 @@ function createLogger() {
       if (shouldLog) console.debug(`[DEBUG] ${msg}`, ...args);
     },
     info: (msg: string, ...args: unknown[]) => {
-      // Info se muestra en dev, en prod solo si JARVIS_LOG_LEVEL=info
-      if (shouldLog || process.env.JARVIS_LOG_LEVEL === "info") {
+      if (shouldLog || process.env.LOG_LEVEL === "info") {
         console.info(`[INFO] ${msg}`, ...sanitizeForLog(args));
       }
     },

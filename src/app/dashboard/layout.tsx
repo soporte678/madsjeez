@@ -20,7 +20,6 @@ import {
   Menu,
   X,
   LayoutGrid,
-  Brain,
 } from "lucide-react";
 import { UserMenu } from "@/components/dashboard/UserMenu";
 import NotificationsDropdown from "@/components/dashboard/NotificationsDropdown";
@@ -126,13 +125,6 @@ const MENU_GROUPS: MenuGroup[] = [
     icon: <User size={18} />,
     href: "/dashboard/perfil",
   },
-  // JARVIS IA oculto del sidebar (decisión producto).
-  // {
-  //   id: "jarvis-ia",
-  //   label: "JARVIS IA",
-  //   icon: <Brain size={18} />,
-  //   href: "/dashboard/jarvis",
-  // },
   {
     id: "configuracion-group",
     label: "Configuracion",

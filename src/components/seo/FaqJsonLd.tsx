@@ -1,4 +1,5 @@
 import React from "react";
+import { safeJsonLd } from "@/lib/safe-json-ld";
 
 interface FaqItem {
   question: string;
@@ -26,7 +27,7 @@ export function FaqJsonLd({ faqs }: FaqJsonLdProps) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
     />
   );
 }

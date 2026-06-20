@@ -163,12 +163,15 @@ export async function POST(request: Request) {
     const userId = session.user.id
     const body = await request.json()
 
+    const price = parseFloat(body.price)
+    if (!isFinite(price) || price < 0) return NextResponse.json({ error: "Precio inválido" }, { status: 400 })
+
     const product = await prisma.product.create({
       data: {
         title: body.title || body.name,
         description: body.description || "",
         sku: body.sku || `SKU-${Date.now()}`,
-        price: parseFloat(body.price),
+        price,
         originalPrice: body.originalPrice ? parseFloat(body.originalPrice) : null,
         stock: parseInt(body.stock) || 0,
         categoryId: body.categoryId || null,
@@ -226,13 +229,24 @@ export async function PATCH(request: Request) {
     if (data.name !== undefined) updateData.title = data.name
     if (data.description !== undefined) updateData.description = data.description
     if (data.sku !== undefined) updateData.sku = data.sku
-    if (data.price !== undefined) updateData.price = parseFloat(data.price)
+    if (data.price !== undefined) {
+      const price = parseFloat(data.price)
+      if (!isFinite(price) || price < 0) return NextResponse.json({ error: "Precio inválido" }, { status: 400 })
+      updateData.price = price
+    }
     if (data.originalPrice !== undefined) updateData.originalPrice = data.originalPrice ? parseFloat(data.originalPrice) : null
-    if (data.stock !== undefined) updateData.stock = parseInt(data.stock)
+    if (data.stock !== undefined) {
+      const stock = parseInt(data.stock, 10)
+      if (!Number.isInteger(stock) || stock < 0) return NextResponse.json({ error: "Stock inválido" }, { status: 400 })
+      updateData.stock = stock
+    }
     if (data.isActive !== undefined) updateData.isActive = data.isActive
     if (data.condition !== undefined) updateData.condition = data.condition
     if (data.freeShipping !== undefined) updateData.freeShipping = data.freeShipping
-    if (data.shippingCost !== undefined) updateData.shippingCost = parseFloat(data.shippingCost)
+    if (data.shippingCost !== undefined) {
+      const sc = parseFloat(data.shippingCost)
+      updateData.shippingCost = isFinite(sc) ? sc : 0
+    }
     if (data.categoryId !== undefined) updateData.categoryId = data.categoryId
 
     const product = await prisma.product.update({

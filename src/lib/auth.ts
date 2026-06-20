@@ -161,7 +161,8 @@ export const authOptions: NextAuthOptions = {
   ],
   ...(sharedAuthCookies ? { cookies: sharedAuthCookies } : {}),
   session: {
-    strategy: "jwt"
+    strategy: "jwt",
+    maxAge: 8 * 60 * 60,
   },
   callbacks: {
     async signIn({ user, account, profile }) {

@@ -18,7 +18,10 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { products } = body as { products: ImportRow[] }
 
-    if (!products || !Array.isArray(products) || products.length === 0) {
+    if (!Array.isArray(products) || products.length > 500) {
+      return NextResponse.json({ error: "Máximo 500 productos por importación" }, { status: 400 })
+    }
+    if (products.length === 0) {
       return NextResponse.json({ error: "No hay productos para importar" }, { status: 400 })
     }
 

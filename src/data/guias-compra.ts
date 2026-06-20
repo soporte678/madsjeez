@@ -28,7 +28,7 @@ export type GuiaCompra = {
   /** Respuesta directa arriba de todo (featured-snippet friendly). */
   answer: string;
   intro: string;
-  vertical: "jardin" | "bebe";
+  vertical: "jardin" | "bebe" | "maquinaria" | "marketplace" | "vendedores" | "compradores" | "emprendedores" | "empresas" | "productos" | "regional";
   sections: GuiaSection[];
   faqs: GuiaFaq[];
   /** Categorías reales del catálogo a las que apunta la guía. */

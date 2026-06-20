@@ -407,7 +407,28 @@ export async function POST(req: NextRequest) {
         (orderStatus === "cancelled" || orderStatus === "refunded") &&
         hasActiveStockReservation((prevOrder as { shipping_address?: unknown } | null)?.shipping_address)
       ) {
-        const linesToRestore = await fetchSupabaseOrderStockLines(orderId);
+        let linesToRestore: StockReservationLine[] = [];
+        // FIX 3: tmp_ orders → items live in Prisma, NOT in Supabase order_items
+        const cancelShadowNum = prismaShadowOrderNumberFromTmpRef(orderId);
+        const cancelBuyerPid = buyerPrismaIdFromTmpExternalRef(orderId);
+        if (cancelShadowNum && cancelBuyerPid) {
+          try {
+            const shadowOrder = await prisma.order.findFirst({
+              where: { buyerId: cancelBuyerPid, orderNumber: cancelShadowNum },
+              include: { items: { select: { productId: true, quantity: true } } },
+            });
+            if (shadowOrder?.items?.length) {
+              linesToRestore = shadowOrder.items
+                .map((it) => ({ productId: it.productId, quantity: it.quantity }))
+                .filter((l) => l.productId && l.quantity > 0);
+            }
+          } catch (e) {
+            logger.warn("MercadoPago webhook: error reading Prisma shadow order items for stock restore (non-fatal):", e);
+          }
+        } else {
+          // Supabase UUID order — fetch normally
+          linesToRestore = await fetchSupabaseOrderStockLines(orderId);
+        }
         if (linesToRestore.length) {
           await restorePrismaStock(prisma, linesToRestore);
           void pushStockToMeliForProductIds(linesToRestore.map((l) => l.productId));
@@ -504,7 +525,7 @@ export async function POST(req: NextRequest) {
             const fullOrder = await prisma.order.findFirst({
               where: { buyerId: buyerPid, orderNumber: shadowNum },
               include: {
-                buyer: { select: { email: true, name: true, password: true } },
+                buyer: { select: { email: true, name: true } },
                 items: { include: { product: { select: { title: true } } } },
               },
             });
@@ -515,13 +536,45 @@ export async function POST(req: NextRequest) {
                 buyerEmail: fullOrder.buyer.email,
                 buyerName: fullOrder.buyer.name ?? undefined,
                 total: Number(fullOrder.total),
+                isGuest: false,
                 items: fullOrder.items.map((it) => ({
                   title: it.product.title,
                   quantity: it.quantity,
                   unitPrice: Number(it.price),
                 })),
-                // isGuest: si no tiene password seteada, es guest
-                isGuest: !fullOrder.buyer.password,
+              });
+            }
+          } else {
+            // FIX 2: Supabase UUID orders — send receipt from Supabase data
+            const { data: sbOrder } = await supabaseService
+              .from("orders")
+              .select("buyer_email, buyer_name, total_amount, order_number")
+              .eq("id", orderId)
+              .maybeSingle();
+            const buyerEmail = typeof (sbOrder as { buyer_email?: string } | null)?.buyer_email === "string"
+              ? (sbOrder as { buyer_email: string }).buyer_email
+              : null;
+            if (buyerEmail) {
+              const { data: sbItems } = await supabaseService
+                .from("order_items")
+                .select("title, quantity, price")
+                .eq("order_id", orderId);
+              const po = sbOrder as { buyer_name?: string; total_amount?: number | string | null; order_number?: string } | null;
+              await sendOrderReceiptEmail({
+                orderId,
+                orderNumber: po?.order_number ?? orderId,
+                buyerEmail,
+                buyerName: typeof po?.buyer_name === "string" ? po.buyer_name : undefined,
+                total: Number(po?.total_amount ?? 0),
+                isGuest: true,
+                items: (sbItems ?? []).map((it) => {
+                  const row = it as { title?: string; quantity?: number; price?: number | string };
+                  return {
+                    title: String(row.title ?? ""),
+                    quantity: Number(row.quantity ?? 1),
+                    unitPrice: Number(row.price ?? 0),
+                  };
+                }),
               });
             }
           }

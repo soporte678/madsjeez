@@ -28,7 +28,6 @@ import {
   RefreshCcw,
   Scale,
   Settings,
-  Sparkles,
   ShieldAlert,
   Smartphone,
   Store,
@@ -41,10 +40,6 @@ import {
   ChevronRight,
 } from "lucide-react"
 
-const AtlasVoiceWidget = dynamic(
-  () => import("@/components/admin/atlas/AtlasVoiceWidget").then((m) => m.AtlasVoiceWidget),
-  { ssr: false }
-)
 
 interface MenuItem {
   id: string
@@ -103,7 +98,6 @@ const menuGroups: MenuGroup[] = [
       { id: "consultas", label: "Consultas Generales", icon: Inbox, href: "/admin/consultas" },
       { id: "whatsapp", label: "WhatsApp Business", icon: Smartphone, href: "/admin/whatsapp" },
       { id: "whatsapp-test", label: "Test WhatsApp API", icon: FlaskConical, href: "/admin/whatsapp-test" },
-      { id: "jarvis", label: "Jarvis Orchestrator", icon: Sparkles, href: "/admin/jarvis" },
     ],
   },
   {
@@ -158,7 +152,6 @@ export function AdminLayoutClient({
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(
     menuGroups.reduce((acc, group) => ({ ...acc, [group.title]: true }), {})
   )
-  const [voiceWidgetOpen, setVoiceWidgetOpen] = useState(false);
   const [adminTheme, setAdminTheme] = useState<AdminTheme>("dark")
 
   useEffect(() => {
@@ -528,13 +521,6 @@ export function AdminLayoutClient({
         .custom-scrollbar::-webkit-scrollbar-thumb { border-radius: 10px; }
       `}</style>
 
-      {!isLoginPage ? (
-        <AtlasVoiceWidget
-          variant="floating"
-          open={voiceWidgetOpen}
-          onOpenChange={setVoiceWidgetOpen}
-        />
-      ) : null}
     </div>
   )
 }

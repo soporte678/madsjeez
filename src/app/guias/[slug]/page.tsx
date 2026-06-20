@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Header } from "@/components/Header";
-import { GUIAS_COMPRA, getGuia } from "@/data/guias-compra";
+import { ALL_GUIAS, getGuiaBySlug } from "@/data/guias-all";
 import { canonicalMeta } from "@/lib/seo/canonical";
 import { ArrowRight, ArrowUpRight, CalendarCheck } from "lucide-react";
 
@@ -12,7 +12,7 @@ export const dynamicParams = false;
 const SITE_URL = "https://www.madsjeez.com.ar";
 
 export function generateStaticParams() {
-  return GUIAS_COMPRA.map((g) => ({ slug: g.slug }));
+  return ALL_GUIAS.map((g) => ({ slug: g.slug }));
 }
 
 export async function generateMetadata({
@@ -21,7 +21,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const guia = getGuia(slug);
+  const guia = getGuiaBySlug(slug);
   if (!guia) return { title: "Guía no encontrada | Madsjeez" };
   return {
     title: guia.seoTitle,
@@ -44,7 +44,7 @@ function toJsonLd(data: unknown) {
 
 export default async function GuiaPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const guia = getGuia(slug);
+  const guia = getGuiaBySlug(slug);
   if (!guia) notFound();
 
   const url = `${SITE_URL}/guias/${guia.slug}`;
@@ -87,7 +87,7 @@ export default async function GuiaPage({ params }: { params: Promise<{ slug: str
     })),
   };
 
-  const related = guia.related.map(getGuia).filter(Boolean);
+  const related = guia.related.map(getGuiaBySlug).filter(Boolean);
 
   return (
     <div className="min-h-screen bg-background text-foreground">

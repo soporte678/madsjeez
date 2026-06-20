@@ -196,7 +196,7 @@ export default function Navbar() {
         .mads-pro-shell {
           background:
             linear-gradient(180deg, rgba(15, 23, 42, 0.94), rgba(15, 23, 42, 0.82)),
-            radial-gradient(circle at top left, rgba(59, 130, 246, 0.12), transparent 58%);
+            radial-gradient(circle at top left, rgba(249, 115, 22, 0.12), transparent 58%);
           border: 1px solid rgba(148, 163, 184, 0.18);
           box-shadow:
             inset 0 1px 0 rgba(255,255,255,0.05),
@@ -273,8 +273,8 @@ export default function Navbar() {
           transform: translateY(-1px);
         }
         
-        .search-glow:focus-within { 
-          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16), 0 8px 28px rgba(14, 116, 244, 0.16); 
+        .search-glow:focus-within {
+          box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.18), 0 8px 28px rgba(249, 115, 22, 0.14);
         }
         
         .suggestion-item { 
@@ -340,7 +340,7 @@ export default function Navbar() {
                   className={cn(
                     "search-glow flex h-11 items-center rounded-2xl border bg-[rgba(15,23,42,0.72)] px-4 transition-all duration-300 backdrop-blur-xl",
                     isSearchOpen
-                      ? "border-[#60a5fa] shadow-lg shadow-sky-500/20"
+                      ? "border-[#f97316] shadow-lg shadow-orange-500/20"
                       : "border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
                   )}
                 >
@@ -648,7 +648,7 @@ export default function Navbar() {
 
           <div className="flex lg:hidden w-full mt-1 relative" ref={searchRef}>
             <form onSubmit={handleSearch} className="w-full">
-              <div className={cn("search-glow flex h-10 w-full items-center rounded-xl border bg-[rgba(15,23,42,0.72)] px-3 transition-all duration-300 backdrop-blur-xl", isSearchOpen ? "border-[#60a5fa] shadow-lg shadow-sky-500/20" : "border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]")}>
+              <div className={cn("search-glow flex h-10 w-full items-center rounded-xl border bg-[rgba(15,23,42,0.72)] px-3 transition-all duration-300 backdrop-blur-xl", isSearchOpen ? "border-[#f97316] shadow-lg shadow-orange-500/20" : "border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]")}>
                 <input type="text" placeholder="Buscar en MadsJeez..." className="flex-1 bg-transparent text-[14px] font-light text-slate-100 placeholder:text-slate-400 outline-none" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setIsSearchOpen(true); setSelectedIndex(-1); }} onFocus={() => setIsSearchOpen(true)} onKeyDown={handleKeyDown} autoComplete="off" />
                 {searchQuery && (
                   <button type="button" onClick={clearSearch} aria-label="Limpiar búsqueda" className="touch-target mr-1 rounded-full p-1 transition-colors hover:bg-white/10">

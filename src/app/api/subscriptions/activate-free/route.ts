@@ -10,6 +10,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { TRIAL_MS } from "@/lib/subscription/effective-tier";
+import { rateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,14 @@ export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
+  const { allowed } = rateLimit(`activate-free:${session.user.id}`, 1, 86_400_000)
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Ya activaste el plan gratuito hoy. Intentá mañana." },
+      { status: 429 }
+    )
   }
 
   try {

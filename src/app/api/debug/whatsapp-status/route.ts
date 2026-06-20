@@ -6,16 +6,24 @@ import {
   getWebhookDebugLog,
 } from "@/lib/whatsapp-bot/webhook-debug-store";
 import { checkEvolutionApiHealth } from "@/lib/whatsapp-bot/evolution-health";
+import { requireAdminRequest } from "@/lib/admin-api";
 
 function authDebug(req: NextRequest): boolean {
   const { webhookSecret } = getWhatsappBotEnv();
   if (!webhookSecret) return false;
   const q = req.nextUrl.searchParams.get("secret");
   const h = req.headers.get("x-madsjeez-webhook-secret");
-  return q === webhookSecret || h === webhookSecret;
+  const bearer = req.headers.get("authorization")?.replace("Bearer ", "") ||
+    req.headers.get("x-debug-secret");
+  return q === webhookSecret || h === webhookSecret || bearer === webhookSecret;
 }
 
 export async function GET(req: NextRequest) {
+  // Layer 1: admin session required
+  const adminResult = await requireAdminRequest(req)
+  if (adminResult instanceof NextResponse) return adminResult
+
+  // Layer 2: webhook secret check (existing)
   if (!authDebug(req)) {
     return NextResponse.json(
       {

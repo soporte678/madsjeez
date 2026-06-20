@@ -154,8 +154,6 @@ export default async function RootLayout({
       <body className="min-h-full flex flex-col font-outfit">
         <MetaPixel />
         <DeferredAnalytics />
-        {/* Jarvis / IA fuera de producción (decisión producto). Dejaba un
-            segundo FAB azul superpuesto al de WhatsApp. Único bot = WhatsApp. */}
         <ChatProvider>
           <Providers>
             {children}

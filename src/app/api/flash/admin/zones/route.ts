@@ -53,10 +53,15 @@ export async function PATCH(req: NextRequest) {
   const admin = await requireFlashAdmin(req)
   if (admin instanceof NextResponse) return admin
 
-  const { id, ...updates } = await req.json()
+  const body = await req.json()
+  const { id, name, type, city, province, postalCodes, radiusKm, centerLat, centerLng, isActive } = body
   if (!id) return adminJson(admin, { error: "id requerido" }, { status: 400 })
 
-  const zone = await prisma.flashZone.update({ where: { id }, data: updates })
+  const data = Object.fromEntries(
+    Object.entries({ name, type, city, province, postalCodes, radiusKm, centerLat, centerLng, isActive })
+      .filter(([_, v]) => v !== undefined)
+  )
+  const zone = await prisma.flashZone.update({ where: { id }, data })
   return adminJson(admin, { zone })
 }
 

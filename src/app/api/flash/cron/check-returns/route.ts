@@ -5,7 +5,11 @@ import { logFlashAudit } from "@/lib/flash/audit"
 // GET /api/flash/cron/check-returns
 // Cron job: marca como RETURNED_TO_SENDER los envíos con 3 intentos fallidos
 export async function GET(req: Request) {
-  const secret = new URL(req.url).searchParams.get("secret")
+  const url = new URL(req.url)
+  const secret =
+    url.searchParams.get("secret") ||
+    req.headers.get("authorization")?.replace("Bearer ", "") ||
+    req.headers.get("x-cron-secret")
   if (secret !== process.env.CRON_SECRET) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   }

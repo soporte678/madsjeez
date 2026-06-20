@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { supabaseService } from "@/lib/supabase/service"
+import { prisma } from "@/lib/prisma"
 import { randomBytes } from "crypto"
 
 const BUCKET = "flash-photos"
@@ -19,6 +20,16 @@ export async function POST(req: NextRequest) {
 
   if (!file) return NextResponse.json({ error: "No se recibió ningún archivo" }, { status: 400 })
   if (!shipmentId) return NextResponse.json({ error: "shipmentId requerido" }, { status: 400 })
+
+  // Ownership check: el usuario debe ser el comprador o el driver del envío
+  const shipment = await prisma.flashShipment.findUnique({
+    where: { id: shipmentId },
+    select: { order: { select: { buyerId: true } }, driver: { select: { userId: true } } }
+  })
+  const userId = (session.user as { id: string }).id
+  if (!shipment || (shipment.order.buyerId !== userId && shipment.driver?.userId !== userId)) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 })
+  }
   if (!ALLOWED.includes(file.type)) {
     return NextResponse.json({ error: `Tipo de archivo no permitido: ${file.type}` }, { status: 415 })
   }
@@ -31,7 +42,6 @@ export async function POST(req: NextRequest) {
     : file.type === "image/heic" ? "heic"
     : "jpg"
 
-  const userId = (session.user as { id: string }).id
   const filename = `${shipmentId}/${userId}_${randomBytes(8).toString("hex")}.${ext}`
 
   const arrayBuffer = await file.arrayBuffer()

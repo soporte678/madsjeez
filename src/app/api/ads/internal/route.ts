@@ -3,6 +3,8 @@ export const dynamic = "force-dynamic";
 import { createHash } from "crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 function hashToInt(input: string) {
   const hex = createHash("sha256").update(input).digest("hex").slice(0, 12);
@@ -119,8 +121,30 @@ export async function GET(req: Request) {
     }
 
     const selected = pickWeighted(candidates, `${placement}:${slotKey}:${minuteBucket}`);
+
+    // Strip sensitive competitive data from the public response
+    const session = await getServerSession(authOptions);
+    const safeAd = selected
+      ? {
+          id: selected.id,
+          campaignId: selected.campaignId,
+          pricingModel: selected.pricingModel,
+          rotationIntervalSeconds: selected.rotationIntervalSeconds,
+          title: selected.title,
+          subtitle: selected.subtitle,
+          imageUrl: selected.imageUrl,
+          href: selected.href,
+          sellerName: selected.sellerName,
+          productTitle: selected.productTitle,
+          pagePath: selected.pagePath,
+          slotKey: selected.slotKey,
+          // budget / weight / shareOfVoice only for the seller's own analytics session
+          ...(session ? { budget: selected.budget, weight: selected.weight } : {}),
+        }
+      : null;
+
     return NextResponse.json({
-      ad: selected,
+      ad: safeAd,
       rotationIntervalSeconds: selected?.rotationIntervalSeconds || 60,
     });
   } catch (error) {

@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseService } from "@/lib/supabase/service";
-import { GUIAS_COMPRA } from "@/data/guias-compra";
+import { ALL_GUIAS } from "@/data/guias-all";
 import { SELLER_LANDINGS } from "@/data/seller-landings";
 import { BLOG_POSTS } from "@/data/blog-posts";
 import { HELP_ARTICLES } from "@/data/help-articles";
@@ -91,11 +91,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
     // Guías de compra (contenido editorial real, ancladas a categorías con inventario)
     { url: `${BASE_URL}/guias`,                       lastModified: new Date("2026-06-01"), changeFrequency: "monthly", priority: 0.7 },
-    ...GUIAS_COMPRA.map((g) => ({
+    ...ALL_GUIAS.map((g) => ({
       url: `${BASE_URL}/guias/${g.slug}`,
       lastModified: new Date(g.updatedAt),
       changeFrequency: 'monthly' as const,
-      priority: 0.6,
+      priority: 0.7,
     })),
     { url: `${BASE_URL}/legal/terminos`,              lastModified: new Date("2026-01-01"), changeFrequency: "yearly",  priority: 0.3 },
     { url: `${BASE_URL}/legal/privacidad`,            lastModified: new Date("2026-01-01"), changeFrequency: "yearly",  priority: 0.3 },

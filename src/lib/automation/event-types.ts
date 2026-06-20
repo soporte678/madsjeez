@@ -19,12 +19,6 @@ export const AUTOMATION_EVENT_TYPES = [
   "ai.low_confidence",
   "bot.failed",
   "human.handoff",
-  "jarvis.health_check_completed",
-  "jarvis.error_detected",
-  "jarvis.improvement_suggested",
-  "jarvis.agent_task_created",
-  "jarvis.daily_report_created",
-  "jarvis.voice_report_requested",
 ] as const;
 
 export type AutomationEventType = (typeof AUTOMATION_EVENT_TYPES)[number];

@@ -32,6 +32,7 @@ import { pushStockToMeliForProductIds } from "@/lib/meli/stock-sync";
 import { randomUUID, randomBytes } from "crypto";
 import type { FlashAddressData } from "@/lib/flash/types";
 import { logFlashAudit } from "@/lib/flash/audit";
+import { rateLimit } from "@/lib/rate-limit";
 
 function sleepMs(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
@@ -98,6 +99,10 @@ type CheckoutBody = z.infer<typeof CheckoutBodySchema>;
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
+
+    const userId = session?.user?.id ?? req.headers.get('x-forwarded-for') ?? 'anon'
+    const { allowed } = rateLimit(`checkout:${userId}`, 5, 60_000)
+    if (!allowed) return NextResponse.json({ error: "Demasiados intentos. Esperá un minuto." }, { status: 429 })
 
     // Parse body primero — necesario para detectar checkout invitado
     let rawBody: unknown;

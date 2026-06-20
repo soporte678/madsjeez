@@ -38,7 +38,7 @@ export async function PATCH(req: NextRequest) {
   if (admin instanceof NextResponse) return admin
 
   const body = await req.json()
-  const { code, ...updates } = body as {
+  const { code, price, isActive, radiusKm, estimatedTime, name, description, priority } = body as {
     code: string
     price?: number
     isActive?: boolean
@@ -53,10 +53,15 @@ export async function PATCH(req: NextRequest) {
     return adminJson(admin, { error: "code requerido" }, { status: 400 })
   }
 
+  const data = Object.fromEntries(
+    Object.entries({ price, isActive, radiusKm, estimatedTime, name, description, priority })
+      .filter(([_, v]) => v !== undefined)
+  )
+
   try {
     const option = await prisma.flashShippingOption.update({
       where: { code },
-      data: updates,
+      data,
     })
     return adminJson(admin, { option })
   } catch (e) {
