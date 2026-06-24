@@ -71,7 +71,7 @@ function RegisterForm() {
       }
 
       // Redirigir al perfil para completar datos
-      router.push("/perfil?onboarding=true")
+      router.push("/dashboard/perfil?onboarding=true")
       router.refresh()
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Error al registrarse")
