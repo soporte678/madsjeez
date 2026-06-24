@@ -32,7 +32,7 @@ export type EffectiveTierResult = {
   trialEndsAt: Date | null;
 };
 
-export const TRIAL_DAYS = 14;
+export const TRIAL_DAYS = 180; // 6 meses gratis para nuevos vendedores
 export const TRIAL_MS = TRIAL_DAYS * 24 * 60 * 60 * 1000;
 
 function parseDate(v: unknown): Date | null {

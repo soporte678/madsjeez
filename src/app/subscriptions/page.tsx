@@ -110,6 +110,7 @@ export default function SubscriptionsPage() {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null)
   const [selectedBilling, setSelectedBilling] = useState<number>(1)
   const [isLoading, setIsLoading] = useState(false)
+  const [isNewSeller, setIsNewSeller] = useState(true)
 
   if (status === "loading") {
     return (
@@ -176,6 +177,27 @@ export default function SubscriptionsPage() {
         toast.success("Plan BÁSICO activado. Ya podés publicar hasta 50 productos.")
         router.push("/dashboard?welcome=basic")
         return
+      }
+
+      // Plan PRO para nuevos vendedores — 6 meses gratis sin tarjeta.
+      if (plan.id === "PLATA" && isNewSeller) {
+        const r = await fetch("/api/subscriptions/activate-free", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tier: "PLATA" }),
+        })
+        const j = await r.json().catch(() => ({}))
+        if (r.ok) {
+          toast.success("¡6 meses gratis activados! Bienvenido a MadsJeez PRO.")
+          router.push("/dashboard?welcome=trial")
+          return
+        }
+        if (r.status === 403) {
+          // Ya usó el trial — continuar con flujo de pago normal
+          setIsNewSeller(false)
+        } else {
+          throw new Error(j.error || "No pudimos activar la prueba gratuita")
+        }
       }
 
       const { finalPrice } = calculatePrice(plan.price, billing.months, billing.discount)
@@ -255,6 +277,18 @@ export default function SubscriptionsPage() {
         </div>
       </div>
 
+      {/* Banner 6 meses gratis */}
+      {isNewSeller && (
+        <div className="bg-gradient-to-r from-emerald-500 to-green-400 text-white py-4 px-4 text-center shadow-lg">
+          <p className="font-black text-xl tracking-tight">
+            NUEVO VENDEDOR: 6 MESES GRATIS en plan PRO
+          </p>
+          <p className="text-sm text-white/90 mt-1">
+            Sin tarjeta de credito. Sin compromiso. Empeza hoy y paga solo si queres seguir.
+          </p>
+        </div>
+      )}
+
       {/* Plans */}
       <div className="max-w-7xl mx-auto px-4 py-16">
         <div className="grid md:grid-cols-3 gap-8">
@@ -281,6 +315,11 @@ export default function SubscriptionsPage() {
                 {plan.popular && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#ffb703] to-[#ffa60a] text-slate-900 px-4 py-1 rounded-full text-sm font-black shadow-lg">
                     MÁS POPULAR
+                  </div>
+                )}
+                {plan.id === "PLATA" && isNewSeller && (
+                  <div className="absolute -top-4 right-4 bg-emerald-500 text-white px-3 py-1 rounded-full text-xs font-black shadow-lg">
+                    6 MESES GRATIS
                   </div>
                 )}
 
@@ -352,17 +391,22 @@ export default function SubscriptionsPage() {
                 <Button
                   className={`w-full py-6 text-lg font-bold rounded-xl transition-all ${
                     isSelected
-                      ? "bg-[#3483FA] hover:bg-[#2968C8] text-white"
+                      ? plan.id === "PLATA" && isNewSeller
+                        ? "bg-emerald-500 hover:bg-emerald-600 text-white"
+                        : "bg-[#3483FA] hover:bg-[#2968C8] text-white"
                       : "bg-gray-100 hover:bg-gray-200 text-gray-800"
                   }`}
                 >
                   {isSelected ? (
-                    <>
-                      Seleccionado
-                      <Check className="w-5 h-5 ml-2" />
-                    </>
+                    plan.id === "PLATA" && isNewSeller ? (
+                      <>Empezar 6 meses gratis <Sparkles className="w-5 h-5 ml-2" /></>
+                    ) : (
+                      <>Seleccionado <Check className="w-5 h-5 ml-2" /></>
+                    )
                   ) : (
-                    "Seleccionar plan"
+                    plan.id === "PLATA" && isNewSeller
+                      ? "Empezar 6 meses gratis"
+                      : "Seleccionar plan"
                   )}
                 </Button>
               </div>
@@ -475,14 +519,14 @@ export default function SubscriptionsPage() {
                 cuando quieras y recuperar todas las funcionalidades.
               </p>
             </div>
-            <div className="bg-white/5 backdrop-blur rounded-xl p-6">
+            <div className="bg-white/5 backdrop-blur rounded-xl p-6 border border-emerald-500/30">
               <h4 className="font-bold text-[#10b981] mb-2 flex items-center gap-2">
                 <Sparkles className="w-5 h-5" />
                 ¿Hay período de prueba?
               </h4>
               <p className="text-white/80 text-sm">
-                Podés empezar con el plan Básico ($0), sin tarjeta de crédito, y pasar a Pro o
-                Ultra cuando lo necesites.
+                Si sos nuevo vendedor, te regalamos <strong className="text-emerald-400">6 meses completos del plan PRO sin cargo</strong>.
+                Sin tarjeta de credito. Al terminar, podés seguir con PRO ($2.999/mes) o quedarte en el plan gratuito.
               </p>
             </div>
           </div>

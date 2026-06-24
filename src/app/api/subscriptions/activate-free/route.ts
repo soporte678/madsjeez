@@ -1,8 +1,11 @@
 /**
  * POST /api/subscriptions/activate-free
  *
- * Activa el plan BÁSICO (FREE) sin pasar por MercadoPago.
- * Setea User.subscriptionTier = FREE y expiry = null.
+ * Activa el plan BÁSICO (FREE) o la prueba gratuita de 6 meses (PLATA/PRO)
+ * para nuevos vendedores, sin pasar por MercadoPago.
+ *
+ * tier = "FREE"  → plan básico permanente (50 publicaciones)
+ * tier = "PLATA" → 6 meses gratis con beneficios ULTRA (one-shot para nuevos)
  */
 
 import { NextResponse } from "next/server";
@@ -14,13 +17,6 @@ import { rateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
-/**
- * Activa el plan BÁSICO (FREE).
- *
- * Si el seller NUNCA tuvo trial (trialEndsAt es null), le otorgamos 14
- * días con beneficios ULTRA. Trial es one-shot: si ya lo usó (aunque haya
- * terminado), no se renueva.
- */
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -37,7 +33,8 @@ export async function POST(req: Request) {
 
   try {
     const body = (await req.json().catch(() => ({}))) as { tier?: string };
-    const tier = body.tier === "FREE" ? "FREE" : "FREE";
+    const requestedTier = body.tier === "PLATA" ? "PLATA" : "FREE";
+    const tier = "FREE"; // tier base siempre FREE; el trial sube el tier efectivo
 
     // Leemos trialEndsAt via Supabase porque el client Prisma aún no
     // tiene este campo declarado (lo agregamos en migración SQL pura).
@@ -46,8 +43,11 @@ export async function POST(req: Request) {
     `;
     const alreadyHadTrial = existing[0]?.trial_ends_at != null;
 
+    // Solo otorgar trial si se pidió PLATA y nunca tuvo trial previo
+    const grantTrial = requestedTier === "PLATA" && !alreadyHadTrial;
+
     const now = new Date();
-    const trialEnd = alreadyHadTrial ? null : new Date(now.getTime() + TRIAL_MS);
+    const trialEnd = grantTrial ? new Date(now.getTime() + TRIAL_MS) : null;
 
     await prisma.user.update({
       where: { id: session.user.id },
@@ -57,7 +57,7 @@ export async function POST(req: Request) {
       },
     });
 
-    if (!alreadyHadTrial) {
+    if (grantTrial) {
       await prisma.$executeRaw`
         UPDATE users SET trial_ends_at = ${trialEnd} WHERE id = ${session.user.id}
       `;
@@ -67,7 +67,8 @@ export async function POST(req: Request) {
       ok: true,
       tier,
       trialEndsAt: trialEnd ? trialEnd.toISOString() : null,
-      trialGranted: !alreadyHadTrial,
+      trialGranted: grantTrial,
+      trialDays: grantTrial ? 180 : 0,
     });
   } catch (err) {
     console.error("activate-free:", err);
