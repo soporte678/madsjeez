@@ -108,37 +108,26 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
+        if (!credentials?.email || !credentials?.password) return null
+        try {
+          const email = credentials.email.trim().toLowerCase()
+          const user = await prisma.user.findUnique({ where: { email } })
+          if (!user || !user.password) return null
+          const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
+          if (!isPasswordValid) return null
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            image: user.image,
+            role: user.role,
+            isSeller: user.isSeller,
+            subscriptionTier: user.subscriptionTier,
+            reputationColor: user.reputationColor,
+          }
+        } catch (error) {
+          logger.error("Error en authorize (DB):", error)
           return null
-        }
-
-        const email = credentials.email.trim().toLowerCase()
-        const user = await prisma.user.findUnique({
-          where: { email },
-        })
-
-        if (!user || !user.password) {
-          return null
-        }
-
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        )
-
-        if (!isPasswordValid) {
-          return null
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          image: user.image,
-          role: user.role,
-          isSeller: user.isSeller,
-          subscriptionTier: user.subscriptionTier,
-          reputationColor: user.reputationColor,
         }
       }
     }),
@@ -222,26 +211,34 @@ export const authOptions: NextAuthOptions = {
     },
     async jwt({ token, user, account, trigger }) {
       if (token.email) {
-        const dbUser = await prisma.user.findUnique({
-          where: { email: token.email as string },
-        })
-        if (dbUser) {
-          if (trigger === "signIn" || !token.id) {
-            token.id = dbUser.id
-            token.subscriptionTier = dbUser.subscriptionTier
-            token.reputationColor = dbUser.reputationColor
-            token.name = dbUser.name
-            token.image = dbUser.image
-          }
-          // Siempre refrescar roles/permisos críticos en cada validación de token:
-          token.role = dbUser.role
-          token.isSeller = dbUser.isSeller
-          token.hasAccessKey = !!dbUser.accessKey
-          const driver = await prisma.flashDriver.findUnique({
-            where: { userId: dbUser.id },
-            select: { isActive: true },
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { email: token.email as string },
           })
-          token.isDriver = !!driver?.isActive
+          if (dbUser) {
+            if (trigger === "signIn" || !token.id) {
+              token.id = dbUser.id
+              token.subscriptionTier = dbUser.subscriptionTier
+              token.reputationColor = dbUser.reputationColor
+              token.name = dbUser.name
+              token.image = dbUser.image
+            }
+            token.role = dbUser.role
+            token.isSeller = dbUser.isSeller
+            token.hasAccessKey = !!dbUser.accessKey
+            try {
+              const driver = await prisma.flashDriver.findUnique({
+                where: { userId: dbUser.id },
+                select: { isActive: true },
+              })
+              token.isDriver = !!driver?.isActive
+            } catch {
+              token.isDriver = token.isDriver ?? false
+            }
+          }
+        } catch (error) {
+          logger.error("Error en JWT callback (DB):", error)
+          // Devolver token sin actualizar para no romper la sesión activa
         }
       }
       return token

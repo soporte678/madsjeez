@@ -18,20 +18,18 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json()
-    // Aceptamos name o full_name (compat con clientes legacy) + sanitizamos.
     const rawName: unknown = body?.name ?? body?.full_name
     const rawEmail: unknown = body?.email
     const rawPassword: unknown = body?.password
-    const name = typeof rawName === "string" ? rawName.trim() : ""
     const email = typeof rawEmail === "string" ? rawEmail.trim().toLowerCase() : ""
     const password = typeof rawPassword === "string" ? rawPassword : ""
+    // Nombre opcional en registro rápido: se deriva del email si no viene
+    const nameInput = typeof rawName === "string" ? rawName.trim() : ""
+    const name = nameInput.length >= 2 ? nameInput : email.split("@")[0].replace(/[._-]/g, " ")
 
-    if (!name || !email || !password) {
+    if (!email || !password) {
       return NextResponse.json(
-        {
-          error: "Faltan campos requeridos",
-          missing: { name: !name, email: !email, password: !password },
-        },
+        { error: "Email y contraseña son requeridos" },
         { status: 400 }
       )
     }
@@ -42,12 +40,6 @@ export async function POST(req: Request) {
     if (password.length < 8) {
       return NextResponse.json(
         { error: "La contraseña debe tener al menos 8 caracteres" },
-        { status: 400 }
-      )
-    }
-    if (name.length < 2) {
-      return NextResponse.json(
-        { error: "Ingresá tu nombre completo" },
         { status: 400 }
       )
     }
