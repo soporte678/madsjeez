@@ -11,6 +11,8 @@ import { REP_GUIAS } from "@/data/reparacion-guias";
 import { MARCAS } from "@/data/marcas";
 import { TUTORIALES } from "@/data/tutoriales";
 import { getAllPosts } from "@/lib/blog/store";
+import { PREGUNTAS } from "@/data/preguntas";
+import { ALTERNATIVAS } from "@/data/alternativas";
 
 const BASE_URL = "https://www.madsjeez.com.ar";
 
@@ -104,6 +106,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(g.updatedAt),
       changeFrequency: 'monthly' as const,
       priority: 0.7,
+    })),
+    { url: `${BASE_URL}/preguntas`,                    lastModified: new Date("2026-06-01"), changeFrequency: "monthly", priority: 0.75 },
+    ...PREGUNTAS.map((p) => ({
+      url: `${BASE_URL}/preguntas/${p.slug}`,
+      lastModified: new Date("2026-06-01"),
+      changeFrequency: "monthly" as const,
+      priority: 0.65,
+    })),
+    { url: `${BASE_URL}/alternativas`,                 lastModified: new Date("2026-06-01"), changeFrequency: "monthly", priority: 0.80 },
+    ...ALTERNATIVAS.map((a) => ({
+      url: `${BASE_URL}/alternativas/${a.slug}`,
+      lastModified: new Date("2026-06-01"),
+      changeFrequency: "monthly" as const,
+      priority: 0.70,
     })),
     { url: `${BASE_URL}/legal/terminos`,              lastModified: new Date("2026-01-01"), changeFrequency: "yearly",  priority: 0.3 },
     { url: `${BASE_URL}/legal/privacidad`,            lastModified: new Date("2026-01-01"), changeFrequency: "yearly",  priority: 0.3 },
