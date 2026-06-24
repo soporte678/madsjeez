@@ -1,58 +1,42 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  AreaChart, Area, FunnelChart, Funnel, LabelList, Cell,
-  BarChart, Bar, PieChart, Pie
+  AreaChart, Area,
+  BarChart, Bar, PieChart, Pie, Cell
 } from 'recharts';
 import {
   Info, Download, Filter, ChevronDown, ChevronRight, ChevronLeft,
-  Eye, TrendingUp, TrendingDown, Minus, Search, FileText, MoreVertical,
-  Calendar, X, Check, Package, Store, Users
+  TrendingUp, TrendingDown, Minus, Search,
+  X, Check, MoreVertical, Calendar, Package, Users,
 } from 'lucide-react';
 
-// --- DATA DEMO ---
-const salesData = [
-  { day: '27 abr', value: 145000 },
-  { day: '28 abr', value: 180000 },
-  { day: '29 abr', value: 120000 },
-  { day: '30 abr', value: 220000 },
-  { day: '1 may', value: 280000 },
-  { day: '2 may', value: 195000 },
-  { day: '3 may', value: 320000 },
-  { day: '4 may', value: 290000 },
-];
+type DaySales = { day: string; value: number }
+type FunnelItem = { name: string; value: number; fill: string }
+type HeatmapRow = { hour: string; lun: number; mar: number; mie: number; jue: number; vie: number; sab: number; dom: number }
+type Publication = {
+  id: string; sku: string; title: string; price: number; sales: number;
+  participation: string; visits: number; img: string; condition: string; badge: string | null
+}
+type MetricsSummary = {
+  grossPeriod: number; totalRevenue: number; totalSales: number; canceledSales: number;
+  monthlyViews: number; avgPrice: number; conversionRate: string;
+  ordersInPeriod: number; activePublications: number; avgPerDay: number;
+}
 
-const funnelData = [
-  { name: 'Visitas totales', value: 2974, fill: '#E0E7FF' },
-  { name: 'Intención de compra', value: 1955, fill: '#C7D2FE' },
-  { name: 'Ventas totales', value: 54, fill: '#6366F1' },
-];
+const EMPTY_HEATMAP: HeatmapRow[] = [
+  '00','06','08','10','12','14','16','18','20','22'
+].map(h => ({ hour: h, lun:0, mar:0, mie:0, jue:0, vie:0, sab:0, dom:0 }))
 
-const heatmapData = [
-  { hour: '00', lun: 0, mar: 0, mie: 1, jue: 0, vie: 2, sab: 3, dom: 1 },
-  { hour: '06', lun: 1, mar: 0, mie: 0, jue: 1, vie: 0, sab: 0, dom: 0 },
-  { hour: '08', lun: 2, mar: 1, mie: 3, jue: 1, vie: 2, sab: 1, dom: 0 },
-  { hour: '10', lun: 3, mar: 4, mie: 2, jue: 3, vie: 5, sab: 4, dom: 2 },
-  { hour: '12', lun: 5, mar: 6, mie: 4, jue: 5, vie: 7, sab: 6, dom: 3 },
-  { hour: '14', lun: 4, mar: 5, mie: 5, jue: 4, vie: 6, sab: 5, dom: 4 },
-  { hour: '16', lun: 6, mar: 7, mie: 6, jue: 7, vie: 8, sab: 7, dom: 5 },
-  { hour: '18', lun: 8, mar: 9, mie: 8, jue: 8, vie: 10, sab: 9, dom: 6 },
-  { hour: '20', lun: 7, mar: 8, mie: 7, jue: 6, vie: 9, sab: 8, dom: 7 },
-  { hour: '22', lun: 4, mar: 3, mie: 4, jue: 3, vie: 5, sab: 4, dom: 3 },
-];
+const EMPTY_SUMMARY: MetricsSummary = {
+  grossPeriod: 0, totalRevenue: 0, totalSales: 0, canceledSales: 0,
+  monthlyViews: 0, avgPrice: 0, conversionRate: '0.0',
+  ordersInPeriod: 0, activePublications: 0, avgPerDay: 0,
+}
 
-const publicationsData = [
-  { id: 1, sku: 'E02000200016', title: 'Carretel Automatico Reforestal Disponible', price: 209997, sales: 2, participation: '11.4%', visits: 5, img: '/placeholder.svg', condition: 'Nuevo', badge: null },
-  { id: 2, sku: 'E02000200026', title: 'Amoladora Desmalezadora Naftera Motosierra', price: 119997, sales: 3, participation: '9.8%', visits: 7, img: '/placeholder.svg', condition: 'Usado', badge: 'OFERTA' },
-  { id: 3, sku: 'E02000200010', title: 'B/D Bolsas De Comienso...', price: 99998, sales: 1, participation: '5.6%', visits: 3, img: '/placeholder.svg', condition: 'Nuevo', badge: null },
-  { id: 4, sku: 'E02000200020', title: 'Amoladora Angular Gamma Cadena 150 Hz', price: 1234160, sales: 1, participation: '4.8%', visits: 2, img: '/placeholder.svg', condition: 'Nuevo', badge: 'OFERTA' },
-  { id: 5, sku: 'E02000200001', title: 'Cilindro Para Desmalezadora...', price: 79998, sales: 2, participation: '4.4%', visits: 1, img: '/placeholder.svg', condition: 'Nuevo', badge: null },
-  { id: 6, sku: 'E02000200017', title: 'Manguera Combustible Completa Con...', price: 79998, sales: 1, participation: '4.4%', visits: 3, img: '/placeholder.svg', condition: 'Nuevo', badge: 'OFERTA' },
-  { id: 7, sku: 'E02000200005', title: 'Bobina Captadora Cepeda...', price: 79218, sales: 1, participation: '4.3%', visits: 7, img: '/placeholder.svg', condition: 'Nuevo', badge: null },
-  { id: 8, sku: 'E02000200004', title: 'Pasto X12 Para De Sputnik...', price: 675000, sales: 4, participation: '27%', visits: 8, img: '/placeholder.svg', condition: 'Nuevo', badge: 'OFERTA' },
-];
+const ars = (v: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }).format(v)
+const n = (v: number) => v.toLocaleString('es-AR')
 
 const periods = ['Últimos 7 días', 'Últimos 14 días', 'Últimos 30 días', 'Este mes', 'Mes anterior'];
 
@@ -115,6 +99,31 @@ export default function MetricasView() {
   const [activeMiPaginaMetric, setActiveMiPaginaMetric] = useState('visitas');
   const [activeAudienciasMetric, setActiveAudienciasMetric] = useState('seguidores');
 
+  // --- Real data state ---
+  const [salesData, setSalesData] = useState<DaySales[]>([])
+  const [funnelData, setFunnelData] = useState<FunnelItem[]>([])
+  const [heatmapData, setHeatmapData] = useState<HeatmapRow[]>(EMPTY_HEATMAP)
+  const [publicationsData, setPublicationsData] = useState<Publication[]>([])
+  const [summary, setSummary] = useState<MetricsSummary>(EMPTY_SUMMARY)
+  const [loading, setLoading] = useState(true)
+
+  const days = period === 'Últimos 14 días' ? 14 : period === 'Últimos 30 días' ? 30 : 7
+
+  useEffect(() => {
+    setLoading(true)
+    fetch(`/api/dashboard/metricas?days=${days}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.salesData) setSalesData(d.salesData)
+        if (d.funnelData) setFunnelData(d.funnelData)
+        if (d.heatmapData) setHeatmapData(d.heatmapData)
+        if (d.publicationsData) setPublicationsData(d.publicationsData)
+        if (d.summary) setSummary(d.summary)
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [days])
+
   const tabs = [
     { id: 'negocio', label: 'Negocio' },
     { id: 'promociones', label: 'Promociones' },
@@ -131,23 +140,17 @@ export default function MetricasView() {
     { id: 'publicaciones', label: 'Publicaciones' },
   ];
 
-  const compareOptions = ['PerÃ­odo anterior', 'Mismo perÃ­odo anterior', 'Sin comparaciÃ³n'];
+  const compareOptions = ['Período anterior', 'Mismo período anterior', 'Sin comparación'];
 
-  const maxHeatmap = useMemo(() => Math.max(...heatmapData.flatMap(d => [d.lun, d.mar, d.mie, d.jue, d.vie, d.sab, d.dom])), []);
+  const maxHeatmap = useMemo(() =>
+    Math.max(1, ...heatmapData.flatMap(d => [d.lun, d.mar, d.mie, d.jue, d.vie, d.sab, d.dom])),
+    [heatmapData]);
 
   const totalPages = Math.ceil(publicationsData.length / 7);
   const paginatedData = publicationsData.slice((currentPage - 1) * 7, currentPage * 7);
 
   return (
     <div className="flex-1 flex flex-col gap-6 w-full max-w-[1200px] text-slate-800 dark:text-slate-100">
-      {/* Banner: datos de ejemplo */}
-      <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 dark:bg-amber-900/20 dark:border-amber-700/40">
-        <span className="text-amber-600 dark:text-amber-400 text-lg">⚠</span>
-        <div>
-          <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">Datos de ejemplo — sección en desarrollo</p>
-          <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">Las gráficas y tablas muestran datos simulados. Tus métricas reales estarán disponibles próximamente.</p>
-        </div>
-      </div>
       {/* Header */}
       <div className="flex justify-between items-start">
         <h1 className="text-[28px] font-semibold text-slate-800 dark:text-slate-100">Métricas</h1>
@@ -292,16 +295,16 @@ export default function MetricasView() {
               </button>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <MetricCard title="Ventas brutas" value="$ 1.834.577" change="64.2%" changeType="up" />
-              <MetricCard title="Unidades vendidas" value="66" change="85%" changeType="up" />
-              <MetricCard title="Precio promedio por unidad" value="$ 27.796,62" change="0.5%" changeType="down" />
-              <MetricCard title="Visitas" value="2.974" change="3.3%" changeType="down" />
+              <MetricCard title="Ventas brutas" value={loading ? '…' : ars(summary.grossPeriod)} />
+              <MetricCard title="Unidades vendidas" value={loading ? '…' : n(summary.totalSales)} />
+              <MetricCard title="Precio promedio por unidad" value={loading ? '…' : summary.avgPrice > 0 ? ars(summary.avgPrice) : '—'} />
+              <MetricCard title="Visitas" value={loading ? '…' : n(summary.monthlyViews)} />
               {showMoreMetrics && (
                 <>
-                  <MetricCard title="Cantidad de ventas" value="54" change="63.6%" changeType="up" />
-                  <MetricCard title="Conversión" value="1.8%" change="57 puntos" changeType="up" />
-                  <MetricCard title="Precio promedio por venta" value="$ 33.973,65" change="0.3%" changeType="down" />
-                  <MetricCard title="Cantidad de ventas canceladas" value="0" change="100%" changeType="neutral" />
+                  <MetricCard title="Cantidad de ventas" value={loading ? '…' : n(summary.totalSales)} />
+                  <MetricCard title="Conversión" value={loading ? '…' : `${summary.conversionRate}%`} />
+                  <MetricCard title="Precio promedio por venta" value={loading ? '…' : summary.avgPrice > 0 ? ars(summary.avgPrice) : '—'} />
+                  <MetricCard title="Cantidad de ventas canceladas" value={loading ? '…' : n(summary.canceledSales)} />
                 </>
               )}
             </div>
@@ -343,8 +346,8 @@ export default function MetricasView() {
             <div className="flex flex-col md:flex-row items-center gap-8">
               <div className="flex-1">
                 <div className="text-sm font-semibold text-gray-500 dark:text-slate-400 mb-1">Conversión total</div>
-                <div className="text-2xl font-black text-gray-800 dark:text-slate-100">1.8%</div>
-                <div className="text-xs text-green-600 dark:text-emerald-400 font-semibold mt-1">+0.3 puntos</div>
+                <div className="text-2xl font-black text-gray-800 dark:text-slate-100">{summary.conversionRate}%</div>
+                <div className="text-xs text-gray-400 dark:text-slate-500 font-semibold mt-1">últimos {days} días</div>
               </div>
               <div className="flex-[2] w-full">
                 <div className="space-y-3">
@@ -355,14 +358,16 @@ export default function MetricasView() {
                         <div
                           className="h-10 rounded-lg flex items-center px-3 text-sm font-bold transition-all"
                           style={{
-                            width: `${(item.value / funnelData[0].value) * 100}%`,
+                            width: funnelData[0]?.value ? `${(item.value / funnelData[0].value) * 100}%` : '100%',
                             backgroundColor: item.fill,
                             color: idx === 2 ? 'white' : '#374151',
                             minWidth: '60px'
                           }}
                         >
                           {item.value.toLocaleString()}
-                          {idx === 0 && <span className="ml-1 text-[10px] font-normal">({((funnelData[2].value / item.value) * 100).toFixed(1)}%)</span>}
+                          {idx === 0 && funnelData[0]?.value > 0 && funnelData[2]?.value != null && (
+                            <span className="ml-1 text-[10px] font-normal">({((funnelData[2].value / funnelData[0].value) * 100).toFixed(1)}%)</span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -488,7 +493,7 @@ export default function MetricasView() {
                   Todos
                   <ChevronDown size={14} />
                 </button>
-                <span className="text-xs text-gray-500">44 publicaciones</span>
+                <span className="text-xs text-gray-500">{summary.activePublications} publicaciones</span>
                 <button className="flex items-center gap-2 px-3 py-1.5 text-blue-600 text-xs font-medium hover:bg-blue-50 rounded-lg">
                   <Download size={14} />
                   Descargar reporte
@@ -605,7 +610,7 @@ export default function MetricasView() {
               </button>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-xs text-gray-500">816 publicaciones</span>
+              <span className="text-xs text-gray-500">{summary.activePublications} publicaciones</span>
               <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
                 Descargar reporte
                 <ChevronDown size={16} />
@@ -654,14 +659,12 @@ export default function MetricasView() {
                 </tr>
               </thead>
               <tbody>
-                {[
-                  { sku: '#15369785723', title: 'Tapa Arranque Facil + Carcaza Desmalezadora Chinas 43-52cc', price: '$ 39.999', sales: '$ 119.997', visits: 63, conv: '4.8%', qty: 3, buyers: 3, units: 3, part: '6.9%', neg: 'Sin opiniones', conditions: ['Envío gratis', 'Full', 'Flex', 'Cuotas'], comp1: 'Básica', comp2: 'Buena', img: '/placeholder.svg' },
-                  { sku: '#2340560972', title: 'Motor Completo Para Desmalezadora 52cc Tipo Niu...', price: '$ 89.999', sales: '$ 89.999', visits: 106, conv: '0.9%', qty: 1, buyers: 1, units: 1, part: '5.2%', neg: 'Sin opiniones', conditions: ['Envío gratis', 'Full', 'Flex', 'Cuotas'], comp1: 'Básica', comp2: 'Buena', img: '/placeholder.svg' },
-                  { sku: '#1684159073', title: 'Tapa De Arranque Facil Motosierra 45cc 52cc Chines...', price: '$ 39.999', sales: '$ 79.998', visits: 56, conv: '5.5%', qty: 2, buyers: 2, units: 2, part: '4.6%', neg: 'Sin opiniones', conditions: ['Envío gratis', 'Flex', 'Cuotas'], comp1: 'Básica', comp2: 'Buena', img: '/placeholder.svg' },
-                  { sku: '#3100740105', title: 'Filtro De Aire Desmalezadora Lusqtoff 52cc X5...', price: '$ 75.543', sales: '$ 75.543', visits: 13, conv: '7.7%', qty: 1, buyers: 1, units: 1, part: '4.4%', neg: 'Sin opiniones', conditions: ['Envío gratis', 'Flex', 'Cuotas'], comp1: 'Básica', comp2: 'Buena', img: '/placeholder.svg' },
-                  { sku: '#2762315998', title: 'Amoladora Angular Gamma 850w - G1917ar Celeste...', price: '$ 103.515,50', sales: '$ 83.093', visits: 7, conv: '14.3%', qty: 1, buyers: 1, units: 1, part: '3.8%', neg: 'Sin opiniones', conditions: ['Envío gratis', 'Full', 'Flex', 'Cuotas'], comp1: 'Básica', comp2: 'Buena', img: '/placeholder.svg' },
-                ].map((pub, i) => (
-                  <tr key={i} className="border-b border-gray-100 hover:bg-gray-50">
+                {loading ? (
+                  <tr><td colSpan={11} className="p-8 text-center text-sm text-gray-400">Cargando publicaciones…</td></tr>
+                ) : paginatedData.length === 0 ? (
+                  <tr><td colSpan={11} className="p-8 text-center text-sm text-gray-400">No hay publicaciones activas</td></tr>
+                ) : paginatedData.map((pub) => (
+                  <tr key={pub.id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="p-3">
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden">
@@ -670,55 +673,35 @@ export default function MetricasView() {
                         <div className="min-w-0">
                           <div className="text-[10px] text-gray-400">{pub.sku} <Info size={10} className="inline" /></div>
                           <div className="text-xs font-medium text-gray-800 truncate max-w-[180px]">{pub.title}</div>
-                          <div className="text-[10px] text-gray-500">{pub.price} | 3 cuot... | Envío gr...</div>
-                          <div className="text-[9px] text-gray-400">$ FULL | MERCADO ENVÍOS FLEX</div>
+                          <div className="text-[10px] text-gray-500">{ars(pub.price)} | {pub.condition}</div>
                         </div>
                       </div>
                     </td>
                     <td className="p-3 text-center">
-                      <div className="text-xs text-gray-800 font-medium">{pub.sales}</div>
-                      <div className="text-[10px] text-green-600">▲ 200%</div>
+                      <div className="text-xs text-gray-800 font-medium">{ars(pub.price * pub.sales)}</div>
                     </td>
                     <td className="p-3 text-center">
                       <div className="text-xs text-gray-800">{pub.visits}</div>
-                      <div className="text-[10px] text-red-500">▼ 12.5%</div>
+                    </td>
+                    <td className="p-3 text-center text-xs text-gray-400">—</td>
+                    <td className="p-3 text-center">
+                      <div className="text-xs text-gray-800">{pub.sales}</div>
+                    </td>
+                    <td className="p-3 text-center text-xs text-gray-400">—</td>
+                    <td className="p-3 text-center">
+                      <div className="text-xs text-gray-800">{pub.sales}</div>
                     </td>
                     <td className="p-3 text-center">
-                      <div className="text-xs text-gray-800">{pub.conv}</div>
-                      <div className="text-[10px] text-green-600">▲ 3.4 puntos</div>
+                      <div className="text-xs text-gray-800">{pub.participation}</div>
                     </td>
+                    <td className="p-3 text-center text-xs text-gray-400">—</td>
                     <td className="p-3 text-center">
-                      <div className="text-xs text-gray-800">{pub.qty}</div>
-                      <div className="text-[10px] text-green-600">▲ 200%</div>
+                      {pub.badge && (
+                        <span className="px-1.5 py-0.5 bg-blue-600 text-white text-[10px] font-bold rounded">{pub.badge}</span>
+                      )}
+                      {!pub.badge && <span className="text-xs text-gray-400">—</span>}
                     </td>
-                    <td className="p-3 text-center">
-                      <div className="text-xs text-gray-800">{pub.buyers}</div>
-                      <div className="text-[10px] text-gray-400">—%</div>
-                    </td>
-                    <td className="p-3 text-center">
-                      <div className="text-xs text-gray-800">{pub.units}</div>
-                      <div className="text-[10px] text-green-600">▲ 200%</div>
-                    </td>
-                    <td className="p-3 text-center">
-                      <div className="text-xs text-gray-800">{pub.part}</div>
-                      <div className="text-[10px] text-green-600">▲ 6.9 puntos</div>
-                    </td>
-                    <td className="p-3 text-center text-xs text-gray-500">{pub.neg}</td>
-                    <td className="p-3 text-center">
-                      <div className="flex flex-col gap-0.5">
-                        {pub.conditions.map((c, j) => (
-                          <div key={j} className="flex items-center gap-1 text-[10px] text-gray-600">
-                            <Check size={10} className="text-green-500" /> {c}
-                          </div>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="p-3 text-center">
-                      <div className="text-[10px] text-gray-600">Calidad de la publicación</div>
-                      <div className="text-[10px] text-red-500 font-medium">{pub.comp1}</div>
-                      <div className="text-[10px] text-gray-600 mt-1">Experiencia de compra</div>
-                      <div className="text-[10px] text-green-600 font-medium">{pub.comp2}</div>
-                    </td>
+                    <td className="p-3 text-center text-xs text-gray-400">—</td>
                   </tr>
                 ))}
               </tbody>

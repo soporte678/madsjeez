@@ -1,4 +1,5 @@
 "use client"
+import { useState, useEffect } from "react"
 import { Zap, Check } from "lucide-react"
 
 export type FlashOption = {
@@ -10,35 +11,6 @@ export type FlashOption = {
   recommended?: boolean
   available?: boolean
 }
-
-// MOCK TEMPORAL — reemplazar fetch a /api/flash/options cuando Cursor lo implemente
-export const FLASH_OPTIONS_MOCK: FlashOption[] = [
-  {
-    code: "flash_local",
-    name: "Flash Local",
-    price: 3999,
-    badge: "Rápido",
-    description: "Busca un conductor local disponible para retirar y entregar tu pedido lo antes posible.",
-    available: true,
-  },
-  {
-    code: "flash_plus",
-    name: "Flash Plus",
-    price: 5999,
-    badge: "Prioridad alta",
-    description: "Entrega prioritaria. Tu pedido pasa a los primeros lugares de la cola.",
-    recommended: true,
-    available: true,
-  },
-  {
-    code: "flash_normal",
-    name: "Flash Normal",
-    price: 6999,
-    badge: "Cobertura ampliada",
-    description: "Cobertura ampliada en zonas Flash establecidas.",
-    available: true,
-  },
-]
 
 function formatArs(v: number) {
   return new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(v)
@@ -52,7 +24,18 @@ interface Props {
   coverageMessage?: string | null
 }
 
-export function FlashShippingSelector({ options = FLASH_OPTIONS_MOCK, selected, onSelect, loading, coverageMessage }: Props) {
+export function FlashShippingSelector({ options: optionsProp, selected, onSelect, loading, coverageMessage }: Props) {
+  const [fetchedOptions, setFetchedOptions] = useState<FlashOption[]>([])
+
+  useEffect(() => {
+    if (optionsProp) return
+    fetch("/api/flash/options")
+      .then(r => r.json())
+      .then(d => { if (Array.isArray(d)) setFetchedOptions(d) })
+      .catch(() => {})
+  }, [optionsProp])
+
+  const options = optionsProp ?? fetchedOptions
   if (loading) {
     return (
       <div className="flex items-center gap-2 py-3 text-sm text-gray-500">
