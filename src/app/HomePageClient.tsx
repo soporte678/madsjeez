@@ -290,8 +290,8 @@ export default function HomePageClient() {
         <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
           {[
             { name: "Básico", price: "$0", tagline: "Para empezar", feats: ["50 publicaciones activas", "0% comisión por venta", "Cobrás con tu Mercado Pago", "Chat con compradores", "Estadísticas básicas"], featured: false },
-            { name: "Pro", price: "$29.999", tagline: "El más elegido", feats: ["200 publicaciones activas", "0% comisión por venta", "Badge Pro en tu perfil", "Soporte prioritario", "Panel de métricas avanzado", "Herramientas de difusión"], featured: true },
-            { name: "Ultra", price: "$49.999", tagline: "Para escalar", feats: ["Publicaciones ilimitadas", "0% comisión por venta", "Máxima exposición en búsquedas", "Soporte dedicado", "Todo lo de Pro"], featured: false },
+            { name: "Pro", price: "$2.999", tagline: "6 meses gratis para nuevos", feats: ["200 publicaciones activas", "0% comisión por venta", "Badge Pro en tu perfil", "Soporte prioritario", "Panel de métricas avanzado", "Herramientas de difusión"], featured: true },
+            { name: "Ultra", price: "$4.999", tagline: "Para escalar", feats: ["Publicaciones ilimitadas", "0% comisión por venta", "Máxima exposición en búsquedas", "Soporte dedicado", "Todo lo de Pro"], featured: false },
           ].map((p) => (
             <div key={p.name} className={`relative flex flex-col rounded-2xl border bg-card p-6 ${p.featured ? "border-primary shadow-lg" : "border-border"}`}>
               {p.featured && <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-0.5 text-[11px] font-black uppercase tracking-wide text-primary-foreground">{p.tagline}</span>}

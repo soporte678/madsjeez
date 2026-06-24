@@ -109,7 +109,7 @@ async function getMarketplaceContext(userMessage: string): Promise<string> {
   if (isSellerQuery) {
     contextParts.push(`\nINFO PARA VENDEDORES:`)
     contextParts.push(`- Registro: /seller/register`)
-    contextParts.push(`- Planes (opcionales): Básico $0 (hasta 50 publicaciones), Pro $29.999/mes (200 publicaciones), Ultra $49.999/mes (ilimitadas)`)
+    contextParts.push(`- Planes (opcionales): Básico $0 (hasta 50 publicaciones), Pro $2.999/mes (200 publicaciones, 6 meses gratis para nuevos), Ultra $4.999/mes (ilimitadas)`)
     contextParts.push(`- Comisión: 0% por venta — el vendedor recibe el 100% directamente en su Mercado Pago`)
     contextParts.push(`- Para cobrar: el vendedor conecta su cuenta de Mercado Pago`)
     contextParts.push(`- Panel de vendedor: /dashboard`)
@@ -127,7 +127,7 @@ TU EXPERIENCIA REAL:
 - Conocés el catálogo completo de herramientas eléctricas, manuales, maquinaria agrícola/industrial, repuestos y ferretería
 - Sabés cómo funciona cada proceso de compra, venta, envío y pago
 - Conocés cómo funcionan compras, envíos, pagos y devoluciones. Las condiciones de envío, garantía y devolución las define cada vendedor en su publicación (no son políticas únicas del marketplace)
-- NO se cobra comisión por venta — el vendedor recibe el 100% en su Mercado Pago. Planes opcionales: Básico $0, Pro $29.999/mes, Ultra $49.999/mes
+- NO se cobra comisión por venta — el vendedor recibe el 100% en su Mercado Pago. Planes opcionales: Básico $0, Pro $2.999/mes (6 meses gratis para nuevos), Ultra $4.999/mes
 - Medios de pago: MercadoPago (tarjetas, transferencia, efectivo). El medio disponible puede variar según el vendedor
 - Envíos: los coordina y define cada vendedor (forma y costo) en la publicación
 - Atención humana: soporte@madsjeez.com o WhatsApp +54 11 2181-6064 (Lun-Vie 9 a 18hs)
@@ -168,7 +168,7 @@ CÓMO ASESORÁS:
 TU EXPERTISE COMERCIAL:
 - Publicaciones óptimas: títulos SEO (palabras clave al inicio, 60 caracteres), descripciones con bullet points, 6 fotos mínimo (fondo blanco, dimensiones reales)
 - Comisión: Madsjeez NO cobra comisión por venta — el vendedor recibe el 100% del importe en su Mercado Pago. Calculá tu precio según costo + margen. Ej: 30% margen → precio = costo / 0.70
-- Planes (opcionales, con 0% comisión): Básico $0 (hasta 50 publicaciones), Pro $29.999/mes (200 publicaciones + más visibilidad), Ultra $49.999/mes (publicaciones ilimitadas). Detalle en /subscriptions
+- Planes (opcionales, con 0% comisión): Básico $0 (hasta 50 publicaciones), Pro $2.999/mes (200 publicaciones + 6 meses gratis para nuevos), Ultra $4.999/mes (publicaciones ilimitadas). Detalle en /subscriptions
 - Conversión: publicaciones con video venden 40% más, envío gratis aumenta conversión 25%, respuesta en <1h mejora reputación
 - Marketing IA disponible en /dashboard: genera posts para Instagram/Facebook, emails de recuperación de carrito, banners promocionales, descripciones SEO automáticas
 - Reputación: respondé preguntas en <1h, enviá en 24h, empacá bien, pedí reviews. 4.8+ estrellas = más visibilidad
@@ -403,7 +403,7 @@ function getFallbackResponse(mode: ChatMode, userMessage: string): string {
       } else if (lower.includes("envío") || lower.includes("envios") || lower.includes("entrega")) {
         return "Cada vendedor define la forma de envío y el costo en su publicación (envío a domicilio o retiro, según el caso). Revisá esos datos en la publicación antes de comprar."
       } else if (lower.includes("vender") || lower.includes("vendedor") || lower.includes("publicar")) {
-        return "Para vender en MadsJeez, registrate como vendedor. Durante la etapa beta no cobramos comisión por venta; tenés planes opcionales (Básico $0, Pro $29.999, Ultra $49.999) según cuánto quieras publicar y destacar. ¿Te interesa registrarte?"
+        return "Para vender en MadsJeez, registrate como vendedor. No cobramos comisión por venta; tenés planes opcionales (Básico $0, Pro $2.999/mes con 6 meses gratis para nuevos, Ultra $4.999/mes) según cuánto quieras publicar y destacar. ¿Te interesa registrarte?"
       } else if (lower.includes("pago") || lower.includes("pagar") || lower.includes("mercadopago")) {
         return "Aceptamos pagos con MercadoPago (tarjeta de crédito/débito, transferencia, efectivo en puntos de pago). También aceptamos transferencia bancaria directa."
       }
