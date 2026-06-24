@@ -2174,132 +2174,91 @@ export default function MetricasView() {
           {/* === TRÁFICO — VISITAS === */}
           {activeMiPaginaSubTab === 'trafico' && activeMiPaginaMetric === 'visitas' && (
             <>
-              {/* Charts row */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Origen de tus visitas — Donut */}
-                <div className="bg-white rounded-xl border border-gray-200 p-5">
-                  <div className="flex items-center gap-1 text-sm font-semibold text-gray-800 mb-4">
-                    Origen de tus visitas <Info size={14} className="text-gray-400" />
-                  </div>
-                  <div className="flex items-center gap-6">
-                    <div className="w-40 h-40">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={[
-                              { name: 'Orgánicas', value: 108, fill: '#8B5CF6' },
-                              { name: 'Publicidad', value: 18, fill: '#F59E0B' },
-                              { name: 'Externas', value: 46, fill: '#06B6D4' },
-                            ]}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={45}
-                            outerRadius={70}
-                            paddingAngle={2}
-                            dataKey="value"
-                            stroke="none"
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <div className="space-y-3">
-                      <div>
-                        <div className="text-2xl font-bold text-gray-800">172</div>
-                        <div className="text-[10px] text-red-500">▼ 0%</div>
+              {(() => {
+                const totalViews = miPaginaData?.summary?.totalViews ?? 0;
+                const hasViews = totalViews > 0;
+                const topProducts = (miPaginaData?.topByViews ?? []).filter((p: { views?: number }) => (p.views ?? 0) > 0);
+                return (
+                  <>
+                    {/* Charts row */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Visitas totales — Donut */}
+                      <div className="bg-white rounded-xl border border-gray-200 p-5">
+                        <div className="flex items-center gap-1 text-sm font-semibold text-gray-800 mb-4">
+                          Visitas en la plataforma <Info size={14} className="text-gray-400" />
+                        </div>
+                        <div className="flex items-center gap-6">
+                          <div className="w-40 h-40">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <PieChart>
+                                <Pie
+                                  data={hasViews
+                                    ? [{ name: 'Vistas', value: totalViews, fill: '#8B5CF6' }]
+                                    : [{ name: 'Sin visitas', value: 1, fill: '#E5E7EB' }]
+                                  }
+                                  cx="50%" cy="50%"
+                                  innerRadius={45} outerRadius={70}
+                                  paddingAngle={0} dataKey="value" stroke="none"
+                                />
+                              </PieChart>
+                            </ResponsiveContainer>
+                          </div>
+                          <div className="space-y-3">
+                            <div>
+                              <div className="text-2xl font-bold text-gray-800">{n(totalViews)}</div>
+                              <div className="text-xs text-gray-400">vistas acumuladas</div>
+                            </div>
+                            <div className="space-y-1.5">
+                              <div className="flex items-center gap-2">
+                                <span className={`w-2 h-2 rounded-full ${hasViews ? 'bg-purple-500' : 'bg-gray-300'}`}></span>
+                                <span className="text-xs text-gray-600">Vistas de productos</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-gray-200"></span>
+                                <span className="text-xs text-gray-400">Origen por fuente: próximamente</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <div className="space-y-1.5">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-purple-500"></span>
-                          <span className="text-xs text-gray-600">Orgánicas</span>
+
+                      {/* Top productos por vistas — Bar chart */}
+                      <div className="bg-white rounded-xl border border-gray-200 p-5">
+                        <div className="flex items-center gap-1 text-sm font-semibold text-gray-800 mb-4">
+                          Productos más vistos <Info size={14} className="text-gray-400" />
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-cyan-500"></span>
-                          <span className="text-xs text-gray-600">Publicidad</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                          <span className="text-xs text-gray-600">Externas</span>
-                        </div>
+                        {topProducts.length > 0 ? (
+                          <ResponsiveContainer width="100%" height={180}>
+                            <BarChart
+                              data={topProducts.slice(0, 5).map((p: { title?: string; views?: number }) => ({
+                                name: (p.title ?? 'Producto').slice(0, 20),
+                                value: p.views ?? 0,
+                              }))}
+                              layout="vertical" barSize={16} margin={{ left: 8 }}
+                            >
+                              <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9CA3AF' }} />
+                              <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9CA3AF' }} width={90} />
+                              <Bar dataKey="value" fill="#8B5CF6" radius={[0, 4, 4, 0]} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        ) : (
+                          <div className="flex items-center justify-center h-40 text-sm text-gray-400">
+                            Aún no hay vistas en tus productos
+                          </div>
+                        )}
                       </div>
                     </div>
-                  </div>
-                </div>
 
-                {/* Detalle del origen — Bar chart */}
-                <div className="bg-white rounded-xl border border-gray-200 p-5">
-                  <div className="flex items-center gap-1 text-sm font-semibold text-gray-800 mb-4">
-                    Detalle del origen <Info size={14} className="text-gray-400" />
-                  </div>
-                  <ResponsiveContainer width="100%" height={180}>
-                    <BarChart
-                      data={[
-                        { name: 'Orgánicas', value: 108, fill: '#8B5CF6' },
-                        { name: 'Externas', value: 46, fill: '#06B6D4' },
-                        { name: 'Publicidad', value: 18, fill: '#F59E0B' },
-                      ]}
-                      layout="vertical"
-                      barSize={20}
-                      margin={{ left: 20 }}
-                    >
-                      <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9CA3AF' }} />
-                      <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9CA3AF' }} width={70} />
-                      <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                        {[
-                          { fill: '#8B5CF6' },
-                          { fill: '#06B6D4' },
-                          { fill: '#F59E0B' },
-                        ].map((entry, index) => (
-                          <Cell key={index} fill={entry.fill} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              {/* Evolución de tus visitas — Line chart */}
-              <div className="bg-white rounded-xl border border-gray-200 p-5">
-                <div className="text-sm font-semibold text-gray-800 mb-4">Evolución de tus visitas</div>
-                <ResponsiveContainer width="100%" height={200}>
-                  <LineChart data={[
-                    { day: '6 abr', organicas: 5, publicidad: 2, externas: 1 },
-                    { day: '8 abr', organicas: 8, publicidad: 3, externas: 2 },
-                    { day: '10 abr', organicas: 12, publicidad: 4, externas: 3 },
-                    { day: '13 abr', organicas: 6, publicidad: 2, externas: 1 },
-                    { day: '15 abr', organicas: 10, publicidad: 5, externas: 2 },
-                    { day: '17 abr', organicas: 14, publicidad: 3, externas: 4 },
-                    { day: '20 abr', organicas: 8, publicidad: 2, externas: 1 },
-                    { day: '22 abr', organicas: 11, publicidad: 4, externas: 3 },
-                    { day: '24 abr', organicas: 16, publicidad: 5, externas: 2 },
-                    { day: '27 abr', organicas: 9, publicidad: 3, externas: 1 },
-                    { day: '29 abr', organicas: 13, publicidad: 4, externas: 3 },
-                    { day: '1 may', organicas: 7, publicidad: 2, externas: 2 },
-                    { day: '3 may', organicas: 15, publicidad: 6, externas: 4 },
-                    { day: '4 may', organicas: 10, publicidad: 3, externas: 2 },
-                  ]}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-                    <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9CA3AF' }} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9CA3AF' }} />
-                    <Line type="monotone" dataKey="organicas" stroke="#8B5CF6" strokeWidth={2} dot={false} />
-                    <Line type="monotone" dataKey="publicidad" stroke="#06B6D4" strokeWidth={2} dot={false} />
-                    <Line type="monotone" dataKey="externas" stroke="#F59E0B" strokeWidth={2} dot={false} />
-                  </LineChart>
-                </ResponsiveContainer>
-                <div className="flex items-center justify-center gap-6 mt-3">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
-                    <span className="text-xs text-gray-500">Orgánicas</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-cyan-500"></span>
-                    <span className="text-xs text-gray-500">Publicidad</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-                    <span className="text-xs text-gray-500">Externas</span>
-                  </div>
-                </div>
-              </div>
+                    {/* Evolución — sin historial disponible */}
+                    <div className="bg-white rounded-xl border border-gray-200 p-5">
+                      <div className="text-sm font-semibold text-gray-800 mb-2">Evolución de tus visitas</div>
+                      <div className="flex items-center justify-center h-28 text-sm text-gray-400">
+                        El historial diario de visitas estará disponible próximamente
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
             </>
           )}
 
