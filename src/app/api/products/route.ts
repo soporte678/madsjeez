@@ -167,7 +167,7 @@ export async function POST(req: Request) {
       )
     }
 
-    // Enforce listing limits según tier efectivo (incluye trial 14 días).
+    // Enforce listing limits según tier efectivo (incluye trial 6 meses).
     const { prisma: prismaClient } = await import("@/lib/prisma");
     const { getEffectiveTier, canPublishMore } = await import("@/lib/subscription/effective-tier");
 

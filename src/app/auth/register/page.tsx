@@ -66,7 +66,7 @@ function RegisterForm() {
       trackEvent("sign_up", { method: "email" })
 
       // Auto-login post-registro para que el usuario entre directo
-      // a su dashboard con el trial 14d activo, sin pasar por /auth/login.
+      // a su dashboard con el trial 6m activo, sin pasar por /auth/login.
       const signRes = await signIn("credentials", {
         email,
         password,

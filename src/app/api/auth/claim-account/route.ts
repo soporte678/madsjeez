@@ -2,7 +2,7 @@
  * POST /api/auth/claim-account
  *
  * Seteo de password para un guest user existente (sin password).
- * Si el email existe y no tiene password → setea password + activa trial 14d.
+ * Si el email existe y no tiene password → setea password + activa trial 6 meses.
  * Si el email existe y tiene password → 409 (ya está claim-eado, debe loguearse).
  * Si no existe → crea el user normal.
  *
@@ -90,7 +90,7 @@ export async function POST(req: Request) {
       userId = created.id;
     }
 
-    // Activar trial 14d si nunca tuvo (one-shot)
+    // Activar trial 6 meses si nunca tuvo (one-shot)
     const trialEnd = new Date(Date.now() + TRIAL_MS);
     try {
       await prisma.$executeRaw`

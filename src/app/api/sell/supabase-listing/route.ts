@@ -38,7 +38,7 @@ export async function POST(req: Request) {
     );
   }
 
-  // Tier efectivo (incluye trial 14 días con beneficios ULTRA)
+  // Tier efectivo (incluye trial 6 meses con beneficios PRO)
   const userRow = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: { subscriptionTier: true, subscriptionExpiry: true },

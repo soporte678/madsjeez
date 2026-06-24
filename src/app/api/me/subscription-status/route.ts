@@ -2,7 +2,7 @@
  * GET /api/me/subscription-status
  *
  * Devuelve el estado del seller para la UI:
- *  - tier efectivo (considera trial 14 días)
+ *  - tier efectivo (considera trial 6 meses)
  *  - si está en trial y cuánto le queda
  *  - cuántas publicaciones activas tiene y el máximo
  *  - hint para mostrar banner "Trial PRO termina en X días"
