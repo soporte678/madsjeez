@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 import { rateLimit, clientIpFromRequest } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
+import { TRIAL_MS } from "@/lib/subscription/effective-tier"
 
 export async function POST(req: Request) {
   // Rate limiting: max 3 intentos por IP cada 15 minutos
@@ -78,18 +79,17 @@ export async function POST(req: Request) {
       }
     })
 
-    // Trial 14 días con beneficios ULTRA al primer registro.
-    // One-shot: si por algún motivo el user ya existía (no debería) no
-    // pisamos el trial_ends_at. Lo seteamos via SQL puro porque el cliente
-    // Prisma no tiene el campo declarado todavía.
-    const trialEnd = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+    // Trial 6 meses con beneficios ULTRA al primer registro.
+    // One-shot: solo si trial_ends_at es null (nunca tuvo trial).
+    // Lo seteamos via SQL puro porque el cliente Prisma no tiene el campo declarado.
+    const trialEnd = new Date(Date.now() + TRIAL_MS)
     try {
       await prisma.$executeRaw`
         UPDATE users SET trial_ends_at = ${trialEnd}
         WHERE id = ${user.id} AND trial_ends_at IS NULL
       `
     } catch (e) {
-      logger.warn("No se pudo activar trial 14d en registro:", e)
+      logger.warn("No se pudo activar trial 6m en registro:", e)
     }
 
     return NextResponse.json({

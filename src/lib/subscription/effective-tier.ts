@@ -1,5 +1,5 @@
 /**
- * Cálculo del tier efectivo del seller con soporte de TRIAL 14 días.
+ * Cálculo del tier efectivo del seller con soporte de TRIAL 6 meses.
  *
  * Reglas:
  * - Si trial_ends_at > now → tier efectivo = "PLATINUM" (todos los beneficios).

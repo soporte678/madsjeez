@@ -452,16 +452,16 @@ export const TUTORIALES: Tutorial[] = [
   {
     slug: 'crear-cuenta',
     title: 'Crear tu cuenta en 1 minuto',
-    subtitle: 'Email + contraseña, sin Google · trial PRO 14 días incluido',
+    subtitle: 'Email + contraseña, sin Google · 6 meses PRO gratis incluidos',
     audience: 'ambos',
     duration: '2 min',
     level: 'fácil',
     tags: ['registro', 'cuenta', 'trial'],
     icon: 'user-plus',
     summary:
-      'Crear una cuenta te habilita carrito persistente, favoritos, historial de compras y panel de seller. Al registrarte activamos 14 días gratis con beneficios ULTRA.',
+      'Crear una cuenta te habilita carrito persistente, favoritos, historial de compras y panel de seller. Al registrarte activamos 6 meses gratis con beneficios PRO.',
     intro:
-      'Madsjeez no requiere cuenta para mirar productos ni para comprar como invitado, pero registrarte te da ventajas concretas: historial, favoritos, direcciones guardadas y 14 días gratis con todos los beneficios del plan ULTRA si querés vender.',
+      'Madsjeez no requiere cuenta para mirar productos ni para comprar como invitado, pero registrarte te da ventajas concretas: historial, favoritos, direcciones guardadas y 6 meses gratis del plan PRO si querés vender.',
     steps: [
       {
         title: 'Tocá "Crear cuenta" en el navbar',
@@ -476,12 +476,12 @@ export const TUTORIALES: Tutorial[] = [
       {
         title: 'Te logueamos automáticamente',
         body: 'Al crear la cuenta entrás directo al dashboard sin pasar por el login. Recibís un email de bienvenida con tu trial activo.',
-        visualHint: 'Dashboard con banner verde "14 días ULTRA gratis activados".',
+        visualHint: 'Dashboard con banner verde "6 meses PRO gratis activados".',
       },
       {
         title: 'Aprovechá el trial',
-        body: 'Tenés 14 días con todos los beneficios del plan ULTRA: publicaciones ilimitadas, marketing IA, exposición máxima. Cuando termine, podés elegir BÁSICO (gratis con 50 pubs), PRO o seguir en ULTRA.',
-        visualHint: 'Contador regresivo "Te quedan 14 días de prueba ULTRA".',
+        body: 'Tenés 6 meses gratis con los beneficios del plan PRO: 200 publicaciones, marketing IA, exposición mejorada. Cuando termine, podés elegir BÁSICO (gratis con 50 pubs) o continuar con PRO a $2.999/mes.',
+        visualHint: 'Contador regresivo "Te quedan X días de prueba PRO".',
       },
     ],
     ctaLabel: 'Crear cuenta ahora',
