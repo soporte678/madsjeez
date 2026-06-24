@@ -39,6 +39,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
     { url: `${BASE_URL}/seller/register`,             lastModified: new Date("2026-06-01"), changeFrequency: "monthly", priority: 0.7 },
     { url: `${BASE_URL}/subscriptions`,               lastModified: new Date("2026-06-01"), changeFrequency: "weekly",  priority: 0.6 },
+    { url: `${BASE_URL}/oferta-vendedores`,           lastModified: new Date("2026-06-01"), changeFrequency: "monthly", priority: 0.85 },
     { url: `${BASE_URL}/blog`,                        lastModified: new Date("2026-06-01"), changeFrequency: "weekly",  priority: 0.7 },
     ...BLOG_POSTS.map((p) => ({
       url: `${BASE_URL}/blog/${p.slug}`,

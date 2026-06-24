@@ -30,9 +30,9 @@ async function getMpClient() {
 // FREE se activa en /api/subscriptions/activate-free (sin MP).
 // GOLD legacy aceptado para no romper suscriptores actuales — alias de PLATA.
 const PLAN_PRICES: Record<string, number> = {
-  PLATA: 29999,    // PRO — 200 publicaciones
-  GOLD: 29999,     // legacy alias
-  PLATINUM: 49999, // ULTRA — ilimitadas
+  PLATA: 2999,    // PRO — 200 publicaciones
+  GOLD: 2999,     // legacy alias
+  PLATINUM: 4999, // ULTRA — ilimitadas
 }
 
 // Descuentos por período
