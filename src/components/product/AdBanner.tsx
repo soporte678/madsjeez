@@ -23,8 +23,8 @@ const ADS = [
   {
     id: "ad-3",
     bg: "from-[#e94560] to-[#0f3460]",
-    title: "DESCUENTOS ÚNICOS",
-    subtitle: "Hasta 40% OFF en electrónica",
+    title: "OFERTAS DEL DÍA",
+    subtitle: "Nuevos descuentos todos los días en el marketplace",
     cta: "Ver ofertas",
     link: "/ofertas",
     accent: "text-white",
@@ -32,7 +32,7 @@ const ADS = [
 ]
 
 export function AdBanner({ variant = "horizontal" }: { variant?: "horizontal" | "sidebar" }) {
-  const ad = ADS[Math.floor(Math.random() * ADS.length)]
+  const ad = ADS[0]
 
   if (variant === "sidebar") {
     return (

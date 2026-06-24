@@ -140,6 +140,14 @@ export default function MetricasView() {
 
   return (
     <div className="flex-1 flex flex-col gap-6 w-full max-w-[1200px] text-slate-800 dark:text-slate-100">
+      {/* Banner: datos de ejemplo */}
+      <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 dark:bg-amber-900/20 dark:border-amber-700/40">
+        <span className="text-amber-600 dark:text-amber-400 text-lg">⚠</span>
+        <div>
+          <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">Datos de ejemplo — sección en desarrollo</p>
+          <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">Las gráficas y tablas muestran datos simulados. Tus métricas reales estarán disponibles próximamente.</p>
+        </div>
+      </div>
       {/* Header */}
       <div className="flex justify-between items-start">
         <h1 className="text-[28px] font-semibold text-slate-800 dark:text-slate-100">Métricas</h1>
@@ -519,7 +527,7 @@ export default function MetricasView() {
                       </td>
                       <td className="p-3 text-right text-sm text-gray-800">
                         $ {pub.price.toLocaleString()}
-                        <div className="text-xs text-gray-400">{pub.sales > 0 ? '+' : ''}{(Math.random() * 20).toFixed(0)}%</div>
+                        <div className="text-xs text-gray-400">—</div>
                       </td>
                       <td className="p-3 text-right text-sm text-gray-800">{pub.sales}</td>
                       <td className="p-3 text-right text-sm text-gray-800">{pub.participation}</td>

@@ -87,7 +87,7 @@ function RotatingProductCarouselBase({ title, subtitle, offset = 0, categorySlug
           </div>
           {totalCount > 0 && (
             <span className="text-xs text-primary font-semibold bg-secondary px-3 py-1 rounded-full">
-              +{Math.max(50, Math.floor(totalCount / 10000) * 10).toLocaleString('es-AR')}.000 PRODUCTOS ESTIMATIVOS EN NUESTRO MARKETPLACE
+              {totalCount.toLocaleString('es-AR')} productos
             </span>
           )}
         </div>

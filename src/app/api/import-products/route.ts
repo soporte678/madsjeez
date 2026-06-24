@@ -114,7 +114,7 @@ export async function POST(request: Request) {
             sales: 0,
             freeShipping: row.freeShipping || false,
             shippingCost: 0,
-            qualityScore: Math.floor(Math.random() * 30) + 50,
+            qualityScore: 0,
             hasVideo: false,
             sellerId,
             categoryId,

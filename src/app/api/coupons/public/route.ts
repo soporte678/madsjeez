@@ -721,7 +721,7 @@ export async function GET(req: Request) {
           isUrgent: daysToExpire <= 1,
         }
       })
-      : [...DEMO_COUPONS]
+      : []
 
     // Filtrar por búsqueda
     if (search) {
