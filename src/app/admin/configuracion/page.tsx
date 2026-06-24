@@ -33,7 +33,7 @@ export default function ConfiguracionPage() {
   const [config, setConfig] = useState<ConfigData>({
     marketplace_name: "MadsJeez",
     contact_email: "soporte@madsjeez.com",
-    contact_phone: "+54 11 1234-5678",
+    contact_phone: "",
     timezone: "America/Argentina/Buenos_Aires",
     description: "El marketplace de productos de ferretería más grande de Argentina",
     require_terms: true,

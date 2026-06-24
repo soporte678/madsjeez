@@ -40,77 +40,6 @@ function formatRelativeDate(date: Date): string {
   return `Hace ${Math.floor(diffDays / 30)} meses`;
 }
 
-// Datos mock solo para desarrollo local
-const mockQuestions: QuestionItem[] = [
-  {
-    id: '1',
-    productId: 'mock-1',
-    productTitle: 'Bujía Para Desmalezadoras Motoguadaña 33/43/52cc',
-    productImage: 'https://via.placeholder.com/80?text=Bujia',
-    sellerName: 'Repuestos MadsJeez',
-    price: 7999,
-    comparePrice: null,
-    stock: 10,
-    question: 'Hola buenas! Sirve como repuesto para una china de segunda marca?',
-    questionDate: 'Hace 3 días',
-    answer: 'Hola, son aptas para todas las chinas mientras sean del cc que mencionamos en la publicación, esperamos tu compra, saludos!',
-    answerDate: 'Hace 3 días',
-    status: 'answered',
-    shipping: null,
-    installments: null,
-  },
-  {
-    id: '2',
-    productId: 'mock-2',
-    productTitle: 'Barral Completo Desmalezadora Más Campana Más Caja Engranaje',
-    productImage: 'https://via.placeholder.com/80?text=Barral',
-    sellerName: 'Repuestos MadsJeez',
-    price: 79999,
-    comparePrice: null,
-    stock: 2,
-    question: 'Es compatible con recortardora stihl?',
-    questionDate: 'Hace 3 días',
-    answer: 'Hola buenas! En este caso solo si es de origen chino, saludos!',
-    answerDate: 'Hace 3 días',
-    status: 'answered',
-    shipping: 'Envío gratis a todo el país',
-    installments: 'Mismo precio en cuotas',
-  },
-  {
-    id: '3',
-    productId: 'mock-3',
-    productTitle: 'Tijera Profesional Dorada Modista 26cm Tela Lana Premium Dorado',
-    productImage: 'https://via.placeholder.com/80?text=Tijera',
-    sellerName: 'Casa de Costura',
-    price: 149999,
-    comparePrice: null,
-    stock: 3,
-    question: 'hola, mas grande tenes?',
-    questionDate: 'Hace 14 días',
-    answer: 'HOLA, POR EL MOMENTO ES EL UNICO TAMAÑO AT...',
-    answerDate: null,
-    status: 'answered',
-    shipping: 'Envío gratis a todo el país',
-    installments: 'Mismo precio en cuotas',
-  },
-  {
-    id: '4',
-    productId: 'mock-4',
-    productTitle: 'Brazo De Suspensión Inferior Recto Vw Passat Audi A4',
-    productImage: 'https://via.placeholder.com/80?text=Brazo',
-    sellerName: 'Autopartes Premium',
-    price: 97965,
-    comparePrice: 90274.75,
-    stock: 15,
-    question: null,
-    questionDate: null,
-    answer: null,
-    answerDate: null,
-    status: 'pending',
-    shipping: 'Envío gratis a todo el país',
-    installments: null,
-  },
-];
 
 export async function GET(request: NextRequest) {
   try {
@@ -170,23 +99,17 @@ export async function GET(request: NextRequest) {
       tableExists = false;
     }
 
-    const shouldUseMockFallback = process.env.NODE_ENV !== 'production' && realQuestions.length === 0 && !tableExists;
-    const response = {
-      questions: shouldUseMockFallback ? mockQuestions : realQuestions,
-      total: shouldUseMockFallback ? mockQuestions.length : realQuestions.length,
-      isRealData: !shouldUseMockFallback,
+    return NextResponse.json({
+      questions: realQuestions,
+      total: realQuestions.length,
       tableExists,
-    };
-
-    return NextResponse.json(response);
+    });
   } catch (error) {
     console.error('Error fetching questions:', error);
-    const shouldUseMockFallback = process.env.NODE_ENV !== 'production';
     return NextResponse.json({
-      questions: shouldUseMockFallback ? mockQuestions : [],
-      total: shouldUseMockFallback ? mockQuestions.length : 0,
-      isRealData: !shouldUseMockFallback,
-      tableExists: shouldUseMockFallback ? false : true,
+      questions: [],
+      total: 0,
+      tableExists: false,
       error: 'Error fetching questions',
     });
   }

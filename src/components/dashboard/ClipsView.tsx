@@ -3,13 +3,6 @@
 import React, { useState } from 'react';
 import { Search, Filter, Info, MoreVertical, ChevronDown } from 'lucide-react';
 
-const clipsData = [
-  { id: 1, sku: '#254448570883', title: 'Aceite Lubricante Motores 2t 100 Cm3...', status: 'Publicado', statusDate: 'Hace 4 días', totalViews: 0, pubViews: 0, clipsViews: 0, retention: '0%', interactions: 0, followers: 0, img: '/placeholder.svg' },
-  { id: 2, sku: '#230166144209', title: 'Campana Pinton Rodamientos Motocicleta...', status: 'Publicado', statusDate: '14 de abril', totalViews: 2, pubViews: 0, clipsViews: 2, retention: '50.0%', interactions: 0, followers: 0, img: '/placeholder.svg' },
-  { id: 3, sku: '#178710155941', title: 'Tapa De Arranque Motosierras + Tapa Fre...', status: 'Publicado', statusDate: '14 de abril', totalViews: 1, pubViews: 1, clipsViews: 0, retention: '0%', interactions: 0, followers: 0, img: '/placeholder.svg' },
-  { id: 4, sku: '#144825137', title: 'Tapa Arranque Desmalezadora Gamma...', status: 'Publicado', statusDate: '1 de abril', totalViews: 1, pubViews: 0, clipsViews: 1, retention: '0%', interactions: 0, followers: 0, img: '/placeholder.svg' },
-  { id: 5, sku: '#2253965236', title: 'Tapa De Arranque Grupo Electrogeno / Ge...', status: 'Publicado', statusDate: '1 de abril', totalViews: 82, pubViews: 0, clipsViews: 82, retention: '20.7%', interactions: 27, followers: 0, img: '/placeholder.svg' },
-];
 
 export default function ClipsView() {
   const [search, setSearch] = useState('');
@@ -97,49 +90,12 @@ export default function ClipsView() {
             </tr>
           </thead>
           <tbody>
-            {clipsData.map((clip) => (
-              <tr key={clip.id} className="border-b border-gray-100 hover:bg-gray-50">
-                <td className="p-3">
-                  <div className="w-16 h-20 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
-                    <img src={clip.img} alt="" className="w-full h-full object-cover" />
-                  </div>
-                </td>
-                <td className="p-3">
-                  <div className="text-[10px] text-gray-400">{clip.sku}</div>
-                  <div className="text-xs font-medium text-gray-800 max-w-[200px] truncate">{clip.title}</div>
-                  <button className="text-blue-600 text-[10px] font-medium hover:underline mt-1">Ver publicaciones</button>
-                </td>
-                <td className="p-3">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                    <span className="text-xs font-medium text-gray-800">{clip.status}</span>
-                  </div>
-                  <div className="text-[10px] text-gray-500 mt-0.5">{clip.statusDate}</div>
-                  <button className="text-blue-600 text-[10px] font-medium hover:underline mt-1">Elegir publicaciones</button>
-                </td>
-                <td className="p-3 text-center">
-                  <div className="text-xs font-medium text-gray-800">{clip.totalViews}</div>
-                  <div className="text-[10px] text-gray-500 mt-1">En la publicación</div>
-                  <div className="text-[10px] text-gray-500">{clip.pubViews}</div>
-                  <div className="text-[10px] text-gray-500 mt-1">En la sección Clips</div>
-                  <div className="text-[10px] text-gray-500">{clip.clipsViews}</div>
-                </td>
-                <td className="p-3 text-center">
-                  <div className="text-xs font-medium text-gray-800">{clip.retention}</div>
-                </td>
-                <td className="p-3 text-center">
-                  <div className="text-xs font-medium text-gray-800">{clip.interactions}</div>
-                </td>
-                <td className="p-3 text-center">
-                  <div className="text-xs font-medium text-gray-800">{clip.followers}</div>
-                </td>
-                <td className="p-3">
-                  <button className="text-gray-400 hover:text-gray-600">
-                    <MoreVertical size={16} />
-                  </button>
-                </td>
-              </tr>
-            ))}
+            <tr>
+              <td colSpan={8} className="p-12 text-center">
+                <div className="text-gray-400 text-sm">No tenés clips subidos todavía</div>
+                <div className="text-gray-300 text-xs mt-1">Subí tu primer clip para empezar a ver métricas de visualizaciones y retención</div>
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>

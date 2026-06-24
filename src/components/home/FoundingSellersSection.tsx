@@ -16,7 +16,7 @@
  *   - Motion ligero: reveal scroll + counter count-up
  */
 
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Crown,
@@ -280,9 +280,17 @@ function SlotsCounter({
 
 function ReferralBlock() {
   const [copied, setCopied] = useState(false);
-  const referralCode = "FUNDADOR-MJ"; // placeholder, viene del user logueado
+  const [referralCode, setReferralCode] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    fetch('/api/user/profile')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.storeSlug) setReferralCode(d.storeSlug.toUpperCase()) })
+      .catch(() => {})
+  }, [])
 
   async function copy() {
+    if (!referralCode) return
     try {
       await navigator.clipboard.writeText(referralCode);
       setCopied(true);
@@ -320,11 +328,12 @@ function ReferralBlock() {
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <div className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-900 dark:text-white">
-              {referralCode}
+              {referralCode ?? <span className="text-slate-400 text-xs">Cargando…</span>}
             </div>
             <button
               type="button"
               onClick={() => void copy()}
+              disabled={!referralCode}
               className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-bold px-3 py-2 transition-colors dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
             >
               {copied ? (

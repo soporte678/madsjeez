@@ -49,96 +49,6 @@ function formatReviewDate(date: Date): string {
   return `Realizada el ${day} de ${month}, ${year}`;
 }
 
-const mockPending: PendingOpinion[] = [
-  {
-    id: 'mock-p-1',
-    orderId: 'mock-o-1',
-    productId: 'mock-prod-1',
-    productTitle: 'Pizarra Blanca Magnética 40x60cm Uso Intensivo Borra Facil Doggo By Apxer Premium',
-    productImage: 'https://via.placeholder.com/80?text=Pizarra',
-    sellerName: 'Escolaria Shop',
-    purchaseDate: 'Comprado el 25 de feb, 2026',
-  },
-  {
-    id: 'mock-p-2',
-    orderId: 'mock-o-2',
-    productId: 'mock-prod-2',
-    productTitle: 'Tanque Nafta Desmalezadora 2 Agujeros 43cc 52cc Chinas',
-    productImage: 'https://via.placeholder.com/80?text=Tanque',
-    sellerName: 'MotoGarden Tools',
-    purchaseDate: 'Comprado el 12 de feb, 2026',
-  },
-  {
-    id: 'mock-p-3',
-    orderId: 'mock-o-3',
-    productId: 'mock-prod-3',
-    productTitle: 'Tanque Nafta Desmalezadora 2 Agujeros 43cc 52cc Chinas.',
-    productImage: 'https://via.placeholder.com/80?text=Tanque',
-    sellerName: 'MotoGarden Tools',
-    purchaseDate: 'Comprado el 10 de feb, 2026',
-  },
-  {
-    id: 'mock-p-4',
-    orderId: 'mock-o-4',
-    productId: 'mock-prod-4',
-    productTitle: 'Carburador Desmalezadora 26cc 33cc Niwa-gamma-garden Bull Service Aluminio',
-    productImage: 'https://via.placeholder.com/80?text=Carburador',
-    sellerName: 'Repuestos MadsJeez',
-    purchaseDate: 'Comprado el 03 de feb, 2026',
-  },
-  {
-    id: 'mock-p-5',
-    orderId: 'mock-o-5',
-    productId: 'mock-prod-5',
-    productTitle: 'Selladora Impulso Manual Dasa Fs-300 Pro 430w Bolsas 30cm 0.15mm Azul',
-    productImage: 'https://via.placeholder.com/80?text=Selladora',
-    sellerName: 'Packaging Pro',
-    purchaseDate: 'Comprado el 03 de feb, 2026',
-  },
-];
-
-const mockCompleted: CompletedOpinion[] = [
-  {
-    id: 'mock-c-1',
-    productId: 'mock-prod-6',
-    productTitle: '10 Film Stretch Negro 10cm 500g P Embalar Embalaje Resistent Negro',
-    productImage: 'https://via.placeholder.com/80?text=Stretch',
-    rating: 1,
-    comment: null,
-    date: 'Realizada el 26 de nov, 2025',
-    likes: 0,
-  },
-  {
-    id: 'mock-c-2',
-    productId: 'mock-prod-7',
-    productTitle: 'Bolsas E Commerce 30x40 + 5 Negra Adhesivo Inviolable X100 U Negro 30x40 Negro X 100',
-    productImage: 'https://via.placeholder.com/80?text=Bolsas',
-    rating: 4,
-    comment: null,
-    date: 'Realizada el 17 de nov, 2025',
-    likes: 0,
-  },
-  {
-    id: 'mock-c-3',
-    productId: 'mock-prod-8',
-    productTitle: 'Bolsas Polietileno Gris Oscuro Belmotec 17x30cm Adhesivo X100 Liso',
-    productImage: 'https://via.placeholder.com/80?text=Bolsas',
-    rating: 4,
-    comment: null,
-    date: 'Realizada el 17 de nov, 2025',
-    likes: 0,
-  },
-  {
-    id: 'mock-c-4',
-    productId: 'mock-prod-9',
-    productTitle: 'Zapatilla Topper Strong Pace Iii Azul Liso 38 Ar',
-    productImage: 'https://via.placeholder.com/80?text=Topper',
-    rating: 5,
-    comment: null,
-    date: 'Actualizada el 17 de sep, 2025',
-    likes: 0,
-  },
-];
 
 export async function GET(request: NextRequest) {
   try {
@@ -221,22 +131,16 @@ export async function GET(request: NextRequest) {
       tableExists = false;
     }
 
-    const isRealData = pending.length > 0 || completed.length > 0;
-
-    const response = {
-      pending: isRealData ? pending : mockPending,
-      completed: isRealData ? completed : mockCompleted,
-      isRealData,
+    return NextResponse.json({
+      pending,
+      completed,
       tableExists,
-    };
-
-    return NextResponse.json(response);
+    });
   } catch (error) {
     console.error('Error fetching opiniones:', error);
     return NextResponse.json({
-      pending: mockPending,
-      completed: mockCompleted,
-      isRealData: false,
+      pending: [],
+      completed: [],
       tableExists: false,
       error: 'Error fetching opiniones',
     });
