@@ -23,11 +23,13 @@ function b64urlDecode(s: string): Buffer {
 }
 
 function secret(): string {
-  return (
-    process.env.NEXTAUTH_SECRET ||
-    process.env.ORDER_ACCESS_SECRET ||
-    "madsjeez-pwreset-fallback-secret"
-  );
+  const s = process.env.NEXTAUTH_SECRET || process.env.ORDER_ACCESS_SECRET;
+  if (!s) {
+    throw new Error(
+      "[password-reset] NEXTAUTH_SECRET no configurado — imposible firmar tokens de reset"
+    );
+  }
+  return s;
 }
 
 export type ResetTokenPayload = {

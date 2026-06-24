@@ -1,4 +1,4 @@
-import crypto from "crypto";
+import crypto, { timingSafeEqual } from "crypto";
 
 function secret() {
   const s = process.env.MELI_OAUTH_STATE_SECRET || process.env.NEXTAUTH_SECRET;
@@ -19,8 +19,9 @@ export function verifyMeliOAuthState(state: string): string | null {
   try {
     const [payload, sig] = state.split(".");
     if (!payload || !sig) return null;
-    const expected = crypto.createHmac("sha256", secret()).update(payload).digest("base64url");
-    if (expected !== sig) return null;
+    const expected = crypto.createHmac("sha256", secret()).update(payload).digest();
+    const provided = Buffer.from(sig, "base64url");
+    if (expected.length !== provided.length || !timingSafeEqual(expected, provided)) return null;
     const json = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as {
       u?: string;
       exp?: number;

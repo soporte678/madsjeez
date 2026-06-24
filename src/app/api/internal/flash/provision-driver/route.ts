@@ -12,8 +12,7 @@ import { prisma } from "@/lib/prisma";
  * - Si existe con chofer pendiente, lo activa.
  */
 export async function POST(request: NextRequest) {
-  const secret =
-    process.env.ADMIN_SETUP_SECRET?.trim() || process.env.CRON_SECRET?.trim();
+  const secret = process.env.INTERNAL_DRIVER_SECRET?.trim() || process.env.ADMIN_SETUP_SECRET?.trim();
   if (!secret) {
     return NextResponse.json({ error: "No configurado" }, { status: 503 });
   }

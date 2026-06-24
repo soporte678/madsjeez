@@ -8,7 +8,7 @@ import { suggestStoreSlug, isValidStoreSlug } from "@/lib/store-slug";
  */
 export async function POST(request: NextRequest) {
   const secret =
-    process.env.ADMIN_SETUP_SECRET?.trim() || process.env.CRON_SECRET?.trim();
+    process.env.INTERNAL_BACKFILL_SECRET?.trim() || process.env.ADMIN_SETUP_SECRET?.trim();
   if (!secret) {
     return NextResponse.json({ error: "No configurado" }, { status: 503 });
   }

@@ -7,9 +7,9 @@ import { purgeSellerCatalogByEmail, type SellerCatalogPurgeMode } from "@/lib/se
  * POST { "email": "vianferreteria@gmail.com", "mode": "delete" }
  */
 export async function POST(request: NextRequest) {
-  const secret = process.env.ADMIN_SETUP_SECRET?.trim();
-  const auth = request.headers.get("authorization");
-  if (!secret || auth !== `Bearer ${secret}`) {
+  const secret = process.env.INTERNAL_PURGE_SECRET?.trim() || process.env.ADMIN_SETUP_SECRET?.trim();
+  const auth = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim();
+  if (!secret || auth !== secret) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 

@@ -14,7 +14,7 @@ import { supabaseService } from "@/lib/supabase/service";
 export const dynamic = "force-dynamic";
 
 function authorized(req: Request): boolean {
-  const secret = process.env.CRON_SECRET || process.env.ADMIN_SETUP_SECRET || process.env.INTERNAL_API_SECRET;
+  const secret = process.env.CRON_SECRET || process.env.INTERNAL_API_SECRET;
   if (!secret) return false;
   const provided =
     req.headers.get("x-internal-secret") ||
