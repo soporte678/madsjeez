@@ -52,7 +52,6 @@ RUN npm install c12@3.3.4 deepmerge-ts@7.1.5 effect@3.20.0 empathic@2.0.0 --omit
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 COPY --from=builder /app/migrate.mjs ./migrate.mjs
-COPY --from=builder /app/docs ./docs
 
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN chmod +x /app/docker-entrypoint.sh
