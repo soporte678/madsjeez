@@ -887,13 +887,31 @@ export default function MetricasView() {
           {/* Resumen circular */}
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <div className="flex items-center gap-8">
-              <div className="relative w-32 h-32">
-                <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
-                  <circle cx="50" cy="50" r="40" fill="none" stroke="#E5E7EB" strokeWidth="12" />
-                  <circle cx="50" cy="50" r="40" fill="none" stroke="#8B5CF6" strokeWidth="12" strokeDasharray="188.5 62.8" strokeLinecap="round" />
-                  <circle cx="50" cy="50" r="40" fill="none" stroke="#10B981" strokeWidth="12" strokeDasharray="62.8 188.5" strokeDashoffset="-188.5" strokeLinecap="round" />
-                </svg>
-              </div>
+              {(() => {
+                const circ = 2 * Math.PI * 40; // 251.3
+                const total = costData?.summary?.totalSales ?? 0;
+                const costs = costData?.summary?.totalCosts ?? 0;
+                const received = costData?.summary?.received ?? 0;
+                const isEmpty = total === 0 && costs === 0 && received === 0;
+                const costsArc = isEmpty ? 0 : Math.min((costs / (total || 1)) * circ, circ);
+                const receivedArc = isEmpty ? 0 : Math.max(circ - costsArc, 0);
+                return (
+                  <div className="relative w-32 h-32">
+                    <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+                      <circle cx="50" cy="50" r="40" fill="none" stroke="#E5E7EB" strokeWidth="12" />
+                      {!isEmpty && (
+                        <>
+                          <circle cx="50" cy="50" r="40" fill="none" stroke="#8B5CF6" strokeWidth="12"
+                            strokeDasharray={`${costsArc} ${circ - costsArc}`} strokeLinecap="round" />
+                          <circle cx="50" cy="50" r="40" fill="none" stroke="#10B981" strokeWidth="12"
+                            strokeDasharray={`${receivedArc} ${circ - receivedArc}`}
+                            strokeDashoffset={`-${costsArc}`} strokeLinecap="round" />
+                        </>
+                      )}
+                    </svg>
+                  </div>
+                );
+              })()}
               <div className="flex-1">
                 <div className="flex items-center gap-1 text-xs font-semibold text-gray-500 mb-1">
                   Ventas concretadas <Info size={12} className="text-gray-400" />
