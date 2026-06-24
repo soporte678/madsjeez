@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   AreaChart, Area,
@@ -24,6 +24,13 @@ type MetricsSummary = {
   monthlyViews: number; avgPrice: number; conversionRate: string;
   ordersInPeriod: number; activePublications: number; avgPerDay: number;
 }
+type PromoData = { campaigns: any[]; coupons: any[]; chartData: any[]; summary: any } | null
+type CostData = { summary: any; costDistribution: any[]; topProducts: any[] } | null
+type AtencionData = { summary: any; claimsByType: any[]; recentClaims: any[]; delayedShipments: any[] } | null
+type EnviosData = { summary: any; weeklyData: any[]; flashByProvince: any[]; recentDelayed: any[] } | null
+type StockData = { summary: any; alerts: any[]; byCategory: any[] } | null
+type MercadoData = { seller: any; byCategory: any[]; competitorsAvailable: boolean } | null
+type MiPaginaData = { profile: any; topByViews: any[]; topBySales: any[]; summary: any } | null
 
 const EMPTY_HEATMAP: HeatmapRow[] = [
   '00','06','08','10','12','14','16','18','20','22'
@@ -107,6 +114,15 @@ export default function MetricasView() {
   const [summary, setSummary] = useState<MetricsSummary>(EMPTY_SUMMARY)
   const [loading, setLoading] = useState(true)
 
+  const [promoData, setPromoData] = useState<PromoData>(null)
+  const [costData, setCostData] = useState<CostData>(null)
+  const [atencionData, setAtencionData] = useState<AtencionData>(null)
+  const [enviosData, setEnviosData] = useState<EnviosData>(null)
+  const [stockData, setStockData] = useState<StockData>(null)
+  const [mercadoData, setMercadoData] = useState<MercadoData>(null)
+  const [miPaginaData, setMiPaginaData] = useState<MiPaginaData>(null)
+  const [tabLoading, setTabLoading] = useState<string | null>(null)
+
   const days = period === 'Últimos 14 días' ? 14 : period === 'Últimos 30 días' ? 30 : 7
 
   useEffect(() => {
@@ -122,6 +138,37 @@ export default function MetricasView() {
       })
       .catch(() => {})
       .finally(() => setLoading(false))
+  }, [days])
+
+  const fetchedTabs = useRef(new Set<string>())
+
+  const loadTab = useCallback(async (tab: string) => {
+    if (fetchedTabs.current.has(tab)) return
+    fetchedTabs.current.add(tab)
+    setTabLoading(tab)
+    try {
+      const endpointMap: Record<string, string> = {
+        promociones: `/api/dashboard/promociones?days=${days}`,
+        costos: `/api/dashboard/costos?days=${days}`,
+        atencion: `/api/dashboard/atencion?days=${days}`,
+        envios: `/api/dashboard/envios`,
+        stock: `/api/dashboard/stock`,
+        mercado: `/api/dashboard/mercado`,
+        mipagina: `/api/dashboard/mipagina`,
+      }
+      const url = endpointMap[tab]
+      if (!url) return
+      const r = await fetch(url)
+      const d = await r.json()
+      if (tab === 'promociones') setPromoData(d)
+      else if (tab === 'costos') setCostData(d)
+      else if (tab === 'atencion') setAtencionData(d)
+      else if (tab === 'envios') setEnviosData(d)
+      else if (tab === 'stock') setStockData(d)
+      else if (tab === 'mercado') setMercadoData(d)
+      else if (tab === 'mipagina') setMiPaginaData(d)
+    } catch {}
+    finally { setTabLoading(null) }
   }, [days])
 
   const tabs = [
@@ -180,7 +227,7 @@ export default function MetricasView() {
           {tabs.map(tab => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => { setActiveTab(tab.id); loadTab(tab.id); }}
               className={`pb-3 text-sm font-medium transition-colors whitespace-nowrap ${
                  activeTab === tab.id ? 'text-blue-600 border-b-2 border-blue-600 dark:text-sky-400 dark:border-sky-400' : 'text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-100'
               }`}
@@ -713,34 +760,36 @@ export default function MetricasView() {
       {/* === PROMOCIONES === */}
       {activeTab === 'promociones' && (
         <>
+          {tabLoading === 'promociones' && (
+            <div className="flex items-center justify-center py-12 text-sm text-gray-400">Cargando promociones…</div>
+          )}
+
           {/* Metrics summary */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-white p-5 rounded-xl border border-gray-200">
               <div className="flex items-center gap-1 text-xs font-semibold text-gray-500 mb-1">
                 Ventas brutas <Info size={12} className="text-gray-400" />
               </div>
-              <div className="text-xl font-black text-gray-800">$ 82.444 <span className="text-xs font-semibold text-green-600">+ 169 %</span></div>
+              <div className="text-xl font-black text-gray-800">{ars(promoData?.summary?.grossPeriod ?? 0)}</div>
             </div>
             <div className="bg-white p-5 rounded-xl border border-gray-200">
               <div className="flex items-center gap-1 text-xs font-semibold text-gray-500 mb-1">
                 Unidades vendidas <Info size={12} className="text-gray-400" />
               </div>
-              <div className="text-xl font-black text-gray-800">1 <span className="text-xs font-semibold text-red-500">- 50 %</span></div>
+              <div className="text-xl font-black text-gray-800">{n(promoData?.summary?.unitsSold ?? 0)}</div>
+            </div>
+            <div className="bg-white p-5 rounded-xl border border-gray-200">
+              <div className="flex items-center gap-1 text-xs font-semibold text-gray-500 mb-1">
+                Campañas activas <Info size={12} className="text-gray-400" />
+              </div>
+              <div className="text-xl font-black text-gray-800">{promoData?.summary?.activeCampaigns ?? 0}</div>
             </div>
           </div>
 
           {/* Chart */}
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <ResponsiveContainer width="100%" height={220}>
-              <LineChart data={[
-                { day: '28 abr', actual: 0, prev: 0 },
-                { day: '29 abr', actual: 0, prev: 0 },
-                { day: '30 abr', actual: 0, prev: 10000 },
-                { day: '1 may', actual: 0, prev: 0 },
-                { day: '2 may', actual: 0, prev: 0 },
-                { day: '3 may', actual: 82444, prev: 0 },
-                { day: '4 may', actual: 0, prev: 0 },
-              ]}>
+              <LineChart data={promoData?.chartData ?? []}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9CA3AF' }} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9CA3AF' }} tickFormatter={(v) => v > 0 ? `$${(v/1000).toFixed(0)}k` : ''} />
@@ -778,7 +827,7 @@ export default function MetricasView() {
               />
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-xs text-gray-500">8 promociones</span>
+              <span className="text-xs text-gray-500">{promoData?.campaigns?.length ?? 0} promociones</span>
               <button className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700">
                 <Download size={14} />
                 Descargar reporte
@@ -800,31 +849,26 @@ export default function MetricasView() {
                 </tr>
               </thead>
               <tbody>
-                {[
-                  { name: 'Lo mejor para tu Hogar 2', dates: 'Del 30 de marzo al 28 de junio', visits: 13, sales: '-', conversion: '0%', units: '-', revenue: '-', active: true },
-                  { name: 'DESCUENTOS 5.5', dates: 'Del 18 de abril al 5 de mayo', visits: 41, sales: '-', conversion: '0%', units: '-', revenue: '-', active: true },
-                  { name: 'Potencia tus ventas Abril', dates: 'Del 4 de abril al 5 de mayo', visits: 70, sales: 1, conversion: '1,4%', units: 1, revenue: '$ 82.444,3', active: true },
-                  { name: 'Hace crecer tus ventas Abril', dates: 'Del 4 de abril al 5 de mayo', visits: 22, sales: '-', conversion: '0%', units: '-', revenue: '-', active: true },
-                  { name: 'Oferta relámpago Para MADSJEEZ', dates: '30 de abril de 15 a las 21 hs', visits: 48, sales: '-', conversion: '0%', units: '-', revenue: '-', active: false },
-                  { name: 'Ofertas Const e Ind Abril', dates: 'Del 31 de marzo al 30 de abril', visits: 2, sales: '-', conversion: '0%', units: '-', revenue: '-', active: false },
-                  { name: 'TIER_3', dates: 'Contiene fechas específicas', visits: 11, sales: '-', conversion: '0%', units: '-', revenue: '-', active: false },
-                  { name: 'Oferta relámpago', dates: 'Contiene fechas específicas', visits: 9, sales: '-', conversion: '0%', units: '-', revenue: '-', active: false },
-                ].map((promo, i) => (
+                {promoData === null && tabLoading !== 'promociones' ? (
+                  <tr><td colSpan={6} className="p-8 text-center text-sm text-gray-400">Sin datos para el período</td></tr>
+                ) : (promoData?.campaigns ?? []).length === 0 && tabLoading !== 'promociones' ? (
+                  <tr><td colSpan={6} className="p-8 text-center text-sm text-gray-400">No hay campañas activas</td></tr>
+                ) : (promoData?.campaigns ?? []).map((promo: any, i: number) => (
                   <tr key={i} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="p-3">
                       <div className="flex flex-col gap-1">
                         {promo.active && (
                           <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold text-white bg-green-500 w-fit">ACTIVA</span>
                         )}
-                        <span className="text-xs text-gray-400">{promo.dates}</span>
-                        <span className="text-sm font-medium text-gray-800">{promo.name}</span>
+                        <span className="text-xs text-gray-400">{promo.dates ?? promo.dateRange ?? ''}</span>
+                        <span className="text-sm font-medium text-gray-800">{promo.name ?? promo.title ?? ''}</span>
                       </div>
                     </td>
-                    <td className="p-3 text-center text-sm text-gray-800">{promo.visits}</td>
-                    <td className="p-3 text-center text-sm text-gray-400">{promo.sales}</td>
-                    <td className="p-3 text-center text-sm text-gray-800">{promo.conversion}</td>
-                    <td className="p-3 text-center text-sm text-gray-400">{promo.units}</td>
-                    <td className="p-3 text-center text-sm text-gray-800 font-medium">{promo.revenue}</td>
+                    <td className="p-3 text-center text-sm text-gray-800">{promo.visits ?? '—'}</td>
+                    <td className="p-3 text-center text-sm text-gray-400">{promo.sales ?? '—'}</td>
+                    <td className="p-3 text-center text-sm text-gray-800">{promo.conversion ?? promo.conversionRate ?? '—'}</td>
+                    <td className="p-3 text-center text-sm text-gray-400">{promo.units ?? promo.unitsSold ?? '—'}</td>
+                    <td className="p-3 text-center text-sm text-gray-800 font-medium">{promo.revenue != null ? ars(promo.revenue) : '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -836,6 +880,10 @@ export default function MetricasView() {
       {/* === COSTOS === */}
       {activeTab === 'costos' && (
         <>
+          {tabLoading === 'costos' && (
+            <div className="flex items-center justify-center py-12 text-sm text-gray-400">Cargando costos…</div>
+          )}
+
           {/* Resumen circular */}
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <div className="flex items-center gap-8">
@@ -850,28 +898,27 @@ export default function MetricasView() {
                 <div className="flex items-center gap-1 text-xs font-semibold text-gray-500 mb-1">
                   Ventas concretadas <Info size={12} className="text-gray-400" />
                 </div>
-                <div className="text-2xl font-black text-gray-800">$ 5.614.345 <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">+ 51.9%</span></div>
+                <div className="text-2xl font-black text-gray-800">{ars(costData?.summary?.totalSales ?? 0)}</div>
                 <button className="text-blue-600 text-xs font-medium hover:underline mt-1">Ir a detalle</button>
               </div>
               <div className="flex gap-8">
                 <div>
                   <div className="flex items-center gap-1 text-xs text-gray-500 mb-1"><span className="w-2 h-2 rounded-full bg-purple-500"></span> Cargos e inversiones <Info size={12} className="text-gray-400" /></div>
-                  <div className="text-lg font-bold text-gray-800">- $ 3.336.520 <span className="text-xs text-gray-400">59.4%</span></div>
+                  <div className="text-lg font-bold text-gray-800">- {ars(costData?.summary?.totalCosts ?? 0)}</div>
                 </div>
                 <div>
                   <div className="flex items-center gap-1 text-xs text-gray-500 mb-1"><span className="w-2 h-2 rounded-full bg-blue-500"></span> Impuestos <Info size={12} className="text-gray-400" /></div>
-                  <div className="text-lg font-bold text-gray-800">- $ 264.161 <span className="text-xs text-gray-400">4.7%</span></div>
+                  <div className="text-lg font-bold text-gray-800">- {ars(costData?.summary?.taxTotal ?? 0)}</div>
                 </div>
                 <div>
                   <div className="flex items-center gap-1 text-xs text-gray-500 mb-1"><span className="w-2 h-2 rounded-full bg-green-500"></span> Recibiste <Info size={12} className="text-gray-400" /></div>
-                  <div className="text-lg font-bold text-gray-800">$ 2.013.664 <span className="text-xs text-gray-400">35.9%</span></div>
+                  <div className="text-lg font-bold text-gray-800">{ars(costData?.summary?.received ?? 0)}</div>
                 </div>
               </div>
             </div>
-            <div className="mt-4 p-3 bg-green-50 rounded-lg">
-              <span className="text-xs text-green-700 font-medium">Beneficios:</span>
-              <span className="text-xs text-green-700"> Durante este período tuviste descuentos y/o bonificaciones. </span>
-              <button className="text-blue-600 text-xs font-medium hover:underline">Revisar</button>
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg flex items-center gap-3">
+              <Info size={14} className="text-blue-500 flex-shrink-0" />
+              <span className="text-xs text-blue-700 font-medium">0% Comisión — Madsjeez no cobra comisión adicional sobre tus ventas de MercadoLibre.</span>
             </div>
           </div>
 
@@ -882,40 +929,29 @@ export default function MetricasView() {
               <div className="flex items-center gap-1 text-xs font-semibold text-gray-500 mb-2">
                 Cargos, inversiones e impuestos <Info size={12} className="text-gray-400" />
               </div>
-              <div className="text-2xl font-black text-gray-800 mb-6">$ 3.600.680</div>
-              <div className="space-y-3">
-                {[
-                  { label: 'Cargos por venta totales', pct: '42.5%', color: 'bg-purple-500', width: '42.5%' },
-                  { label: 'Inversión en Publicidad', pct: '37.2%', color: 'bg-purple-400', width: '37.2%' },
-                  { label: 'Percepciones', pct: '6.6%', color: 'bg-orange-400', width: '6.6%' },
-                  { label: 'Costos de envío', pct: '9.9%', color: 'bg-purple-300', width: '9.9%' },
-                  { label: 'Cargos por envíos Full', pct: '1.5%', color: 'bg-purple-200', width: '1.5%' },
-                  { label: 'Otros cargos', pct: '0.9%', color: 'bg-purple-200', width: '0.9%' },
-                  { label: 'Retenciones', pct: '0.7%', color: 'bg-orange-300', width: '0.7%' },
-                  { label: 'Cargos por devolución', pct: '0.6%', color: 'bg-purple-200', width: '0.6%' },
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <div className="w-48 text-xs text-gray-600 text-right truncate">{item.label}</div>
-                    <div className="flex-1 h-6 bg-gray-100 rounded overflow-hidden">
-                      <div className={`h-full ${item.color} rounded`} style={{ width: item.width }}></div>
-                    </div>
-                    <div className="w-12 text-xs font-semibold text-gray-700">{item.pct}</div>
-                  </div>
-                ))}
+              <div className="text-2xl font-black text-gray-800 mb-6">
+                {ars((costData?.summary?.totalCosts ?? 0) + (costData?.summary?.taxTotal ?? 0))}
               </div>
-              <div className="flex items-center gap-4 mt-6 pt-4 border-t border-gray-100">
-                {[
-                  { label: 'Cargos por venta', color: 'bg-purple-500' },
-                  { label: 'Costos de envío', color: 'bg-purple-300' },
-                  { label: 'Cargos por otros servicios', color: 'bg-purple-200' },
-                  { label: 'Inversión en Publicidad', color: 'bg-purple-400' },
-                  { label: 'Impuestos', color: 'bg-orange-400' },
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-1">
-                    <span className={`w-3 h-3 rounded-full ${item.color}`}></span>
-                    <span className="text-[10px] text-gray-500">{item.label}</span>
-                  </div>
-                ))}
+              <div className="space-y-3">
+                {(costData?.costDistribution ?? []).length > 0 ? (
+                  (costData?.costDistribution ?? []).map((item: any, i: number) => {
+                    const colors = ['bg-purple-500','bg-purple-400','bg-orange-400','bg-purple-300','bg-purple-200','bg-orange-300','bg-purple-200','bg-gray-300']
+                    const total = (costData?.costDistribution ?? []).reduce((s: number, x: any) => s + (x.amount ?? x.value ?? 0), 0)
+                    const val = item.amount ?? item.value ?? 0
+                    const pct = total > 0 ? ((val / total) * 100).toFixed(1) : '0'
+                    return (
+                      <div key={i} className="flex items-center gap-3">
+                        <div className="w-48 text-xs text-gray-600 text-right truncate">{item.label ?? item.name ?? ''}</div>
+                        <div className="flex-1 h-6 bg-gray-100 rounded overflow-hidden">
+                          <div className={`h-full ${colors[i % colors.length]} rounded`} style={{ width: `${pct}%` }}></div>
+                        </div>
+                        <div className="w-12 text-xs font-semibold text-gray-700">{pct}%</div>
+                      </div>
+                    )
+                  })
+                ) : (
+                  <p className="text-sm text-gray-400 text-center py-4">Sin datos para el período</p>
+                )}
               </div>
             </div>
           </div>
@@ -937,7 +973,7 @@ export default function MetricasView() {
                   className="pl-9 pr-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 w-64 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
-              <span className="text-xs text-gray-500">266 publicaciones</span>
+              <span className="text-xs text-gray-500">{costData?.topProducts?.length ?? 0} publicaciones</span>
             </div>
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
               <table className="w-full text-sm">
@@ -953,34 +989,27 @@ export default function MetricasView() {
                   </tr>
                 </thead>
                 <tbody>
-                  {[
-                    { sku: '#3112842870', title: 'Tapa De Arranque Cortacesped 3.5 Hp 4...', price: '$33.000', sales: '$ 33.849', qty: '1 u.', costs: '- $ 7.689', tax: '$ 0', received: '$ 26.160', rent: '77.3%', img: '/placeholder.svg' },
-                    { sku: '#2762315998', title: 'Amoladora Angular Gamma 850w - G1917ar Celeste 50...', price: '$103.515,50', sales: '$ 83.093', qty: '1 u.', costs: '- $ 19.210', tax: '$ 0', received: '$ 63.884', rent: '76.9%', img: '/placeholder.svg', catalog: true },
-                    { sku: '#2708560344', title: 'Tapa Arranque Fácil Desmalezadora Chines...', price: '$35.999', sales: '$ 36.848', qty: '1 u.', costs: '- $ 8.388', tax: '- $ 728', received: '$ 27.732', rent: '75.3%', img: '/placeholder.svg', full: true },
-                    { sku: '#1684180971', title: 'Arco Sierra Mini 300mm 12 Pulgadas Premium Alta...', price: '$33.000', sales: '$ 33.849', qty: '1 u.', costs: '- $ 7.755', tax: '- $ 673', received: '$ 25.421', rent: '75.1%', img: '/placeholder.svg' },
-                    { sku: '#2378214276', title: 'Tapa Arranque Moño Desmalezadora...', price: '$14.999', sales: '$ 38.498', qty: '2 u.', costs: '- $ 9.500', tax: '- $ 157', received: '$ 28.841', rent: '74.9%', img: '/placeholder.svg', full: true },
-                    { sku: '#2747600680', title: '50 Bolsas De Consorcio Residuos 80x110 Reforzade...', price: '$49.699', sales: '$ 140.846', qty: '5 u.', costs: '- $ 36.819', tax: '- $ 525', received: '$ 103.502', rent: '73.5%', img: '/placeholder.svg' },
-                  ].map((pub, i) => (
+                  {(costData?.topProducts ?? []).length === 0 && tabLoading !== 'costos' ? (
+                    <tr><td colSpan={7} className="p-8 text-center text-sm text-gray-400">Sin datos para el período</td></tr>
+                  ) : (costData?.topProducts ?? []).map((pub: any, i: number) => (
                     <tr key={i} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="p-3">
                         <div className="flex items-center gap-3">
-                          {pub.catalog && <span className="px-1.5 py-0.5 bg-blue-600 text-white text-[10px] font-bold rounded">CATÁLOGO</span>}
                           <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
-                            <img src={pub.img} alt="" className="w-full h-full object-cover" />
+                            <img src={pub.img ?? '/placeholder.svg'} alt="" className="w-full h-full object-cover" />
                           </div>
                           <div>
-                            <div className="text-xs text-gray-400 flex items-center gap-1">{pub.sku} <Info size={10} /></div>
-                            <div className="text-sm font-medium text-gray-800 max-w-[200px] truncate">{pub.title}</div>
-                            <div className="text-xs text-gray-500">{pub.price} | 3 cuo... | Envío gr...</div>
-                            <div className="text-[10px] text-gray-400">{pub.full ? '$ FULL | ' : ''}MERCADO ENVÍOS FLEX</div>
+                            <div className="text-xs text-gray-400 flex items-center gap-1">{pub.sku ?? pub.id ?? ''} <Info size={10} /></div>
+                            <div className="text-sm font-medium text-gray-800 max-w-[200px] truncate">{pub.title ?? pub.name ?? ''}</div>
+                            <div className="text-xs text-gray-500">{pub.price != null ? ars(pub.price) : ''}</div>
                           </div>
                         </div>
                       </td>
-                      <td className="p-3 text-center text-sm text-gray-800">{pub.sales}<div className="text-xs text-gray-400">{pub.qty}</div></td>
-                      <td className="p-3 text-center text-sm text-gray-800">{pub.costs}</td>
-                      <td className="p-3 text-center text-sm text-gray-800">{pub.tax}</td>
-                      <td className="p-3 text-center text-sm text-gray-800 font-medium">{pub.received}</td>
-                      <td className="p-3 text-center text-sm text-gray-800">{pub.rent}</td>
+                      <td className="p-3 text-center text-sm text-gray-800">{pub.sales != null ? ars(pub.sales) : '—'}<div className="text-xs text-gray-400">{pub.qty != null ? `${pub.qty} u.` : ''}</div></td>
+                      <td className="p-3 text-center text-sm text-gray-800">{pub.costs != null ? `- ${ars(pub.costs)}` : '—'}</td>
+                      <td className="p-3 text-center text-sm text-gray-800">{pub.tax != null ? (pub.tax === 0 ? '$ 0' : `- ${ars(pub.tax)}`) : '—'}</td>
+                      <td className="p-3 text-center text-sm text-gray-800 font-medium">{pub.received != null ? ars(pub.received) : '—'}</td>
+                      <td className="p-3 text-center text-sm text-gray-800">{pub.rentability != null ? `${pub.rentability}%` : '—'}</td>
                       <td className="p-3 text-right">
                         <div className="flex items-center gap-2 justify-end">
                           <button className="text-blue-600 text-xs font-medium hover:underline">Ir a detalle</button>
@@ -992,18 +1021,6 @@ export default function MetricasView() {
                 </tbody>
               </table>
             </div>
-            {/* Pagination */}
-            <div className="p-4 flex items-center justify-center gap-1">
-              <button className="w-8 h-8 flex items-center justify-center bg-blue-600 text-white text-sm font-semibold rounded-lg">1</button>
-              {[2,3,4,5,6,7,8,9].map(n => (
-                <button key={n} className="w-8 h-8 flex items-center justify-center text-gray-500 text-sm hover:bg-gray-100 rounded-lg">{n}</button>
-              ))}
-              <span className="text-gray-400 px-2">...</span>
-              <button className="w-8 h-8 flex items-center justify-center text-gray-500 text-sm hover:bg-gray-100 rounded-lg">27</button>
-              <button className="flex items-center gap-1 px-3 py-1.5 text-gray-500 text-sm hover:bg-gray-100 rounded-lg">
-                Siguiente <ChevronRight size={14} />
-              </button>
-            </div>
           </div>
         </>
       )}
@@ -1011,6 +1028,10 @@ export default function MetricasView() {
       {/* === ATENCIÓN A TUS COMPRADORES === */}
       {activeTab === 'atencion' && (
         <>
+          {tabLoading === 'atencion' && (
+            <div className="flex items-center justify-center py-12 text-sm text-gray-400">Cargando datos de atención…</div>
+          )}
+
           {/* Sub-tabs */}
           <div className="flex gap-4 border-b border-gray-200">
             <button
@@ -1064,32 +1085,37 @@ export default function MetricasView() {
                       Principales tipos de problemas <Info size={12} className="text-gray-400" />
                     </div>
                     <div className="space-y-3">
-                      {[
-                        { label: 'Con el producto entregado', value: 2, color: 'bg-indigo-500', max: 5 },
-                        { label: 'Al gestionar o preparar la venta', value: 1, color: 'bg-pink-400', max: 5 },
-                        { label: 'Por otros motivos', value: 0, color: 'bg-gray-300', max: 5 },
-                        { label: 'Porque el comprador se arrepintió', value: 0, color: 'bg-gray-300', max: 5 },
-                        { label: 'Al despachar o entregar el producto', value: 0, color: 'bg-gray-300', max: 5 },
-                      ].map((item, i) => (
-                        <div key={i} className="flex items-center gap-3">
-                          <div className="w-48 text-xs text-gray-600 text-right truncate">{item.label}</div>
-                          <div className="flex-1 h-5 bg-gray-100 rounded overflow-hidden">
-                            <div className={`h-full ${item.color} rounded`} style={{ width: `${(item.value / item.max) * 100}%`, minWidth: item.value > 0 ? '8px' : '0' }}></div>
-                          </div>
-                          <div className="w-6 text-xs font-semibold text-gray-700 text-right">{item.value}</div>
-                        </div>
-                      ))}
+                      {(atencionData?.claimsByType ?? []).length > 0 ? (
+                        (() => {
+                          const maxVal = Math.max(1, ...(atencionData?.claimsByType ?? []).map((x: any) => x.count ?? x.value ?? 0))
+                          const colors = ['bg-indigo-500','bg-pink-400','bg-gray-300','bg-gray-300','bg-gray-300']
+                          return (atencionData?.claimsByType ?? []).map((item: any, i: number) => {
+                            const val = item.count ?? item.value ?? 0
+                            return (
+                              <div key={i} className="flex items-center gap-3">
+                                <div className="w-48 text-xs text-gray-600 text-right truncate">{item.label ?? item.type ?? item.name ?? ''}</div>
+                                <div className="flex-1 h-5 bg-gray-100 rounded overflow-hidden">
+                                  <div className={`h-full ${colors[i % colors.length]} rounded`} style={{ width: `${(val / maxVal) * 100}%`, minWidth: val > 0 ? '8px' : '0' }}></div>
+                                </div>
+                                <div className="w-6 text-xs font-semibold text-gray-700 text-right">{val}</div>
+                              </div>
+                            )
+                          })
+                        })()
+                      ) : (
+                        <p className="text-sm text-gray-400 py-2">Sin datos para el período</p>
+                      )}
                     </div>
                   </div>
                   <div className="w-px h-40 bg-gray-100 mx-4"></div>
                   <div className="flex flex-col gap-4">
                     <div className="text-center">
-                      <div className="text-sm font-semibold text-gray-800">3</div>
+                      <div className="text-sm font-semibold text-gray-800">{atencionData?.summary?.totalClaims ?? 0}</div>
                       <div className="text-xs text-gray-500">problemas</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-sm font-semibold text-gray-800">3</div>
-                      <div className="text-xs text-gray-500">ventas afectadas</div>
+                      <div className="text-sm font-semibold text-gray-800">{atencionData?.summary?.openClaims ?? 0}</div>
+                      <div className="text-xs text-gray-500">abiertos</div>
                     </div>
                   </div>
                 </div>
@@ -1108,19 +1134,8 @@ export default function MetricasView() {
                     <div className="flex items-center gap-1 text-xs font-semibold text-gray-500 mb-2">
                       Reclamos <Info size={12} className="text-gray-400" />
                     </div>
-                    <div className="text-2xl font-black text-gray-800">0,77% <span className="text-xs font-semibold text-green-600">+ 0,43 puntos</span></div>
-                    <div className="text-xs text-gray-400 mt-1">3 ventas</div>
-                    <div className="mt-4 flex items-center justify-center">
-                      <svg viewBox="0 0 100 100" className="w-16 h-16 -rotate-90">
-                        <circle cx="50" cy="50" r="40" fill="none" stroke="#E5E7EB" strokeWidth="10" />
-                        <circle cx="50" cy="50" r="40" fill="none" stroke="#3B82F6" strokeWidth="10" strokeDasharray="150 101" strokeLinecap="round" />
-                      </svg>
-                      <div className="absolute ml-20 mt-0 space-y-1">
-                        <div className="flex items-center gap-1 text-[10px] text-gray-500"><span className="w-2 h-2 rounded-full bg-blue-500"></span> En ventas concretadas</div>
-                        <div className="flex items-center gap-1 text-[10px] text-gray-500"><span className="w-2 h-2 rounded-full bg-blue-400"></span> Con devolución</div>
-                        <div className="flex items-center gap-1 text-[10px] text-gray-500"><span className="w-2 h-2 rounded-full bg-blue-300"></span> Con cancelación</div>
-                      </div>
-                    </div>
+                    <div className="text-2xl font-black text-gray-800">{atencionData?.summary?.claimRate != null ? `${atencionData.summary.claimRate}%` : '0%'}</div>
+                    <div className="text-xs text-gray-400 mt-1">{atencionData?.summary?.totalClaims ?? 0} ventas</div>
                   </div>
 
                   {/* Cancelaciones */}
@@ -1128,25 +1143,17 @@ export default function MetricasView() {
                     <div className="flex items-center gap-1 text-xs font-semibold text-gray-500 mb-2">
                       Cancelaciones <Info size={12} className="text-gray-400" />
                     </div>
-                    <div className="text-2xl font-black text-gray-800">0% <span className="text-xs font-semibold text-gray-400">0 puntos</span></div>
-                    <div className="text-xs text-gray-400 mt-1">0 ventas</div>
-                    <div className="mt-4 flex items-center justify-center">
-                      <svg viewBox="0 0 100 100" className="w-16 h-16 -rotate-90">
-                        <circle cx="50" cy="50" r="40" fill="none" stroke="#E5E7EB" strokeWidth="10" />
-                      </svg>
-                      <div className="absolute ml-20 mt-0">
-                        <div className="flex items-center gap-1 text-[10px] text-gray-500"><span className="w-2 h-2 rounded-full bg-gray-300"></span> Por vos</div>
-                      </div>
-                    </div>
+                    <div className="text-2xl font-black text-gray-800">{atencionData?.summary?.cancellationRate != null ? `${atencionData.summary.cancellationRate}%` : '0%'}</div>
+                    <div className="text-xs text-gray-400 mt-1">{atencionData?.summary?.canceledOrders ?? 0} ventas</div>
                   </div>
 
-                  {/* Mediaciones */}
+                  {/* Demoras */}
                   <div className="bg-white rounded-xl border border-gray-200 p-5">
                     <div className="flex items-center gap-1 text-xs font-semibold text-gray-500 mb-2">
-                      Mediaciones <Info size={12} className="text-gray-400" />
+                      Envíos demorados <Info size={12} className="text-gray-400" />
                     </div>
-                    <div className="text-2xl font-black text-gray-800">0% <span className="text-xs font-semibold text-green-600">+ 0,06 puntos</span></div>
-                    <div className="text-xs text-gray-400 mt-1">0 ventas</div>
+                    <div className="text-2xl font-black text-gray-800">{atencionData?.summary?.delayRate != null ? `${atencionData.summary.delayRate}%` : '0%'}</div>
+                    <div className="text-xs text-gray-400 mt-1">{atencionData?.summary?.delayedCount ?? 0} envíos</div>
                   </div>
 
                   {/* Devoluciones + Cambios */}
@@ -1161,11 +1168,9 @@ export default function MetricasView() {
                     </div>
                     <div className="bg-white rounded-xl border border-gray-200 p-5">
                       <div className="flex items-center gap-1 text-xs font-semibold text-gray-500 mb-2">
-                        Cambios <Info size={12} className="text-gray-400" />
+                        Órdenes totales <Info size={12} className="text-gray-400" />
                       </div>
-                      <p className="text-xs text-gray-500 leading-relaxed">
-                        Ocultamos esta métrica porque no está afectando tu color actual de reputación.
-                      </p>
+                      <div className="text-xl font-black text-gray-800">{n(atencionData?.summary?.totalOrders ?? 0)}</div>
                     </div>
                   </div>
                 </div>
@@ -1249,30 +1254,22 @@ export default function MetricasView() {
                     </tr>
                   </thead>
                   <tbody>
-                    {[
-                      { id: '#200016031484498', date: 'vie, 17/abr/2026 15:40 hs', product: 'Tope Guia Cadena Y Reso...', service: 'Correos', maxDate: 'lun. 20/abr/2026 23:59 hs', shipDate: 'jue. 23/abr/2026 11:37 hs', rep: 'Afectada' },
-                      { id: '#200016031488112', date: 'vie, 17/abr/2026 15:40 hs', product: 'Aceite Lubricante Para Ca...', service: 'Correos', maxDate: 'lun. 20/abr/2026 23:59 hs', shipDate: 'jue. 23/abr/2026 11:37 hs', rep: 'Afectada' },
-                      { id: '#200015962501570', date: 'lun, 13/abr/2026 11:55 hs', product: 'Caretel Autocut Stihl Neg...', service: 'Envíos Flex', maxDate: 'mar. 14/abr/2026 21 hs', shipDate: 'No lo despachaste', rep: 'Afectada' },
-                      { id: '#200015934617476', date: 'sáb. 11/abr/2026 09:26 hs', product: 'Caja Reductora Engranaje...', service: 'Correos', maxDate: 'lun. 20/abr/2026 23:59 hs', shipDate: 'mar. 21/abr/2026 10:12 hs', rep: 'Afectada' },
-                      { id: '#200015846361104', date: 'dom, 05/abr/2026 14:19 hs', product: 'Tanza Bordeadora Desmal...', service: 'Correos', maxDate: 'lun. 06/abr/2026 23:59 hs', shipDate: 'mar. 07/abr/2026 07:54 hs', rep: 'Afectada' },
-                      { id: '#200015846357612', date: 'dom, 05/abr/2026 14:19 hs', product: 'Tope Guia Cadena Y Reso...', service: 'Correos', maxDate: 'lun. 06/abr/2026 23:59 hs', shipDate: 'mar. 07/abr/2026 07:54 hs', rep: 'Afectada' },
-                      { id: '#200015846357614', date: 'dom, 05/abr/2026 14:19 hs', product: 'Cubrevalienta Motosierra...', service: 'Correos', maxDate: 'lun. 06/abr/2026 23:59 hs', shipDate: 'mar. 07/abr/2026 07:54 hs', rep: 'Afectada' },
-                      { id: '#200015846368340', date: 'dom, 05/abr/2026 14:19 hs', product: 'Ojal De Bronce Universal...', service: 'Correos', maxDate: 'lun. 06/abr/2026 23:59 hs', shipDate: 'mar. 07/abr/2026 07:54 hs', rep: 'Afectada' },
-                      { id: '#200015838736530', date: 'sáb. 04/abr/2026 18:48 hs', product: 'Tapón Cebador Para Term...', service: 'Correos', maxDate: 'lun. 06/abr/2026 23:59 hs', shipDate: 'mar. 07/abr/2026 07:53 hs', rep: 'Afectada' },
-                    ].map((row, i) => (
+                    {(atencionData?.delayedShipments ?? []).length === 0 && tabLoading !== 'atencion' ? (
+                      <tr><td colSpan={6} className="p-8 text-center text-sm text-gray-400">Sin envíos incorrectos para el período</td></tr>
+                    ) : (atencionData?.delayedShipments ?? []).map((row: any, i: number) => (
                       <tr key={i} className="border-b border-gray-100 hover:bg-gray-50">
                         <td className="p-3">
-                          <div className="text-xs text-blue-600 font-medium">{row.id}</div>
-                          <div className="text-xs text-gray-400">{row.date}</div>
+                          <div className="text-xs text-blue-600 font-medium">{row.id ?? row.orderId ?? '—'}</div>
+                          <div className="text-xs text-gray-400">{row.date ?? ''}</div>
                         </td>
-                        <td className="p-3 text-xs text-gray-700 truncate max-w-[180px]">{row.product}</td>
-                        <td className="p-3 text-xs text-gray-700">{row.service}</td>
-                        <td className="p-3 text-xs text-gray-700">{row.maxDate}</td>
-                        <td className="p-3 text-xs text-gray-700">{row.shipDate}</td>
+                        <td className="p-3 text-xs text-gray-700 truncate max-w-[180px]">{row.product ?? row.title ?? '—'}</td>
+                        <td className="p-3 text-xs text-gray-700">{row.service ?? row.shippingService ?? '—'}</td>
+                        <td className="p-3 text-xs text-gray-700">{row.maxDate ?? row.deadline ?? '—'}</td>
+                        <td className="p-3 text-xs text-gray-700">{row.shipDate ?? row.shippedAt ?? 'No despachado'}</td>
                         <td className="p-3">
                           <div className="flex items-center gap-1.5">
                             <span className="w-2 h-2 rounded-full bg-red-500"></span>
-                            <span className="text-xs text-gray-700 font-medium">{row.rep}</span>
+                            <span className="text-xs text-gray-700 font-medium">{row.rep ?? row.reputation ?? 'Afectada'}</span>
                           </div>
                         </td>
                       </tr>
@@ -1288,6 +1285,10 @@ export default function MetricasView() {
       {/* === DESEMPEÑO EN ENVÍOS === */}
       {activeTab === 'envios' && (
         <>
+          {tabLoading === 'envios' && (
+            <div className="flex items-center justify-center py-12 text-sm text-gray-400">Cargando envíos…</div>
+          )}
+
           {/* Sub-tabs */}
           <div className="flex gap-4 border-b border-gray-200">
             <button
@@ -1308,6 +1309,36 @@ export default function MetricasView() {
           <div className="flex items-center justify-end gap-4">
             <button className="text-blue-600 text-sm font-medium hover:underline">Descargar reporte de envíos</button>
             <button className="text-blue-600 text-sm font-medium hover:underline">Necesito ayuda</button>
+          </div>
+
+          {/* Resumen de envíos */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-white rounded-xl border border-gray-200 p-5">
+              <div className="flex items-center gap-1 text-xs font-semibold text-gray-500 mb-1">
+                Total envíos <Info size={12} className="text-gray-400" />
+              </div>
+              <div className="text-xl font-black text-gray-800">{n(enviosData?.summary?.totalShipments ?? 0)}</div>
+            </div>
+            <div className="bg-white rounded-xl border border-gray-200 p-5">
+              <div className="flex items-center gap-1 text-xs font-semibold text-gray-500 mb-1">
+                A tiempo <Info size={12} className="text-gray-400" />
+              </div>
+              <div className="text-xl font-black text-green-600">{enviosData?.summary?.onTimePct != null ? `${enviosData.summary.onTimePct}%` : '—'}</div>
+              <div className="text-xs text-gray-400 mt-1">{n(enviosData?.summary?.onTime ?? 0)} envíos</div>
+            </div>
+            <div className="bg-white rounded-xl border border-gray-200 p-5">
+              <div className="flex items-center gap-1 text-xs font-semibold text-gray-500 mb-1">
+                Demorados <Info size={12} className="text-gray-400" />
+              </div>
+              <div className="text-xl font-black text-red-500">{n(enviosData?.summary?.delayed ?? 0)}</div>
+              <div className="text-xs text-gray-400 mt-1">{enviosData?.summary?.delayRate != null ? `${enviosData.summary.delayRate}%` : '—'} tasa</div>
+            </div>
+            <div className="bg-white rounded-xl border border-gray-200 p-5">
+              <div className="flex items-center gap-1 text-xs font-semibold text-gray-500 mb-1">
+                Envíos Flash <Info size={12} className="text-gray-400" />
+              </div>
+              <div className="text-xl font-black text-gray-800">{n(enviosData?.summary?.flashCount ?? 0)}</div>
+            </div>
           </div>
 
           {/* Exposure cards */}
@@ -1411,11 +1442,7 @@ export default function MetricasView() {
               Historial de tus envíos en las últimas semanas <Info size={14} className="text-gray-400" />
             </div>
             <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={[
-                { week: '15 abr - 18 abr', correct: 95, anticipados: 3, incSafe: 1, incBad: 1 },
-                { week: '20 abr - 24 abr', correct: 88, anticipados: 5, incSafe: 4, incBad: 3 },
-                { week: '27 abr - 1 may', correct: 91, anticipados: 2, incSafe: 2, incBad: 5 },
-              ]} barCategoryGap="20%">
+              <BarChart data={enviosData?.weeklyData ?? []} barCategoryGap="20%">
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
                 <XAxis dataKey="week" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9CA3AF' }} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9CA3AF' }} />
@@ -1457,19 +1484,127 @@ export default function MetricasView() {
 
       {/* === STOCK FULL === */}
       {activeTab === 'stock' && (
-        <div className="bg-white rounded-xl border border-gray-200 p-20 text-center">
-          <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Package size={32} className="text-blue-500" />
+        <>
+          {tabLoading === 'stock' && (
+            <div className="flex items-center justify-center py-12 text-sm text-gray-400">Cargando stock…</div>
+          )}
+
+          {/* Metric cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-white p-5 rounded-xl border border-gray-200">
+              <div className="flex items-center gap-1 text-xs font-semibold text-gray-500 mb-1">
+                Total publicaciones <Info size={12} className="text-gray-400" />
+              </div>
+              <div className="text-xl font-black text-gray-800">{n(stockData?.summary?.total ?? 0)}</div>
+            </div>
+            <div className="bg-white p-5 rounded-xl border border-gray-200">
+              <div className="flex items-center gap-1 text-xs font-semibold text-gray-500 mb-1">
+                Sin stock <Info size={12} className="text-gray-400" />
+              </div>
+              <div className="text-xl font-black text-red-500">{n(stockData?.summary?.outOfStock ?? 0)}</div>
+            </div>
+            <div className="bg-white p-5 rounded-xl border border-gray-200">
+              <div className="flex items-center gap-1 text-xs font-semibold text-gray-500 mb-1">
+                Stock crítico <Info size={12} className="text-gray-400" />
+              </div>
+              <div className="text-xl font-black text-orange-500">{n(stockData?.summary?.critical ?? 0)}</div>
+            </div>
+            <div className="bg-white p-5 rounded-xl border border-gray-200">
+              <div className="flex items-center gap-1 text-xs font-semibold text-gray-500 mb-1">
+                Stock bajo <Info size={12} className="text-gray-400" />
+              </div>
+              <div className="text-xl font-black text-yellow-600">{n(stockData?.summary?.lowStock ?? 0)}</div>
+            </div>
           </div>
-          <h3 className="text-lg font-semibold text-gray-800 mb-2">Stock Full</h3>
-          <p className="text-sm text-gray-500 mb-1">Próximamente</p>
-          <p className="text-xs text-gray-400 max-w-md mx-auto">Asignación y estimación de tu espacio, espacio de almacenamiento y gestión de stock.</p>
-        </div>
+
+          {/* Additional summary */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="bg-white p-5 rounded-xl border border-gray-200">
+              <div className="text-xs font-semibold text-gray-500 mb-1">Unidades totales</div>
+              <div className="text-xl font-black text-gray-800">{n(stockData?.summary?.totalUnits ?? 0)}</div>
+            </div>
+            <div className="bg-white p-5 rounded-xl border border-gray-200">
+              <div className="text-xs font-semibold text-gray-500 mb-1">Valor en stock</div>
+              <div className="text-xl font-black text-gray-800">{ars(stockData?.summary?.totalStockValue ?? 0)}</div>
+            </div>
+            <div className="bg-white p-5 rounded-xl border border-gray-200">
+              <div className="text-xs font-semibold text-gray-500 mb-1">Publicaciones activas</div>
+              <div className="text-xl font-black text-green-600">{n(stockData?.summary?.active ?? 0)}</div>
+            </div>
+          </div>
+
+          {/* Alerts table */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-800 mb-4">Alertas de stock</h3>
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    <th className="text-left p-3 text-xs font-semibold text-gray-500 uppercase">Producto</th>
+                    <th className="text-center p-3 text-xs font-semibold text-gray-500 uppercase">Stock</th>
+                    <th className="text-center p-3 text-xs font-semibold text-gray-500 uppercase">Alerta</th>
+                    <th className="text-left p-3 text-xs font-semibold text-gray-500 uppercase">Categoría</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(stockData?.alerts ?? []).length === 0 && tabLoading !== 'stock' ? (
+                    <tr><td colSpan={4} className="p-8 text-center text-sm text-gray-400">Sin alertas de stock</td></tr>
+                  ) : (stockData?.alerts ?? []).map((alert: any, i: number) => (
+                    <tr key={i} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="p-3">
+                        <div className="text-sm font-medium text-gray-800 truncate max-w-[280px]">{alert.title ?? alert.name ?? '—'}</div>
+                        <div className="text-xs text-gray-400">{alert.sku ?? alert.id ?? ''}</div>
+                      </td>
+                      <td className="p-3 text-center text-sm text-gray-800">{alert.stock ?? alert.quantity ?? 0}</td>
+                      <td className="p-3 text-center">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold ${
+                          (alert.alertType ?? alert.level ?? '') === 'out_of_stock' ? 'bg-red-100 text-red-700' :
+                          (alert.alertType ?? alert.level ?? '') === 'critical' ? 'bg-orange-100 text-orange-700' :
+                          'bg-yellow-100 text-yellow-700'
+                        }`}>
+                          {alert.alertLabel ?? alert.alertType ?? alert.level ?? 'Bajo'}
+                        </span>
+                      </td>
+                      <td className="p-3 text-xs text-gray-600">{alert.category ?? '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* By category */}
+          {(stockData?.byCategory ?? []).length > 0 && (
+            <div>
+              <h3 className="text-sm font-semibold text-gray-800 mb-4">Distribución por categoría</h3>
+              <div className="space-y-3">
+                {(stockData?.byCategory ?? []).map((cat: any, i: number) => {
+                  const total = (stockData?.byCategory ?? []).reduce((s: number, x: any) => s + (x.count ?? x.total ?? 0), 0)
+                  const val = cat.count ?? cat.total ?? 0
+                  const pct = total > 0 ? Math.round((val / total) * 100) : 0
+                  return (
+                    <div key={i} className="flex items-center gap-3">
+                      <div className="w-40 text-xs text-gray-600 text-right truncate">{cat.category ?? cat.name ?? ''}</div>
+                      <div className="flex-1 h-5 bg-gray-100 rounded overflow-hidden">
+                        <div className="h-full bg-blue-500 rounded" style={{ width: `${pct}%` }}></div>
+                      </div>
+                      <div className="w-16 text-xs font-semibold text-gray-700 text-right">{val} ({pct}%)</div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* === ANÁLISIS DE MERCADO === */}
       {activeTab === 'mercado' && (
         <>
+          {tabLoading === 'mercado' && (
+            <div className="flex items-center justify-center py-12 text-sm text-gray-400">Cargando análisis de mercado…</div>
+          )}
+
           {/* Sub-tabs */}
           <div className="flex gap-4 border-b border-gray-200">
             <button
@@ -1507,28 +1642,61 @@ export default function MetricasView() {
             <button className="text-blue-600 text-sm font-medium hover:underline">Necesito ayuda</button>
           </div>
 
+          {/* Seller metrics + category cards */}
+          {mercadoData?.seller && (
+            <div className="bg-white rounded-xl border border-gray-200 p-5">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 rounded-full bg-amber-700 flex items-center justify-center text-white text-sm font-bold">
+                  {(mercadoData.seller.name ?? 'M').charAt(0)}
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-gray-800">{mercadoData.seller.name ?? '—'}</div>
+                  <div className="text-xs text-gray-500">{mercadoData.seller.reputationLevel ?? ''}</div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">Ventas totales</div>
+                  <div className="text-lg font-bold text-gray-800">{ars(mercadoData.seller.totalRevenue ?? 0)}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">Cantidad de ventas</div>
+                  <div className="text-lg font-bold text-gray-800">{n(mercadoData.seller.totalSales ?? 0)}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">Visitas mensuales</div>
+                  <div className="text-lg font-bold text-gray-800">{n(mercadoData.seller.monthlyViews ?? 0)}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">Conversión</div>
+                  <div className="text-lg font-bold text-gray-800">{mercadoData.seller.conversionRate ?? '—'}</div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Category cards */}
           <div className="bg-white rounded-xl border border-gray-200 p-4">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs text-gray-500">2 categorías</span>
+              <span className="text-xs text-gray-500">{(mercadoData?.byCategory ?? []).length} categorías</span>
               <button className="flex items-center gap-2 text-blue-600 text-xs font-medium hover:underline">
                 <Download size={14} />
                 Descargar reporte
               </button>
             </div>
-            <div className="flex gap-3">
-              <div className="flex-1 bg-gray-50 rounded-lg p-4 border border-gray-100 cursor-pointer hover:border-blue-300 transition-colors">
-                <div className="text-sm font-semibold text-gray-800 mb-1">Hogar, Muebles y Jardín</div>
-                <div className="text-xs text-gray-500">Ventas brutas totales</div>
-                <div className="text-sm font-bold text-gray-800">$ 284.970,54</div>
-                <div className="text-xs text-gray-500 mt-1">Cantidad de ventas: <span className="font-medium text-gray-700">9</span></div>
-              </div>
-              <div className="flex-1 bg-white rounded-lg p-4 border border-gray-100 cursor-pointer hover:border-blue-300 transition-colors">
-                <div className="text-sm font-semibold text-gray-800 mb-1">Herramientas</div>
-                <div className="text-xs text-gray-500">Ventas brutas totales</div>
-                <div className="text-sm font-bold text-gray-800">$ 101.293,2</div>
-                <div className="text-xs text-gray-500 mt-1">Cantidad de ventas: <span className="font-medium text-gray-700">3</span></div>
-              </div>
+            <div className="flex gap-3 flex-wrap">
+              {(mercadoData?.byCategory ?? []).length > 0 ? (
+                (mercadoData?.byCategory ?? []).map((cat: any, i: number) => (
+                  <div key={i} className={`flex-1 min-w-[180px] rounded-lg p-4 border border-gray-100 cursor-pointer hover:border-blue-300 transition-colors ${i === 0 ? 'bg-gray-50' : 'bg-white'}`}>
+                    <div className="text-sm font-semibold text-gray-800 mb-1">{cat.category ?? cat.name ?? '—'}</div>
+                    <div className="text-xs text-gray-500">Ventas brutas totales</div>
+                    <div className="text-sm font-bold text-gray-800">{ars(cat.totalRevenue ?? cat.sales ?? 0)}</div>
+                    <div className="text-xs text-gray-500 mt-1">Cantidad de ventas: <span className="font-medium text-gray-700">{n(cat.totalSales ?? cat.qty ?? 0)}</span></div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-gray-400 py-2">Sin datos de categorías</p>
+              )}
             </div>
           </div>
 
@@ -1754,44 +1922,33 @@ export default function MetricasView() {
               {/* Desempeño de tus categorías */}
               <div>
                 <h3 className="text-sm font-semibold text-gray-800 mb-3">Desempeño de tus categorías</h3>
-                <div className="flex gap-4">
-                  <div className="flex-1 bg-white rounded-xl border border-gray-200 p-5">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 font-bold text-sm">0%</div>
-                      <div>
-                        <div className="text-sm font-semibold text-gray-800">Hogar, Muebles y Jardín</div>
+                {(mercadoData?.byCategory ?? []).length > 0 ? (
+                  <div className="flex gap-4 flex-wrap">
+                    {(mercadoData?.byCategory ?? []).map((cat: any, i: number) => (
+                      <div key={i} className="flex-1 min-w-[200px] bg-white rounded-xl border border-gray-200 p-5">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${i === 0 ? 'bg-green-100 text-green-600' : 'bg-orange-100 text-orange-600'}`}>
+                            {cat.totalSales ?? cat.qty ?? 0}
+                          </div>
+                          <div>
+                            <div className="text-sm font-semibold text-gray-800">{cat.category ?? cat.name ?? '—'}</div>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-y-2 text-xs text-gray-600">
+                          <div>Ventas brutas: <span className="font-medium text-gray-800">{ars(cat.totalRevenue ?? cat.sales ?? 0)}</span></div>
+                          <div>Cantidad: <span className="font-medium text-gray-800">{n(cat.totalSales ?? cat.qty ?? 0)}</span></div>
+                          {cat.views != null && <div>Visitas: <span className="font-medium text-gray-800">{n(cat.views)}</span></div>}
+                          {cat.avgPrice != null && <div>Precio prom.: <span className="font-medium text-gray-800">{ars(cat.avgPrice)}</span></div>}
+                        </div>
+                        <div className="flex gap-2 mt-4">
+                          <button className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700">Ir a detalle</button>
+                        </div>
                       </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-y-2 text-xs text-gray-600">
-                      <div>Unidades vendidas: <span className="font-medium text-gray-800">14.970</span></div>
-                      <div>Ventas promedio: <span className="font-medium text-gray-800">$174.000</span></div>
-                      <div>Visitas: <span className="font-medium text-gray-800">6.500</span></div>
-                      <div>Precio promedio: <span className="font-medium text-gray-800">$39.999</span></div>
-                    </div>
-                    <div className="flex gap-2 mt-4">
-                      <button className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700">Ir a detalle</button>
-                      <button className="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-50">Clonar 10 publicaciones</button>
-                    </div>
+                    ))}
                   </div>
-                  <div className="flex-1 bg-white rounded-xl border border-gray-200 p-5">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-sm">0%</div>
-                      <div>
-                        <div className="text-sm font-semibold text-gray-800">Herramientas</div>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-y-2 text-xs text-gray-600">
-                      <div>Unidades vendidas: <span className="font-medium text-gray-800">2</span></div>
-                      <div>Ventas promedio: <span className="font-medium text-gray-800">$101.000</span></div>
-                      <div>Visitas: <span className="font-medium text-gray-800">1.200</span></div>
-                      <div>Precio promedio: <span className="font-medium text-gray-800">$39.999</span></div>
-                    </div>
-                    <div className="flex gap-2 mt-4">
-                      <button className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700">Ir a detalle</button>
-                      <button className="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-50">Clonar 10 publicaciones</button>
-                    </div>
-                  </div>
-                </div>
+                ) : (
+                  <p className="text-sm text-gray-400 py-4">Sin datos de categorías para el período</p>
+                )}
               </div>
 
               {/* Otras categorías */}
@@ -1844,34 +2001,76 @@ export default function MetricasView() {
       {/* === MI PÁGINA === */}
       {activeTab === 'mipagina' && (
         <>
+          {tabLoading === 'mipagina' && (
+            <div className="flex items-center justify-center py-12 text-sm text-gray-400">Cargando mi página…</div>
+          )}
+
           {/* Profile card */}
           <div className="bg-white rounded-xl border border-gray-200 p-5">
             <div className="text-xs text-gray-400 mb-3">Recorrido: Últimos 30 días</div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-full bg-amber-700 flex items-center justify-center text-white text-sm font-bold">
-                  M
+                  {(miPaginaData?.profile?.name ?? 'M').charAt(0)}
                 </div>
                 <div>
-                  <div className="text-sm font-semibold text-gray-800">MAQJEEZ</div>
-                  <div className="text-xs text-gray-500">15% más seguidores totales</div>
+                  <div className="text-sm font-semibold text-gray-800">{miPaginaData?.profile?.name ?? 'MAQJEEZ'}</div>
+                  <div className="text-xs text-gray-500">{miPaginaData?.profile?.reputationLevel ?? ''}</div>
                   <button className="text-blue-600 text-xs font-medium hover:underline mt-0.5">Ir a Mi página</button>
                 </div>
               </div>
               <div className="flex items-center gap-12">
                 <div className="text-center">
                   <div className="text-xs text-gray-500">Visitas</div>
-                  <div className="text-sm font-bold text-gray-800">172</div>
-                  <div className="text-[10px] text-red-500">▼ 0%</div>
+                  <div className="text-sm font-bold text-gray-800">{n(miPaginaData?.profile?.monthlyViews ?? 0)}</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-xs text-gray-500">Nuevos seguidores</div>
-                  <div className="text-sm font-bold text-gray-800">18</div>
-                  <div className="text-[10px] text-green-600">▲ 50%</div>
+                  <div className="text-xs text-gray-500">Ventas exitosas</div>
+                  <div className="text-sm font-bold text-gray-800">{n(miPaginaData?.profile?.successfulSales ?? 0)}</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xs text-gray-500">Conversión</div>
+                  <div className="text-sm font-bold text-gray-800">{miPaginaData?.profile?.conversionRate ?? '—'}</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xs text-gray-500">Ingresos totales</div>
+                  <div className="text-sm font-bold text-gray-800">{ars(miPaginaData?.profile?.totalRevenue ?? 0)}</div>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* Top products by views table */}
+          {(miPaginaData?.topByViews ?? []).length > 0 && (
+            <div>
+              <h3 className="text-sm font-semibold text-gray-800 mb-4">Top productos por visitas</h3>
+              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200">
+                      <th className="text-left p-3 text-xs font-semibold text-gray-500 uppercase">Producto</th>
+                      <th className="text-center p-3 text-xs font-semibold text-gray-500 uppercase">Visitas</th>
+                      <th className="text-center p-3 text-xs font-semibold text-gray-500 uppercase">Ventas</th>
+                      <th className="text-center p-3 text-xs font-semibold text-gray-500 uppercase">Ingresos</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(miPaginaData?.topByViews ?? []).map((prod: any, i: number) => (
+                      <tr key={i} className="border-b border-gray-100 hover:bg-gray-50">
+                        <td className="p-3">
+                          <div className="text-sm font-medium text-gray-800 truncate max-w-[280px]">{prod.title ?? prod.name ?? '—'}</div>
+                          <div className="text-xs text-gray-400">{prod.sku ?? prod.id ?? ''}</div>
+                        </td>
+                        <td className="p-3 text-center text-sm text-gray-800">{n(prod.views ?? prod.visits ?? 0)}</td>
+                        <td className="p-3 text-center text-sm text-gray-800">{n(prod.sales ?? 0)}</td>
+                        <td className="p-3 text-center text-sm text-gray-800">{prod.revenue != null ? ars(prod.revenue) : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           {/* Sub-tabs */}
           <div className="flex gap-4 border-b border-gray-200">
