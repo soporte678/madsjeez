@@ -8,7 +8,7 @@
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { rateLimit, clientIpFromRequest } from "@/lib/rate-limit";
+import { checkRateLimitAsync, clientIpFromRequest } from "@/lib/rate-limit";
 import { signResetToken } from "@/lib/auth/password-reset-token";
 import { logger } from "@/lib/logger";
 
@@ -18,11 +18,11 @@ const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || "https://www.madsjeez.com.ar
 
 export async function POST(req: Request) {
   const ip = clientIpFromRequest(req);
-  const { allowed, retryAfter } = rateLimit(`forgot-pw:${ip}`, 3, 15 * 60 * 1000);
-  if (!allowed) {
+  const rl = await checkRateLimitAsync(`forgot-pw:${ip}`, { max: 3, windowMs: 15 * 60 * 1000 });
+  if (!rl.ok) {
     return NextResponse.json(
       { error: "Demasiados intentos. Probá de nuevo en unos minutos." },
-      { status: 429, headers: { "Retry-After": String(retryAfter) } },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } },
     );
   }
 

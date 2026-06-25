@@ -65,3 +65,8 @@ next-env.d.ts
 # OS
 *.log
 logs.json
+
+# TWA / APK build artifacts
+twa/android.keystore
+twa/android/
+public/downloads/madsjeez.apk

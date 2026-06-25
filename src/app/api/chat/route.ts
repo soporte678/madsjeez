@@ -266,18 +266,27 @@ export async function POST(req: NextRequest) {
       })
     }
 
+    // Sanitize and cap user input before sending to Gemini
+    const rawContent = typeof lastMessage.content === 'string'
+      ? lastMessage.content
+      : String(lastMessage.content || '')
+
+    const safeContent = rawContent
+      .slice(0, 2000)
+      .replace(/ignore\s+(all\s+)?previous\s+instructions?/gi, '[filtered]')
+      .replace(/system\s*prompt/gi, '[filtered]')
+      .replace(/reveal\s+(your\s+)?(instructions?|prompt|context)/gi, '[filtered]')
+      .replace(/you\s+are\s+(now\s+)?a\s+/gi, '[filtered] ')
+      .replace(/act\s+as\s+(if\s+you\s+(were|are)\s+)?a?\s*/gi, '[filtered] ')
+
     // Get real-time context from the marketplace database
-    console.log("Chat request - last message:", lastMessage.content)
-    
     let liveContext = ""
     try {
-      liveContext = await getMarketplaceContext(lastMessage.content)
-      console.log("Context fetched, length:", liveContext.length)
+      liveContext = await getMarketplaceContext(safeContent)
     } catch (e) {
       console.error("Error fetching context:", e)
     }
     const systemPrompt = BASE_PROMPTS[mode] + liveContext
-    console.log("System prompt length:", systemPrompt.length)
 
     const genAI = new GoogleGenerativeAI(apiKey)
 
@@ -321,10 +330,8 @@ export async function POST(req: NextRequest) {
         history: history.length > 0 ? history : undefined,
       })
 
-      console.log(`Sending message to ${modelName}...`)
-      const result = await chat.sendMessage(lastMessage.content)
+      const result = await chat.sendMessage(safeContent)
       const text = extractGeminiText(result)
-      console.log(`${modelName} response received, length:`, text.length)
       return text
     }
 

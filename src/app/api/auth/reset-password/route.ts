@@ -8,7 +8,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { rateLimit, clientIpFromRequest } from "@/lib/rate-limit";
+import { checkRateLimitAsync, clientIpFromRequest } from "@/lib/rate-limit";
 import { verifyResetToken } from "@/lib/auth/password-reset-token";
 import { logger } from "@/lib/logger";
 
@@ -16,11 +16,11 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   const ip = clientIpFromRequest(req);
-  const { allowed, retryAfter } = rateLimit(`reset-pw:${ip}`, 5, 15 * 60 * 1000);
-  if (!allowed) {
+  const rl = await checkRateLimitAsync(`reset-pw:${ip}`, { max: 5, windowMs: 15 * 60 * 1000 });
+  if (!rl.ok) {
     return NextResponse.json(
       { error: "Demasiados intentos. Probá de nuevo en unos minutos." },
-      { status: 429, headers: { "Retry-After": String(retryAfter) } },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } },
     );
   }
 

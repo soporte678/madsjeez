@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { supabase } from "@/lib/supabase"
+import { supabaseService } from "@/lib/supabase/service"
 
 // POST /api/questions/upload - Subir imágenes para preguntas
 export async function POST(request: Request) {
@@ -37,12 +37,12 @@ export async function POST(request: Request) {
     const bucketName = "question-images"
 
     // Verificar si el bucket existe, si no, crearlo
-    const { data: buckets } = await supabase.storage.listBuckets()
+    const { data: buckets } = await supabaseService.storage.listBuckets()
     const bucketExists = buckets?.some(b => b.name === bucketName)
     
     if (!bucketExists) {
       // Crear bucket con políticas públicas
-      const { error: createError } = await supabase.storage.createBucket(bucketName, {
+      const { error: createError } = await supabaseService.storage.createBucket(bucketName, {
         public: true,
         fileSizeLimit: 5242880, // 5MB
         allowedMimeTypes: ["image/jpeg", "image/png", "image/webp", "image/gif"]
@@ -75,8 +75,20 @@ export async function POST(request: Request) {
       }
 
       // Generar nombre único
+      const MIME_TO_EXT: Record<string, string> = {
+        'image/jpeg': 'jpg',
+        'image/jpg': 'jpg',
+        'image/png': 'png',
+        'image/gif': 'gif',
+        'image/webp': 'webp',
+      }
+
+      const fileExt = MIME_TO_EXT[file.type]
+      if (!fileExt) {
+        return NextResponse.json({ error: 'Tipo de archivo no permitido' }, { status: 415 })
+      }
+
       const timestamp = Date.now()
-      const fileExt = file.name.split(".").pop()
       const fileName = `${session.user.id}/${timestamp}_${i}.${fileExt}`
 
       // Convertir File a ArrayBuffer
@@ -84,7 +96,7 @@ export async function POST(request: Request) {
       const buffer = new Uint8Array(arrayBuffer)
 
       // Subir a Supabase Storage
-      const { data, error: uploadError } = await supabase.storage
+      const { data, error: uploadError } = await supabaseService.storage
         .from(bucketName)
         .upload(fileName, buffer, {
           contentType: file.type,
@@ -100,7 +112,7 @@ export async function POST(request: Request) {
       }
 
       // Obtener URL pública
-      const { data: { publicUrl } } = supabase.storage
+      const { data: { publicUrl } } = supabaseService.storage
         .from(bucketName)
         .getPublicUrl(fileName)
 
@@ -158,7 +170,7 @@ export async function DELETE(request: Request) {
       )
     }
 
-    const { error } = await supabase.storage
+    const { error } = await supabaseService.storage
       .from(bucketName)
       .remove([filePath])
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { supabaseService } from "@/lib/supabase/service"
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,10 +27,8 @@ export async function POST(request: NextRequest) {
     // For now, we'll use a simple Resend implementation if available
     // or log to audit_logs table
     
-    const supabase = await createClient()
-    
     // Log to audit_logs
-    await supabase.from("admin_audit_logs").insert({
+    await supabaseService.from("admin_audit_logs").insert({
       admin_user_id: adminUserId,
       action: "login",
       entity_type: "admin_user",

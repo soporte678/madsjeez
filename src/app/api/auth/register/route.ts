@@ -1,18 +1,18 @@
 import { NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
-import { rateLimit, clientIpFromRequest } from "@/lib/rate-limit"
+import { checkRateLimitAsync, clientIpFromRequest } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 import { TRIAL_MS } from "@/lib/subscription/effective-tier"
 
 export async function POST(req: Request) {
   // Rate limiting: max 3 intentos por IP cada 15 minutos
   const ip = clientIpFromRequest(req)
-  const { allowed, retryAfter } = rateLimit(`register:${ip}`, 3, 15 * 60 * 1000)
-  if (!allowed) {
+  const rl = await checkRateLimitAsync(`register:${ip}`, { max: 3, windowMs: 15 * 60 * 1000 })
+  if (!rl.ok) {
     return NextResponse.json(
       { error: "Demasiados intentos. Intenta de nuevo en unos minutos." },
-      { status: 429, headers: { "Retry-After": String(retryAfter) } }
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } }
     )
   }
 

@@ -2497,3 +2497,31 @@ model StoreEvent {
   @@map("store_events")
 }
 
+// Solicitudes de vendedores para la campaña "1000 vendedores / 200 publicaciones gratis"
+model SellerApplication {
+  id                String   @id @default(cuid())
+  nombreCompleto    String   @map("nombre_completo")
+  nombreComercio    String   @map("nombre_comercio")
+  email             String   @unique
+  whatsapp          String
+  direccion         String
+  codigoPostal      String   @map("codigo_postal")
+  provincia         String
+  localidad         String
+  rubro             String
+  cuit              String   @unique
+  cantidadProductos String   @map("cantidad_productos")
+  linkMercadoLibre  String?  @map("link_mercadolibre")
+  linkTiendaNube    String?  @map("link_tiendanube")
+  linkInstagram     String?  @map("link_instagram")
+  linkWeb           String?  @map("link_web")
+  mensaje           String?
+  aceptaContacto    Boolean  @default(false) @map("acepta_contacto")
+  confirmaDatos     Boolean  @default(false) @map("confirma_datos")
+  estado            String   @default("Pendiente de revisión")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("seller_applications")
+}
+

@@ -181,6 +181,71 @@ export const COMPARATIVAS: Comparativa[] = [
     related: ["desmalezadora-vs-bordeadora", "desmalezadora-nafta-vs-electrica-vs-bateria"],
   },
   {
+    slug: "madsjeez-vs-mercadolibre",
+    title: "Madsjeez vs MercadoLibre: cuánto te cuesta realmente vender en cada uno",
+    seoTitle: "Madsjeez vs MercadoLibre 2026 — Comisiones y costos reales para vendedores",
+    metaDescription: "MercadoLibre cobra 12-16% + IVA en comisiones. Madsjeez cobra 0%. En $1.000.000 de ventas, ML te descuenta ~$145.000. Comparativa honesta con números reales.",
+    excerpt: "La comparativa que los vendedores necesitan antes de decidir dónde publicar en Argentina.",
+    intro: "Si vendés en Argentina, probablemente usás MercadoLibre. Pero ¿sabés exactamente cuánto te cobra? Esta comparativa muestra los números reales, sin letra chica ni marketing.",
+    options: [
+      { name: "MercadoLibre", tagline: "La plataforma más grande de Argentina" },
+      { name: "Madsjeez", tagline: "Marketplace especializado, 0% de comisión" },
+    ],
+    rows: [
+      { criterio: "Comisión por venta (Clásico)", valores: ["12% + IVA ≈ 13.5% real", "0%"] },
+      { criterio: "Comisión por venta (Premium)", valores: ["16% + IVA ≈ 18% real", "0%"] },
+      { criterio: "Costo mensual fijo", valores: ["$0 (pero comisión variable)", "Básico $0 / PRO $2.999 / ULTRA $4.999"] },
+      { criterio: "En $300.000/mes de ventas", valores: ["$40.500–$54.000 en comisiones", "$0–$2.999 (plan fijo)"] },
+      { criterio: "En $500.000/mes de ventas", valores: ["$67.500–$90.000 en comisiones", "$0–$2.999 (plan fijo)"] },
+      { criterio: "En $1.000.000/mes de ventas", valores: ["$135.000–$180.000 en comisiones", "$0–$4.999 (plan fijo)"] },
+      { criterio: "Publicidad necesaria para posicionarse", valores: ["5-15% adicional (Product Ads)", "No requerida"] },
+      { criterio: "Suspensión de cuenta", valores: ["Automática, sin aviso previo", "Con revisión manual y notificación"] },
+      { criterio: "Acceso a datos del comprador", valores: ["Limitado — ML es intermediario", "Relación directa con el cliente"] },
+      { criterio: "Logística de envíos", valores: ["Mercado Envíos (obligatorio en Premium)", "Libre elección de logística"] },
+      { criterio: "Soporte al vendedor", valores: ["Bot + ticket (1-3 días hábiles)", "WhatsApp directo (PRO/ULTRA)"] },
+      { criterio: "Especialización de la audiencia", valores: ["Masivo, todo rubro", "Herramientas, maquinaria, repuestos"] },
+    ],
+    veredicto: [
+      {
+        option: "MercadoLibre",
+        cuando: "Necesitás el mayor volumen de tráfico posible desde el día 1 y tu margen soporta perder entre 14% y 20% de cada venta en comisiones.",
+      },
+      {
+        option: "Madsjeez",
+        cuando: "Vendés herramientas, maquinaria o repuestos, querés quedarte con el 100% de cada venta, y buscás clientes que ya saben lo que buscan en tu nicho.",
+      },
+    ],
+    notas: [
+      "Los porcentajes de comisión incluyen IVA sobre la comisión (21%). Ejemplo: 12% de comisión ML + 21% IVA sobre esa comisión = 12% × 1.21 = 14.52% efectivo.",
+      "Product Ads en ML no es obligatorio pero en categorías competitivas es prácticamente necesario para mantener visibilidad.",
+      "Madsjeez y MercadoLibre no son excluyentes — muchos vendedores usan ambos canales en paralelo.",
+    ],
+    faqs: [
+      {
+        question: "¿Cuánto cobra exactamente MercadoLibre de comisión en 2026?",
+        answer: "MercadoLibre cobra entre 12% (plan Clásico) y 16% (plan Premium) de comisión sobre el precio de venta, más IVA (21%) sobre esa comisión. El cargo efectivo real es entre 13.5% y 19.4%. Adicionalmente, Product Ads puede sumar entre 5% y 15% más.",
+      },
+      {
+        question: "¿Madsjeez realmente cobra 0% de comisión por venta?",
+        answer: "Sí. Madsjeez no cobra ningún porcentaje sobre tus ventas. El modelo es suscripción fija: plan Básico gratuito, PRO $2.999/mes, ULTRA $4.999/mes. Lo que cobrás en cada venta es 100% tuyo.",
+      },
+      {
+        question: "¿Puedo vender en Madsjeez y MercadoLibre al mismo tiempo?",
+        answer: "Sí, y es lo más recomendado para comenzar. Publicar en Madsjeez no implica salir de ML. Podés operar ambos canales en paralelo, comparar resultados y hacer la transición gradual si lo preferís.",
+      },
+      {
+        question: "¿Qué pasa si me suspenden la cuenta en MercadoLibre?",
+        answer: "Una suspensión en ML significa perder acceso inmediato a todos tus clientes y ventas. Por eso la estrategia multicanal es clave: si tenés presencia en Madsjeez, una suspensión en ML no frena tu negocio.",
+      },
+      {
+        question: "¿Madsjeez tiene el mismo tráfico que MercadoLibre?",
+        answer: "No — ML tiene décadas de posicionamiento y millones de usuarios. Madsjeez es un marketplace especializado en crecimiento, con audiencia de calidad en el nicho de herramientas y maquinaria. El diferencial es que en Madsjeez no perdés comisión en ninguna venta.",
+      },
+    ],
+    searchQuery: "herramientas maquinaria",
+    related: ["desmalezadora-nafta-vs-electrica-vs-bateria"],
+  },
+  {
     slug: "espada-corta-vs-larga-motosierra",
     title: "Espada corta vs. larga en motosierra",
     seoTitle: "Espada de motosierra corta o larga: cuál elegir | Madsjeez",

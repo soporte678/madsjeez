@@ -21,7 +21,7 @@ Contacto de soporte: soporte@madsjeez.com
 - [Cómo vender](https://www.madsjeez.com.ar/vender): Información para comercios, ferreterías y emprendedores que quieren vender online
 - [Registro de vendedor](https://www.madsjeez.com.ar/seller/register): Alta de cuenta vendedor y publicación de productos
 - [Publicar producto](https://www.madsjeez.com.ar/sell): Crear una nueva publicación
-- [Planes y suscripciones](https://www.madsjeez.com.ar/subscriptions): Planes Plata, Gold y Platinum con beneficios y comisiones
+- [Planes y suscripciones](https://www.madsjeez.com.ar/subscriptions): Planes Básico, PRO y ULTRA con beneficios y condiciones
 
 ## Empresa y confianza
 
@@ -36,6 +36,21 @@ Contacto de soporte: soporte@madsjeez.com
 - [Política de privacidad](https://www.madsjeez.com.ar/legal/privacidad): Tratamiento de datos personales
 - [Política de cookies](https://www.madsjeez.com.ar/legal/cookies): Uso de cookies y tecnologías similares
 - [Reembolsos y devoluciones](https://www.madsjeez.com.ar/legal/reembolsos): Política de devoluciones y reclamos
+
+## Vender en Madsjeez
+
+Madsjeez cobra 0% de comisión por venta en todos los planes. El modelo es de suscripción fija:
+- Plan Básico: gratuito, hasta 50 publicaciones activas
+- Plan PRO: $2.999/mes, hasta 200 publicaciones, WhatsApp support
+- Plan ULTRA: $4.999/mes, publicaciones ilimitadas, soporte prioritario
+
+### Recursos para vendedores
+- [Empezar a vender](https://www.madsjeez.com.ar/vender-en-madsjeez): Hub principal para nuevos vendedores.
+- [0% de comisión — cómo funciona](https://www.madsjeez.com.ar/alternativas/vender-sin-pagar-comision-marketplace): Diferencia entre comisión variable y suscripción fija.
+- [Alternativa a MercadoLibre](https://www.madsjeez.com.ar/alternativa-a-mercado-libre): Por qué vendedores de ML diversifican canales.
+- [Comisiones de MercadoLibre](https://www.madsjeez.com.ar/alternativas/comisiones-mercadolibre-vendedores): Análisis de las tarifas de ML vs Madsjeez.
+- [Cuenta suspendida en ML](https://www.madsjeez.com.ar/alternativas/cuenta-suspendida-mercadolibre-que-hacer): Qué hacer y cómo protegerse.
+- [Oferta Sellers Fundadores](https://www.madsjeez.com.ar/oferta-vendedores): 6 meses gratis del plan PRO para los primeros 100 vendedores.
 
 ## Optional
 

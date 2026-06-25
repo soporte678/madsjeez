@@ -90,9 +90,9 @@ export const SELLER_LANDINGS: SellerLanding[] = [
     slug: HUB_SLUG,
     keyword: "vender productos online Argentina",
     breadcrumb: "Vender en Madsjeez",
-    seoTitle: "Vendé tus productos online en Madsjeez | Marketplace para emprendedores",
+    seoTitle: "Vendé online sin pagar comisión | Madsjeez Marketplace Argentina",
     metaDescription:
-      "Publicá tus productos en Madsjeez y sumá un nuevo canal de venta online para tu emprendimiento, comercio o negocio mayorista en Argentina.",
+      "Vendé en Madsjeez con 0% de comisión por venta. Marketplace argentino para emprendedores, ferreterías y mayoristas. Cobrás el 100% de cada venta.",
     h1: "Vendé tus productos online en Madsjeez",
     heroEyebrow: "Marketplace argentino para vendedores",
     heroSubtitle:

@@ -1,6 +1,7 @@
 import { randomUUID, createHash } from "crypto";
 import { NextResponse } from "next/server";
 import { Pool } from "pg";
+import { checkRateLimitAsync, clientIpFromRequest } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -19,16 +20,24 @@ function parseTraffic(url: URL, referrer: string | null) {
 }
 
 export async function POST(req: Request) {
+  // Rate limit: 60 req/min per IP — return ok:true to avoid revealing to scrapers
+  const ip = clientIpFromRequest(req);
+  const rl = await checkRateLimitAsync(`track:${ip}`, { max: 60, windowMs: 60 * 1000 });
+  if (!rl.ok) return NextResponse.json({ ok: true });
+
   try {
     const body = (await req.json()) as {
       path?: string;
       referrer?: string | null;
       eventName?: string;
     };
+    // Length caps
+    body.path = (body.path || "/").slice(0, 500);
+    if (typeof body.eventName === "string") body.eventName = body.eventName.slice(0, 200);
+
     const url = new URL(req.url);
     const parsed = parseTraffic(url, body.referrer || null);
     const ua = req.headers.get("user-agent");
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "na";
     const visitorHash = createHash("sha256").update(`${ip}:${ua || ""}`).digest("hex").slice(0, 24);
     const isAnalyticsEvent =
       typeof body.eventName === "string" && body.eventName.trim().length > 0;

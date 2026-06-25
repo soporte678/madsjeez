@@ -152,6 +152,48 @@ export default async function RootLayout({
         ) : null}
       </head>
       <body className="min-h-full flex flex-col font-outfit">
+        {/* Structured data global */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              "name": "Madsjeez",
+              "url": "https://www.madsjeez.com.ar",
+              "logo": "https://www.madsjeez.com.ar/icons/icon-512x512.png",
+              "description": "Marketplace argentino para maquinaria, herramientas y repuestos. 0% de comisión por venta.",
+              "contactPoint": {
+                "@type": "ContactPoint",
+                "contactType": "customer service",
+                "availableLanguage": "Spanish"
+              },
+              "address": {
+                "@type": "PostalAddress",
+                "addressCountry": "AR"
+              }
+            })
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              "name": "Madsjeez",
+              "url": "https://www.madsjeez.com.ar",
+              "potentialAction": {
+                "@type": "SearchAction",
+                "target": {
+                  "@type": "EntryPoint",
+                  "urlTemplate": "https://www.madsjeez.com.ar/search?q={search_term_string}"
+                },
+                "query-input": "required name=search_term_string"
+              }
+            })
+          }}
+        />
         <MetaPixel />
         <DeferredAnalytics />
         <ChatProvider>

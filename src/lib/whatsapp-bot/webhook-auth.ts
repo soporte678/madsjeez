@@ -31,9 +31,8 @@ export function verifyEvolutionWebhookAuth(
 
   const evolutionApiKey = process.env.EVOLUTION_API_KEY?.trim() || "";
   const headerApiKey = req.headers.get("apikey")?.trim() || "";
-  const bodyApiKey = typeof body.apikey === "string" ? body.apikey.trim() : "";
 
-  if (evolutionApiKey && (headerApiKey === evolutionApiKey || bodyApiKey === evolutionApiKey)) {
+  if (evolutionApiKey && headerApiKey === evolutionApiKey) {
     return { ok: true, reason: "evolution_api_key_match" };
   }
 

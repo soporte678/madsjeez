@@ -7,8 +7,8 @@ export function assertAdminBootstrapAllowed(): NextResponse | null {
   const enabled = process.env.ENABLE_ADMIN_BOOTSTRAP === "true";
   if (process.env.NODE_ENV === "production" && !enabled) {
     return NextResponse.json(
-      { error: "Admin bootstrap is disabled in production. Set ENABLE_ADMIN_BOOTSTRAP=true temporarily if required." },
-      { status: 403 }
+      { error: "Not available" },
+      { status: 404 }
     );
   }
   return null;

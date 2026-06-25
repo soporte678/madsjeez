@@ -6,6 +6,7 @@ import {
   AreaChart, Area,
   BarChart, Bar, PieChart, Pie, Cell
 } from 'recharts';
+import Link from 'next/link';
 import {
   Info, Download, Filter, ChevronDown, ChevronRight, ChevronLeft,
   TrendingUp, TrendingDown, Minus, Search,
@@ -23,6 +24,7 @@ type MetricsSummary = {
   grossPeriod: number; totalRevenue: number; totalSales: number; canceledSales: number;
   monthlyViews: number; avgPrice: number; conversionRate: string;
   ordersInPeriod: number; activePublications: number; avgPerDay: number;
+  abandonedCarts?: number;
 }
 type PromoData = { campaigns: any[]; coupons: any[]; chartData: any[]; summary: any } | null
 type CostData = { summary: any; costDistribution: any[]; topProducts: any[] } | null
@@ -193,6 +195,25 @@ export default function MetricasView() {
     Math.max(1, ...heatmapData.flatMap(d => [d.lun, d.mar, d.mie, d.jue, d.vie, d.sab, d.dom])),
     [heatmapData]);
 
+  const heatStats = useMemo(() => {
+    const DAY_KEYS = ['dom','lun','mar','mie','jue','vie','sab'] as const
+    const DAY_LABELS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado']
+    let total = 0
+    const byDay: Record<string, number> = { dom:0, lun:0, mar:0, mie:0, jue:0, vie:0, sab:0 }
+    const byHour: Record<string, number> = {}
+    for (const row of heatmapData) {
+      let rowTotal = 0
+      for (const d of DAY_KEYS) { const v = row[d] || 0; byDay[d] += v; rowTotal += v }
+      byHour[row.hour] = rowTotal; total += rowTotal
+    }
+    const bestDayKey = (Object.entries(byDay).sort((a,b) => b[1]-a[1])[0]?.[0] || 'lun')
+    const bestDay = DAY_LABELS[DAY_KEYS.indexOf(bestDayKey as typeof DAY_KEYS[number])] || 'Lunes'
+    const peakEntry = Object.entries(byHour).sort((a,b) => b[1]-a[1])[0]
+    const peakH = peakEntry ? parseInt(peakEntry[0]) : 18
+    const peakPct = total > 0 ? ((Math.max(...Object.values(byHour)) / total) * 100).toFixed(1) : '0.0'
+    return { bestDay, bestHour: `De ${String(peakH).padStart(2,'0')}:00 a ${String(peakH+2).padStart(2,'0')}:00`, peakPct }
+  }, [heatmapData]);
+
   const totalPages = Math.ceil(publicationsData.length / 7);
   const paginatedData = publicationsData.slice((currentPage - 1) * 7, currentPage * 7);
 
@@ -203,10 +224,10 @@ export default function MetricasView() {
         <h1 className="text-[28px] font-semibold text-slate-800 dark:text-slate-100">Métricas</h1>
         <div className="flex items-center gap-3 flex-wrap">
           <button onClick={() => setReportMessage(`Reporte listo para ${period.toLowerCase()}${compareWith === 'Sin comparación' ? '' : ` comparado con ${compareWith.toLowerCase()}`}.`)} className="text-blue-600 dark:text-sky-400 text-sm font-medium hover:underline">Generar reporte</button>
-          <button onClick={() => setReportMessage('El monitor de ventas en vivo ya quedó enlazado para seguimiento continuo desde este panel.')} className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 rounded-full text-sm font-semibold shadow-sm hover:bg-gray-50 dark:hover:bg-slate-800">
+          <Link href="/dashboard/monitor-ventas" target="_blank" className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 rounded-full text-sm font-semibold shadow-sm hover:bg-gray-50 dark:hover:bg-slate-800">
             <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
             Monitor de ventas en vivo
-          </button>
+          </Link>
         </div>
       </div>
 
@@ -423,16 +444,18 @@ export default function MetricasView() {
               </div>
               <div className="flex-1 text-center">
                 <div className="text-sm text-gray-500 dark:text-slate-400 mb-2">Ventas totales</div>
-                <div className="text-xl font-black text-gray-800 dark:text-slate-100">54 <span className="text-xs font-normal text-gray-500 dark:text-slate-400">($1.834.576)</span></div>
+                <div className="text-xl font-black text-gray-800 dark:text-slate-100">{summary.ordersInPeriod} <span className="text-xs font-normal text-gray-500 dark:text-slate-400">({ars(summary.grossPeriod)})</span></div>
               </div>
             </div>
-            <div className="mt-6 p-3 bg-blue-50 dark:bg-sky-500/10 rounded-lg flex items-center gap-3">
-              <Info size={16} className="text-blue-600 dark:text-sky-400 flex-shrink-0" />
-              <p className="text-xs text-blue-700 dark:text-sky-200">
-                Convertí en ventas los <strong>744 carritos abandonados</strong> comunicando un cupón de descuento. Incluye a quienes dejaron tus productos en el carrito entre 3 y 14 días previos a hoy.
-              </p>
-              <button onClick={() => setReportMessage('Acción sugerida: lanzar cupón para carritos abandonados desde Promociones > Cupones.')} className="text-xs text-blue-600 dark:text-sky-300 font-semibold hover:underline flex-shrink-0">Comunicar cupón</button>
-            </div>
+            {(summary.abandonedCarts ?? 0) > 0 && (
+              <div className="mt-6 p-3 bg-blue-50 dark:bg-sky-500/10 rounded-lg flex items-center gap-3">
+                <Info size={16} className="text-blue-600 dark:text-sky-400 flex-shrink-0" />
+                <p className="text-xs text-blue-700 dark:text-sky-200">
+                  Convertí en ventas los <strong>{n(summary.abandonedCarts ?? 0)} carritos abandonados</strong> comunicando un cupón de descuento.
+                </p>
+                <button onClick={() => setReportMessage('Acción sugerida: lanzar cupón para carritos abandonados desde Promociones > Cupones.')} className="text-xs text-blue-600 dark:text-sky-300 font-semibold hover:underline flex-shrink-0">Comunicar cupón</button>
+              </div>
+            )}
           </div>
 
           {/* Concentración de ventas por día y hora */}
@@ -446,22 +469,26 @@ export default function MetricasView() {
             </p>
             <div className="flex items-center gap-6 mb-4">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-gray-800">54</span>
-                <span className="text-xs text-green-600 font-semibold">63.6%</span>
+                <span className="text-sm font-semibold text-gray-800">{summary.ordersInPeriod}</span>
+                {summary.ordersInPeriod > 0 && <span className="text-xs text-green-600 font-semibold">{heatStats.peakPct}%</span>}
                 <span className="text-xs text-gray-500">Cantidad de ventas totales</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-gray-800">7</span>
+                <span className="text-sm font-semibold text-gray-800">{summary.avgPerDay}</span>
                 <span className="text-xs text-gray-500">Promedio de ventas por día</span>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-gray-800">Lunes</span>
-                <span className="text-xs text-gray-500">Día con más ventas</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-gray-800">De 18:00 a 0:00</span>
-                <span className="text-xs text-gray-500">Franja</span>
-              </div>
+              {summary.ordersInPeriod > 0 && (
+                <>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-gray-800">{heatStats.bestDay}</span>
+                    <span className="text-xs text-gray-500">Día con más ventas</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-gray-800">{heatStats.bestHour}</span>
+                    <span className="text-xs text-gray-500">Franja</span>
+                  </div>
+                </>
+              )}
             </div>
             <div className="flex items-center gap-1 mb-2">
               <div className="flex gap-1">
@@ -503,30 +530,13 @@ export default function MetricasView() {
       {activeTab === 'negocio' && (
         <>
           {/* Detalle de competidores */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-sm font-semibold text-gray-800 mb-4">Detalle de competidores</h3>
-            <div className="flex items-center gap-6">
-              <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center">
-                <span className="text-2xl font-black text-indigo-600">4</span>
-              </div>
-              <div className="flex-1">
-                <div className="text-xs text-gray-500">Frecuentes</div>
-                <div className="text-xl font-black text-gray-800">4.8%</div>
-                <div className="text-xs text-gray-400">Total 52 • 50.0%</div>
-              </div>
-              <div className="w-px h-12 bg-gray-200"></div>
-              <div className="flex-1">
-                <div className="text-xs text-gray-500">Frecuentes</div>
-                <div className="text-xl font-black text-gray-800">4 <span className="text-xs font-normal text-gray-500">+100%</span></div>
-              </div>
-              <div className="flex-1">
-                <div className="text-xs text-gray-500">Nuevos</div>
-                <div className="text-xl font-black text-gray-800">48 <span className="text-xs font-normal text-gray-500">+33.3%</span></div>
-              </div>
-              <div className="flex-1">
-                <div className="text-xs text-gray-500">Tasa de conversión</div>
-                <div className="text-xl font-black text-gray-800">8%</div>
-              </div>
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 p-6">
+            <h3 className="text-sm font-semibold text-gray-800 dark:text-slate-100 mb-1">Detalle de competidores</h3>
+            <p className="text-xs text-gray-500 dark:text-slate-400 mb-6">Análisis basado en tu categoría principal</p>
+            <div className="flex flex-col items-center justify-center py-8 gap-3">
+              <Users size={32} className="text-gray-300 dark:text-slate-600" />
+              <p className="text-sm font-semibold text-gray-500 dark:text-slate-400">Análisis de competidores próximamente</p>
+              <p className="text-xs text-gray-400 dark:text-slate-500 text-center max-w-xs">Esta sección mostrará métricas comparativas de tu categoría cuando integres tu cuenta de MercadoLibre.</p>
             </div>
           </div>
 

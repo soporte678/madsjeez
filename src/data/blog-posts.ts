@@ -458,6 +458,216 @@ export const BLOG_POSTS: BlogPost[] = [
     related: ["que-es-un-marketplace-para-emprendedores", "como-vender-por-internet-sin-pagina-web", "como-crear-una-buena-publicacion-de-producto"],
   },
 
+  /* ---------------------------------------------------------------- 11 */
+  {
+    slug: "como-migrar-de-mercadolibre-a-madsjeez",
+    title: "Cómo migrar de MercadoLibre a Madsjeez sin perder ventas: guía paso a paso",
+    seoTitle: "Cómo migrar de MercadoLibre a Madsjeez: guía paso a paso 2026 | Madsjeez",
+    metaDescription:
+      "Guía completa para abrir tu canal en Madsjeez mientras seguís en ML. Sin suspensiones, sin baches de caja. La transición que hacen los vendedores inteligentes.",
+    excerpt:
+      "Migrar no significa cerrar. La estrategia correcta es abrir Madsjeez como canal paralelo mientras seguís en MercadoLibre.",
+    category: "Estrategia",
+    tags: ["mercadolibre", "vendedores", "estrategia", "marketplace"],
+    updatedAt: "2026-06-24",
+    readingMinutes: 8,
+    intro:
+      "Migrar no significa cerrar. La estrategia que funciona para la mayoría de los vendedores es abrir Madsjeez como canal paralelo mientras seguís en MercadoLibre. Esta guía explica cómo hacerlo paso a paso.",
+    sections: [
+      {
+        h2: "Antes de empezar: la mentalidad correcta",
+        paragraphs: [
+          "No se trata de 'abandonar MercadoLibre'. Se trata de no depender de un solo canal. Los vendedores que más crecen son los que tienen múltiples fuentes de ventas. Si ML te suspende mañana, ¿seguís vendiendo?",
+        ],
+      },
+      {
+        h2: "Paso 1: Abrí tu cuenta en Madsjeez (5 minutos)",
+        paragraphs: [
+          "Ingresá a madsjeez.com.ar y creá tu cuenta de vendedor. El proceso es directo: nombre, email, contraseña. El plan Básico es gratuito y no requiere tarjeta de crédito.",
+          "Una vez dentro, completá tu perfil de vendedor: nombre de tu tienda, logo, descripción de tu negocio. Esto influye en cómo te ven los compradores.",
+        ],
+      },
+      {
+        h2: "Paso 2: Elegí el plan según tu catálogo",
+        paragraphs: [
+          "Recomendación: empezá con Básico, publicá tus 20-30 mejores productos, y actualizá al plan que necesites cuando empieces a ver tráfico.",
+        ],
+        list: [
+          "Básico (gratuito): hasta 50 publicaciones activas. Ideal para empezar y probar el canal.",
+          "PRO ($2.999/mes): hasta 200 publicaciones, WhatsApp de soporte directo.",
+          "ULTRA ($4.999/mes): publicaciones ilimitadas, soporte prioritario.",
+        ],
+      },
+      {
+        h2: "Paso 3: Preparás tu catálogo",
+        paragraphs: [
+          "En MercadoLibre, podés exportar tu catálogo desde 'Mis publicaciones' → 'Exportar'. Te da un Excel con todos tus productos: título, precio, stock, descripción.",
+          "Con ese Excel, adaptás los campos al formato de Madsjeez. No es una importación automática, pero con 20-50 productos el proceso toma entre 1 y 3 horas.",
+        ],
+        list: [
+          "Título claro y descriptivo",
+          "Fotos (podés reusar las mismas que en ML)",
+          "Precio y stock actualizado",
+          "Descripción (podés reusar la de ML)",
+          "Categoría correspondiente",
+        ],
+      },
+      {
+        h2: "Paso 4: Publicá tus primeros productos",
+        paragraphs: [
+          "Empezá con los productos que mejor te funcionan en ML. No hagas todo de una vez. Publicá tus top 10-20 artículos, verificá que se vean bien, y después expandí.",
+          "Prestá atención a: fotos con fondo blanco para mejor conversión, precio (en Madsjeez no hay comisión, así que podés bajar el precio vs ML o quedarte el margen), y descripciones con especificaciones técnicas detalladas.",
+        ],
+      },
+      {
+        h2: "Paso 5: Configurá tus métodos de cobro",
+        paragraphs: [
+          "Madsjeez se integra con Mercado Pago para procesar pagos. Configurá tu cuenta de Mercado Pago en el perfil de vendedor. Los pagos llegan directamente a tu cuenta, sin retenciones intermedias de la plataforma.",
+          "También podés aceptar transferencia bancaria — configuralo en las preferencias de tu tienda.",
+        ],
+      },
+      {
+        h2: "Paso 6: Compartí tu tienda con tus clientes habituales",
+        paragraphs: [
+          "Si tenés clientes que te compran seguido en ML, contales que ahora tenés canal propio. Muchos clientes prefieren comprar directo cuando tienen relación con el vendedor.",
+        ],
+        list: [
+          "WhatsApp de clientes habituales",
+          "Redes sociales de tu negocio",
+          "Firma de email",
+          "Grupos de compradores si participás en alguno",
+        ],
+      },
+      {
+        h2: "Lo que no debés hacer: cerrar ML de golpe",
+        paragraphs: [
+          "El error más común es irse de ML de un día para el otro. No hagas eso. La estrategia correcta es: operar ambos canales en paralelo los primeros meses, analizar qué canal genera mejores márgenes por producto, y después decidir la distribución óptima según resultados.",
+          "ML sigue siendo el canal de mayor volumen en Argentina. Madsjeez es el canal de mayor margen. Usá ambos según te convenga.",
+        ],
+      },
+      {
+        h2: "Resultado esperado",
+        paragraphs: [
+          "Los vendedores que agregan Madsjeez como canal reportan que entre el 15% y el 30% de sus ventas se mueven al canal sin comisión en los primeros 3 meses. A largo plazo, eso puede significar recuperar varios meses de suscripción solo en comisiones ahorradas.",
+        ],
+      },
+    ],
+    faqs: [
+      {
+        question: "¿Tengo que cerrar mi cuenta de MercadoLibre para usar Madsjeez?",
+        answer: "No. La estrategia recomendada es operar ambos canales en paralelo. Madsjeez es un canal adicional, no un reemplazo.",
+      },
+      {
+        question: "¿Cuánto tiempo lleva migrar el catálogo?",
+        answer: "Con 20-50 productos, entre 1 y 3 horas. Podés reutilizar fotos y descripciones de MercadoLibre directamente.",
+      },
+      {
+        question: "¿Cómo cobro en Madsjeez?",
+        answer: "A través de Mercado Pago o transferencia bancaria. Los pagos llegan directamente a tu cuenta sin retenciones de la plataforma.",
+      },
+      {
+        question: "¿Puedo poner el mismo precio que en MercadoLibre?",
+        answer: "Sí, e incluso más bajo. En Madsjeez no hay comisión por venta, así que podés bajar el precio y seguir ganando lo mismo o quedarte el margen extra.",
+      },
+    ],
+    ctaLanding: "alternativa-a-mercado-libre",
+    related: [
+      "alternativas-para-vender-fuera-de-mercado-libre",
+      "whatsapp-instagram-marketplace-juntos",
+      "donde-vender-productos-online-argentina",
+    ],
+  },
+
+  /* ---------------------------------------------------------------- 12 */
+  {
+    slug: "cuanto-cobra-mercadolibre-comision-vendedores-2026",
+    title: "¿Cuánto cobra MercadoLibre de comisión? El número real que muchos vendedores prefieren no calcular",
+    seoTitle: "Comisiones de MercadoLibre 2026: cuánto te cobra realmente | Madsjeez",
+    metaDescription:
+      "ML cobra 12-16% + IVA. Si vendés $500.000/mes, perdés hasta $90.000 en comisiones. Calculá el impacto real en tu margen y conocé la alternativa.",
+    excerpt:
+      "La comisión de MercadoLibre parece razonable hasta que la multiplicás por tus ventas del mes. Acá el cálculo real, sin letra chica.",
+    category: "Estrategia",
+    tags: ["comisiones MercadoLibre", "vendedores", "costos de plataforma"],
+    updatedAt: "2026-06-24",
+    readingMinutes: 6,
+    intro:
+      "La comisión de MercadoLibre parece un porcentaje razonable hasta que lo multiplicás por tus ventas del mes. Acá el cálculo real, sin letra chica.",
+    sections: [
+      {
+        h2: "¿Cuánto cobra ML exactamente?",
+        paragraphs: [
+          "MercadoLibre tiene dos planes de publicación:",
+        ],
+        list: [
+          "Plan Clásico: 12% de comisión + IVA sobre la comisión = 13,5% real efectivo.",
+          "Plan Premium: 16% de comisión + IVA sobre la comisión = 18% real efectivo.",
+        ],
+      },
+      {
+        h2: "El IVA sobre la comisión: el detalle que confunde",
+        paragraphs: [
+          "El IVA sobre la comisión (21%) es lo que confunde a muchos vendedores. La comisión en sí es 12% o 16%, pero ML aplica IVA sobre ese importe, entonces el cargo real sobre tu venta es mayor.",
+        ],
+      },
+      {
+        h2: "El cálculo que cambia todo",
+        paragraphs: [
+          "Si vendés $100.000 al mes: Plan Clásico te restan $13.500, Plan Premium te restan $18.000.",
+          "Si vendés $300.000 al mes: Plan Clásico te restan $40.500, Plan Premium te restan $54.000.",
+          "Si vendés $500.000 al mes: Plan Clásico te restan $67.500, Plan Premium te restan $90.000.",
+          "Si vendés $1.000.000 al mes: Plan Clásico te restan $135.000, Plan Premium te restan $180.000.",
+        ],
+      },
+      {
+        h2: "El costo que no figura en los términos: Product Ads",
+        paragraphs: [
+          "Para mantener visibilidad en ML en categorías competitivas, la mayoría de los vendedores necesitan invertir en Product Ads. La inversión típica es entre 5% y 15% del precio de venta adicional.",
+          "Sumando comisión + publicidad: en Premium podés estar entregando entre 23% y 33% de cada venta a la plataforma.",
+        ],
+      },
+      {
+        h2: "La alternativa: modelo de suscripción fija",
+        paragraphs: [
+          "Existe otra forma de estructurar los costos de una plataforma: suscripción fija mensual y 0% de comisión por venta.",
+          "En Madsjeez, el costo es un monto fijo: Básico sin costo, PRO $2.999/mes, ULTRA $4.999/mes. Sin importar cuánto vendas, no hay comisión. Si tu negocio crece, tu costo en la plataforma no crece con él.",
+          "Para un vendedor con $500.000/mes en ventas: ML Premium implica $90.000/mes en comisiones más publicidad, mientras que Madsjeez PRO son $2.999/mes sin comisiones. La diferencia es el margen que se queda con el vendedor.",
+        ],
+      },
+      {
+        h2: "¿Conviene cambiar?",
+        paragraphs: [
+          "No hay una respuesta única. ML tiene mucho más tráfico y muchos vendedores necesitan esa audiencia. Pero muchos descubren que agregar Madsjeez como canal paralelo —sin cerrar ML— mejora sus márgenes sin perder ventas.",
+          "Los vendedores de herramientas, maquinaria y repuestos que probaron Madsjeez como canal adicional reportan que la audiencia es más específica: clientes que ya saben lo que buscan y comparan menos por precio.",
+        ],
+      },
+    ],
+    faqs: [
+      {
+        question: "¿Cuánto cobra MercadoLibre de comisión en 2026?",
+        answer: "El Plan Clásico cobra 12% + IVA sobre la comisión (13,5% real). El Plan Premium cobra 16% + IVA (18% real). Si además usás Product Ads, el costo total puede superar el 30% de cada venta.",
+      },
+      {
+        question: "¿Por qué la comisión real es mayor al porcentaje anunciado?",
+        answer: "Porque ML aplica IVA (21%) sobre el importe de la comisión. Entonces el 12% se convierte en 13,5% y el 16% en 18% sobre el precio de venta.",
+      },
+      {
+        question: "¿Existe una alternativa a pagar comisión por venta?",
+        answer: "Sí. Madsjeez funciona con suscripción mensual fija (desde $2.999/mes en PRO) sin comisión por venta. A partir de cierto volumen de ventas, el costo es significativamente menor.",
+      },
+      {
+        question: "¿Tengo que dejar MercadoLibre para probar otra plataforma?",
+        answer: "No. Podés sumar Madsjeez como canal adicional y mantener tus publicaciones en ML. Muchos vendedores operan en paralelo para distribuir el riesgo y mejorar márgenes.",
+      },
+    ],
+    ctaLanding: "alternativa-a-mercado-libre",
+    related: [
+      "alternativas-para-vender-fuera-de-mercado-libre",
+      "donde-vender-productos-online-argentina",
+      "whatsapp-instagram-marketplace-juntos",
+    ],
+  },
+
   /* ---------------------------------------------------------------- 10 */
   {
     slug: "como-crear-una-buena-publicacion-de-producto",

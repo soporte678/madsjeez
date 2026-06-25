@@ -1,0 +1,57 @@
+{
+  "packageId": "com.ar.madsjeez",
+  "host": "www.madsjeez.com.ar",
+  "name": "Madsjeez Marketplace",
+  "launcherName": "Madsjeez",
+  "display": "standalone",
+  "orientation": "portrait",
+  "themeColor": "#f97316",
+  "themeColorDark": "#ea580c",
+  "navigationColor": "#f97316",
+  "navigationColorDark": "#ea580c",
+  "navigationDividerColor": "#f97316",
+  "navigationDividerColorDark": "#ea580c",
+  "backgroundColor": "#ffffff",
+  "enableNotifications": true,
+  "startUrl": "/",
+  "iconUrl": "https://www.madsjeez.com.ar/icons/icon-512x512.png",
+  "maskableIconUrl": "https://www.madsjeez.com.ar/icons/icon-512x512.png",
+  "monochromeIconUrl": "https://www.madsjeez.com.ar/icons/icon-512x512.png",
+  "splashScreenFadeOutDuration": 300,
+  "isSplashScreenFadeOutEnabled": true,
+  "appVersion": "1.0.0",
+  "appVersionCode": 1,
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "madsjeez"
+  },
+  "minSdkVersion": 21,
+  "targetSdkVersion": 34,
+  "webManifestUrl": "https://www.madsjeez.com.ar/manifest.json",
+  "fullScopeUrl": "https://www.madsjeez.com.ar/",
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "enableSiteSettingsShortcut": true,
+  "alphaDependencies": { "enabled": false },
+  "features": {
+    "locationDelegation": { "enabled": false },
+    "playBilling": { "enabled": false }
+  },
+  "shortcuts": [
+    {
+      "name": "Buscar productos",
+      "shortName": "Buscar",
+      "url": "/search",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Mi cuenta",
+      "shortName": "Cuenta",
+      "url": "/dashboard",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+    }
+  ],
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": []
+}
