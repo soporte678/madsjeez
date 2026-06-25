@@ -153,9 +153,10 @@ export type StoreBranding = {
   name: string; shortDescription: string | null; description: string | null;
   logoUrl: string | null; bannerUrl: string | null;
   primaryColor: string | null; secondaryColor: string | null;
-  whatsapp: string | null; email: string | null;
+  whatsapp: string | null; phone: string | null; email: string | null;
   instagram: string | null; facebook: string | null; website: string | null;
-  province: string | null; city: string | null; category: string | null;
+  tiktok: string | null;
+  province: string | null; city: string | null; address: string | null; category: string | null;
   seoTitle: string | null; seoDescription: string | null; ogImageUrl: string | null;
   isActive: boolean;
 };
@@ -166,8 +167,9 @@ export async function getStoreBranding(userId: string): Promise<StoreBranding | 
     where: { ownerUserId: userId },
     select: {
       name: true, shortDescription: true, description: true, logoUrl: true, bannerUrl: true,
-      primaryColor: true, secondaryColor: true, whatsapp: true, email: true,
-      instagram: true, facebook: true, website: true, province: true, city: true,
+      primaryColor: true, secondaryColor: true, whatsapp: true, phone: true, email: true,
+      instagram: true, facebook: true, website: true, tiktok: true,
+      province: true, city: true, address: true,
       category: true, seoTitle: true, seoDescription: true, ogImageUrl: true, isActive: true,
     },
   });
