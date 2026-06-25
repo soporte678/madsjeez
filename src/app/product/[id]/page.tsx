@@ -151,6 +151,31 @@ async function getProductReviews(productId: string) {
   return reviews || [];
 }
 
+/** Obtiene WhatsApp del seller (tabla stores) y si tiene MP conectado (tabla seller_mercadopago). */
+async function getSellerContactInfo(sellerId: string): Promise<{ waPhone: string | null; hasMercadoPago: boolean }> {
+  const store = await prisma.store.findUnique({
+    where: { ownerUserId: sellerId },
+    select: { whatsapp: true, phone: true },
+  }).catch(() => null);
+  const waPhone = store?.whatsapp || store?.phone || null;
+
+  let hasMercadoPago = false;
+  if (hasValidSupabaseConfig()) {
+    try {
+      const supabase = await createClient();
+      const { data } = await supabase
+        .from("seller_mercadopago")
+        .select("mp_access_token, is_active")
+        .eq("seller_id", sellerId)
+        .eq("is_active", true)
+        .maybeSingle();
+      hasMercadoPago = Boolean((data as { mp_access_token?: string } | null)?.mp_access_token?.trim());
+    } catch { /* sin MP */ }
+  }
+
+  return { waPhone, hasMercadoPago };
+}
+
 async function getTopRatedProducts(categoryId: string | null, currentProductId: string) {
   if (!categoryId) return [];
   if (!hasValidSupabaseConfig()) return [];
@@ -250,13 +275,16 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   let productReviews: any[];
   let topRatedProducts: any[];
 
+  let sellerContactInfo: { waPhone: string | null; hasMercadoPago: boolean } = { waPhone: null, hasMercadoPago: false };
+
   if (sbProduct) {
     product = sbProduct;
-    [relatedProducts, sellerProducts, productReviews, topRatedProducts] = await Promise.all([
+    [relatedProducts, sellerProducts, productReviews, topRatedProducts, sellerContactInfo] = await Promise.all([
       getRelatedProducts(product.category_id, product.id),
       getSellerProducts(product.seller_id, product.id),
       getProductReviews(product.id),
       getTopRatedProducts(product.category_id, product.id),
+      getSellerContactInfo(product.seller_id),
     ]);
   } else {
     const bundle = await getPrismaProductDetailBundle(id);
@@ -266,6 +294,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
     sellerProducts = bundle.sellerProducts;
     productReviews = bundle.productReviews;
     topRatedProducts = bundle.topRatedProducts;
+    sellerContactInfo = await getSellerContactInfo(product.seller_id);
   }
 
   const totalReviews = productReviews.length;
@@ -624,6 +653,8 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                 sellerProvince={product.seller?.seller_province ?? null}
                 sellerLocality={product.seller?.seller_locality ?? null}
                 sellerPartido={product.seller?.seller_partido ?? null}
+                sellerWhatsapp={sellerContactInfo.waPhone}
+                hasMercadoPago={sellerContactInfo.hasMercadoPago}
               />
             </div>
           </div>

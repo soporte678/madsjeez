@@ -35,6 +35,8 @@ interface BuyBoxProps {
   sellerProvince?: string | null
   sellerLocality?: string | null
   sellerPartido?: string | null
+  sellerWhatsapp?: string | null
+  hasMercadoPago?: boolean
 }
 
 function upsertGuestCartItem(params: {
@@ -110,12 +112,25 @@ export function BuyBox({
   sellerProvince,
   sellerLocality,
   sellerPartido,
+  sellerWhatsapp,
+  hasMercadoPago = true,
 }: BuyBoxProps) {
   const router = useRouter()
   const { status } = useSession()
   const [quantity, setQuantity] = useState(1)
   const [unitPrice, setUnitPrice] = useState(basePrice)
   const [busy, setBusy] = useState<null | "cart" | "buy">(null)
+
+  // WA fallback cuando el vendedor no tiene MP conectado
+  const buildWaHref = (msg: string) => {
+    if (!sellerWhatsapp) return null
+    const digits = sellerWhatsapp.replace(/\D/g, "")
+    const full = digits.startsWith("54") ? digits : `54${digits}`
+    return `https://wa.me/${full}?text=${encodeURIComponent(msg)}`
+  }
+  const waProductMsg = `¡Hola ${sellerName}! Te escribo desde Madsjeez. Vi tu producto: "${productTitle}" a $${unitPrice.toLocaleString("es-AR")} y me interesa. ¿Podés darme más info y coordinar el pedido?`
+  const waHref = buildWaHref(waProductMsg)
+  const useWhatsapp = !hasMercadoPago && Boolean(waHref)
 
   const handleQuantityChange = (qty: number, price: number) => {
     setQuantity(qty)
@@ -315,22 +330,48 @@ export function BuyBox({
       </div>
 
       <div className="flex flex-col gap-2 mb-6">
-        <button
-          type="button"
-          disabled={busy !== null || stock < 1}
-          onClick={handleBuyNow}
-          className="w-full bg-[#3483fa] text-white font-semibold py-3.5 rounded-md hover:bg-[#2968c8] transition-colors text-center text-[16px] disabled:opacity-60"
-        >
-          {busy === "buy" ? "Procesando…" : "Comprar ahora"}
-        </button>
-        <button
-          type="button"
-          disabled={busy !== null || stock < 1}
-          onClick={handleAddToCart}
-          className="w-full bg-[#d7e7ff] text-[#3483fa] font-semibold py-3.5 rounded-md hover:bg-[#c5dcfa] transition-colors text-[16px] disabled:opacity-60"
-        >
-          {busy === "cart" ? "Agregando…" : "Agregar al carrito"}
-        </button>
+        {useWhatsapp ? (
+          <>
+            <a
+              href={waHref!}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full bg-[#25d366] text-white font-semibold py-3.5 rounded-md hover:bg-[#1dba58] transition-colors text-center text-[16px] flex items-center justify-center gap-2"
+            >
+              <MessageCircle size={18} /> Consultar y comprar por WhatsApp
+            </a>
+            <a
+              href={buildWaHref(`¡Hola ${sellerName}! Te escribo desde Madsjeez. Quiero hacer un pedido de: "${productTitle}". ¿Cómo seguimos?`)!}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full bg-[#dcf8e9] text-[#1dba58] font-semibold py-3.5 rounded-md hover:bg-[#c5f0d8] transition-colors text-[16px] flex items-center justify-center gap-2"
+            >
+              <MessageCircle size={18} /> Hacer pedido
+            </a>
+            <p className="text-center text-[12px] text-gray-400 mt-1">
+              Este vendedor gestiona pedidos por WhatsApp
+            </p>
+          </>
+        ) : (
+          <>
+            <button
+              type="button"
+              disabled={busy !== null || stock < 1}
+              onClick={handleBuyNow}
+              className="w-full bg-[#3483fa] text-white font-semibold py-3.5 rounded-md hover:bg-[#2968c8] transition-colors text-center text-[16px] disabled:opacity-60"
+            >
+              {busy === "buy" ? "Procesando…" : "Comprar ahora"}
+            </button>
+            <button
+              type="button"
+              disabled={busy !== null || stock < 1}
+              onClick={handleAddToCart}
+              className="w-full bg-[#d7e7ff] text-[#3483fa] font-semibold py-3.5 rounded-md hover:bg-[#c5dcfa] transition-colors text-[16px] disabled:opacity-60"
+            >
+              {busy === "cart" ? "Agregando…" : "Agregar al carrito"}
+            </button>
+          </>
+        )}
       </div>
 
       {/* Stock info */}
