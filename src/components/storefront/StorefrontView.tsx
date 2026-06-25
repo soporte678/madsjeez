@@ -146,16 +146,23 @@ function SizeGuide({ primary }: { primary: string }) {
 function ProductCard({
   p, primary, waHref, onProductClick,
 }: {
-  p: { id: string; title: string; price: number; image: string | null; categoryName: string; description: string | null; isAnticipo: boolean };
+  p: { id: string; title: string; price: number; image: string | null; images: string[]; categoryName: string; description: string | null; isAnticipo: boolean };
   primary: string;
   waHref: string;
   onProductClick: (id: string) => void;
 }) {
+  const [imgIndex, setImgIndex] = useState(0);
   const color = extractColor(`${p.title} ${p.description ?? ""}`);
   const cat = extractCategory(p.title);
+  const images = p.images.length > 0 ? p.images : p.image ? [p.image] : [];
+  const hasMultiple = images.length > 1;
 
   return (
-    <div className="group relative flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:ring-slate-300">
+    <div
+      className="group relative flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:ring-slate-300"
+      onMouseEnter={() => hasMultiple && setImgIndex(1)}
+      onMouseLeave={() => setImgIndex(0)}
+    >
       {/* Badges */}
       <div className="absolute left-2 top-2 z-10 flex flex-col gap-1">
         {p.isAnticipo && (
@@ -168,23 +175,59 @@ function ProductCard({
         </span>
       </div>
 
-      {/* Image */}
+      {/* Fotos counter badge */}
+      {hasMultiple && (
+        <div className="absolute right-2 top-2 z-10">
+          <span className="flex items-center gap-0.5 rounded-full bg-black/50 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur">
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-white" />
+            {images.length} fotos
+          </span>
+        </div>
+      )}
+
+      {/* Image carousel */}
       <Link href={`/product/${p.id}`} onClick={() => onProductClick(p.id)} className="block">
         <div className="relative aspect-[3/4] overflow-hidden bg-slate-50">
-          {p.image ? (
-            <OptimizedProductImage
-              src={p.image}
-              title={p.title}
-              category={p.categoryName}
-              fill
-              sizes="(max-width:768px) 50vw, 25vw"
-              className="object-contain p-3 transition-transform duration-500 group-hover:scale-[1.04]"
-            />
+          {images.length > 0 ? (
+            <>
+              {images.map((src, i) => (
+                <OptimizedProductImage
+                  key={src}
+                  src={src}
+                  title={p.title}
+                  category={p.categoryName}
+                  fill
+                  sizes="(max-width:768px) 50vw, 25vw"
+                  className={`object-contain p-3 transition-all duration-500 ${
+                    i === imgIndex ? "opacity-100 scale-100" : "opacity-0 scale-[1.02] absolute inset-0"
+                  }`}
+                  priority={i === 0}
+                />
+              ))}
+            </>
           ) : (
             <div className="flex h-full w-full items-center justify-center">
               <Package className="h-10 w-10 text-slate-300" />
             </div>
           )}
+
+          {/* Dots navegador (desktop hover) */}
+          {hasMultiple && (
+            <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+              {images.map((_, i) => (
+                <button
+                  key={i}
+                  className={`h-1.5 rounded-full transition-all duration-200 ${
+                    i === imgIndex ? "w-4 bg-white" : "w-1.5 bg-white/50"
+                  }`}
+                  onMouseEnter={(e) => { e.stopPropagation(); setImgIndex(i); }}
+                  onClick={(e) => e.preventDefault()}
+                  aria-label={`Foto ${i + 1}`}
+                />
+              ))}
+            </div>
+          )}
+
           {/* Hover overlay */}
           <div className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-black/50 to-transparent p-4 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
             <span className="rounded-full bg-white px-5 py-2 text-xs font-bold text-slate-900 shadow">
@@ -194,13 +237,38 @@ function ProductCard({
         </div>
       </Link>
 
+      {/* Thumbnail strip (si hay múltiples fotos) */}
+      {hasMultiple && (
+        <div className="flex gap-1.5 border-t border-slate-100 px-3 py-2">
+          {images.slice(0, 5).map((src, i) => (
+            <button
+              key={src}
+              onMouseEnter={() => setImgIndex(i)}
+              onClick={(e) => { e.preventDefault(); setImgIndex(i); }}
+              className={`relative h-9 w-9 shrink-0 overflow-hidden rounded-lg border-2 transition-all duration-150 ${
+                i === imgIndex ? "border-pink-400 opacity-100" : "border-transparent opacity-60 hover:opacity-90"
+              }`}
+              aria-label={`Foto ${i + 1}`}
+            >
+              <OptimizedProductImage
+                src={src}
+                title={p.title}
+                fill
+                sizes="36px"
+                className="object-contain p-0.5"
+              />
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Info */}
-      <div className="flex flex-1 flex-col p-3">
+      <div className="flex flex-1 flex-col p-3 pt-1">
         {/* Color chip */}
         {color && (
-          <div className="mb-2 flex items-center gap-1.5">
+          <div className="mb-1.5 flex items-center gap-1.5">
             <span
-              className="h-3.5 w-3.5 rounded-full border"
+              className="h-3 w-3 rounded-full border"
               style={{ background: color.hex, borderColor: color.border ?? color.hex }}
             />
             <span className="text-[11px] font-medium text-slate-400">{color.name}</span>

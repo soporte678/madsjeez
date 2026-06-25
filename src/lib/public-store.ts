@@ -3,7 +3,7 @@ import { primaryImageUrlFromRows, hasValidProductImageUrl } from "@/lib/productV
 import { suggestStoreSlug, isValidStoreSlug } from "@/lib/store-slug";
 
 const productInclude = {
-  images: { orderBy: { order: "asc" as const }, take: 1 },
+  images: { orderBy: { order: "asc" as const }, take: 6 },
   category: { select: { name: true, slug: true } },
 } as const;
 
@@ -12,6 +12,7 @@ export type PublicStoreProduct = {
   title: string;
   price: number;
   image: string | null;
+  images: string[];
   categoryName: string;
   description: string | null;
   isAnticipo: boolean;
@@ -121,11 +122,15 @@ export async function getPublicStoreBySlug(slug: string): Promise<PublicStoreDat
   for (const p of rows) {
     const image = primaryImageUrlFromRows(p.images);
     if (!hasValidProductImageUrl(image)) continue;
+    const allImages = p.images
+      .map((img) => img.url)
+      .filter((url) => hasValidProductImageUrl(url));
     products.push({
       id: p.id,
       title: p.title,
       price: p.price,
       image,
+      images: allImages,
       categoryName: p.category?.name || "",
       description: p.description ?? null,
       isAnticipo: !!(p.description && /anticipo/i.test(p.description)),
