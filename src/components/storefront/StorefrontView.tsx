@@ -66,7 +66,7 @@ export function StorefrontView({ store, branding }: { store: PublicStoreData; br
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
           <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
-            {logo ? <Image src={logo} alt={name} fill sizes="36px" className="object-cover" unoptimized={logoUnoptimized} /> : <span className="flex h-full w-full items-center justify-center text-sm font-black" style={{ color: primary }}>{name.charAt(0).toUpperCase()}</span>}
+            {logo ? <Image src={logo} alt={name} fill sizes="36px" className="object-contain p-1" unoptimized={logoUnoptimized} /> : <span className="flex h-full w-full items-center justify-center text-sm font-black" style={{ color: primary }}>{name.charAt(0).toUpperCase()}</span>}
           </div>
           <span className="truncate font-bold text-slate-900">{name}</span>
           <form onSubmit={onSearch} className="ml-auto hidden items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2 py-1.5 sm:flex">
@@ -83,7 +83,7 @@ export function StorefrontView({ store, branding }: { store: PublicStoreData; br
         <div className="absolute bottom-0 left-0 right-0 mx-auto max-w-6xl px-4 pb-4">
           <div className="flex items-end gap-4">
             <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border-2 border-white bg-white shadow-lg md:h-24 md:w-24">
-              {logo ? <Image src={logo} alt={name} fill sizes="96px" className="object-cover" unoptimized={logoUnoptimized} /> : <span className="flex h-full w-full items-center justify-center text-2xl font-black" style={{ color: primary }}>{name.charAt(0).toUpperCase()}</span>}
+              {logo ? <Image src={logo} alt={name} fill sizes="96px" className="object-contain p-2" unoptimized={logoUnoptimized} /> : <span className="flex h-full w-full items-center justify-center text-2xl font-black" style={{ color: primary }}>{name.charAt(0).toUpperCase()}</span>}
             </div>
             <div className="pb-1 text-white">
               <h1 className="text-2xl font-black drop-shadow md:text-4xl">{name}</h1>
