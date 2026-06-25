@@ -1,0 +1,7 @@
+node_modules
+.next
+.git
+twa/android/.gradle
+twa/android/build
+twa/android/app/build
+*.log
