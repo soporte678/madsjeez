@@ -3,7 +3,7 @@
  * Maneja push notifications y caching basico
  */
 
-const CACHE_NAME = "madsjeez-v1";
+const CACHE_NAME = "madsjeez-v2";
 
 // Instalacion: precachear recursos esenciales
 self.addEventListener("install", (event) => {
@@ -11,8 +11,12 @@ self.addEventListener("install", (event) => {
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll([
         "/",
-        "/icons/icon-192x192.png",
-        "/icons/icon-512x512.png",
+        "/descargar-app",
+        "/como-usar-la-app",
+        "/offline.html",
+        "/icons/icon-192x192.svg",
+        "/icons/icon-512x512.svg",
+        "/manifest.json",
       ]);
     })
   );
@@ -138,7 +142,12 @@ self.addEventListener("fetch", (event) => {
       .catch(() => {
         // Fallback a cache si hay error de red
         return caches.match(event.request).then((cached) => {
-          return cached || new Response("Offline", { status: 503 });
+          if (cached) return cached;
+          // Si es navegacion, servir offline page
+          if (event.request.destination === 'document' || event.request.mode === 'navigate') {
+            return caches.match('/offline.html');
+          }
+          return new Response('Offline', { status: 503 });
         });
       })
   );

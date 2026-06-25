@@ -99,6 +99,32 @@ export default function DescargarAppPage() {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
             </Link>
           </div>
+
+          {/* Botón APK para Android y desktop */}
+          {!isIosFirst && (
+            <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+              <a
+                href="/downloads/madsjeez.apk"
+                download="madsjeez.apk"
+                className="inline-flex items-center gap-2 bg-[#f97316] hover:bg-orange-600 text-white font-black px-7 py-4 rounded-2xl transition-all text-base active:scale-95 shadow-lg shadow-orange-500/25"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                Descargar APK para Android
+                <span className="text-orange-200 text-sm font-normal">1.2 MB</span>
+              </a>
+              <Link href="#iphone" className="inline-flex items-center gap-2 border border-gray-700 text-gray-300 hover:text-white hover:border-gray-500 font-semibold px-6 py-4 rounded-2xl transition-all text-sm">
+                Instalar en iPhone
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
+              </Link>
+            </div>
+          )}
+          {isIosFirst && (
+            <div className="mt-8">
+              <a href="#iphone" className="inline-flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-white font-bold px-7 py-4 rounded-2xl transition-all text-base">
+                Ver pasos para iPhone →
+              </a>
+            </div>
+          )}
         </div>
       </section>
 
@@ -163,18 +189,57 @@ export default function DescargarAppPage() {
             <span className="text-orange-500 font-bold text-sm uppercase tracking-wider">Para Android</span>
           </div>
           <h2 className="text-2xl md:text-3xl font-black mb-2 text-gray-900">Cómo instalar en Android</h2>
-          <p className="text-gray-500 mb-8">Desde Chrome, en 4 pasos rápidos. Sin descargar ningún archivo.</p>
-          <div className="space-y-8">
-            <StepCircle n={1} label="Abrí Chrome en tu celular Android." detail="Tiene que ser Google Chrome (el ícono de círculo de colores). No Firefox ni Samsung Internet." />
-            <StepCircle n={2} label="Entrá a www.madsjeez.com.ar" detail="Escribilo en la barra de arriba de Chrome y apretá Enter." />
-            <StepCircle n={3} label='Tocá los tres puntitos (⋮) arriba a la derecha.' detail='Se abre un menú. Buscá la opción "Agregar a pantalla de inicio" o "Instalar app".' />
-            <StepCircle n={4} label='Tocá "Instalar" o "Agregar". ¡Listo!' detail="El ícono de Madsjeez aparece en tu pantalla de inicio. Tocalo para entrar directo a la app, igual que cualquier otra." />
+          <p className="text-gray-500 mb-8">Dos métodos disponibles. Recomendamos la APK directa.</p>
+
+          {/* Método 1: APK directa */}
+          <div className="bg-orange-50 border-2 border-orange-200 rounded-2xl p-6 mb-6">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="bg-orange-500 text-white text-xs font-black px-2.5 py-1 rounded-lg">Recomendado</span>
+              <h3 className="font-black text-gray-900 text-lg">Instalar la APK directamente</h3>
+            </div>
+
+            <div className="space-y-5">
+              <StepCircle n={1} label="Descargá la APK" detail="Tocá el botón naranja de arriba o el de acá abajo para descargar el archivo." />
+              <StepCircle n={2} label="Abrí el archivo descargado" detail="Vas a ver la notificación de descarga en tu celular. Tocala para abrir el instalador." />
+              <StepCircle n={3} label='Si aparece "Fuentes desconocidas", tocá Configuración' detail='Android puede pedirte permiso para instalar apps fuera de Google Play. Tocá "Configuración", activá el permiso para tu navegador, y volvé.' />
+              <StepCircle n={4} label='Tocá "Instalar" → Abrir. ¡Listo!' detail="El ícono de Madsjeez aparece en tu celular. Tiene todas las funciones de la web." />
+            </div>
+
+            <a
+              href="/downloads/madsjeez.apk"
+              download="madsjeez.apk"
+              className="mt-6 w-full flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-black px-5 py-4 rounded-xl transition-all active:scale-95"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              Descargar APK — 1.2 MB
+            </a>
+
+            <div className="mt-4 flex items-center gap-2 text-xs text-orange-700 bg-orange-100 rounded-xl px-4 py-2.5">
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+              Descargá solo desde <strong className="ml-1">www.madsjeez.com.ar</strong> — es la única fuente oficial
+            </div>
           </div>
 
-          <div className="mt-8 bg-orange-50 border border-orange-200 rounded-2xl p-5 text-sm text-orange-800">
-            <p className="font-bold mb-1">💡 ¿Chrome te mostró un banner automático?</p>
-            <p>Si Chrome te muestra un cartel que dice "Instalar Madsjeez" o "Agregar a pantalla de inicio" al entrar al sitio, tocá ese banner directamente. Es la forma más fácil.</p>
-          </div>
+          {/* Método 2: Chrome PWA */}
+          <details className="bg-gray-50 border border-gray-200 rounded-2xl overflow-hidden">
+            <summary className="px-6 py-4 cursor-pointer font-bold text-gray-800 flex items-center justify-between select-none hover:bg-gray-100 transition-colors">
+              <span>Método alternativo: instalar desde Chrome (sin descargar archivo)</span>
+              <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/></svg>
+            </summary>
+            <div className="px-6 pb-6 pt-2">
+              <p className="text-gray-500 text-sm mb-6">Si preferís no descargar ningún archivo, podés usar Chrome para agregar Madsjeez a tu pantalla de inicio:</p>
+              <div className="space-y-6">
+                <StepCircle n={1} label="Abrí Chrome en tu celular Android." detail="Tiene que ser Google Chrome (el ícono de círculo de colores). No Firefox ni Samsung Internet." />
+                <StepCircle n={2} label="Entrá a www.madsjeez.com.ar" detail="Escribilo en la barra de arriba de Chrome y apretá Enter." />
+                <StepCircle n={3} label='Tocá los tres puntitos (⋮) arriba a la derecha.' detail='Se abre un menú. Buscá la opción "Agregar a pantalla de inicio" o "Instalar app".' />
+                <StepCircle n={4} label='Tocá "Instalar" o "Agregar". ¡Listo!' detail="El ícono de Madsjeez aparece en tu pantalla de inicio." />
+              </div>
+              <div className="mt-6 bg-orange-50 border border-orange-200 rounded-xl p-4 text-sm text-orange-800">
+                <p className="font-bold mb-1">Chrome te mostró un banner automático?</p>
+                <p>Si Chrome te muestra un cartel que dice "Instalar Madsjeez", tocalo directamente. Es la forma más fácil.</p>
+              </div>
+            </div>
+          </details>
 
           {/* Google Play — Próximamente */}
           <div className="mt-4 bg-gray-50 border border-gray-200 rounded-2xl p-5 flex items-center gap-4">
@@ -249,15 +314,84 @@ export default function DescargarAppPage() {
 
       {/* ── QUÉ PODÉS HACER ── */}
       <section className="px-4 py-14 bg-white">
-        <div className="mx-auto max-w-2xl">
-          <h2 className="text-2xl md:text-3xl font-black text-center mb-8 text-gray-900">Qué podés hacer con la app</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {FEATURES.map((f) => (
-              <div key={f.label} className="bg-gray-50 border border-gray-100 rounded-2xl p-4 text-center">
-                <div className="text-3xl mb-2">{f.icon}</div>
-                <p className="text-sm font-semibold text-gray-700">{f.label}</p>
-              </div>
-            ))}
+        <div className="mx-auto max-w-3xl">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-3">La app tiene todo lo que tiene la web</h2>
+            <p className="text-gray-500">Nada se pierde. Todas las funciones disponibles en tu celular.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Compradores */}
+            <div className="bg-gray-50 rounded-2xl border border-gray-100 p-5">
+              <h3 className="font-black text-gray-900 mb-4 flex items-center gap-2">
+                <span className="w-7 h-7 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                </span>
+                Para compradores
+              </h3>
+              <ul className="space-y-2.5 text-sm text-gray-700">
+                {["Buscar productos y catálogos", "Ver fichas completas de productos", "Agregar al carrito y comprar", "Ver historial de pedidos", "Contactar vendedores", "Guardar favoritos", "Explorar por categorías", "Ver ofertas y descuentos"].map(f => (
+                  <li key={f} className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-orange-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Vendedores */}
+            <div className="bg-gray-50 rounded-2xl border border-gray-100 p-5">
+              <h3 className="font-black text-gray-900 mb-4 flex items-center gap-2">
+                <span className="w-7 h-7 bg-orange-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                </span>
+                Para vendedores
+              </h3>
+              <ul className="space-y-2.5 text-sm text-gray-700">
+                {["Panel de ventas y estadísticas", "Publicar y editar productos", "Ver y gestionar stock", "Responder preguntas y consultas", "Ver pedidos y ventas", "Gestionar envíos", "Crear publicaciones", "Ver métricas en tiempo real"].map(f => (
+                  <li key={f} className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-orange-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Cuenta */}
+            <div className="bg-gray-50 rounded-2xl border border-gray-100 p-5">
+              <h3 className="font-black text-gray-900 mb-4 flex items-center gap-2">
+                <span className="w-7 h-7 bg-green-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                </span>
+                Tu cuenta
+              </h3>
+              <ul className="space-y-2.5 text-sm text-gray-700">
+                {["Iniciar y cerrar sesión", "Editar perfil y datos", "Ver historial completo", "Gestionar notificaciones", "Cambiar contraseña", "Configuración de cuenta"].map(f => (
+                  <li key={f} className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-orange-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* App features */}
+            <div className="bg-orange-50 rounded-2xl border border-orange-100 p-5">
+              <h3 className="font-black text-gray-900 mb-4 flex items-center gap-2">
+                <span className="w-7 h-7 bg-orange-500 rounded-lg flex items-center justify-center">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18.01"/></svg>
+                </span>
+                Funciones extra en la app
+              </h3>
+              <ul className="space-y-2.5 text-sm text-gray-700">
+                {["Acceso rápido desde pantalla de inicio", "Ícono propio en el celular", "Notificaciones push nativas", "Sin barra de navegación del browser", "Pantalla completa (full screen)", "Funciona sin instalar Google Play"].map(f => (
+                  <li key={f} className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-orange-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
       </section>
