@@ -16,10 +16,11 @@ import {
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-function waLink(phone: string): string {
+function waLink(phone: string, message?: string): string {
   const digits = phone.replace(/\D/g, "");
   const full = digits.startsWith("54") ? digits : `54${digits}`;
-  return `https://wa.me/${full}`;
+  const base = `https://wa.me/${full}`;
+  return message ? `${base}?text=${encodeURIComponent(message)}` : base;
 }
 function mapsEmbedUrl(address: string) {
   return `https://maps.google.com/maps?q=${encodeURIComponent(address)}&output=embed&z=16`;
@@ -144,14 +145,17 @@ function SizeGuide({ primary }: { primary: string }) {
 // ─── Product card ─────────────────────────────────────────────────────────────
 
 function ProductCard({
-  p, primary, waHref, onProductClick,
+  p, primary, waPhone, storeName, onProductClick,
 }: {
   p: { id: string; title: string; price: number; image: string | null; images: string[]; categoryName: string; description: string | null; isAnticipo: boolean };
   primary: string;
-  waHref: string;
+  waPhone: string | null;
+  storeName: string;
   onProductClick: (id: string) => void;
 }) {
   const [imgIndex, setImgIndex] = useState(0);
+  const productMsg = `¡Hola! Te escribo desde la tienda de ${storeName} en Madsjeez. Me interesa el producto: "${p.title}". ¿Me podés dar más información sobre talles, colores y disponibilidad?`;
+  const productWaHref = waPhone ? waLink(waPhone, productMsg) : null;
   const color = extractColor(`${p.title} ${p.description ?? ""}`);
   const cat = extractCategory(p.title);
   const images = p.images.length > 0 ? p.images : p.image ? [p.image] : [];
@@ -286,10 +290,23 @@ function ProductCard({
             ${p.price.toLocaleString("es-AR")}
           </p>
           {p.isAnticipo ? (
-            <span className="text-[10px] font-semibold text-amber-600">Consultar</span>
-          ) : (
+            productWaHref ? (
+              <a
+                href={productWaHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-bold text-white transition hover:opacity-90"
+                style={{ background: "#f59e0b" }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MessageCircle className="h-2.5 w-2.5" /> Anticipo
+              </a>
+            ) : (
+              <span className="text-[10px] font-semibold text-amber-600">Consultar</span>
+            )
+          ) : productWaHref ? (
             <a
-              href={waHref}
+              href={productWaHref}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-bold text-white transition hover:opacity-90"
@@ -298,7 +315,7 @@ function ProductCard({
             >
               <MessageCircle className="h-2.5 w-2.5" /> Stock
             </a>
-          )}
+          ) : null}
         </div>
       </div>
     </div>
@@ -322,7 +339,12 @@ export function StorefrontView({ store, branding }: { store: PublicStoreData; br
   const location = [branding?.city, branding?.province].filter(Boolean).join(", ");
   const address = branding?.address;
   const waPhone = branding?.whatsapp || branding?.phone;
-  const waHref = waPhone ? waLink(waPhone) : "#";
+  const waHrefGeneral = waPhone
+    ? waLink(waPhone, `¡Hola ${name}! Te escribo desde tu tienda en Madsjeez. Quisiera más información sobre sus productos.`)
+    : "#";
+  const waHrefStock = waPhone
+    ? waLink(waPhone, `¡Hola ${name}! Te escribo desde tu tienda en Madsjeez. Antes de hacer mi pedido, quería consultar disponibilidad de talle y color. ¿Me podés ayudar?`)
+    : "#";
 
   type Social = { Icon: React.FC<{ className?: string }>; href: string; label: string; color?: string };
   const socials: Social[] = [
@@ -397,7 +419,7 @@ export function StorefrontView({ store, branding }: { store: PublicStoreData; br
 
           {waPhone && (
             <a
-              href={waHref}
+              href={waHrefGeneral}
               target="_blank"
               rel="noopener noreferrer"
               className="ml-auto hidden items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold text-white sm:inline-flex"
@@ -465,7 +487,7 @@ export function StorefrontView({ store, branding }: { store: PublicStoreData; br
               {waPhone && (
                 <div className="mt-5 flex flex-wrap justify-center gap-3 md:justify-start">
                   <a
-                    href={waHref}
+                    href={waHrefGeneral}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-3 text-sm font-black shadow-lg transition hover:scale-105"
@@ -507,7 +529,7 @@ export function StorefrontView({ store, branding }: { store: PublicStoreData; br
           <p className="text-sm text-amber-800">
             <strong>Stock limitado.</strong> Consultá disponibilidad de talle y color por WhatsApp antes de hacer tu pedido.
             {waPhone && (
-              <a href={waHref} target="_blank" rel="noopener noreferrer" className="ml-2 font-bold underline underline-offset-2 hover:no-underline">
+              <a href={waHrefStock} target="_blank" rel="noopener noreferrer" className="ml-2 font-bold underline underline-offset-2 hover:no-underline">
                 Consultar ahora →
               </a>
             )}
@@ -552,7 +574,8 @@ export function StorefrontView({ store, branding }: { store: PublicStoreData; br
                 <ProductCard
                   p={p}
                   primary={primary}
-                  waHref={waHref}
+                  waPhone={waPhone ?? null}
+                  storeName={name}
                   onProductClick={(id) => {
                     trackEvent("store_product_click", { product_id: id, store: store.storeSlug });
                     trackStore("product_click", id);
