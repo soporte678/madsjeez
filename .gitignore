@@ -72,5 +72,5 @@ twa/android/.gradle/
 twa/android/build/
 twa/android/app/build/
 twa/android/local.properties
-# APK: commiteado por GitHub Actions y por builds locales
-public/downloads/madsjeez.apk
+# APK: commiteada en el repo para que Railway la sirva
+# public/downloads/madsjeez.apk
