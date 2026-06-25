@@ -350,36 +350,24 @@ export default function HomePageClient() {
         </div>
       </section>
 
-      {/* ───────── DESCARGÁ LA APP ───────── */}
-      <section className="bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 border-y border-gray-800">
-        <div className="mx-auto max-w-5xl px-4 py-14 md:py-16">
-          <div className="flex flex-col md:flex-row items-center gap-10">
-            {/* Ícono/visual */}
-            <div className="flex-shrink-0 w-20 h-20 rounded-3xl bg-[#f97316] flex items-center justify-center shadow-lg shadow-orange-500/30">
-              <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18.5l-6-6m6 6l6-6m-6 6V5.5" /></svg>
-            </div>
-            {/* Texto */}
-            <div className="flex-1 text-center md:text-left">
-              <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">Descargá la app de Madsjeez</h2>
-              <p className="mt-2 text-gray-400 text-base leading-relaxed max-w-xl">
-                Usá Madsjeez desde tu celular como una app. Comprá, vendé y administrá tus productos de forma más rápida y cómoda, usando la misma cuenta que en la web.
-              </p>
-              <div className="mt-6 flex flex-wrap gap-3 justify-center md:justify-start">
-                <a href="/descargar-app"
-                  className="inline-flex items-center gap-2 bg-[#f97316] hover:bg-orange-600 text-white font-bold px-6 py-3 rounded-xl transition-all active:scale-95 text-sm">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.523 15.341l-4.415-2.581A2 2 0 0 0 12 12.5a2 2 0 0 0-1.108.26L6.477 15.34A8 8 0 0 1 4 9h16a8 8 0 0 1-2.477 6.341zM12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/></svg>
-                  Descargar app para Android
-                </a>
-                <a href="/descargar-app#iphone"
-                  className="inline-flex items-center gap-2 border border-gray-600 hover:border-gray-400 text-gray-300 hover:text-white font-semibold px-5 py-3 rounded-xl transition-all text-sm">
-                  Ver cómo instalarla en iPhone
-                </a>
-                <a href="/"
-                  className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-300 font-medium px-4 py-3 rounded-xl transition-all text-sm underline underline-offset-2">
-                  Seguir usando la web
-                </a>
+      {/* ───────── APP TRUST STRIP ───────── */}
+      <section className="bg-gray-950 border-t border-gray-800/70">
+        <div className="mx-auto max-w-5xl px-4 py-5">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-[#f97316] flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18.01"/></svg>
+              </div>
+              <div>
+                <p className="text-white font-semibold text-sm leading-tight">Madsjeez también está disponible como app</p>
+                <p className="text-gray-500 text-xs mt-0.5">Android · iPhone · Misma cuenta · Sin costo extra</p>
               </div>
             </div>
+            <a href="/descargar-app"
+              className="flex-shrink-0 inline-flex items-center gap-1.5 text-[#f97316] hover:text-orange-400 font-semibold text-sm transition-colors group">
+              Ver cómo instalarla
+              <svg className="w-4 h-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
+            </a>
           </div>
         </div>
       </section>
