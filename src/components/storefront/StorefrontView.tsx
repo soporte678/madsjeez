@@ -49,6 +49,9 @@ const COLOR_MAP: Array<{ pattern: RegExp; hex: string; name: string; border?: st
   { pattern: /\blavanda\b/i,     hex: "#a78bfa", name: "Lavanda" },
   { pattern: /\brojo\b/i,        hex: "#ef4444", name: "Rojo" },
   { pattern: /\bacacia\b/i,      hex: "#c4a462", name: "Acacia" },
+  { pattern: /\bvison\b/i,       hex: "#d4b896", name: "Visón", border: "#c4a376" },
+  { pattern: /\bchampagne\b/i,   hex: "#f5e6c8", name: "Champagne", border: "#e0cba8" },
+  { pattern: /\blila\b/i,        hex: "#c084fc", name: "Lila" },
   { pattern: /vichy/i,           hex: "#475569", name: "Vichy" },
   { pattern: /estampa Francia/i, hex: "#6366f1", name: "Estampado" },
   { pattern: /estampa/i,         hex: "#8b5cf6", name: "Estampado" },
@@ -64,10 +67,10 @@ function extractColor(text: string) {
 
 function extractCategory(title: string): string {
   const t = title.toLowerCase()
-  if (t.includes("top")) return "Tops"
-  if (t.includes("malla enteriza") || t.includes("vedetina") || t.includes("cala")) return "Mallas"
-  if (t.includes("triángulo") || t.includes("triangulito") || t.includes("colaless") || t.includes("culotte") || t.includes("bottom")) return "Bikinis"
-  if (t.includes("pollerita") || t.includes("remera")) return "Cover-ups"
+  if (t.includes("malla enteriza") || t.includes("malla indiana") || t.includes("malla noe") || t.includes("malla noé") || t.includes("malla leini") || t.includes("malla paisana") || t.includes("malla lili") || t.includes("malla cala") || t.includes("malla negra") || t.includes("malla vedetina") || t.includes("vedetina") || t.includes("natacion") || t.includes("natación")) return "Mallas"
+  if (t.includes("top") || t.includes("tankini") || t.includes("bando")) return "Tops"
+  if (t.includes("triángulo") || t.includes("triangulito") || t.includes("triangulo") || t.includes("colaless") || t.includes("culotteless") || t.includes("culotte") || t.includes("bottom")) return "Bikinis"
+  if (t.includes("pollerita") || t.includes("remera") || t.includes("short") || t.includes("calza") || t.includes("biker")) return "Cover-ups"
   return "Colección"
 }
 
@@ -176,27 +179,6 @@ function ProductCard({
           </div>
         </div>
       </Link>
-
-      {/* Thumbnail strip */}
-      {hasMultiple && (
-        <div className="flex gap-1.5 px-3 pt-2 pb-1">
-          {images.slice(0, 5).map((src, i) => (
-            <button
-              key={src}
-              onMouseEnter={() => setImgIndex(i)}
-              onClick={(e) => { e.preventDefault(); setImgIndex(i) }}
-              className="relative h-8 w-8 shrink-0 overflow-hidden rounded-lg border-2 transition-all duration-150"
-              style={{
-                borderColor: i === imgIndex ? primary : "transparent",
-                opacity: i === imgIndex ? 1 : 0.5,
-              }}
-              aria-label={`Foto ${i + 1}`}
-            >
-              <OptimizedProductImage src={src} title={p.title} fill sizes="32px" className="object-contain p-0.5" />
-            </button>
-          ))}
-        </div>
-      )}
 
       {/* Info */}
       <div className="flex flex-1 flex-col gap-2 px-3 pb-3 pt-1">
@@ -434,6 +416,22 @@ export function StorefrontView({ store, branding }: { store: PublicStoreData; br
                 ))}
               </div>
 
+              {/* Compact stats */}
+              <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-white/25">
+                <span className="font-bold text-white/35">{store.productCount} productos</span>
+                <span>·</span>
+                <span>Talles S–XXL</span>
+                {location && (
+                  <>
+                    <span>·</span>
+                    <span className="flex items-center gap-1">
+                      <MapPin className="h-3 w-3 text-white/20" />
+                      {location}
+                    </span>
+                  </>
+                )}
+              </div>
+
               {/* CTAs */}
               {waPhone && (
                 <div className="mt-9 flex flex-wrap gap-3">
@@ -460,53 +458,70 @@ export function StorefrontView({ store, branding }: { store: PublicStoreData; br
               )}
             </div>
 
-            {/* RIGHT: logo display + stats */}
-            <div className="flex flex-col items-center gap-8">
-              {/* Big logo with pink glow */}
+            {/* RIGHT: product mosaic — hidden on mobile, shows on lg+ */}
+            <div className="relative hidden lg:block">
+              {/* Pink ambient glow behind the mosaic */}
               <div
-                className="relative flex h-52 w-52 items-center justify-center overflow-hidden rounded-[36px]"
+                aria-hidden
+                className="pointer-events-none absolute inset-0 z-0"
                 style={{
-                  background: "rgba(255,255,255,0.04)",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  boxShadow: `0 0 0 1px ${primary}30, 0 24px 80px ${primary}28, inset 0 1px 0 rgba(255,255,255,0.06)`,
+                  background: `radial-gradient(circle at center, ${primary}22, transparent 70%)`,
+                  filter: "blur(60px)",
                 }}
-              >
-                {logo ? (
-                  <Image
-                    src={logo}
-                    alt={name}
-                    fill
-                    sizes="208px"
-                    className="object-contain p-6"
-                    unoptimized={logoUnoptimized}
-                  />
-                ) : (
-                  <span className="text-8xl font-black" style={{ color: primary }}>
-                    {name.charAt(0)}
-                  </span>
-                )}
-              </div>
-
-              {/* Stats */}
-              <div className="grid w-full grid-cols-3 gap-3">
-                {[
-                  { value: store.productCount.toString(), label: "Productos" },
-                  { value: "5",                           label: "Talles"    },
-                  { value: location || "CABA",            label: "Ubicación" },
-                ].map(({ value, label }) => (
+              />
+              {store.products.length >= 2 ? (
+                <div className="relative z-10 grid grid-cols-2 gap-3">
+                  {store.products.slice(0, 4).map((p, i) => (
+                    <Link
+                      key={p.id}
+                      href={`/product/${p.id}`}
+                      className="group relative overflow-hidden rounded-2xl"
+                      style={{
+                        background: "rgba(255,255,255,0.06)",
+                        border: "1px solid rgba(255,255,255,0.10)",
+                        boxShadow: "0 4px 24px rgba(0,0,0,0.30)",
+                      }}
+                    >
+                      <div className="relative aspect-[3/4]">
+                        {p.image && (
+                          <OptimizedProductImage
+                            src={p.image}
+                            title={p.title}
+                            category={p.categoryName}
+                            fill
+                            sizes="20vw"
+                            className="object-contain p-3 transition-transform duration-700 group-hover:scale-[1.04]"
+                            priority={i < 2}
+                          />
+                        )}
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                          <p className="line-clamp-1 text-[10px] font-semibold text-white/70">{p.title}</p>
+                          <p className="text-xs font-black" style={{ color: primary }}>
+                            ${p.price.toLocaleString("es-AR")}
+                          </p>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center">
                   <div
-                    key={label}
-                    className="rounded-2xl p-4 text-center"
+                    className="relative flex h-52 w-52 items-center justify-center overflow-hidden rounded-[36px]"
                     style={{
                       background: "rgba(255,255,255,0.04)",
                       border: "1px solid rgba(255,255,255,0.08)",
+                      boxShadow: `0 0 0 1px ${primary}30, 0 24px 80px ${primary}28`,
                     }}
                   >
-                    <p className="text-xl font-black text-white">{value}</p>
-                    <p className="mt-0.5 text-[11px] text-white/40">{label}</p>
+                    {logo ? (
+                      <Image src={logo} alt={name} fill sizes="208px" className="object-contain p-6" unoptimized={logoUnoptimized} />
+                    ) : (
+                      <span className="text-8xl font-black" style={{ color: primary }}>{name.charAt(0)}</span>
+                    )}
                   </div>
-                ))}
-              </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -758,7 +773,15 @@ export function StorefrontView({ store, branding }: { store: PublicStoreData; br
                 <span style={{ color: primary }}>con identidad.</span>
               </h2>
               <div className="mt-4 h-[2px] w-12 rounded-full" style={{ background: `${primary}60` }} />
-              <p className="mt-6 text-base leading-relaxed text-white/50">
+              <blockquote
+                className="mt-8 border-l-2 pl-5"
+                style={{ borderColor: `${primary}70` }}
+              >
+                <p className="text-base font-medium italic leading-relaxed text-white/45">
+                  {`"Diseñamos para cuerpos reales, con materiales de alta calidad y detalles que se notan en cada uso."`}
+                </p>
+              </blockquote>
+              <p className="mt-5 text-base leading-relaxed text-white/50">
                 {desc ||
                   "Kachet es una marca argentina de bikinis, mallas y ropa de playa. Diseños exclusivos con materiales de alta calidad, pensados para cada tipo de cuerpo."}
               </p>

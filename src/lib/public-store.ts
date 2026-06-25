@@ -115,7 +115,7 @@ export async function getPublicStoreBySlug(slug: string): Promise<PublicStoreDat
     },
     include: productInclude,
     orderBy: { updatedAt: "desc" },
-    take: 48,
+    take: 96,
   });
 
   const products: PublicStoreProduct[] = [];
