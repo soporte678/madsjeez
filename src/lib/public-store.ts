@@ -13,6 +13,8 @@ export type PublicStoreProduct = {
   price: number;
   image: string | null;
   categoryName: string;
+  description: string | null;
+  isAnticipo: boolean;
 };
 
 export type PublicStoreData = {
@@ -125,6 +127,8 @@ export async function getPublicStoreBySlug(slug: string): Promise<PublicStoreDat
       price: p.price,
       image,
       categoryName: p.category?.name || "",
+      description: p.description ?? null,
+      isAnticipo: !!(p.description && /anticipo/i.test(p.description)),
     });
   }
 
