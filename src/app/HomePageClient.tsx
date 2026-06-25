@@ -31,6 +31,7 @@ const CategoryCarousel = dynamic(() => import("@/components/CategoryCarousel").t
 const LazyRotatingProductCarousel = dynamic(() => import("@/components/LazyRotatingProductCarousel").then(m => m.LazyRotatingProductCarousel), { loading: () => <div className="mb-8 h-48 animate-pulse rounded-xl bg-muted/60" /> })
 const PaidAdBannerSlot = dynamic(() => import("@/components/ads/PaidAdBannerSlot").then(m => m.PaidAdBannerSlot), { loading: () => <div className="h-24 animate-pulse rounded-xl bg-muted/60" /> })
 const HomeSeoContent = dynamic(() => import("@/components/home/HomeSeoContent").then(m => m.HomeSeoContent), { loading: () => null })
+const AppQRCode = dynamic(() => import("@/components/home/AppQRCode").then(m => m.AppQRCode), { ssr: false, loading: () => <div className="w-14 h-14 rounded-lg bg-gray-800 animate-pulse flex-shrink-0" /> })
 const SiteCompanyFooter = dynamic(() => import("@/components/seo/SiteCompanyFooter").then(m => m.SiteCompanyFooter), { loading: () => null })
 const SiteSocialFooter = dynamic(() => import("@/components/seo/SiteSocialFooter").then(m => m.SiteSocialFooter), { loading: () => null })
 const SiteNetworkFooter = dynamic(() => import("@/components/seo/SiteNetworkFooter").then(m => m.SiteNetworkFooter), { loading: () => null })
@@ -353,8 +354,9 @@ export default function HomePageClient() {
       {/* ───────── APP TRUST STRIP ───────── */}
       <section className="bg-gray-950 border-t border-gray-800/70">
         <div className="mx-auto max-w-5xl px-4 py-5">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+            {/* texto */}
+            <div className="flex items-center gap-3 sm:flex-1">
               <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-[#f97316] flex items-center justify-center">
                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18.01"/></svg>
               </div>
@@ -363,11 +365,62 @@ export default function HomePageClient() {
                 <p className="text-gray-500 text-xs mt-0.5">Android · iPhone · Misma cuenta · Sin costo extra</p>
               </div>
             </div>
-            <a href="/descargar-app"
-              className="flex-shrink-0 inline-flex items-center gap-1.5 text-[#f97316] hover:text-orange-400 font-semibold text-sm transition-colors group">
-              Ver cómo instalarla
-              <svg className="w-4 h-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
-            </a>
+
+            {/* QR + badges + link */}
+            <div className="flex flex-wrap items-center gap-3 justify-center sm:justify-end">
+              {/* QR */}
+              <a href="/descargar-app" title="Escaneá para instalar la app" className="flex-shrink-0 hover:opacity-80 transition-opacity">
+                <AppQRCode size={56} />
+              </a>
+
+              {/* Google Play — Próximamente */}
+              <div className="relative flex-shrink-0">
+                <div className="flex items-center gap-2 bg-gray-800/60 border border-gray-700/60 rounded-xl px-3 py-2 opacity-50 select-none cursor-default">
+                  <svg className="w-6 h-6 flex-shrink-0" viewBox="0 0 24 24" fill="none">
+                    <path d="M3 3.8C3 3 3.9 2.5 4.6 2.9L21 11.5C21.7 11.9 21.7 12.9 21 13.3L4.6 21.9C3.9 22.3 3 21.8 3 21V3.8Z" fill="url(#gp1)"/>
+                    <path d="M3 3.8L13 12.4 4.6 2.9C3.9 2.5 3 3 3 3.8Z" fill="url(#gp2)"/>
+                    <path d="M3 21L13 12.4 4.6 21.9C3.9 22.3 3 21.8 3 21Z" fill="#1a9e47"/>
+                    <path d="M21 11.5L13 12.4 21 13.3C21.7 12.9 21.7 11.9 21 11.5Z" fill="#f9ab00"/>
+                    <defs>
+                      <linearGradient id="gp1" x1="3" y1="12.4" x2="21" y2="12.4" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stopColor="#4285f4"/>
+                        <stop offset="100%" stopColor="#34a853"/>
+                      </linearGradient>
+                      <linearGradient id="gp2" x1="3" y1="8" x2="13" y2="8" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stopColor="#ea4335"/>
+                        <stop offset="100%" stopColor="#4285f4"/>
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                  <div className="text-left">
+                    <div className="text-gray-500 text-[9px] leading-tight">Pronto en</div>
+                    <div className="text-gray-300 text-xs font-bold leading-tight">Google Play</div>
+                  </div>
+                </div>
+                <span className="absolute -top-2 -right-1.5 bg-[#f97316] text-white text-[9px] font-black px-1.5 py-0.5 rounded-full leading-none whitespace-nowrap">Próx.</span>
+              </div>
+
+              {/* App Store — Próximamente */}
+              <div className="relative flex-shrink-0">
+                <div className="flex items-center gap-2 bg-gray-800/60 border border-gray-700/60 rounded-xl px-3 py-2 opacity-50 select-none cursor-default">
+                  <svg className="w-6 h-6 flex-shrink-0 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                  </svg>
+                  <div className="text-left">
+                    <div className="text-gray-500 text-[9px] leading-tight">Pronto en</div>
+                    <div className="text-gray-300 text-xs font-bold leading-tight">App Store</div>
+                  </div>
+                </div>
+                <span className="absolute -top-2 -right-1.5 bg-[#f97316] text-white text-[9px] font-black px-1.5 py-0.5 rounded-full leading-none whitespace-nowrap">Próx.</span>
+              </div>
+
+              {/* link */}
+              <a href="/descargar-app"
+                className="flex-shrink-0 inline-flex items-center gap-1.5 text-[#f97316] hover:text-orange-400 font-semibold text-sm transition-colors group">
+                Ver cómo instalarla
+                <svg className="w-4 h-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
+              </a>
+            </div>
           </div>
         </div>
       </section>

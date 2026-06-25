@@ -176,9 +176,29 @@ export default function DescargarAppPage() {
             <p>Si Chrome te muestra un cartel que dice "Instalar Madsjeez" o "Agregar a pantalla de inicio" al entrar al sitio, tocá ese banner directamente. Es la forma más fácil.</p>
           </div>
 
-          <div className="mt-4 bg-gray-50 border border-gray-200 rounded-2xl p-5 text-sm text-gray-600">
-            <p className="font-bold text-gray-800 mb-1">🔜 Próximamente: APK descargable y Google Play</p>
-            <p>Estamos preparando la APK para descarga directa y la publicación en Google Play. Mientras tanto, este método funciona igual y es más rápido.</p>
+          {/* Google Play — Próximamente */}
+          <div className="mt-4 bg-gray-50 border border-gray-200 rounded-2xl p-5 flex items-center gap-4">
+            <div className="flex-shrink-0 relative">
+              <div className="w-14 h-14 rounded-2xl bg-gray-200 flex items-center justify-center opacity-50">
+                <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none">
+                  <path d="M3 3.8C3 3 3.9 2.5 4.6 2.9L21 11.5C21.7 11.9 21.7 12.9 21 13.3L4.6 21.9C3.9 22.3 3 21.8 3 21V3.8Z" fill="url(#gplay-a)"/>
+                  <path d="M3 3.8L13 12.4 4.6 2.9C3.9 2.5 3 3 3 3.8Z" fill="#ea4335"/>
+                  <path d="M3 21L13 12.4 4.6 21.9C3.9 22.3 3 21.8 3 21Z" fill="#34a853"/>
+                  <path d="M21 11.5L13 12.4 21 13.3C21.7 12.9 21.7 11.9 21 11.5Z" fill="#f9ab00"/>
+                  <defs>
+                    <linearGradient id="gplay-a" x1="3" y1="12.4" x2="21" y2="12.4" gradientUnits="userSpaceOnUse">
+                      <stop offset="0%" stopColor="#4285f4"/>
+                      <stop offset="60%" stopColor="#34a853"/>
+                    </linearGradient>
+                  </defs>
+                </svg>
+              </div>
+              <span className="absolute -top-1.5 -right-1.5 bg-orange-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full leading-none whitespace-nowrap">Pronto</span>
+            </div>
+            <div>
+              <p className="font-bold text-gray-900 text-sm mb-1">Próximamente en Google Play</p>
+              <p className="text-gray-500 text-xs leading-relaxed">Estamos construyendo la versión de Madsjeez para Google Play Store. Cuando esté lista, podrás instalarla con actualizaciones automáticas. Por ahora, el método de arriba funciona igual de bien.</p>
+            </div>
           </div>
         </div>
       </section>
@@ -209,9 +229,20 @@ export default function DescargarAppPage() {
             <p>La forma correcta para iPhone es agregar Madsjeez a la pantalla de inicio desde Safari. La web de Madsjeez sigue funcionando siempre. Esta opción solo crea un acceso más cómodo en tu celular.</p>
           </div>
 
-          <div className="mt-4 bg-gray-100 rounded-2xl p-5 text-sm text-gray-600">
-            <p className="font-bold text-gray-800 mb-1">🔜 Próximamente en App Store</p>
-            <p>Estamos preparando la versión de Madsjeez para App Store. Mientras tanto, podés usar Madsjeez desde Safari y agregarlo a la pantalla de inicio.</p>
+          {/* App Store — Próximamente */}
+          <div className="mt-4 bg-gray-100 border border-gray-200 rounded-2xl p-5 flex items-center gap-4">
+            <div className="flex-shrink-0 relative">
+              <div className="w-14 h-14 rounded-2xl bg-gray-200 flex items-center justify-center opacity-50">
+                <svg className="w-8 h-8 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                </svg>
+              </div>
+              <span className="absolute -top-1.5 -right-1.5 bg-orange-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full leading-none whitespace-nowrap">Pronto</span>
+            </div>
+            <div>
+              <p className="font-bold text-gray-900 text-sm mb-1">Próximamente en App Store</p>
+              <p className="text-gray-500 text-xs leading-relaxed">Estamos construyendo la versión de Madsjeez para el App Store de Apple. Mientras tanto, el método de arriba (Safari + Agregar a pantalla de inicio) funciona exactamente igual que una app nativa.</p>
+            </div>
           </div>
         </div>
       </section>
