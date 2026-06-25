@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tema base (fondo blanco, sin title bar) -->
+    <style name="Theme.Madsjeez" parent="android:Theme.Translucent.NoTitleBar">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/white</item>
+        <item name="android:statusBarColor">@color/colorPrimary</item>
+    </style>
+
+    <!-- Tema para el splash screen (fondo naranja) -->
+    <style name="Theme.Madsjeez.Splash" parent="android:Theme.NoTitleBar.Fullscreen">
+        <item name="android:windowBackground">@color/colorPrimary</item>
+        <item name="android:statusBarColor">@color/colorPrimaryDark</item>
+        <item name="android:windowIsTranslucent">false</item>
+    </style>
+</resources>

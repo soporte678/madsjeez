@@ -42,16 +42,18 @@
       "name": "Buscar productos",
       "shortName": "Buscar",
       "url": "/search",
-      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+      "chosenIconUrl": "https://www.madsjeez.com.ar/icons/icon-96x96.png",
+      "icons": [{ "src": "https://www.madsjeez.com.ar/icons/icon-96x96.png", "sizes": "96x96" }]
     },
     {
       "name": "Mi cuenta",
       "shortName": "Cuenta",
       "url": "/dashboard",
-      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+      "chosenIconUrl": "https://www.madsjeez.com.ar/icons/icon-96x96.png",
+      "icons": [{ "src": "https://www.madsjeez.com.ar/icons/icon-96x96.png", "sizes": "96x96" }]
     }
   ],
-  "fingerprints": [],
+  "fingerprints": ["93:50:49:8B:2D:31:43:FC:02:8A:8E:E8:A4:A6:5A:03:A1:0F:97:A5:A9:AC:46:D9:2D:1E:C7:4C:8D:69:5E:F7"],
   "additionalTrustedOrigins": [],
   "retainedBundles": []
 }

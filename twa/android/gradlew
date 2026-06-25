@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Wrapper script para Gradle — descarga el JAR si no existe
+set -e
+
+GRADLE_WRAPPER_JAR="gradle/wrapper/gradle-wrapper.jar"
+if [ ! -f "$GRADLE_WRAPPER_JAR" ]; then
+  echo "[gradlew] Descargando gradle-wrapper.jar..."
+  mkdir -p gradle/wrapper
+  curl -fsSL -o "$GRADLE_WRAPPER_JAR" \
+    "https://github.com/gradle/gradle/raw/v8.5.0/gradle/wrapper/gradle-wrapper.jar"
+fi
+
+exec java -jar "$GRADLE_WRAPPER_JAR" "$@"
