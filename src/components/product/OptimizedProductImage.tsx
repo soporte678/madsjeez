@@ -44,6 +44,9 @@ export function OptimizedProductImage({
     );
   }
 
+  // Proxy URLs no pasan por el optimizador (se sirven directo desde nuestro server)
+  const unoptimized = src.startsWith("/api/img-proxy") || src.startsWith("/api/");
+
   const shared = {
     src,
     alt,
@@ -51,6 +54,7 @@ export function OptimizedProductImage({
     sizes,
     priority,
     quality: 80 as const,
+    unoptimized,
   };
 
   if (fill) {
