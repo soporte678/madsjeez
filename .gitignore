@@ -69,4 +69,5 @@ logs.json
 # TWA / APK build artifacts
 twa/android.keystore
 twa/android/
-public/downloads/madsjeez.apk
+# APK gestionado por GitHub Actions — no ignorar
+# public/downloads/madsjeez.apk

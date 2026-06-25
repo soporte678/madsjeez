@@ -1,0 +1,158 @@
+name: Build Madsjeez APK
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'twa/**'
+      - '.github/workflows/build-apk.yml'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Versión de la APK (ej: 1.0.1)'
+        required: false
+        default: '1.0.0'
+
+jobs:
+  build-apk:
+    name: Build & Sign APK
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android Build Tools
+        run: |
+          sdkmanager "build-tools;34.0.0" "platforms;android-34" "platform-tools"
+
+      - name: Setup icons
+        run: |
+          cd twa/android
+          bash setup-icons.sh
+
+      - name: Download Gradle Wrapper JAR
+        run: |
+          mkdir -p twa/android/gradle/wrapper
+          curl -fsSL -o twa/android/gradle/wrapper/gradle-wrapper.jar \
+            "https://github.com/gradle/gradle/raw/v8.5.0/gradle/wrapper/gradle-wrapper.jar"
+
+      - name: Make gradlew executable
+        run: chmod +x twa/android/gradlew
+
+      - name: Generate Keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > twa/android.keystore
+            echo "Keystore cargado desde secrets."
+          else
+            echo "Secret ANDROID_KEYSTORE_BASE64 no configurado. Generando keystore temporal..."
+            keytool -genkeypair \
+              -keystore twa/android.keystore \
+              -alias madsjeez \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -storepass madsjeez2026 \
+              -keypass madsjeez2026 \
+              -dname "CN=Madsjeez, OU=App, O=Madsjeez, L=Buenos Aires, ST=Buenos Aires, C=AR" \
+              -noprompt
+            echo "AVISO: Keystore temporal generado. No usar en producción."
+          fi
+
+      - name: Get SHA-256 fingerprint
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || 'madsjeez2026' }}
+        run: |
+          FINGERPRINT=$(keytool -list -v \
+            -keystore twa/android.keystore \
+            -alias madsjeez \
+            -storepass "${KEYSTORE_PASSWORD:-madsjeez2026}" 2>/dev/null \
+            | grep "SHA256:" | sed 's/.*SHA256: //' | tr -d ' ')
+          echo "SHA256_FINGERPRINT=$FINGERPRINT" >> $GITHUB_ENV
+          echo "Fingerprint: $FINGERPRINT"
+
+      - name: Update assetlinks.json
+        run: |
+          mkdir -p public/.well-known
+          cat > public/.well-known/assetlinks.json << EOF
+          [{
+            "relation": ["delegate_permission/common.handle_all_urls"],
+            "target": {
+              "namespace": "android_app",
+              "package_name": "com.ar.madsjeez",
+              "sha256_cert_fingerprints": ["${{ env.SHA256_FINGERPRINT }}"]
+            }
+          }]
+          EOF
+
+      - name: Build APK (Release)
+        env:
+          KEYSTORE_PATH: "../../android.keystore"
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || 'madsjeez2026' }}
+          KEY_ALIAS: madsjeez
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || 'madsjeez2026' }}
+        run: |
+          cd twa/android
+          chmod +x gradlew || true
+          ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: Locate APK
+        run: |
+          APK_PATH=$(find twa/android -name "*.apk" | head -1)
+          echo "APK encontrada: $APK_PATH"
+          echo "APK_PATH=$APK_PATH" >> $GITHUB_ENV
+
+      - name: Copy APK to public/downloads
+        run: |
+          mkdir -p public/downloads
+          cp "${{ env.APK_PATH }}" public/downloads/madsjeez.apk
+          ls -lh public/downloads/madsjeez.apk
+
+      - name: Upload APK as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: madsjeez-apk-${{ github.run_number }}
+          path: public/downloads/madsjeez.apk
+          retention-days: 30
+
+      - name: Commit APK and assetlinks to repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/downloads/madsjeez.apk public/.well-known/assetlinks.json
+          git diff --staged --quiet || git commit -m "build(apk): APK v$(cat twa/twa-manifest.json | python3 -c 'import sys,json; print(json.load(sys.stdin)[\"appVersion\"])')"
+          git push
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: github.event_name == 'workflow_dispatch'
+        with:
+          tag_name: apk-v${{ github.event.inputs.version || '1.0.0' }}
+          name: Madsjeez APK v${{ github.event.inputs.version || '1.0.0' }}
+          body: |
+            ## Madsjeez para Android v${{ github.event.inputs.version || '1.0.0' }}
+
+            Instalación:
+            1. Descargá `madsjeez.apk`
+            2. En tu celular, tocá el archivo descargado
+            3. Tocá Instalar → Abrir
+
+            También disponible en: https://www.madsjeez.com.ar/descargar-app
+          files: public/downloads/madsjeez.apk
+          draft: false
+          prerelease: false
