@@ -190,7 +190,7 @@ export default function HomePageClient() {
         <LazyRotatingProductCarousel eager title="Productos destacados" subtitle="Productos reales del catálogo del marketplace" />
       </section>
       <section className="cv-auto mx-auto max-w-[1184px] px-4">
-        <LazyRotatingProductCarousel title="Herramientas y ferretería" subtitle="Si no hay stock en la categoría, mostramos el resto del catálogo" offset={36} categorySlug="herramientas" />
+        <LazyRotatingProductCarousel title="Herramientas y ferretería" offset={36} categorySlug="herramientas" />
       </section>
 
       {/* ───────── PARA VENDEDORES ───────── */}

@@ -157,7 +157,8 @@ async function buildProductPool(
     ];
   }
 
-  if (pool.length === 0) {
+  // Fallback cross-category only when no specific category requested
+  if (pool.length === 0 && !categorySlug) {
     const fallbackRows = await prisma.product.findMany({
       where: baseWhere,
       include: productInclude,
