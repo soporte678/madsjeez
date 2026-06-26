@@ -442,6 +442,33 @@ export function BuyBox({
           </div>
         </div>
       </div>
+
+      {/* Payment trust */}
+      <div className="border-t border-gray-200 pt-4 mt-4">
+        <div className="flex items-center gap-1.5 text-[12px] text-gray-500 mb-3">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Pago 100% seguro · SSL cifrado
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Visa */}
+          <span className="inline-flex items-center justify-center border border-gray-200 rounded px-2 py-1 bg-white">
+            <svg width="34" height="11" viewBox="0 0 34 11" fill="none"><path d="M13.02 0.22L10.8 10.78H8.36L10.58 0.22H13.02ZM23.34 7.04L24.64 3.44L25.38 7.04H23.34ZM26.1 10.78H28.36L26.38 0.22H24.24C23.74 0.22 23.32 0.5 23.14 0.94L19.56 10.78H22.1L22.6 9.38H25.68L26.1 10.78ZM19.82 7.36C19.83 4.98 16.5 4.86 16.52 3.8C16.52 3.48 16.84 3.14 17.52 3.06C17.86 3.02 18.82 2.98 19.9 3.48L20.32 1.38C19.74 1.16 19 0.9 18.06 0.9C15.7 0.9 14.04 2.1 14.02 3.82C14 5.1 15.18 5.82 16.08 6.24C17 6.68 17.3 6.96 17.3 7.34C17.28 7.92 16.6 8.18 15.96 8.2C14.78 8.22 14.08 7.88 13.52 7.62L13.08 9.8C13.64 10.06 14.68 10.28 15.76 10.3C18.28 10.3 19.82 9.12 19.82 7.36ZM10.06 0.22L6.28 10.78H3.72L1.88 1.94C1.76 1.44 1.66 1.26 1.26 1.04C0.6 0.68 -0.02 0.46 -0.02 0.46L0.04 0.22H4.02C4.58 0.22 5.08 0.6 5.2 1.22L6.18 6.34L8.68 0.22H10.06Z" fill="#1A1F71"/></svg>
+          </span>
+          {/* Mastercard */}
+          <span className="inline-flex items-center justify-center border border-gray-200 rounded px-2 py-1 bg-white">
+            <svg width="28" height="18" viewBox="0 0 28 18" fill="none"><circle cx="10" cy="9" r="9" fill="#EB001B"/><circle cx="18" cy="9" r="9" fill="#F79E1B"/><path d="M14 3.5a9 9 0 0 1 0 11A9 9 0 0 1 14 3.5z" fill="#FF5F00"/></svg>
+          </span>
+          {/* MercadoPago pill */}
+          <span className="inline-flex items-center gap-1 border border-blue-100 rounded px-2 py-1 bg-blue-50 text-[11px] font-semibold text-blue-700">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="12"/></svg>
+            MercadoPago
+          </span>
+          {/* Transferencia */}
+          <span className="inline-flex items-center border border-gray-200 rounded px-2 py-1 bg-white text-[11px] text-gray-600">
+            Transferencia
+          </span>
+        </div>
+      </div>
     </div>
   )
 }

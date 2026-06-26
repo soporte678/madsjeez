@@ -28,6 +28,7 @@ import { BuyBox } from "@/components/product/BuyBox";
 import { Reveal } from "@/components/premium";
 import { ProductViewTracker } from "@/components/analytics/ProductViewTracker";
 import { ProductJsonLd } from "@/components/seo/ProductJsonLd";
+import { RecentlyViewedProducts } from "@/components/product/RecentlyViewedProducts";
 import { BreadcrumbJsonLd } from "@/components/seo/BreadcrumbJsonLd";
 
 function hasValidSupabaseConfig() {
@@ -362,6 +363,8 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
         price={Number(product.price || 0)}
         categoryName={product.categories?.name || null}
         sellerName={sellerName}
+        primaryImage={images[0] || null}
+        categorySlug={categorySlug}
       />
 
       <div className="min-h-screen bg-background font-sans text-foreground pb-20">
@@ -657,6 +660,11 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                 hasMercadoPago={sellerContactInfo.hasMercadoPago}
               />
             </div>
+          </div>
+
+          {/* Recently Viewed */}
+          <div className="mt-8 px-4 lg:px-0">
+            <RecentlyViewedProducts currentId={product.id} />
           </div>
 
           {/* Seller Products Carousel */}

@@ -7,6 +7,7 @@ import {
   trackEvent,
 } from "@/lib/analytics";
 import { trackMetaEvent } from "@/components/seo/MetaPixel";
+import { saveRecentlyViewed } from "@/lib/recently-viewed";
 
 interface ProductViewTrackerProps {
   productId: string;
@@ -14,6 +15,8 @@ interface ProductViewTrackerProps {
   price: number;
   categoryName?: string | null;
   sellerName?: string | null;
+  primaryImage?: string | null;
+  categorySlug?: string | null;
 }
 
 export function ProductViewTracker({
@@ -22,12 +25,22 @@ export function ProductViewTracker({
   price,
   categoryName,
   sellerName,
+  primaryImage,
+  categorySlug,
 }: ProductViewTrackerProps) {
   const sentRef = useRef(false);
 
   useEffect(() => {
     if (sentRef.current) return;
     sentRef.current = true;
+
+    saveRecentlyViewed({
+      id: productId,
+      title,
+      price: Number(price || 0),
+      image: primaryImage || null,
+      categorySlug: categorySlug || "",
+    });
 
     trackEvent("view_item", {
       currency: ANALYTICS_CURRENCY,
