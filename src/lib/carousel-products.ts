@@ -37,6 +37,8 @@ function mapRow(p: {
 }): CarouselProductDto | null {
   const image = primaryImageUrlFromRows(p.images);
   if (!hasValidProductImageUrl(image)) return null;
+  // Proxy images can't be optimized by next/image — skip from landing carousels
+  if (image && image.startsWith("/api/img-proxy")) return null;
   return {
     id: p.id,
     title: p.title,
