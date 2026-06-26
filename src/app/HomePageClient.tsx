@@ -32,9 +32,7 @@ const LazyRotatingProductCarousel = dynamic(() => import("@/components/LazyRotat
 const PaidAdBannerSlot = dynamic(() => import("@/components/ads/PaidAdBannerSlot").then(m => m.PaidAdBannerSlot), { loading: () => <div className="h-24 animate-pulse rounded-xl bg-muted/60" /> })
 const HomeSeoContent = dynamic(() => import("@/components/home/HomeSeoContent").then(m => m.HomeSeoContent), { loading: () => null })
 const AppQRCode = dynamic(() => import("@/components/home/AppQRCode").then(m => m.AppQRCode), { ssr: false, loading: () => <div className="w-14 h-14 rounded-lg bg-gray-800 animate-pulse flex-shrink-0" /> })
-const SiteCompanyFooter = dynamic(() => import("@/components/seo/SiteCompanyFooter").then(m => m.SiteCompanyFooter), { loading: () => null })
-const SiteSocialFooter = dynamic(() => import("@/components/seo/SiteSocialFooter").then(m => m.SiteSocialFooter), { loading: () => null })
-const SiteNetworkFooter = dynamic(() => import("@/components/seo/SiteNetworkFooter").then(m => m.SiteNetworkFooter), { loading: () => null })
+const Footer = dynamic(() => import("@/components/Footer").then(m => m.Footer), { loading: () => null })
 
 const track = (name: string, params?: Record<string, unknown>) => trackEvent(name, params ?? {})
 
@@ -429,41 +427,7 @@ export default function HomePageClient() {
       <HomeSeoContent />
 
       {/* ───────── FOOTER ───────── */}
-      <footer className="border-t-[10px] border-[#f97316] bg-gradient-to-b from-[#1a1a2e] to-[#16213e] pb-10 pt-16">
-        <div className="mx-auto flex max-w-7xl flex-col gap-12 px-4">
-          <div className="grid grid-cols-2 gap-10 md:grid-cols-4 lg:grid-cols-6">
-            <div className="col-span-2">
-              <span className="font-outfit text-2xl font-black uppercase tracking-tighter text-white">MADS<span className="text-[#f97316]">JEEZ</span></span>
-              <p className="mt-5 mb-6 max-w-sm text-sm leading-relaxed font-medium text-slate-400">
-                Marketplace argentino para comprar y vender online: catálogo, ofertas, MADSJEEZ Ads y herramientas
-                para vendedores con Mercado Pago, Instagram, Facebook y WhatsApp.
-              </p>
-              <SiteCompanyFooter />
-              <SiteSocialFooter />
-              <SiteNetworkFooter />
-            </div>
-            {[
-              { title: "Marketplace", links: [["Quiénes somos", "/quienes-somos"], ["Centro de ayuda", "/ayuda"], ["Ofertas", "/offers"], ["Contacto", "/ayuda"]] },
-              { title: "Vendedores", links: [["Empezar a vender", "/seller/register"], ["Crear mi tienda", "/crear-tienda-online"], ["Ayuda para vendedores", "/ayuda-vendedores"], ["Suscripciones", "/subscriptions"]] },
-              { title: "Guías y ayuda", links: [["Guías de compra", "/guias"], ["Reparación", "/reparacion"], ["Comparativas", "/comparativas"], ["Marcas", "/marcas"], ["Blog", "/blog"], ["Tutoriales", "/tutoriales"]] },
-              { title: "Legales", links: [["Términos", "/legal/terminos"], ["Privacidad", "/legal/privacidad"], ["Aviso Legal", "/legal/aviso-legal"]] },
-            ].map((section) => (
-              <div key={section.title}>
-                <h4 className="mb-5 text-[11px] font-black uppercase tracking-widest text-[#f97316]">{section.title}</h4>
-                <ul className="flex flex-col gap-3">
-                  {section.links.map(([label, href]) => (
-                    <li key={label}><Link href={href} className="text-[13px] font-bold text-slate-400 transition-colors hover:text-[#00b4d8]">{label}</Link></li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-          <div className="flex flex-col items-center justify-between gap-6 border-t border-slate-700 pt-10 text-[11px] font-black tracking-widest text-slate-500 md:flex-row">
-            <span className="text-slate-400">COPYRIGHT © 2026 MADSJEEZ COMMERCE GROUP S.R.L.</span>
-            <Link href="/legal/aviso-legal" className="text-[#f97316] transition-colors hover:text-[#ffb703]">DATA FISCAL</Link>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </main>
   )
 }
