@@ -182,7 +182,7 @@ export function CategoryCarousel() {
         landings del marketplace.
       </div>
 
-      <div className="relative overflow-hidden rounded-[20px]">
+      <div className="group/catcarousel relative overflow-hidden rounded-[20px]">
         {loading ? (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: VISIBLE_COUNT }).map((_, i) => (
@@ -211,7 +211,7 @@ export function CategoryCarousel() {
               type="button"
               onClick={() => go(-1)}
               disabled={pageIndex === 0}
-              className="absolute left-2 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-[rgba(15,23,42,0.92)] text-slate-100 shadow-lg backdrop-blur-md transition hover:border-sky-400/30 disabled:opacity-30 sm:left-3"
+              className="absolute left-2 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-[rgba(15,23,42,0.92)] text-slate-100 shadow-lg backdrop-blur-md transition-opacity duration-200 hover:border-sky-400/30 opacity-0 group-hover/catcarousel:opacity-100 disabled:opacity-0 sm:left-3"
               aria-label="Anterior"
             >
               <ChevronLeft size={22} />
@@ -220,7 +220,7 @@ export function CategoryCarousel() {
               type="button"
               onClick={() => go(1)}
               disabled={pageIndex >= pages.length - 1}
-              className="absolute right-2 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-[rgba(15,23,42,0.92)] text-slate-100 shadow-lg backdrop-blur-md transition hover:border-sky-400/30 disabled:opacity-30 sm:right-3"
+              className="absolute right-2 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-[rgba(15,23,42,0.92)] text-slate-100 shadow-lg backdrop-blur-md transition-opacity duration-200 hover:border-sky-400/30 opacity-0 group-hover/catcarousel:opacity-100 disabled:opacity-0 sm:right-3"
               aria-label="Siguiente"
             >
               <ChevronRight size={22} />
