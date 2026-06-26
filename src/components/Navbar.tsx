@@ -324,8 +324,8 @@ export default function Navbar() {
       <header className="w-full sticky top-0 z-[100] flex min-h-[70px] lg:h-[100px] flex-col justify-center border-b border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.98)_0%,rgba(15,23,42,0.95)_46%,rgba(17,24,39,0.94)_100%)] font-outfit shadow-[0_18px_40px_rgba(2,6,23,0.34)] backdrop-blur-xl py-2 lg:py-0">
         <div className="max-w-[1200px] mx-auto px-4 lg:px-0 w-full flex flex-col gap-2 lg:gap-0 justify-center">
           
-          <div className="hidden lg:flex items-center h-12">
-            <div className="w-[160px] flex-shrink-0">
+          <div className="hidden lg:flex items-center h-12 gap-6">
+            <div className="w-[148px] flex-shrink-0">
               <RainbowLogo
                 href="/"
                 textSizeClassName="text-[22px]"
@@ -334,7 +334,7 @@ export default function Navbar() {
               />
             </div>
 
-            <div ref={searchRef} className="w-[600px] flex-shrink-0 ml-8 relative">
+            <div ref={searchRef} className="flex-1 min-w-0 relative">
               <form onSubmit={handleSearch}>
                 <div 
                   className={cn(
@@ -517,11 +517,11 @@ export default function Navbar() {
               )}
             </div>
 
-            <div className="flex-1 flex items-center justify-end">
+            <div className="flex items-center gap-4 flex-shrink-0">
               <Link
                 href="/mads-pro"
                 aria-label="Suscribite a Mads Pro por $30.000/mes con envíos gratis ilimitados en productos desde $25.000"
-                className="mads-pro-shell relative flex h-[38px] w-[340px] cursor-pointer items-center overflow-hidden rounded-full px-1.5 transition-all duration-300 hover:-translate-y-[1px] hover:border-white/20 hover:shadow-[0_14px_36px_rgba(2,6,23,0.32)]"
+                className="mads-pro-shell relative flex h-[38px] w-[300px] cursor-pointer items-center overflow-hidden rounded-full px-1.5 transition-all duration-300 hover:-translate-y-[1px] hover:border-white/20 hover:shadow-[0_14px_36px_rgba(2,6,23,0.32)]"
               >
                  <div className="absolute left-6 w-[230px] flex items-center justify-center animate-wipe-out">
                     <span className="font-black tracking-tight text-white/92 drop-shadow-sm text-[18px]">Suscribite a</span>
@@ -563,16 +563,23 @@ export default function Navbar() {
                     <span className="font-montserrat font-black text-white text-[11px] italic tracking-tight">MADS PRO</span>
                  </div>
               </Link>
+              <div className="flex items-center gap-1">
+                <button type="button" className="touch-target relative cursor-pointer nav-icon" aria-label="Novedades y alertas" onClick={() => { if (hasSeenNovedadesPanelThisSession()) { router.push("/notifications"); return; } openNovedadesPanel(); }}>
+                  <Bell size={20} strokeWidth={1.5} aria-hidden />
+                </button>
+                <Link href="/cart" aria-label="Carrito de compras" className="touch-target relative cursor-pointer nav-icon">
+                  <ShoppingCart size={20} strokeWidth={1.5} aria-hidden />
+                </Link>
+              </div>
             </div>
           </div>
 
-          <div className="hidden lg:flex items-center justify-between h-10 mt-1">
-            <div className="flex items-center">
-              <div className="w-[260px] flex-shrink-0">
+          <div className="hidden lg:flex items-center justify-between h-10 mt-0.5">
+            <div className="flex items-center gap-6 min-w-0">
+              <div className="flex-shrink-0">
                 <ZoneSelector compact />
               </div>
-
-              <nav className="flex flex-1 min-w-0 items-center gap-x-3 lg:gap-x-4 text-[13px] font-light ml-4 md:ml-8 overflow-x-auto scrollbar-hide pb-0.5 md:pb-0">
+              <nav className="flex items-center gap-x-5 text-[13px] font-light overflow-x-auto scrollbar-hide">
                 <Link href="/categories" className="flex items-center gap-0.5 nav-link whitespace-nowrap shrink-0">
                   Categorías <ChevronDown size={11} className="mt-0.5 opacity-40" />
                 </Link>
@@ -580,15 +587,13 @@ export default function Navbar() {
                 <Link href="/deals" className="nav-link whitespace-nowrap shrink-0">Descuentos</Link>
                 <Link href="/coupons/public" className="nav-link whitespace-nowrap shrink-0">Cupones</Link>
                 <Link href="/search" className="nav-link whitespace-nowrap shrink-0">Catálogo</Link>
-                <Link href="/notifications" className="nav-link whitespace-nowrap shrink-0 hidden sm:inline">Alertas</Link>
-                <Link href="/subscriptions" className="nav-link whitespace-nowrap shrink-0 hidden md:inline">MADS+</Link>
-                <Link href="/seller/register" className="nav-link whitespace-nowrap shrink-0 hidden lg:inline">Vender</Link>
-                <span className="nav-link whitespace-nowrap shrink-0 hidden xl:inline invisible pointer-events-none select-none" aria-hidden="true">Mi panel</span>
-                <span className="nav-link whitespace-nowrap shrink-0 invisible pointer-events-none select-none" aria-hidden="true">Ayuda</span>
+                <Link href="/notifications" className="nav-link whitespace-nowrap shrink-0">Alertas</Link>
+                <Link href="/subscriptions" className="nav-link whitespace-nowrap shrink-0">MADS+</Link>
+                <Link href="/seller/register" className="nav-link whitespace-nowrap shrink-0">Vender</Link>
               </nav>
             </div>
 
-            <div className="flex items-center gap-x-4 text-[13px] font-light flex-shrink-0">
+            <div className="flex items-center gap-x-5 text-[13px] font-light flex-shrink-0">
               {!session ? (
                 <>
                   <Link href="/auth/register" className="nav-link whitespace-nowrap font-medium">Creá tu cuenta</Link>
@@ -597,24 +602,16 @@ export default function Navbar() {
               ) : (
                 <>
                   <Link href="/dashboard" className="flex items-center gap-1.5 cursor-pointer nav-link group flex-shrink-0">
-                    <User size={16} className="text-slate-300 transition-colors group-hover:text-white" />
-                    <span className="whitespace-nowrap font-normal">{session.user?.name || "Mi cuenta"}</span>
+                    <User size={15} className="text-slate-300 transition-colors group-hover:text-white" />
+                    <span className="whitespace-nowrap font-normal">{session.user?.name?.split(" ")[0] || "Mi cuenta"}</span>
                     <ChevronDown size={10} className="opacity-50 group-hover:rotate-180 transition-transform" />
                   </Link>
-                  <Link href="/orders" className="nav-link whitespace-nowrap font-medium">Mis compras</Link>
+                  <Link href="/orders" className="nav-link whitespace-nowrap">Mis compras</Link>
                   <Link href="/favorites" className="flex items-center gap-0.5 nav-link whitespace-nowrap">
                     Favoritos <ChevronDown size={10} className="opacity-50" />
                   </Link>
                 </>
               )}
-              <div className="flex items-center gap-4 ml-1">
-                 <button type="button" className="touch-target relative cursor-pointer nav-icon" aria-label="Novedades y alertas" onClick={() => { if (hasSeenNovedadesPanelThisSession()) { router.push("/notifications"); return; } openNovedadesPanel(); }}>
-                    <Bell size={18} strokeWidth={1.5} className="nav-icon" aria-hidden />
-                 </button>
-                 <Link href="/cart" aria-label="Carrito de compras" className="touch-target relative cursor-pointer nav-icon">
-                    <ShoppingCart size={18} strokeWidth={1.5} className="nav-icon" aria-hidden />
-                 </Link>
-              </div>
             </div>
           </div>
 
