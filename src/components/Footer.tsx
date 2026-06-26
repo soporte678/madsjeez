@@ -3,7 +3,7 @@ import { MapPin, Phone, Mail, Code2, Briefcase, Palette, ExternalLink } from "lu
 import { COMPANY } from "@/lib/company";
 import { AUTHORITY_EXTERNAL_LINKS } from "@/lib/seo/social";
 
-const NAV = [
+const NAV_SIMPLE = [
   {
     title: "Marketplace",
     links: [
@@ -22,25 +22,6 @@ const NAV = [
       ["Crear mi tienda", "/crear-tienda-online"],
       ["Ayuda para vendedores", "/ayuda-vendedores"],
       ["Suscripciones", "/subscriptions"],
-    ],
-  },
-  {
-    title: "Guías y Ayuda",
-    links: [
-      ["Guías de compra", "/guias"],
-      ["Reparación", "/reparacion"],
-      ["Comparativas", "/comparativas"],
-      ["Marcas", "/marcas"],
-      ["Blog", "/blog"],
-      ["Tutoriales", "/tutoriales"],
-    ],
-  },
-  {
-    title: "Legales",
-    links: [
-      ["Términos", "/legal/terminos"],
-      ["Privacidad", "/legal/privacidad"],
-      ["Aviso Legal", "/legal/aviso-legal"],
     ],
   },
 ];
@@ -155,8 +136,8 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Columnas de navegación — 2 cols cada una */}
-          {NAV.map((section) => (
+          {/* Marketplace + Vendedores — 2 cols cada una */}
+          {NAV_SIMPLE.map((section) => (
             <div key={section.title} className="lg:col-span-2">
               <h3 className="mb-5 text-[11px] font-bold uppercase tracking-[0.15em] text-slate-100">
                 {section.title}
@@ -164,10 +145,7 @@ export function Footer() {
               <ul className="space-y-3 text-[13px]">
                 {section.links.map(([label, href]) => (
                   <li key={label}>
-                    <Link
-                      href={href}
-                      className="block text-slate-400 transition-colors hover:text-orange-400"
-                    >
+                    <Link href={href} className="block text-slate-400 transition-colors hover:text-orange-400">
                       {label}
                     </Link>
                   </li>
@@ -175,6 +153,26 @@ export function Footer() {
               </ul>
             </div>
           ))}
+
+          {/* Guías y Ayuda + Legales — combinadas en 2 cols */}
+          <div className="flex flex-col gap-8 lg:col-span-2">
+            <div>
+              <h3 className="mb-5 text-[11px] font-bold uppercase tracking-[0.15em] text-slate-100">Guías y Ayuda</h3>
+              <ul className="space-y-3 text-[13px]">
+                {[["Guías de compra", "/guias"], ["Reparación", "/reparacion"], ["Comparativas", "/comparativas"], ["Marcas", "/marcas"], ["Blog", "/blog"], ["Tutoriales", "/tutoriales"]].map(([label, href]) => (
+                  <li key={label}><Link href={href} className="block text-slate-400 transition-colors hover:text-orange-400">{label}</Link></li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3 className="mb-5 text-[11px] font-bold uppercase tracking-[0.15em] text-slate-100">Legales</h3>
+              <ul className="space-y-3 text-[13px]">
+                {[["Términos", "/legal/terminos"], ["Privacidad", "/legal/privacidad"], ["Aviso Legal", "/legal/aviso-legal"]].map(([label, href]) => (
+                  <li key={label}><Link href={href} className="block text-slate-400 transition-colors hover:text-orange-400">{label}</Link></li>
+                ))}
+              </ul>
+            </div>
+          </div>
 
           {/* Red de proyectos — 3 cols */}
           <div className="lg:col-span-3">
