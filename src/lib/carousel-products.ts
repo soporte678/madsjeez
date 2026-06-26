@@ -37,8 +37,6 @@ function mapRow(p: {
 }): CarouselProductDto | null {
   const image = primaryImageUrlFromRows(p.images);
   if (!hasValidProductImageUrl(image)) return null;
-  // Proxy images can't be optimized by next/image — skip from landing carousels
-  if (image && image.startsWith("/api/img-proxy")) return null;
   return {
     id: p.id,
     title: p.title,
@@ -141,7 +139,8 @@ async function buildProductPool(
   const primaryIds = new Set(primaryMapped.map((p) => p.id));
   let pool = [...primaryMapped];
 
-  if (pool.length < poolCap) {
+  // Only backfill across categories when no specific category was requested
+  if (pool.length < poolCap && !categorySlug) {
     const need = poolCap - pool.length;
     const fillerRows = await prisma.product.findMany({
       where: {

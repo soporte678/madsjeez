@@ -136,6 +136,7 @@ function RotatingProductCarouselBase({ title, subtitle, offset = 0, categorySlug
                   fill
                   loading="lazy"
                   decoding="async"
+                  unoptimized={product.image.includes("/api/img-proxy")}
                   className="object-contain p-2 group-hover:scale-[1.03] transition-transform duration-300"
                   sizes="(max-width:640px) 168px, 200px"
                 />
