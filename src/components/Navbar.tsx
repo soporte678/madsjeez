@@ -180,7 +180,7 @@ export default function Navbar() {
           .letter-piece { animation: none !important; }
         }
 
-        /* --- Animación de barrido de luz para la insignia MADS PRO --- */
+        /* --- Animación de barrido de luz para la insignia --- */
         @keyframes sweep {
           0% { transform: translateX(-200%); }
           20% { transform: translateX(300%); }
@@ -188,9 +188,18 @@ export default function Navbar() {
         }
 
         .mads-pro-badge {
-          background: linear-gradient(90deg, var(--primary), var(--accent));
           position: relative;
           overflow: hidden;
+        }
+
+        /* PRO badge: naranja */
+        .mads-pro-badge.badge-pro {
+          background: linear-gradient(90deg, #f97316, #ff9100);
+        }
+
+        /* ULTRA badge: violeta/índigo */
+        .mads-pro-badge.badge-ultra {
+          background: linear-gradient(90deg, #6366f1, #8b5cf6);
         }
 
         .mads-pro-shell {
@@ -215,31 +224,45 @@ export default function Navbar() {
         }
 
         /* --- ANIMACIÓN DEL EFECTO BORRADOR (WIPER) --- */
-        
+
         /* 1. Movimiento de la insignia de lado a lado */
         @keyframes slideBadge {
-          0%, 40% { transform: translateX(240px); }  /* Lado Derecho */
-          50%, 90% { transform: translateX(0); }     /* Lado Izquierdo */
-          100% { transform: translateX(240px); }     /* Vuelve a la Derecha */
+          0%, 40% { transform: translateX(240px); }
+          50%, 90% { transform: translateX(0); }
+          100% { transform: translateX(240px); }
         }
-        
-        /* 2. Fade Out de "Suscribite a" cuando pasa el borrador */
+
+        /* 2. Fade Out de "Publicá con" cuando pasa el borrador */
         @keyframes wipeOut1 {
           0%, 40% { opacity: 1; transform: translateX(0) scale(1); pointer-events: auto; }
           45%, 95% { opacity: 0; transform: translateX(-10px) scale(0.95); pointer-events: none; }
           100% { opacity: 1; transform: translateX(0) scale(1); pointer-events: auto; }
         }
 
-        /* 3. Fade In de "y disfrutá..." cuando el borrador lo revela */
+        /* 3. Fade In de los planes cuando el borrador lo revela */
         @keyframes wipeIn2 {
           0%, 45% { opacity: 0; transform: translateX(10px) scale(0.95); pointer-events: none; }
           50%, 90% { opacity: 1; transform: translateX(0) scale(1); pointer-events: auto; }
           95%, 100% { opacity: 0; transform: translateX(10px) scale(0.95); pointer-events: none; }
         }
 
+        /* Badge alterna entre PRO (naranja) y ULTRA (violeta) en sync con 8s */
+        @keyframes badgePro {
+          0%, 40% { opacity: 1; }
+          50%, 90% { opacity: 0; }
+          100% { opacity: 1; }
+        }
+        @keyframes badgeUltra {
+          0%, 40% { opacity: 0; }
+          50%, 90% { opacity: 1; }
+          100% { opacity: 0; }
+        }
+
         .animate-slide-badge { animation: slideBadge 8s infinite cubic-bezier(0.64, 0, 0.36, 1); }
         .animate-wipe-out { animation: wipeOut1 8s infinite cubic-bezier(0.64, 0, 0.36, 1); }
         .animate-wipe-in { animation: wipeIn2 8s infinite cubic-bezier(0.64, 0, 0.36, 1); }
+        .animate-badge-pro { animation: badgePro 8s infinite cubic-bezier(0.64, 0, 0.36, 1); }
+        .animate-badge-ultra { animation: badgeUltra 8s infinite cubic-bezier(0.64, 0, 0.36, 1); }
 
         .search-shadow { box-shadow: 0 1px 2px 0 rgba(0,0,0,0.2); }
         .nav-link {
@@ -520,48 +543,41 @@ export default function Navbar() {
             <div className="flex items-center gap-4 flex-shrink-0">
               <Link
                 href="/mads-pro"
-                aria-label="Suscribite a Mads Pro por $30.000/mes con envíos gratis ilimitados en productos desde $25.000"
+                aria-label="Programas de publicación para vendedores: MADS PRO y MADS ULTRA"
                 className="mads-pro-shell relative flex h-[38px] w-[300px] cursor-pointer items-center overflow-hidden rounded-full px-1.5 transition-all duration-300 hover:-translate-y-[1px] hover:border-white/20 hover:shadow-[0_14px_36px_rgba(2,6,23,0.32)]"
               >
-                 <div className="absolute left-6 w-[230px] flex items-center justify-center animate-wipe-out">
-                    <span className="font-black tracking-tight text-white/92 drop-shadow-sm text-[18px]">Suscribite a</span>
-                 </div>
-                 <div className="absolute left-[92px] w-auto flex items-center gap-1.5 animate-wipe-in">
-                    <span className="whitespace-nowrap text-[12px] font-semibold text-slate-200">y disfrutá</span>
-                    <div className="flex items-center gap-1">
-                       <div className="w-[32px] flex items-center justify-center flex-shrink-0">
-                          <svg width="32" height="26" viewBox="0 0 100 80" className="drop-shadow-sm">
-                            <defs>
-                              <linearGradient id="boxTop" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stopColor="#F5D0A9"/>
-                                <stop offset="100%" stopColor="#D8A56D"/>
-                              </linearGradient>
-                              <linearGradient id="boxLeft" x1="0%" y1="0%" x2="0%" y2="100%">
-                                <stop offset="0%" stopColor="#C48E56"/>
-                                <stop offset="100%" stopColor="#966029"/>
-                              </linearGradient>
-                              <linearGradient id="boxRight" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stopColor="#A87541"/>
-                                <stop offset="100%" stopColor="#75471B"/>
-                              </linearGradient>
-                            </defs>
-                            <path d="M50 10 L95 25 L50 40 L5 25 Z" fill="url(#boxTop)"/>
-                            <path d="M5 25 L50 40 L50 75 L5 60 Z" fill="url(#boxLeft)"/>
-                            <path d="M50 40 L95 25 L95 60 L50 75 Z" fill="url(#boxRight)"/>
-                            <path d="M48 20 L58 23 L58 75 L48 72 Z" fill="rgba(0,0,0,0.15)"/>
-                            <path d="M60 40 L85 32 L85 45 L60 55 Z" fill="#3D2B1F"/>
-                            <rect x="62" y="42" width="20" height="2" fill="#fff" opacity="0.4" transform="rotate(-18 62 42)"/>
-                          </svg>
-                       </div>
-                       <div className="flex flex-col justify-center border-l border-white/12 py-0.5 pl-1.5 leading-[1.05]">
-                          <span className="text-[8.5px] font-black uppercase tracking-wider text-slate-100">Envíos gratis</span>
-                          <span className="mt-[1px] text-[8.5px] font-black uppercase tracking-wider text-yellow-300">Desde $25.000 · $30.000/mes</span>
-                       </div>
-                    </div>
-                 </div>
-                 <div className="absolute left-[6px] rounded-full px-3 py-[5px] flex items-center shadow-lg shadow-primary/30 animate-slide-badge z-20 mads-pro-badge">
-                    <span className="font-montserrat font-black text-white text-[11px] italic tracking-tight">MADS PRO</span>
-                 </div>
+                {/* Fase 1: "Publicá con" */}
+                <div className="absolute left-6 w-[230px] flex items-center justify-center animate-wipe-out">
+                  <span className="font-black tracking-tight text-white/92 drop-shadow-sm text-[18px]">Publicá con</span>
+                </div>
+
+                {/* Fase 2: nombre del plan + detalle */}
+                <div className="absolute left-[100px] w-auto flex items-center gap-2 animate-wipe-in">
+                  <div className="flex flex-col justify-center border-l border-white/12 py-0.5 pl-2 leading-[1.1]">
+                    <span className="text-[9px] font-black uppercase tracking-wider text-orange-300">
+                      MADS PRO · Listing potenciado
+                    </span>
+                    <span className="mt-[2px] text-[9px] font-black uppercase tracking-wider text-violet-300">
+                      MADS ULTRA · Exposición máxima
+                    </span>
+                  </div>
+                </div>
+
+                {/* Badge deslizante — alterna PRO (naranja) / ULTRA (violeta) */}
+                <div className="absolute left-[6px] animate-slide-badge z-20">
+                  {/* PRO badge */}
+                  <div className="absolute inset-0 rounded-full px-3 py-[5px] flex items-center shadow-lg shadow-orange-500/30 mads-pro-badge badge-pro animate-badge-pro">
+                    <span className="font-montserrat font-black text-white text-[11px] italic tracking-tight whitespace-nowrap">MADS PRO</span>
+                  </div>
+                  {/* ULTRA badge */}
+                  <div className="absolute inset-0 rounded-full px-3 py-[5px] flex items-center shadow-lg shadow-violet-500/30 mads-pro-badge badge-ultra animate-badge-ultra">
+                    <span className="font-montserrat font-black text-white text-[11px] italic tracking-tight whitespace-nowrap">ULTRA</span>
+                  </div>
+                  {/* Spacer invisible para mantener el ancho del contenedor */}
+                  <div className="rounded-full px-3 py-[5px] flex items-center opacity-0 pointer-events-none">
+                    <span className="font-montserrat font-black text-[11px] italic tracking-tight whitespace-nowrap">MADS PRO</span>
+                  </div>
+                </div>
               </Link>
               <div className="flex items-center gap-1">
                 <button type="button" className="touch-target relative cursor-pointer nav-icon" aria-label="Novedades y alertas" onClick={() => { if (hasSeenNovedadesPanelThisSession()) { router.push("/notifications"); return; } openNovedadesPanel(); }}>
