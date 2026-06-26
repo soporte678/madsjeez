@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Header } from "@/components/Header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Reveal } from "@/components/seller/premium/motion-primitives"
-import { Store, Check } from "lucide-react"
+import { Store, Check, Crown } from "lucide-react"
 
 const REG_BENEFITS = [
   "Publicá productos con fotos, precio y stock.",
@@ -22,6 +22,9 @@ const REG_BENEFITS = [
 
 export default function SellerRegisterPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const isFoundingProgram = searchParams.get("program") === "founding"
+
   const [formData, setFormData] = useState({
     businessName: "",
     cuit: "",
@@ -49,7 +52,10 @@ export default function SellerRegisterPage() {
       const response = await fetch("/api/seller/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          ...(isFoundingProgram ? { program: "founding" } : {}),
+        }),
       })
 
       const data = await response.json()
@@ -58,7 +64,7 @@ export default function SellerRegisterPage() {
         throw new Error(data.error || "Error al registrarse como vendedor")
       }
 
-      router.push("/dashboard?registered=seller")
+      router.push(isFoundingProgram ? "/dashboard?registered=founder" : "/dashboard?registered=seller")
     } catch (err: any) {
       setError(err.message)
     } finally {
@@ -98,10 +104,15 @@ export default function SellerRegisterPage() {
 
           {/* Formulario (intacto) */}
           <Reveal delay={0.15} className="order-first lg:order-none">
-          <Card>
+          <Card className={isFoundingProgram ? "border-orange-500/40 shadow-[0_0_40px_-10px_rgba(249,115,22,0.2)]" : ""}>
             <CardHeader>
+              {isFoundingProgram && (
+                <div className="mb-2 flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest text-orange-500">
+                  <Crown className="h-3.5 w-3.5" /> Programa Sellers Fundadores
+                </div>
+              )}
               <CardTitle className="text-2xl text-center">
-                Registrarse como Vendedor
+                {isFoundingProgram ? "Postularte como Fundador" : "Registrarse como Vendedor"}
               </CardTitle>
             </CardHeader>
             <CardContent>
